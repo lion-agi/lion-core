@@ -1,5 +1,5 @@
-from .flatten import flatten
-from .unflatten import unflatten
+from ..item_handlers.flatten import flatten
+from ..item_handlers.unflatten import unflatten
 
 
 def npop(input_, / ,indices, seperator="|", default=...):
