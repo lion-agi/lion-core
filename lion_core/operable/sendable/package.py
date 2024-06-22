@@ -17,7 +17,6 @@ class PackageCategory(str, Enum):
     SIGNAL = "signal"
 
 
-
 class Package(Element):
 
     request_source: str | None = None

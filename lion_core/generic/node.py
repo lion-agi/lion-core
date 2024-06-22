@@ -217,8 +217,6 @@ class Node(Component, Relatable):
         return self.__str__()
 
 
-
-
 from enum import Enum
 from pydantic import Field
 from ..abc import Condition

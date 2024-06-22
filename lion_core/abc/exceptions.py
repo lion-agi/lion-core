@@ -5,8 +5,8 @@ class LionError(Exception):
         if message is None:
             message = "An unspecified error occurred in the Lion system."
         super().__init__(message)
-        
-        
+
+
 class LionIDError(LionError):
     """Exception raised for errors in the Lion ID."""
 
@@ -59,7 +59,7 @@ class LionOperationError(LionError):
         if message is None:
             message = "Operation failed."
         super().__init__(message)
-        
+
 
 class LionRelationError(LionError):
     """Exception raised for errors in the Lion relation."""

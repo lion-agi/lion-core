@@ -173,7 +173,7 @@ class Flow(Element):
 
                 return False
 
-    def exclude(self, seq = None, item=None, name=None):
+    def exclude(self, seq=None, item=None, name=None):
         """
         Excludes an item or sequence from the flow.
 

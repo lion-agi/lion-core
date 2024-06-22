@@ -1,4 +1,4 @@
-from .base import Rule
+from ..rule.base import Rule
 
 
 """

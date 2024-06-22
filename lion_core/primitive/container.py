@@ -16,10 +16,10 @@
 
 #     def __setitem__(self, index, value):
 #         lib.nset(self.flat_structure, index, value)
-        
+
 #     def __contains__(self, value):
 #         return value in self.flat_keys or value in self.flat_structure
-                
+
 #     def __bool__(self):
 #         return self.flat_structure not in [{}, [], None, [{}], [[]], [None]]
 
@@ -28,32 +28,30 @@
 
 #     def __iter__(self):
 #         yield from self.flat_structure.values()
-        
+
 #     def keys(self, max_depth=0, **kwargs):
 #         return lib.get_flattened_keys(self.flat_structure, max_depth=max_depth, **kwargs)
-        
+
 #     def values(self, max_depth=0, **kwargs):
 #         yield from 0
-    
+
 #     def items(a, depth=0):
 #         ...
-        
+
 #     def pop(a, b, c):
 #         ...
-        
+
 #     def remove(a, b):
 #         ...
-        
+
 #     def insert(a, b, c):
 #         ...
-        
+
 #     def filter(a, b):
 #         ...
-    
+
 #     def merge(a, b):
 #         ...
-        
+
 #     def update(a, b):
 #         ...
-        
-    

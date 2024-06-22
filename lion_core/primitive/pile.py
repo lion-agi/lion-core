@@ -9,16 +9,12 @@ from ..abc import (
     Ordering,
     LionValueError,
     LionTypeError,
-    ItemNotFoundError)
+    ItemNotFoundError,
+)
 
 from ..generic.component import Component
 
-from .utils import (
-    to_list_type, 
-    get_lion_id, 
-    validate_order, 
-    is_same_dtype
-)
+from .utils import to_list_type, get_lion_id, validate_order, is_same_dtype
 
 T = TypeVar("T", bound=Component)
 

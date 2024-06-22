@@ -126,7 +126,6 @@ class Edge(Component):
         return get_lion_id(item) in (self.head, self.tail)
 
 
-
 class HyperEdge(Component):
     """Represents a hyperedge connecting multiple nodes in a hypergraph."""
 

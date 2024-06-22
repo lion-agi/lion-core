@@ -3,14 +3,8 @@ from typing import Any
 from lion_core.setting import base_lion_fields
 from lion_core.generic.utils import change_dict_key
 
-lc_meta_fields = [
-    "lc", 
-    "type", 
-    "id", 
-    "langchain", 
-    "lc_type", 
-    "lc_id"
-]
+lc_meta_fields = ["lc", "type", "id", "langchain", "lc_type", "lc_id"]
+
 
 class LangChainComponentMixin:
 

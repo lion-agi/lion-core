@@ -1,6 +1,9 @@
 from typing import Union
 
-def unflatten(flat_dict: dict, sep: str = "|", inplace: bool = False) -> Union[dict, list]:
+
+def unflatten(
+    flat_dict: dict, sep: str = "|", inplace: bool = False
+) -> Union[dict, list]:
     """
     Unflatten a single-level dictionary into a nested dictionary or list.
 

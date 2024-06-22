@@ -133,9 +133,7 @@ def deep_update(original: dict, update: dict) -> dict:
     return original
 
 
-def get_target_container(
-    nested: list | dict, indices: list[int | str]
-) -> list | dict:
+def get_target_container(nested: list | dict, indices: list[int | str]) -> list | dict:
     """
     Retrieve the target container (sub-list or sub-dictionary) in a nested
     structure using a list of indices.

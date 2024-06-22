@@ -1,4 +1,4 @@
 from .base import Rule
-from .rulebook import RuleBook
+from ..knowledge.rulebook import RuleBook
 
 __all__ = ["Rule", "RuleBook"]

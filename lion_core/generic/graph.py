@@ -235,7 +235,6 @@ class Graph(Node):
         return len(self.internal_nodes)
 
 
-
 # from collections import deque
 # from typing import Any, List, Union
 # import contextlib
@@ -399,7 +398,6 @@ class Graph(Node):
 #         self.relations["out"].include(hyperedge)
 #         for node in nodes:
 #             node.relations["in"].include(hyperedge)
-
 
 
 class Tree(Graph):

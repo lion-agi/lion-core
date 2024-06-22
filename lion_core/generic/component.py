@@ -56,7 +56,7 @@ class Component(Temporal, BaseModel, ComponentMixin):
             random_hyphen=True,
             num_hyphens=4,
             hyphen_start_index=6,
-            hyphen_end_index=24
+            hyphen_end_index=24,
         ),
         title="Lion ID",
         description="A 32 character unique identifier for the component",
@@ -88,9 +88,7 @@ class Component(Temporal, BaseModel, ComponentMixin):
     content: Any = Field(
         default=None,
         description="The optional content of the node.",
-        validation_alias=AliasChoices(
-            "text", "page_content", "chunk_content", "data"
-        ),
+        validation_alias=AliasChoices("text", "page_content", "chunk_content", "data"),
     )
 
     class Config:
@@ -285,9 +283,7 @@ class Component(Temporal, BaseModel, ComponentMixin):
         try:
             dict_ = {**obj, **kwargs}
             if "embedding" in dict_:
-                dict_["embedding"] = cls._validate_embedding(
-                    dict_["embedding"]
-                )
+                dict_["embedding"] = cls._validate_embedding(dict_["embedding"])
 
             if "lion_class" in dict_:
                 cls = _init_class.get(dict_.pop("lion_class"), cls)
@@ -344,7 +340,7 @@ class Component(Temporal, BaseModel, ComponentMixin):
                     num_hyphens=4,
                     hyphen_start_index=6,
                     hyphen_end_index=24,
-                )
+                ),
             )
         if "timestamp" not in dict_:
             dict_["timestamp"] = SysUtils.time()
@@ -355,8 +351,7 @@ class Component(Temporal, BaseModel, ComponentMixin):
         return dict_
 
     @classmethod
-    def _from_str(cls, obj: str, /, *args, fuzzy_parse: bool = False,
-                  **kwargs) -> T:
+    def _from_str(cls, obj: str, /, *args, fuzzy_parse: bool = False, **kwargs) -> T:
         """
         Create a Component instance from a JSON string.
 

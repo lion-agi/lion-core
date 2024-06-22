@@ -21,7 +21,6 @@ from lionagi.lib.data_handlers._to_num import (
 )
 
 
-
 class TestNFilterFunctions(unittest.TestCase):
 
     def test_nfilter_dict(self):
@@ -636,10 +635,6 @@ class TestToDfFunction(unittest.TestCase):
         data = [{"a": 1, "b": [{"c": 2}, {"d": 3}]}]
         with self.assertRaises(ValueError):
             to_df(data)
-
-
-
-
 
 
 class TestUtilities(unittest.TestCase):

@@ -28,5 +28,5 @@ __all__ = [
     "to_num",
     "get_flattened_keys",
     "strip_lower",
-    "npop"
+    "npop",
 ]

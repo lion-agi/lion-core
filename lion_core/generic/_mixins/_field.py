@@ -7,7 +7,7 @@ from lion_core.abc.exceptions import LionTypeError, LionValueError
 
 
 class ComponentFieldMixin:
-    
+
     def _add_field(
         self,
         field: str,
