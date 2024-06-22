@@ -1,63 +1,61 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
-"""Component class, base building block in LionAGI."""
-
-
 from collections.abc import Sequence
 from functools import singledispatchmethod
 from typing import Any, TypeVar, TypeAlias, Union
 
 from pandas import DataFrame, Series
 from pydantic import BaseModel, Field, ValidationError, AliasChoices
+from datetime import datetime
 
-
-from lionagi.os.lib import (
-    strip_lower,
-    to_dict,
-    to_str,
-    fuzzy_parse_json,
-)
-from lionagi.os.lib.sys_util import get_timestamp, create_id
-from lionagi.os._setting.meta_fields import base_lion_fields
-from ..abc.element import Element
-from .exceptions import LionTypeError, LionValueError
-from ...lionagi.core.abc.mixins import ComponentMixin
-
-
-T = TypeVar("T")
 
 _init_class = {}
 
 
 class Component(Element, ComponentMixin):
-    """
-    Represents a distinguishable, temporal entity in LionAGI.
 
-    Encapsulates essential attributes and behaviors needed for individual
-    components within the system's architecture. Each component is uniquely
-    identifiable, with built-in version control and metadata handling.
+    ln_id: str = Field(
+        default_factory=create_id,
+        title="ID",
+        description="A 32-char unique hash identifier.",
+        frozen=True,
+        validation_alias=AliasChoices("node_id", "id_", "id"),
+    )
 
-    Attributes:
-        ln_id (str): A unique identifier for the component.
-        timestamp (str): The UTC timestamp when the component was created.
-        metadata (dict): Additional metadata for the component.
-        extra_fields (dict): Additional fields for the component.
-        content (Any): Optional content of the component.
-    """
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now().isoformat(),
+        title="Creation Timestamp",
+        description="The UTC timestamp of creation",
+        frozen=True,
+    )
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if cls.__name__ not in _init_class:
+            _init_class[cls.__name__] = cls
+
+    @property
+    def class_name(self) -> str:
+        """Get the class name."""
+        return self._class_name()
+
+    @classmethod
+    def _class_name(cls) -> str:
+        """Get the class name."""
+        return cls.__name__
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     metadata: dict[str, Any] = Field(
         default_factory=dict,
@@ -83,6 +81,59 @@ class Component(Element, ComponentMixin):
         default=[],
         description="The optional embedding of the node.",
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from lionagi.os.lib import (
+    strip_lower,
+    to_dict,
+    to_str,
+    fuzzy_parse_json,
+)
+from lionagi.os.lib.sys_util import get_timestamp, create_id
+from lionagi.os._setting.meta_fields import base_lion_fields
+from ..abc.element import Element
+from ...generic.exceptions import LionTypeError, LionValueError
+from ...lionagi.core.abc.mixins import ComponentMixin
+
+
+T = TypeVar("T")
+
+_init_class = {}
+
+
+
+
+
+
 
     class Config:
         """Model configuration settings."""
