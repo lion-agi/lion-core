@@ -43,6 +43,15 @@ class LionEntityError(LionError):
         super().__init__(message)
 
 
+class ItemNotFoundError(LionEntityError):
+    """Exception raised when an entity is not found."""
+
+    def __init__(self, message=None):
+        if message is None:
+            message = "Entity not found."
+        super().__init__(message)
+
+
 class LionOperationError(LionError):
     """Exception raised for errors in the Lion operation."""
 

@@ -18,7 +18,7 @@ from pydantic import Field
 
 from lionagi.os.collections.abc import Actionable
 from lionagi.os.collections.node.node import Node
-from .tool import Tool
+from .tool.tool import Tool
 
 
 class DirectiveSelection(Node, Actionable):

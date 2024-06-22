@@ -1,25 +1,10 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 from collections.abc import Mapping
 from collections import deque
 from typing import Tuple
 import contextlib
-from ..abc import Record, LionTypeError, ItemNotFoundError, LionIDable, Element, Field
-from ..pile.pile import Pile, pile
+from pydantic import Field
+from ..abc import Record, LionTypeError, ItemNotFoundError, Element
+from .pile import Pile, pile
 from .progression import Progression, progression
 
 
@@ -134,7 +119,7 @@ class Flow(Element):
     def __getitem__(self, seq=None, /):
         return self.get(seq)
 
-    def __setitem__(self, seq: LionIDable | str, index=None, value=None, /):
+    def __setitem__(self, seq, index=None, value=None, /):
         if seq not in self:
             raise ItemNotFoundError(f"Sequence {seq}")
 
@@ -188,7 +173,7 @@ class Flow(Element):
 
                 return False
 
-    def exclude(self, seq: LionIDable = None, item=None, name=None):
+    def exclude(self, seq = None, item=None, name=None):
         """
         Excludes an item or sequence from the flow.
 

@@ -1,52 +1,29 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
-"""
-This module defines the Pile class, a versatile container for managing
-collections of Element objects. It supports structured access and
-manipulation, including retrieval, addition, and deletion of elements.
-"""
-
 from collections.abc import Iterable
 from typing import TypeVar, Type, Any, Generic
 from pydantic import Field, field_validator
-from lionagi.os.lib import to_df
-from ...lionagi.collections.model.imodel import iModel
-from ...lionagi.collections.util import is_same_dtype, to_list_type, _validate_order
+import lion_core.libs as libs
 
 from ..abc import (
     Element,
     Record,
-    Component,
     Ordering,
-    LionIDable,
-    get_lion_id,
     LionValueError,
     LionTypeError,
-    ItemNotFoundError,
+    ItemNotFoundError)
+
+from ..generic.component import Component
+
+from .utils import (
+    to_list_type, 
+    get_lion_id, 
+    validate_order, 
+    is_same_dtype
 )
 
-from ..primitives._mixin.embed_mixin import PileEmbeddingsMixin
-from ..primitives._mixin.query_mixin import PileQueryMixin
+T = TypeVar("T", bound=Component)
 
 
-T = TypeVar("T")
-
-
-class Pile(Element, PileEmbeddingsMixin, PileQueryMixin, Record, Generic[T]):
+class Pile(Component, Record, Generic[T]):
     """
     Collection class for managing Element objects.
 
@@ -66,10 +43,6 @@ class Pile(Element, PileEmbeddingsMixin, PileQueryMixin, Record, Generic[T]):
     item_type: set[Type[Element]] | None = Field(default=None)
     name: str | None = None
     order: list[str] = Field(default_factory=list)
-    index: Any = None
-    engines: dict[str, Any] = Field(default_factory=dict)
-    query_response: list = []
-    tools: dict = {}
 
     def __init__(
         self,
@@ -425,7 +398,7 @@ class Pile(Element, PileEmbeddingsMixin, PileQueryMixin, Record, Generic[T]):
 
         return self + other
 
-    def __isub__(self, other: LionIDable) -> "Pile":
+    def __isub__(self, other) -> "Pile":
         """
         Exclude item(s) from the current pile using `-=`.
 
@@ -502,7 +475,7 @@ class Pile(Element, PileEmbeddingsMixin, PileQueryMixin, Record, Generic[T]):
 
     @field_validator("order", mode="before")
     def _validate_order(cls, value):
-        return _validate_order(value)
+        return validate_order(value)
 
     def _validate_item_type(self, value):
         """
@@ -527,7 +500,7 @@ class Pile(Element, PileEmbeddingsMixin, PileQueryMixin, Record, Generic[T]):
         value = to_list_type(value)
 
         for i in value:
-            if not isinstance(i, (type(Element), type(iModel))):
+            if not isinstance(i, type(Element)):
                 raise LionTypeError(
                     "Invalid item type. Expected a subclass of Component."
                 )
@@ -586,7 +559,7 @@ class Pile(Element, PileEmbeddingsMixin, PileQueryMixin, Record, Generic[T]):
             if _dict.get("embedding", None):
                 _dict["embedding"] = str(_dict.get("embedding"))
             dicts_.append(_dict)
-        return to_df(dicts_)
+        return libs.to_df(dicts_)
 
     def to_csv(self, file_name, **kwargs):
         """

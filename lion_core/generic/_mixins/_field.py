@@ -1,8 +1,9 @@
 from functools import singledispatchmethod
 from typing import Any
 from pydantic import Field
-from lionagi.os.lib import strip_lower
-from ...generic.exceptions import FieldError, LionTypeError
+import lion_core.libs as libs
+
+from lion_core.abc.exceptions import LionTypeError, LionValueError
 
 
 class ComponentFieldMixin:
@@ -42,7 +43,7 @@ class ComponentFieldMixin:
         """Get the value of a field attribute."""
         try:
             if not self._field_has_attr(k, attr):
-                raise FieldError(f"field {k} has no attribute {attr}")
+                raise LionValueError(f"field {k} has no attribute {attr}")
 
             field = self.all_fields[k]
             if not (a := getattr(field, attr, None)):
@@ -67,7 +68,7 @@ class ComponentFieldMixin:
             if "|" in str(v):
                 v = str(v)
                 v = v.split("|")
-                dict_[k] = [strip_lower(i) for i in v]
+                dict_[k] = [libs.strip_lower(i) for i in v]
             else:
                 dict_[k] = [v.__name__] if v else None
         return dict_

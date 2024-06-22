@@ -1,16 +1,18 @@
 from typing import Any
 
-from lionagi.os.lib.sys_util import change_dict_key
-from lionagi.os._setting.meta_fields import lc_meta_fields, base_lion_fields
+from lion_core.setting import base_lion_fields
+from lion_core.generic.utils import change_dict_key
 
+lc_meta_fields = [
+    "lc", 
+    "type", 
+    "id", 
+    "langchain", 
+    "lc_type", 
+    "lc_id"
+]
 
 class LangChainComponentMixin:
-
-    def to_langchain_doc(self, **kwargs) -> Any:
-        """Serializes this node for Langchain."""
-        from lionagi.app.LangChain.bridge import LangchainBridge
-
-        return LangchainBridge.to_langchain_document(self, **kwargs)
 
     @classmethod
     def _from_langchain(cls, obj: Any):

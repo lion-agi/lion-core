@@ -1,24 +1,8 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 import contextlib
-from lionagi.os.lib.sys_util import create_copy
+from lion_core.libs import SysUtils
 from pydantic import field_validator, Field
-from ..abc import Ordering, get_lion_id, ItemNotFoundError, LionIDable, Element
-from ..util import _validate_order
+from ..abc import Ordering, ItemNotFoundError, Element
+from .utils import validate_order, get_lion_id
 
 
 class Progression(Element, Ordering):
@@ -37,7 +21,7 @@ class Progression(Element, Ordering):
     @field_validator("order", mode="before")
     def _validate_order(cls, value) -> list[str]:
         """Validate and convert the order field."""
-        return _validate_order(value)
+        return validate_order(value)
 
     def __contains__(self, item):
         """Check if an item or items are in the progression."""
@@ -45,7 +29,7 @@ class Progression(Element, Ordering):
             return False
         if isinstance(item, Progression):
             return all([i in self.order for i in item.order])
-        if isinstance(item, LionIDable) and len(a := get_lion_id(item)) == 32:
+        if isinstance(item, (Element, str)) and len(a := get_lion_id(item)) == 32:
             return a in self.order
         item = self._validate_order(item)
         return all([i in self.order for i in item])
@@ -100,11 +84,11 @@ class Progression(Element, Ordering):
 
         raise ItemNotFoundError(f"index {key}")
 
-    def remove(self, item: LionIDable):
+    def remove(self, item):
         """Remove the next occurrence of an item from the progression."""
         if item in self:
             item = self._validate_order(item)
-            l_ = create_copy(self.order)
+            l_ = SysUtils.copy(self.order)
 
             with contextlib.suppress(Exception):
                 for i in item:
@@ -157,7 +141,7 @@ class Progression(Element, Ordering):
     def __radd__(self, other):
         if not isinstance(other, Progression):
             _copy = self.copy()
-            l_ = create_copy(_copy.order)
+            l_ = SysUtils.copy(_copy.order)
             l_.insert(0, get_lion_id(other))
             _copy.order = l_
             return _copy
@@ -204,7 +188,7 @@ class Progression(Element, Ordering):
 
     def __list__(self):
         """Return a list representation of the progression."""
-        return create_copy(self.order)
+        return SysUtils.copy(self.order)
 
     def __reversed__(self):
         """Return a reversed progression."""

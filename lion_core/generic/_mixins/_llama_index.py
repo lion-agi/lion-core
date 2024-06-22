@@ -1,15 +1,23 @@
 from typing import Any, Type
-from lionagi.os.lib.sys_util import change_dict_key
-from lionagi.os._setting.meta_fields import llama_meta_fields
+from lion_core.generic.utils import change_dict_key
+
+
+llama_meta_fields = [
+    "id_",
+    "embedding",
+    "excluded_embed_metadata_keys",
+    "excluded_llm_metadata_keys",
+    "relationships",
+    "start_char_idx",
+    "end_char_idx",
+    "class_name",
+    "text_template",
+    "metadata_template",
+    "metadata_seperator",
+]
 
 
 class LlamaIndexComponentMixin:
-
-    def to_llama_index_node(self, **kwargs) -> Any:
-        """Serializes this node for LlamaIndex."""
-        from lionagi.app.LlamaIndex.bridge import LlamaIndexBridge
-
-        return LlamaIndexBridge.to_llama_index_node(self, **kwargs)
 
     @classmethod
     def _from_llama_index(cls, obj: Any):

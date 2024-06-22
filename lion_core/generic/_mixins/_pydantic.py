@@ -1,5 +1,5 @@
 from typing import TypeVar
-from ...generic.exceptions import LionValueError
+from lion_core.abc import LionValueError
 
 T = TypeVar("T")
 

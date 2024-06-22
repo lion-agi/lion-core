@@ -2,33 +2,7 @@ from .catalog import KnowledgeCatalog
 
 
 class KnowledgeBase:
-    """
-    A class to represent a Knowledge Base (KB) containing entities, relations, and sources.
-
-    Attributes:
-        entities (dict): A dictionary of entities in the KB, where the keys are entity titles, and the values are
-                         entity information (excluding the title).
-        relations (list): A list of relations in the KB, where each relation is a dictionary containing information
-                          about the relation (head, type, tail) and metadata (article_url and spans).
-        sources (dict): A dictionary of information about the sources of relations, where the keys are article URLs,
-                       and the values are source data (article_title and article_publish_date).
-        catalog (KnowledgeCatalog): An instance of the KnowledgeCatalog class to manage entity data.
-
-    Methods:
-        merge_with_kb(kb2): Merge another Knowledge Base (kb2) into this KB.
-        add_entity(e): Add an entity to the KB.
-        add_relation(r, article_title, article_publish_date): Add a relation to the KB.
-        print(): Print the entities, relations, and sources in the KB.
-        extract_relations_from_model_output(text): Extract relations from the model output text.
-    """
-
     def __init__(self, catalog: KnowledgeCatalog):
-        """
-        Initialize an empty Knowledge Base (KB) with empty dictionaries for entities, relations, and sources.
-
-        Args:
-            catalog (KnowledgeCatalog): An instance of the KnowledgeCatalog class to manage entity data.
-        """
         self.entities = {}
         self.relations = []
         self.sources = {}
