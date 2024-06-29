@@ -9,9 +9,9 @@ Functions:
 
 import asyncio
 from typing import Any, List, Union, Dict, Callable
-from lionagi.os.libs.data_handlers import to_list
-from lionagi.os.libs.function_handlers._lcall import lcall
-from lionagi.os.libs.function_handlers._rcall import rcall
+from lion_core.libs.data_handlers import to_list
+from lion_core.libs.function_handlers._lcall import lcall
+from lion_core.libs.function_handlers._rcall import rcall
 
 
 async def mcall(
@@ -32,7 +32,6 @@ async def mcall(
     error_map: Union[Dict[type, Callable], None] = None,
     max_concurrent: Union[int, None] = None,
     throttle_period: Union[float, None] = None,
-    flatten: bool = False,
     dropna: bool = False,
     **kwargs: Any,
 ) -> List[Any]:
@@ -72,8 +71,6 @@ async def mcall(
             concurrent executions. Defaults to None.
         throttle_period (Union[float, None], optional): Minimum time period
             between successive function executions. Defaults to None.
-        flatten (bool, optional): Whether to flatten the output list. Defaults
-            to False.
         dropna (bool, optional): Whether to drop None values from the output
             list. Defaults to False.
         **kwargs (Any): Additional keyword arguments to pass to each function.
@@ -86,8 +83,8 @@ async def mcall(
         ValueError: If the length of inputs and functions do not match when not
             exploding the function calls.
     """
-    input_ = to_list(input_)
-    func = to_list(func)
+    input_ = to_list(input_, flatten=False, dropna=False)
+    func = to_list(func, flatten=False, dropna=False)
 
     if explode:
         tasks = [
@@ -106,7 +103,6 @@ async def mcall(
                 error_map=error_map,
                 max_concurrent=max_concurrent,
                 throttle_period=throttle_period,
-                flatten=flatten,
                 dropna=dropna,
                 **kwargs,
             )

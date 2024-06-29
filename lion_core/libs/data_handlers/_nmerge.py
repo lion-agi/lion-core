@@ -22,7 +22,7 @@ Functions:
 from collections import defaultdict
 from itertools import chain
 from typing import Any, Callable, Union, List
-from lionagi.os.libs.data_handlers._util import is_homogeneous
+from lion_core.libs.data_handlers._util import is_homogeneous
 
 
 def nmerge(
@@ -31,7 +31,6 @@ def nmerge(
     *,
     overwrite: bool = False,
     dict_sequence: bool = False,
-    sep: str = "|",
     sort_list: bool = False,
     custom_sort: Callable[[Any], Any] | None = None,
 ) -> Union[dict, list]:
@@ -45,10 +44,8 @@ def nmerge(
             dictionaries with those from subsequent dictionaries. Defaults to
             False.
         dict_sequence (bool, optional): Enables unique key generation for
-            duplicate keys by appending a sequence number, using `sequence_separator`
-            as the delimiter. Applicable only if `overwrite` is False.
-        sequence_separator (str, optional): The separator used when generating
-            unique keys for duplicate dictionary keys. Defaults to "|".
+            duplicate keys by appending a sequence number. Applicable only if
+            `overwrite` is False.
         sort_list (bool, optional): When True, sort the resulting list after
             merging. It does not affect dictionaries. Defaults to False.
         custom_sort (Callable[[Any], Any] | None, optional): An optional callable
@@ -62,11 +59,11 @@ def nmerge(
         TypeError: If `nested_structure` contains objects of incompatible types
             that cannot be merged.
     """
+    if not isinstance(nested_structure, list):
+        raise TypeError("Please input a list")
     if is_homogeneous(nested_structure, dict):
-        return _merge_dicts(nested_structure, overwrite, dict_sequence, sep)
-    elif is_homogeneous(nested_structure, list) and not any(
-        isinstance(it, (dict, str)) for it in nested_structure
-    ):
+        return _merge_dicts(nested_structure, overwrite, dict_sequence)
+    elif is_homogeneous(nested_structure, list):
         return _merge_sequences(nested_structure, sort_list, custom_sort)
     else:
         raise TypeError(
@@ -103,7 +100,6 @@ def _merge_dicts(
     iterables: List[dict[Any, Any]],
     dict_update: bool,
     dict_sequence: bool,
-    sequence_separator: str,
 ) -> dict[Any, Any]:
     """
     Merges a list of dictionaries into a single dictionary, with options for
@@ -114,19 +110,17 @@ def _merge_dicts(
         dict_update (bool): If True, overwrite existing keys in dictionaries
             with those from subsequent dictionaries.
         dict_sequence (bool): Enables unique key generation for duplicate keys
-            by appending a sequence number, using `sequence_separator` as the
-            delimiter.
-        sequence_separator (str): The separator used when generating unique keys
-            for duplicate dictionary keys.
+            by appending a sequence number
 
     Returns:
         dict[Any, Any]: The merged dictionary.
     """
-    merged_dict = {}
+    merged_dict = {}                # {'a': [1, 2]}
     sequence_counters = defaultdict(int)
+    list_values = {}
 
-    for d in iterables:
-        for key, value in d.items():
+    for d in iterables:             # [{'a': [1, 2]}, {'a': [3, 4]}]
+        for key, value in d.items():        # {'a': [3, 4]}
             if key not in merged_dict or dict_update:
                 if (
                     key in merged_dict
@@ -135,13 +129,15 @@ def _merge_dicts(
                 ):
                     _deep_merge_dicts(merged_dict[key], value)
                 else:
-                    merged_dict[key] = value
+                    merged_dict[key] = value      # {'a': [1, 2]}
+                    if isinstance(value, list):
+                        list_values[key] = True
             elif dict_sequence:
                 sequence_counters[key] += 1
-                new_key = f"{key}{sequence_separator}{sequence_counters[key]}"
+                new_key = f"{key}{sequence_counters[key]}"
                 merged_dict[new_key] = value
             else:
-                if not isinstance(merged_dict[key], list):
+                if not isinstance(merged_dict[key], list) or list_values.get(key, False):
                     merged_dict[key] = [merged_dict[key]]
                 merged_dict[key].append(value)
 

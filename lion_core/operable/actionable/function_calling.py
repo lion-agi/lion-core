@@ -11,9 +11,9 @@ from functools import singledispatchmethod
 from typing import Any, Callable, Dict
 
 
-from lionagi.os.lib import ucall, fuzzy_parse_json
-from lionagi.os.collections.abc import Actionable
-from lionagi.os.collections.message import ActionRequest
+from lion_core.libs import ucall, fuzzy_parse_json
+from lion_core.core.generic.concepts import Actionable
+from lion_core.core.sendable.action_request import ActionRequest
 
 
 class FunctionCalling(Actionable):

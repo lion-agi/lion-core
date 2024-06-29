@@ -9,8 +9,8 @@ Functions:
 
 import asyncio
 from typing import Any, Callable, Optional, Dict
-from lionagi.os.libs.sys_util import get_now
-from lionagi.os.libs.function_handlers._ucall import ucall
+from lion_core.libs.sys_util import SysUtil
+from lion_core.libs.function_handlers._ucall import ucall
 
 
 async def rcall(
@@ -71,7 +71,6 @@ async def rcall(
     result = None
 
     await asyncio.sleep(initial_delay)
-
     for attempt in range(retries + 1):
         try:
             if retries == 0:
@@ -80,7 +79,6 @@ async def rcall(
                         func, *args, timeout=timeout, timing=True, **kwargs
                     )
                     return result, duration
-
                 result = await _rcall(func, *args, timeout=timeout, **kwargs)
                 return result
             err_msg = f"Attempt {attempt + 1}/{retries + 1}: {error_msg or ''}"
@@ -166,25 +164,26 @@ async def _rcall(
         asyncio.TimeoutError: If the function execution exceeds the timeout.
         Exception: If an error occurs and `ignore_err` is False.
     """
-    start_time = get_now(datetime_=False)
+    start_time = SysUtil.time()
+
     try:
         await asyncio.sleep(delay)
         if timeout is not None:
             result = await asyncio.wait_for(ucall(func, *args, **kwargs), timeout)
         else:
             result = await ucall(func, *args, **kwargs)
-        duration = get_now(datetime_=False) - start_time
+        duration = SysUtil.time() - start_time
         return (result, duration) if timing else result
     except asyncio.TimeoutError as e:
         err_msg = f"{err_msg or ''} Timeout {timeout} seconds exceeded"
         if ignore_err:
-            duration = get_now(datetime_=False) - start_time
+            duration = SysUtil.time() - start_time
             return (default, duration) if timing else default
         else:
             raise asyncio.TimeoutError(err_msg) from e
     except Exception as e:
         if ignore_err:
-            duration = get_now(datetime_=False) - start_time
+            duration = SysUtil.time() - start_time
             return (default, duration) if timing else default
         else:
             raise

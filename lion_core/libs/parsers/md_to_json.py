@@ -1,8 +1,8 @@
 import re
 from typing import Any, Callable
 
-from lionagi.os.libs.parsers.util import md_json_char_map
-from lionagi.os.libs.parsers.fuzzy_parse_json import fuzzy_parse_json
+from lion_core.libs.parsers.util import md_json_char_map
+from lion_core.libs.parsers.fuzzy_parse_json import fuzzy_parse_json
 
 
 def md_to_json(

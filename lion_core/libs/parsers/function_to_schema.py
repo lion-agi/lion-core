@@ -1,7 +1,7 @@
 import inspect
 
-from lionagi.os.libs.parsers.extract_docstring import extract_docstring_details
-from lionagi.os.libs.parsers.util import py_json_msp
+from lion_core.libs.parsers.extract_docstring import extract_docstring_details
+from lion_core.libs.parsers.util import py_json_msp
 
 
 def function_to_schema(

@@ -14,9 +14,9 @@ Helper Functions:
 """
 
 from typing import Any, Generator, Dict, List, Optional, Tuple
-from lionagi.os.libs.sys_util import create_copy
-from lionagi.os.libs.data_handlers._to_list import to_list
-from lionagi.os.libs.data_handlers._to_dict import to_dict
+from lion_core.libs.sys_util import SysUtil
+from lion_core.libs.data_handlers._to_list import to_list
+from lion_core.libs.data_handlers._to_dict import to_dict
 
 
 def flatten(
@@ -53,6 +53,8 @@ def flatten(
         ValueError: If inplace is True and nested_structure is not a
             dictionary.
     """
+    if not isinstance(parent_key, str):
+        raise TypeError(f"Unsupported key type: {type(parent_key).__name__}. Only string keys are acceptable.")
     if inplace:
         if not isinstance(nested_structure, dict):
             raise ValueError("Object must be a dictionary when 'inplace' is True.")
@@ -108,7 +110,7 @@ def get_flattened_keys(
                 nested_structure, sep=sep, max_depth=max_depth, dict_only=dict_only
             ).keys()
         )
-    obj_copy = create_copy(nested_structure, num=1)
+    obj_copy = SysUtil.create_copy(nested_structure, num=1)
     flatten(obj_copy, sep=sep, max_depth=max_depth, inplace=True, dict_only=dict_only)
     return to_list(obj_copy.keys())
 
@@ -147,6 +149,8 @@ def _dynamic_flatten_in_place(
         items = list(nested_structure.items())  # Create a copy of the dictionary
 
         for k, v in items:
+            if not isinstance(k, str):
+                raise TypeError(f"Unsupported key type: {type(k).__name__}. Only string keys are acceptable.")
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
 
             if isinstance(v, dict) and (max_depth is None or current_depth < max_depth):
@@ -197,12 +201,14 @@ def _dynamic_flatten_generator(
     Yields:
         Tuple[str, Any]: The flattened key and value pairs.
     """
-    if max_depth is not None and current_depth > max_depth:
+    if max_depth is not None and current_depth >= max_depth:
         yield sep.join(parent_key), nested_structure
         return
 
     if isinstance(nested_structure, dict):
         for k, v in nested_structure.items():
+            if not isinstance(k, str):
+                raise TypeError(f"Unsupported key type: {type(k).__name__}. Only string keys are acceptable.")
             new_key = parent_key + (k,)
             yield from _dynamic_flatten_generator(
                 v, new_key, sep, max_depth, current_depth + 1, dict_only

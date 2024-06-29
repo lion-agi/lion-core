@@ -12,8 +12,8 @@ Classes:
 import time
 import asyncio
 import functools
-from typing import Any, Callable
-from lionagi.os.libs.sys_util import get_now
+from typing import Any, Callable, Union
+from lion_core.libs.sys_util import SysUtil
 
 
 class Throttle:
@@ -33,7 +33,7 @@ class Throttle:
         __call_async__: Decorates an asynchronous function with throttling.
     """
 
-    def __init__(self, period: int) -> None:
+    def __init__(self, period: Union[int, float]) -> None:
         """
         Initializes a new instance of Throttle.
 
@@ -58,10 +58,10 @@ class Throttle:
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> Any:
-            elapsed = get_now(datetime_=False) - self.last_called
+            elapsed = SysUtil.time() - self.last_called
             if elapsed < self.period:
                 time.sleep(self.period - elapsed)
-            self.last_called = get_now(datetime_=False)
+            self.last_called = SysUtil.time()
             return func(*args, **kwargs)
 
         return wrapper
@@ -80,10 +80,10 @@ class Throttle:
 
         @functools.wraps(func)
         async def wrapper(*args, **kwargs) -> Any:
-            elapsed = get_now(datetime_=False) - self.last_called
+            elapsed = SysUtil.time() - self.last_called
             if elapsed < self.period:
                 await asyncio.sleep(self.period - elapsed)
-            self.last_called = get_now(datetime_=False)
+            self.last_called = SysUtil.time()
             return await func(*args, **kwargs)
 
         return wrapper

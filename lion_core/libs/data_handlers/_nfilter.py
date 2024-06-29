@@ -13,7 +13,7 @@ from typing import Any, Callable, Union
 
 
 def nfilter(
-    nested_structure: Union[dict, list], /, condition: Callable[[Any], bool]
+    nested_structure: Union[dict, list], condition: Callable[[Any], bool]
 ) -> Union[dict, list]:
     """
     Filter elements in a nested structure (dict or list) based on a condition.
@@ -52,7 +52,11 @@ def _filter_dict(
     Returns:
         dict[Any, Any]: The filtered dictionary.
     """
-    return {k: v for k, v in dictionary.items() if condition((k, v))}
+    return {
+        k: nfilter(v, condition) if isinstance(v, (dict, list)) else v
+        for k, v in dictionary.items()
+        if condition(v) or isinstance(v, (dict, list))
+    }
 
 
 def _filter_list(lst: list[Any], condition: Callable[[Any], bool]) -> list[Any]:
@@ -67,4 +71,8 @@ def _filter_list(lst: list[Any], condition: Callable[[Any], bool]) -> list[Any]:
     Returns:
         list[Any]: The filtered list.
     """
-    return [item for item in lst if condition(item)]
+    return [
+        nfilter(item, condition) if isinstance(item, (dict, list)) else item
+        for item in lst
+        if condition(item) or isinstance(item, (dict, list))
+    ]

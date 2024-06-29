@@ -9,8 +9,8 @@ Functions:
 
 import asyncio
 from typing import Callable, Any, List, Dict, Optional
-from lionagi.os.libs.function_handlers._ucall import ucall
-from lionagi.os.libs.function_handlers._util import is_coroutine_func
+from lion_core.libs.function_handlers._ucall import ucall
+from lion_core.libs.function_handlers._util import is_coroutine_func
 
 
 async def pcall(

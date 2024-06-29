@@ -1,6 +1,6 @@
 from typing import Any
 import json
-from ..data_handlers import to_dict
+from lion_core.libs.data_handlers import to_dict
 
 
 def as_readable_json(input_: Any, /) -> str:

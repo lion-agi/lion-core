@@ -1,6 +1,6 @@
 from typing import Any, Union, Callable
 import numpy as np
-from lionagi.os.libs.algorithms.jaro_distance import jaro_winkler_similarity
+from lion_core.libs.algorithms.jaro_distance import jaro_winkler_similarity
 
 
 def force_validate_keys(

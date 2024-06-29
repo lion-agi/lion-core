@@ -1,5 +1,5 @@
 import contextlib
-from lion_core.libs import SysUtils
+from lion_core.libs import SysUtil
 from pydantic import field_validator, Field
 from ..abc import Ordering, ItemNotFoundError, Element
 from .utils import validate_order, get_lion_id
@@ -88,7 +88,7 @@ class Progression(Element, Ordering):
         """Remove the next occurrence of an item from the progression."""
         if item in self:
             item = self._validate_order(item)
-            l_ = SysUtils.copy(self.order)
+            l_ = SysUtil.copy(self.order)
 
             with contextlib.suppress(Exception):
                 for i in item:
@@ -141,7 +141,7 @@ class Progression(Element, Ordering):
     def __radd__(self, other):
         if not isinstance(other, Progression):
             _copy = self.copy()
-            l_ = SysUtils.copy(_copy.order)
+            l_ = SysUtil.copy(_copy.order)
             l_.insert(0, get_lion_id(other))
             _copy.order = l_
             return _copy
@@ -188,7 +188,7 @@ class Progression(Element, Ordering):
 
     def __list__(self):
         """Return a list representation of the progression."""
-        return SysUtils.copy(self.order)
+        return SysUtil.copy(self.order)
 
     def __reversed__(self):
         """Return a reversed progression."""

@@ -10,7 +10,7 @@ Functions:
                         given value, extending the list if necessary.
 """
 
-from lionagi.os.libs.data_handlers._to_list import to_list
+from lion_core.libs.data_handlers._to_list import to_list
 from typing import Any, Union
 
 
@@ -19,8 +19,6 @@ def ninsert(
     indices: list[Union[str, int]],
     value: Any,
     *,
-    sep: str = "|",
-    max_depth: Union[int, None] = None,
     current_depth: int = 0,
 ) -> None:
     """
@@ -36,10 +34,6 @@ def ninsert(
             indices (int for lists) defining the path to the insertion point.
         value (Any): The value to insert at the specified location within
             `nested_structure`.
-        sep (str): A separator used when concatenating indices to form
-            composite keys in case of ambiguity. Defaults to "|".
-        max_depth (int | None): Limits the depth of insertion. If `None`,
-            no limit is applied.
         current_depth (int): Internal use only; tracks the current depth
             during recursive calls.
 
@@ -55,14 +49,11 @@ def ninsert(
     if not indices:
         raise ValueError("Indices list cannot be empty")
 
-    if isinstance(indices, str):
-        indices = indices.split(sep)
     indices = to_list(indices)
     for i, part in enumerate(indices[:-1]):
-        if max_depth is not None and current_depth >= max_depth:
-            break
-
         if isinstance(part, int):
+            if isinstance(nested_structure, dict):
+                raise TypeError(f"Unsupported key type: {type(part).__name__}. Only string keys are acceptable.")
             while len(nested_structure) <= part:
                 nested_structure.append(None)
             if nested_structure[part] is None or not isinstance(
@@ -81,39 +72,13 @@ def ninsert(
         current_depth += 1
 
     last_part = indices[-1]
-    if max_depth is not None and current_depth >= max_depth:
-        if isinstance(last_part, int):
-            handle_list_insert(nested_structure, last_part, value)
-        elif isinstance(nested_structure, list):
-            raise TypeError("Cannot use non-integer index on a list")
-        else:
-            nested_structure[last_part] = value
+    if isinstance(last_part, int):
+        if isinstance(nested_structure, dict):
+            raise TypeError(f"Unsupported key type: {type(last_part).__name__}. Only string keys are acceptable.")
+        while len(nested_structure) <= last_part:
+            nested_structure.append(None)
+        nested_structure[last_part] = value
+    elif isinstance(nested_structure, list):
+        raise TypeError("Cannot use non-integer index on a list")
     else:
-        if isinstance(last_part, int):
-            handle_list_insert(nested_structure, last_part, value)
-        elif isinstance(nested_structure, list):
-            raise TypeError("Cannot use non-integer index on a list")
-        else:
-            nested_structure[last_part] = value
-
-
-def handle_list_insert(nested_structure: list, part: int, value: Any) -> None:
-    """
-    Ensures a specified index in a list is occupied by a given value, extending the
-    list if necessary.
-
-    This method modifies a list by inserting or replacing an element at a specified
-    index. If the index is beyond the current list size, the list is extended with
-    `None` values up to the index, then the specified value is inserted.
-
-    Args:
-        nested_structure: The list to modify.
-        part: The target index for inserting or replacing the value.
-        value: The value to be inserted or to replace an existing value in the list.
-
-    Note:
-        This function directly modifies the input list in place.
-    """
-    while len(nested_structure) <= part:
-        nested_structure.append(None)
-    nested_structure[part] = value
+        nested_structure[last_part] = value

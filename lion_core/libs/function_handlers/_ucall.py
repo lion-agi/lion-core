@@ -8,7 +8,7 @@ The following functionalities are provided:
 
 import asyncio
 from typing import Any, Callable, Dict, Optional
-from lionagi.os.libs.function_handlers._util import (
+from lion_core.libs.function_handlers._util import (
     is_coroutine_func,
     custom_error_handler,
     force_async,

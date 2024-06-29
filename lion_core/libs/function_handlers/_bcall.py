@@ -8,8 +8,8 @@ Functions:
 """
 
 from typing import Any, Callable, AsyncGenerator, Optional, Dict, List
-from lionagi.os.libs.data_handlers import to_list
-from lionagi.os.libs.function_handlers._lcall import lcall
+from lion_core.libs.data_handlers import to_list
+from lion_core.libs.function_handlers._lcall import lcall
 
 
 async def bcall(
@@ -79,7 +79,7 @@ async def bcall(
         >>>                                  retries=3, delay=1):
         >>>     print(batch_results)
     """
-    input_ = to_list(input_)
+    input_ = to_list(input_, flatten=False, dropna=False)
 
     for i in range(0, len(input_), batch_size):
         batch = input_[i : i + batch_size]

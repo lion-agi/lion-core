@@ -1,4 +1,4 @@
-from lionagi.os.libs.data_handlers import strip_lower
+from lion_core.libs.data_handlers import strip_lower
 
 
 def force_validate_boolean(x):

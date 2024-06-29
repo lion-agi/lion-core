@@ -16,9 +16,9 @@ limitations under the License.
 
 from typing import Callable, Union, List, Dict, Any
 from pydantic import Field, field_serializer
-from lionagi.os.lib import ucall
+from lion_core.libs import ucall
 from lionagi.os.collections.abc import Actionable
-from lionagi.os.collections import Node
+from lion_core.generic.node import Node
 from .function_calling import FunctionCalling
 
 

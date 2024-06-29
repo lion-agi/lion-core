@@ -156,7 +156,7 @@ def replace_nans(d: dict) -> dict:
     return {k: (None if isna(v) else v) for k, v in d.items()}
 
 
-def xml_to_dict(root: Any) -> dict[str, Any]:
+def xml_to_dict(input_: Any) -> dict[str, Any]:
     """
     Convert an XML element and its children to a dictionary.
 
@@ -167,16 +167,8 @@ def xml_to_dict(root: Any) -> dict[str, Any]:
         dict[str, Any]: The dictionary representation of the XML structure.
     """
 
-    def parse_xml(element: Any, parent: dict[str, Any]) -> None:
-        children = list(element)
-        if children:
-            d = defaultdict(list)
-            for child in children:
-                parse_xml(child, d)
-            parent[element.tag].append(d if len(d) > 1 else d[next(iter(d))])
-        else:
-            parent[element.tag].append(element.text)
+    from lion_core.libs.sys_util import SysUtil
+    SysUtil.check_import("xmltodict")
 
-    result = defaultdict(list)
-    parse_xml(root, result)
-    return {k: v[0] if len(v) == 1 else v for k, v in result.items()}
+    import xmltodict
+    return xmltodict.parse(input_)

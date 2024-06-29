@@ -16,7 +16,7 @@ from functools import singledispatch
 from pandas import DataFrame, Series, concat, read_csv
 from pandas.core.generic import NDFrame
 from typing import Any, Dict
-from lionagi.os.libs.data_handlers._to_list import to_list
+from lion_core.libs.data_handlers._to_list import to_list
 from io import StringIO
 
 
@@ -67,7 +67,8 @@ def to_df(
     try:
         df = DataFrame(input_, **kwargs)
 
-        drop_kwargs["how"] = drop_how
+        if "thresh" not in drop_kwargs:
+            drop_kwargs["how"] = drop_how
         df = df.dropna(**drop_kwargs)
         return df.reset_index(drop=True) if reset_index else df
     except Exception as e:
@@ -112,7 +113,9 @@ def _(
             drop_kwargs = {}
         try:
             df = DataFrame(input_, **kwargs)
-            df = df.dropna(**{**drop_kwargs, "how": drop_how})
+            if "thresh" not in drop_kwargs:
+                drop_kwargs["how"] = drop_how
+            df = df.dropna(**drop_kwargs)
             return df.reset_index(drop=True) if reset_index else df
         except Exception as e:
             raise ValueError(f"Error converting input_ to DataFrame: {e}") from e

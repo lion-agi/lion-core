@@ -1,5 +1,5 @@
 from abc import ABC
-from lionagi.os.lib import lcall
+from lion_core.libs import lcall
 from ..abc import ModelLimitExceededError
 
 

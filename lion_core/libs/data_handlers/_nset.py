@@ -12,7 +12,7 @@ Functions:
 """
 
 from typing import Any, Union
-from lionagi.os.libs.data_handlers._to_list import to_list
+from lion_core.libs.data_handlers._to_list import to_list
 
 
 def nset(
@@ -52,11 +52,15 @@ def nset(
 
     for i, index in enumerate(_indices[:-1]):
         if isinstance(target_container, list):
+            if not isinstance(index, int):
+                raise TypeError("Cannot use non-integer index on a list")
             ensure_list_index(target_container, index)
             if target_container[index] is None:
                 next_index = _indices[i + 1]
                 target_container[index] = [] if isinstance(next_index, int) else {}
         elif isinstance(target_container, dict):
+            if isinstance(index, int):
+                raise TypeError(f"Unsupported key type: {type(index).__name__}. Only string keys are acceptable.")
             if index not in target_container:
                 next_index = _indices[i + 1]
                 target_container[index] = [] if isinstance(next_index, int) else {}
@@ -67,9 +71,13 @@ def nset(
 
     last_index = _indices[-1]
     if isinstance(target_container, list):
+        if not isinstance(last_index, int):
+            raise TypeError("Cannot use non-integer index on a list")
         ensure_list_index(target_container, last_index)
         target_container[last_index] = value
     elif isinstance(target_container, dict):
+        if isinstance(last_index, int):
+            raise TypeError(f"Unsupported key type: {type(last_index).__name__}. Only string keys are acceptable.")
         target_container[last_index] = value
     else:
         raise TypeError("Cannot set value on non-list/dict element")

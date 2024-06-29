@@ -14,7 +14,7 @@ from collections.abc import Mapping, Iterable
 from typing import Any, Generator, List
 
 
-def to_list(input_: Any, /, *, flatten: bool = True, dropna: bool = True) -> List[Any]:
+def to_list(input_: Any, /, *, flatten: bool = False, dropna: bool = False) -> List[Any]:
     """
     Convert various types of input into a list.
 

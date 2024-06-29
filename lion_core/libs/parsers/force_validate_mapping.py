@@ -1,7 +1,8 @@
 import contextlib
 from typing import Any, Callable, Union
-from lionagi.os.libs.parsers.md_to_json import fuzzy_parse_json, md_to_json
-from lionagi.os.libs.parsers.force_validate_keys import force_validate_keys
+from lion_core.libs.parsers.md_to_json import md_to_json
+from lion_core.libs.parsers.fuzzy_parse_json import fuzzy_parse_json
+from lion_core.libs.parsers.force_validate_keys import force_validate_keys
 
 
 def force_validate_mapping(

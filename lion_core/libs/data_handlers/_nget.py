@@ -23,7 +23,7 @@ Raises:
         is provided.
 """
 
-from lionagi.os.libs.data_handlers._util import get_target_container
+from lion_core.libs.data_handlers._util import get_target_container
 from typing import Any, Union
 
 

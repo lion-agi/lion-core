@@ -139,7 +139,7 @@ def get_target_container(nested: list | dict, indices: list[int | str]) -> list 
     structure using a list of indices.
 
     Args:
-        nested_list (list | dict): The nested structure to navigate.
+        nested (list | dict): The nested structure to navigate.
         indices (list[int | str]): A list of indices to navigate through the
             nested structure.
 
@@ -162,7 +162,7 @@ def get_target_container(nested: list | dict, indices: list[int | str]) -> list 
                 current_element = current_element[index]
 
             else:
-                raise IndexError("List index out of range")
+                raise IndexError("List index is invalid or out of range")
 
         elif isinstance(current_element, dict):
             if index in current_element:

@@ -10,8 +10,7 @@ Functions:
 
 import asyncio
 from typing import Any, Callable, List, Dict, Optional
-from lionagi.os.libs.data_handlers import to_list
-from lionagi.os.libs.function_handlers._ucall import ucall
+from lion_core.libs.function_handlers._ucall import ucall
 
 
 async def lcall(
@@ -29,7 +28,6 @@ async def lcall(
     error_map: Optional[Dict[type, Callable[[Exception], Any]]] = None,
     max_concurrent: Optional[int] = None,
     throttle_period: Optional[float] = None,
-    flatten: bool = False,
     dropna: bool = False,
     **kwargs: Any,
 ) -> List[Any]:
@@ -68,8 +66,6 @@ async def lcall(
             executions. Defaults to None.
         throttle_period (Optional[float], optional): Minimum time period
             between successive function executions. Defaults to None.
-        flatten (bool, optional): Whether to flatten the output list. Defaults
-            to False.
         dropna (bool, optional): Whether to drop None values from the output
             list. Defaults to False.
         **kwargs (Any): Additional keyword arguments to pass to the function.
@@ -138,16 +134,19 @@ async def lcall(
     results.sort(key=lambda x: x[0])  # Sort results based on the original index
 
     if timing:
-        if not flatten:
-            if dropna:
-                return [
-                    (result[1], result[2])
-                    for result in results
-                    if result[1] is not None
-                ]
-            else:
-                return [(result[1], result[2]) for result in results]
+        if dropna:
+            return [
+                (result[1], result[2])
+                for result in results
+                if result[1] is not None
+            ]
         else:
-            return to_list([result[1] for result in results], dropna=dropna)
+            return [(result[1], result[2]) for result in results]
     else:
+        if dropna:
+            return [
+                result[1]
+                for result in results
+                if result[1] is not None
+            ]
         return [result[1] for result in results]

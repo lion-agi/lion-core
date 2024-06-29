@@ -13,8 +13,8 @@ Functions:
 
 import json
 from typing import Any
-from lionagi.os.libs.data_handlers._to_list import to_list
-from lionagi.os.libs.data_handlers._to_dict import to_dict
+from lion_core.libs.data_handlers._to_list import to_list
+from lion_core.libs.data_handlers._to_dict import to_dict
 
 
 def to_str(

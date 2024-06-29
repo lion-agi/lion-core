@@ -16,7 +16,7 @@ import asyncio
 from typing import Any, Callable, Dict
 from functools import lru_cache, wraps
 from concurrent.futures import ThreadPoolExecutor
-from lionagi.os.libs.function_handlers._throttle import Throttle
+from lion_core.libs.function_handlers._throttle import Throttle
 
 
 def force_async(fn: Callable[..., Any]) -> Callable[..., Any]:

@@ -1,5 +1,5 @@
 import numpy as np
-from lionagi.os.libs.algorithms.jaro_distance import (
+from lion_core.libs.algorithms.jaro_distance import (
     jaro_winkler_similarity,
 )
 

@@ -1,5 +1,5 @@
 import inspect
-from lionagi.os.libs.data_handlers import strip_lower
+from lion_core.libs.data_handlers import strip_lower
 
 
 def extract_docstring_details(func, style="google"):
