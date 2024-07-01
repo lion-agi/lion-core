@@ -1,9 +1,12 @@
+# lion_core/abc/exceptions.py
+
+
 class LionError(Exception):
-    """Base class for all exceptions in the Lion system."""
+    """Base class for all exceptions in the LION system."""
 
     def __init__(self, message=None):
         if message is None:
-            message = "An unspecified error occurred in the Lion system."
+            message = "An error occurred in the LION system."
         super().__init__(message)
 
 
@@ -16,12 +19,30 @@ class LionIDError(LionError):
         super().__init__(message)
 
 
-class LionTypeError(LionError):
-    """Exception raised for type mismatch or type checking errors."""
+class LionElementError(LionError):
+    """Exception raised for errors in the Lion element."""
 
     def __init__(self, message=None):
         if message is None:
-            message = "Incorrect type."
+            message = "Invalid Lion element."
+        super().__init__(message)
+
+
+class ItemExistedError(LionElementError):
+    """Exception raised when an entity already exists."""
+
+    def __init__(self, message=None):
+        if message is None:
+            message = "Entity already exists."
+        super().__init__(message)
+
+
+class ItemNotFoundError(LionElementError):
+    """Exception raised when an entity does not exist."""
+
+    def __init__(self, message=None):
+        if message is None:
+            message = "Entity does not exist."
         super().__init__(message)
 
 
@@ -34,21 +55,12 @@ class LionValueError(LionError):
         super().__init__(message)
 
 
-class LionEntityError(LionError):
-    """Exception raised for errors in the Lion entity."""
+class LionValidationError(LionValueError):
+    """Exception raised for errors in the Lion validation."""
 
     def __init__(self, message=None):
         if message is None:
-            message = "Invalid lion entity."
-        super().__init__(message)
-
-
-class ItemNotFoundError(LionEntityError):
-    """Exception raised when an entity is not found."""
-
-    def __init__(self, message=None):
-        if message is None:
-            message = "Entity not found."
+            message = "Validation failed."
         super().__init__(message)
 
 
@@ -67,4 +79,13 @@ class LionRelationError(LionError):
     def __init__(self, message=None):
         if message is None:
             message = "Relation failed."
+        super().__init__(message)
+
+
+class LionQuantumError(LionError):
+    """Exception raised for errors in the Lion quantum system."""
+
+    def __init__(self, message=None):
+        if message is None:
+            message = "Quantum error occurred."
         super().__init__(message)
