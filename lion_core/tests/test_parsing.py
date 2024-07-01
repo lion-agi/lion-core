@@ -1,7 +1,7 @@
-from lionagi.lib.parsers import *
+from lion_core.libs.parsers import *
 import unittest
-from lionagi.lib.parsers.md_to_json import escape_chars_in_json
-from lionagi.lib.parsers.extract_docstring import (
+from lion_core.libs.parsers.md_to_json import escape_chars_in_json
+from lion_core.libs.parsers.extract_docstring import (
     _extract_docstring_details_google,
     _extract_docstring_details_rest,
 )
