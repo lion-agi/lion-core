@@ -72,3 +72,7 @@ def nget(
             return default
         else:
             raise LookupError("Target not found and no default value provided.")
+
+
+
+# Path: lion_core/libs/data_handlers/_nget.py

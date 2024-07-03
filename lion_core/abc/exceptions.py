@@ -1,6 +1,3 @@
-# lion_core/abc/exceptions.py
-
-
 class LionError(Exception):
     """Base class for all exceptions in the LION system."""
 
@@ -89,3 +86,15 @@ class LionQuantumError(LionError):
         if message is None:
             message = "Quantum error occurred."
         super().__init__(message)
+
+
+class LionTypeError(LionError):
+    """Exception raised for errors in the Lion type."""
+
+    def __init__(self, message=None):
+        if message is None:
+            message = "Invalid Lion type."
+        super().__init__(message)
+        
+
+# lion_core/abc/exceptions.py

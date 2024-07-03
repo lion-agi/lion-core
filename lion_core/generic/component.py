@@ -1,85 +1,50 @@
-"""
-Provides the Component class for flexible data representation and conversion.
+"""Core Component class for the Lion framework.
 
-This module defines the Component class, which serves as a versatile base for
-creating and manipulating data objects. It offers methods for conversion
-between various data formats and provides a robust foundation for building
-more specialized data structures.
+This module defines the Component class, which extends the Element class
+and provides additional functionality for managing metadata, extra fields,
+and content. It includes methods for conversion, serialization, and field
+management.
 
-Key features:
-- Flexible initialization from various data types
-- Conversion to different formats (dict, JSON, XML, etc.)
-- Metadata and extra fields support
-- Subclass registration mechanism
+Classes:
+    Component: Extended base class for components in the Lion framework.
 """
 
-from typing import Any, TypeVar
-from pandas import DataFrame, Series
-from pydantic import BaseModel, Field, ValidationError, AliasChoices
-from lion_core.abc import Temporal, LionTypeError
-from lion_core.libs import SysUtils
-import lion_core.libs as libs
-from lion_core.setting import base_lion_fields
-from lion_core.generic._mixins import ComponentMixin
+from __future__ import annotations
+from typing import Any, TypeVar, Type
+from datetime import datetime
+from copy import copy
 
-T = TypeVar("T")
+from pydantic import Field, ValidationError
+from pydantic.main import FieldInfo, AliasChoices
 
-_init_class = {}
+from lion_core.setting import BASE_LION_FIELDS
+from lion_core.libs import SysUtil, nget, ninsert, nset, npop
+from lion_core.abc import Element, _INIT_CLASS
+from lion_core.util import ConverterRegistry
+
+T = TypeVar("T", bound="Component")
 
 
-class Component(Temporal, BaseModel, ComponentMixin):
-    """
-    A versatile base component class with common attributes and methods.
+class Component(Element):
+    """Extended base class for components in the Lion framework.
 
-    This class provides a foundation for creating data objects with built-in
-    support for metadata, content, and various conversion methods. It can be
-    used as-is or subclassed for more specific use cases.
+    This class builds upon the Element class, adding support for metadata,
+    extra fields, and content. It provides methods for conversion,
+    serialization, and field management.
 
     Attributes:
-        ln_id (str): A unique identifier for the component.
-        timestamp (str): Creation timestamp of the component.
         metadata (dict): Additional metadata for the component.
-        extra_fields (dict): Additional fields for the component.
-        content (Any): Optional content of the component.
-
-    Example:
-        >>> comp = Component(content="Hello, World!")
-        >>> comp.ln_id
-        'ln_abc123de-f456-gh78-i90j-klmnop123456'
-        >>> comp.content
-        'Hello, World!'
+        extra_fields (dict): Extra fields not defined in the base model.
+        content (Any): The main content of the component.
     """
-
-    ln_id: str = Field(
-        default_factory=lambda: SysUtils.id(
-            n=28,
-            random_hyphen=True,
-            num_hyphens=4,
-            hyphen_start_index=6,
-            hyphen_end_index=24,
-        ),
-        title="Lion ID",
-        description="A 32 character unique identifier for the component",
-        frozen=True,
-        validation_alias=AliasChoices("node_id", "id_", "id"),
-    )
-
-    timestamp: str = Field(
-        default_factory=SysUtils.time,
-        title="Creation Timestamp",
-        frozen=True,
-        alias="created",
-    )
 
     metadata: dict[str, Any] = Field(
         default_factory=dict,
         validation_alias=AliasChoices("meta", "info"),
-        description="Additional metadata for the component.",
     )
 
     extra_fields: dict[str, Any] = Field(
         default_factory=dict,
-        description="Additional fields for the component.",
         validation_alias=AliasChoices(
             "extra", "additional_fields", "schema_extra", "extra_schema"
         ),
@@ -87,239 +52,53 @@ class Component(Temporal, BaseModel, ComponentMixin):
 
     content: Any = Field(
         default=None,
-        description="The optional content of the node.",
         validation_alias=AliasChoices("text", "page_content", "chunk_content", "data"),
     )
 
-    class Config:
-        """Model configuration settings."""
-
-        extra = "allow"
-        arbitrary_types_allowed = True
-        populate_by_name = True
-        use_enum_values = True
-
-    def __init_subclass__(cls, **kwargs):
-        """Register subclasses in the _init_class dictionary."""
-        super().__init_subclass__(**kwargs)
-        if cls.__name__ not in _init_class:
-            _init_class[cls.__name__] = cls
-
-    @property
-    def class_name(self) -> str:
-        """Get the class name."""
-        return self._class_name()
+    def all_fields(self) -> dict[str, Any]:
+        """Get all fields of the component, including extra fields."""
+        return {**self.model_fields, **self.extra_fields}
 
     @classmethod
-    def _class_name(cls) -> str:
-        """Get the class name."""
-        return cls.__name__
+    def from_obj(cls: Type[T], obj: Any, converter_key: str) -> T:
+        """Create a Component instance from any object using a converter."""
+        dict_data = ConverterRegistry.convert_from(obj, converter_key)
+        return cls.from_dict(dict_data)
 
     @classmethod
-    def from_obj(cls, obj: Any, /, **kwargs) -> T:
-        """
-        Create a Component instance from various object types.
-
-        This method serves as a flexible factory for creating Component
-        instances from different data structures.
-
-        Args:
-            obj: The object to convert.
-            **kwargs: Additional keyword arguments for customization.
-
-        Returns:
-            An instance of the Component class.
-
-        Raises:
-            LionTypeError: If the object type is unsupported.
-
-        Examples:
-            >>> comp = Component.from_obj({"content": "Hello", "meta": {"key": "value"}})
-            >>> comp.content
-            'Hello'
-            >>> comp.metadata
-            {'key': 'value'}
-
-            >>> comp = Component.from_obj("[1, 2, 3]", fuzzy_parse=True)
-            >>> comp.content
-            [1, 2, 3]
-        """
-        if isinstance(obj, (dict, str, list, Series, DataFrame, BaseModel)):
-            return cls._dispatch_from_obj(obj, **kwargs)
-
-        type_ = str(type(obj))
-
-        if "llama_index" in type_:
-            return cls._from_llama_index(obj)
-        elif "langchain" in type_:
-            return cls._from_langchain(obj)
-
-        raise LionTypeError(f"Unsupported type: {type(obj)}")
-
-    def astype(self, type_name: str, **kwargs) -> T:
-        """
-        Convert the component to a specified type.
-
-        This method allows for easy conversion of the Component instance
-        to various data formats or structures.
-
-        Args:
-            type_name: The target type name (e.g., "json", "dict", "xml").
-            **kwargs: Additional keyword arguments for the conversion.
-
-        Returns:
-            The converted object.
-
-        Raises:
-            LionTypeError: If the target type is unsupported.
-
-        Examples:
-            >>> comp = Component(content="Test", metadata={"key": "value"})
-            >>> comp.astype("dict")
-            {'ln_id': '...', 'timestamp': '...', 'content': 'Test', 'metadata': {'key': 'value'}, ...}
-
-            >>> comp.astype("json_str")
-            '{"ln_id": "...", "timestamp": "...", "content": "Test", "metadata": {"key": "value"}, ...}'
-        """
-        match libs.strip_lower(type_name):
-            case "json_str" | "str":
-                return self._to_json_str(**kwargs)
-            case "json" | "dict":
-                return self.to_dict(**kwargs)
-            case "xml" | "xml_str":
-                return self._to_xml(**kwargs)
-            case "pd_series":
-                return self.to_pd_series(**kwargs)
-            case "llama_index" | "llama":
-                return self.to_llama_index_node(**kwargs)
-            case "langchain" | "lc":
-                return self.to_langchain_doc(**kwargs)
-            case "pydantic" | "pydanticmodel":
-                return BaseModel(**self.to_dict(**kwargs))
-            case "list":
-                return [self]
-            case _:
-                raise LionTypeError(f"Unsupported type: {type_name}")
-
-    def to_dict(self, *args, dropna=False, **kwargs) -> dict[str, Any]:
-        """
-        Convert the component to a dictionary.
-
-        This method provides a complete dictionary representation of the
-        Component, including all fields and metadata.
-
-        Args:
-            *args: Additional positional arguments.
-            dropna: Whether to drop None values from the resulting dict.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            A dictionary representation of the component.
-
-        Example:
-            >>> comp = Component(content="Test", metadata={"key": "value"})
-            >>> comp.to_dict()
-            {'ln_id': '...', 'timestamp': '...', 'content': 'Test', 'metadata': {'key': 'value'}, ...}
-        """
-        dict_ = self.model_dump(*args, by_alias=True, **kwargs)
-
-        for field_name in list(self.extra_fields.keys()):
-            if field_name not in dict_:
-                dict_[field_name] = getattr(self, field_name, None)
-
-        dict_.pop("extra_fields", None)
-        dict_["lion_class"] = self.class_name
-        if dropna:
-            dict_ = {k: v for k, v in dict_.items() if v is not None}
-        return dict_
-
-    @classmethod
-    def _dispatch_from_obj(cls, obj: Any, **kwargs) -> T:
-        """
-        Dispatch the from_obj method based on the input type.
-
-        This internal method determines the appropriate conversion method
-        based on the type of the input object.
-
-        Args:
-            obj: The object to convert.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            An instance of the Component class.
-        """
-        if isinstance(obj, dict):
-            return cls._from_dict(obj, **kwargs)
-        elif isinstance(obj, str):
-            return cls._from_str(obj, **kwargs)
-        elif isinstance(obj, list):
-            return cls._from_list(obj, **kwargs)
-        elif isinstance(obj, Series):
-            return cls._from_pd_series(obj, **kwargs)
-        elif isinstance(obj, DataFrame):
-            return cls._from_pd_dataframe(obj, **kwargs)
-        elif isinstance(obj, BaseModel):
-            return cls._from_base_model(obj, **kwargs)
-
-    @classmethod
-    def _from_dict(cls, obj: dict, /, *args, **kwargs) -> T:
-        """
-        Create a Component instance from a dictionary.
-
-        This method handles the conversion of a dictionary to a Component
-        instance, including processing of special fields and validation.
-
-        Args:
-            obj: The dictionary to convert.
-            *args: Additional positional arguments.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            An instance of the Component class.
-
-        Raises:
-            ValueError: If the dictionary is invalid for deserialization.
-        """
+    def from_dict(cls: Type[T], obj: dict, **kwargs) -> T:
+        """Create a Component or its subclass instance from a dictionary."""
         try:
             dict_ = {**obj, **kwargs}
-            if "embedding" in dict_:
-                dict_["embedding"] = cls._validate_embedding(dict_["embedding"])
 
             if "lion_class" in dict_:
-                cls = _init_class.get(dict_.pop("lion_class"), cls)
-
-            if "lc" in dict_:
-                dict_ = cls._process_langchain_dict(dict_)
+                class_name = dict_.pop("lion_class")
+                if class_name not in _INIT_CLASS:
+                    raise ValueError(f"Subclass {class_name} not registered")
+                target_cls = _INIT_CLASS[class_name]
             else:
-                dict_ = cls._process_generic_dict(dict_)
+                target_cls = cls
 
-            return cls.model_validate(dict_, *args, **kwargs)
+            dict_ = target_cls._process_generic_dict(dict_)
+            instance = target_cls.model_validate(dict_)
 
+            for key, field_info in instance.extra_fields.items():
+                value = dict_.get(key, field_info.default)
+                setattr(instance, key, copy(value))
+
+            return instance
         except ValidationError as e:
             raise ValueError("Invalid dictionary for deserialization.") from e
 
     @classmethod
     def _process_generic_dict(cls, dict_: dict) -> dict:
-        """
-        Process a generic dictionary for component creation.
-
-        This method handles the preprocessing of a dictionary before it's
-        used to create a Component instance, ensuring all necessary fields
-        are present and correctly formatted.
-
-        Args:
-            dict_: The dictionary to process.
-
-        Returns:
-            The processed dictionary.
-        """
+        """Process a generic dictionary for component creation."""
         meta_ = dict_.pop("metadata", None) or {}
-
         if not isinstance(meta_, dict):
             meta_ = {"extra_meta": meta_}
 
         for key in list(dict_.keys()):
-            if key not in base_lion_fields:
+            if key not in BASE_LION_FIELDS and key not in cls.model_fields:
                 meta_[key] = dict_.pop(key)
 
         if not dict_.get("content", None):
@@ -333,7 +112,7 @@ class Component(Temporal, BaseModel, ComponentMixin):
         if "ln_id" not in dict_:
             dict_["ln_id"] = meta_.pop(
                 "ln_id",
-                SysUtils.id(
+                SysUtil.id(
                     n=28,
                     prefix="ln_",
                     random_hyphen=True,
@@ -343,114 +122,129 @@ class Component(Temporal, BaseModel, ComponentMixin):
                 ),
             )
         if "timestamp" not in dict_:
-            dict_["timestamp"] = SysUtils.time()
-        if "metadata" not in dict_:
-            dict_["metadata"] = {}
-        if "extra_fields" not in dict_:
-            dict_["extra_fields"] = {}
+            dict_["timestamp"] = SysUtil.time()
+
+        extra_fields = {}
+        for key, value in meta_.items():
+            if key not in BASE_LION_FIELDS and key not in cls.model_fields:
+                extra_fields[key] = FieldInfo(default=value)
+
+        dict_["extra_fields"] = extra_fields
         return dict_
 
-    @classmethod
-    def _from_str(cls, obj: str, /, *args, fuzzy_parse: bool = False, **kwargs) -> T:
-        """
-        Create a Component instance from a JSON string.
+    def to_obj(self, convert_registry: ConverterRegistry, converter_key: str) -> Any:
+        """Convert this Component instance to another object type."""
+        return convert_registry.convert_to(self, converter_key)
 
-        This method handles the conversion of a JSON string to a Component
-        instance, with an option for fuzzy parsing of imperfect JSON.
+    def to_dict(self, by_alias=True, **kwargs) -> dict[str, Any]:
+        """Convert the component to a dictionary."""
+        dict_ = self.model_dump(by_alias=by_alias, **kwargs)
+        for field_name in self.extra_fields:
+            dict_[field_name] = getattr(self, field_name)
+        dict_["lion_class"] = self.__class__.__name__
+        return dict_
 
-        Args:
-            obj: The JSON string to convert.
-            *args: Additional positional arguments.
-            fuzzy_parse: Whether to use fuzzy parsing for imperfect JSON.
-            **kwargs: Additional keyword arguments.
+    def add_field(self, name: str, field: FieldInfo) -> None:
+        """Add a new field to the component's extra fields."""
+        if name in self.all_fields:
+            raise ValueError(f"Field '{name}' already exists")
+        self.extra_fields[name] = field
+        setattr(self, name, copy(field.default))
+        self._add_last_update(name)
 
-        Returns:
-            An instance of the Component class.
+    def update_field(self, name: str, field: FieldInfo) -> None:
+        """Update an existing field in the component's extra fields."""
+        if name not in self.extra_fields:
+            raise ValueError(f"Field '{name}' does not exist in extra fields")
+        self.extra_fields[name] = field
+        current_value = getattr(self, name, field.default)
+        setattr(self, name, copy(current_value))
+        self._add_last_update(name)
 
-        Raises:
-            ValueError: If the JSON is invalid for deserialization.
-        """
-        obj = libs.fuzzy_parse_json(obj) if fuzzy_parse else libs.to_dict(obj)
-        try:
-            return cls.from_obj(obj, *args, **kwargs)
-        except ValidationError as e:
-            raise ValueError("Invalid JSON for deserialization: ") from e
+    def _add_last_update(self, name: str) -> None:
+        """Add or update the last update timestamp for a field."""
+        current_time = SysUtil.time()
+        nset(self.metadata, ["last_updated", name], current_time)
 
-    @classmethod
-    def _from_list(cls, obj: list, /, *args, **kwargs) -> list[T]:
-        """
-        Create a list of node instances from a list of objects.
+    def _meta_pop(self, indices, default=...) -> Any:
+        """Remove and return an item from the metadata."""
+        return npop(self.metadata, indices, default)
 
-        This method converts each item in the input list to a Component
-        instance.
+    def _meta_insert(self, indices, value) -> None:
+        """Insert a value into the metadata at the specified indices."""
+        ninsert(self.metadata, indices, value)
 
-        Args:
-            obj: The list of objects to convert.
-            *args: Additional positional arguments.
-            **kwargs: Additional keyword arguments.
+    def _meta_set(self, indices, value) -> None:
+        """Set a value in the metadata at the specified indices."""
+        if not self._meta_get(indices):
+            self._meta_insert(indices, value)
+        else:
+            nset(self.metadata, indices, value)
 
-        Returns:
-            A list of Component instances.
-        """
-        return [cls.from_obj(item, *args, **kwargs) for item in obj]
+    def _meta_get(self, indices, default=...) -> Any:
+        """Get a value from the metadata at the specified indices."""
+        return nget(self.metadata, indices, default)
 
-    def _to_xml(self, *args, dropna=False, **kwargs) -> str:
-        """
-        Convert the component to an XML string.
+    def __init_subclass__(cls, **kwargs):
+        """Register subclasses in the _INIT_CLASS dictionary."""
+        super().__init_subclass__(**kwargs)
+        _INIT_CLASS[cls.__name__] = cls
 
-        This method provides an XML representation of the Component,
-        useful for integration with XML-based systems.
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Set an attribute and update the last update timestamp."""
+        if name == "metadata":
+            raise AttributeError("Cannot directly assign to metadata.")
 
-        Args:
-            *args: Additional positional arguments.
-            dropna: Whether to drop None values from the resulting XML.
-            **kwargs: Additional keyword arguments.
+        if name in self.extra_fields:
+            self.extra_fields[name] = Field(default=value)
 
-        Returns:
-            An XML string representation of the component.
-        """
-        import xml.etree.ElementTree as ET
+        super().__setattr__(name, value)
+        self._add_last_update(name)
 
-        root = ET.Element(self.__class__.__name__)
+    def __str__(self) -> str:
+        """Return a concise string representation of the component."""
+        content_preview = str(self.content)[:50]
+        if len(content_preview) == 50:
+            content_preview += "..."
 
-        def convert(dict_obj: dict, parent: ET.Element) -> None:
-            for key, val in dict_obj.items():
-                if isinstance(val, dict):
-                    element = ET.SubElement(parent, key)
-                    convert(val, element)
-                else:
-                    element = ET.SubElement(parent, key)
-                    element.text = str(val)
+        return (
+            f"{self.__class__.__name__}("
+            f"ln_id={self.ln_id[:8]}..., "
+            f"timestamp={datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d %H:%M')}, "
+            f"content='{content_preview}', "
+            f"metadata_keys={list(self.metadata.keys())}, "
+            f"extra_fields_keys={list(self.extra_fields.keys())})"
+        )
 
-        convert(self.to_dict(*args, dropna=dropna, **kwargs), root)
-        return ET.tostring(root, encoding="unicode")
+    def __repr__(self) -> str:
+        """Return a detailed string representation of the component."""
 
-    def _to_json_str(self, *args, dropna=False, **kwargs) -> str:
-        """
-        Convert the component to a JSON string.
+        def truncate_dict(d, max_items=5, max_str_len=50):
+            items = list(d.items())[:max_items]
+            truncated = {
+                k: (
+                    v[:max_str_len] + "..."
+                    if isinstance(v, str) and len(v) > max_str_len
+                    else v
+                )
+                for k, v in items
+            }
+            if len(d) > max_items:
+                truncated["..."] = f"({len(d) - max_items} more items)"
+            return truncated
 
-        This method provides a JSON string representation of the Component,
-        useful for data exchange and serialization.
+        content_repr = repr(self.content)
+        if len(content_repr) > 100:
+            content_repr = content_repr[:97] + "..."
 
-        Args:
-            *args: Additional positional arguments.
-            dropna: Whether to drop None values from the resulting JSON.
-            **kwargs: Additional keyword arguments.
+        return (
+            f"{self.__class__.__name__}("
+            f"ln_id={repr(self.ln_id)}, "
+            f"timestamp={self.timestamp}, "
+            f"content={content_repr}, "
+            f"metadata={truncate_dict(self.metadata)}, "
+            f"extra_fields={truncate_dict(self.extra_fields)})"
+        )
+        
 
-        Returns:
-            A JSON string representation of the component.
-        """
-        dict_ = self.to_dict(*args, dropna=dropna, **kwargs)
-        return libs.to_str(dict_)
-
-    def __str__(self):
-        """Return a string representation of the component."""
-        dict_ = self.to_dict()
-        return Series(dict_).__str__()
-
-    def __repr__(self):
-        dict_ = self.to_dict()
-        return Series(dict_).__repr__()
-
-    def __len__(self):
-        return 1
+# Path: lion_core/generic/component.py

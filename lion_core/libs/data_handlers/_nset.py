@@ -101,3 +101,6 @@ def ensure_list_index(lst_: list, index: int, default: Any = None) -> None:
     """
     while len(lst_) <= index:
         lst_.append(default)
+
+
+# Path: lion_core/libs/data_handlers/_nset.py

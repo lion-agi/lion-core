@@ -221,3 +221,7 @@ def _dynamic_flatten_generator(
             )
     else:
         yield sep.join(parent_key), nested_structure
+
+
+
+# Path: lion_core/libs/data_handlers/_flatten.py

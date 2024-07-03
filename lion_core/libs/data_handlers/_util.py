@@ -172,3 +172,6 @@ def get_target_container(nested: list | dict, indices: list[int | str]) -> list 
         else:
             raise TypeError("Current element is neither a list nor a dictionary")
     return current_element
+
+
+# Path: lion_core/libs/data_handlers/_util.py

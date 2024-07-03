@@ -1,18 +1,25 @@
+"""Graph and Tree module for the Lion framework.
+
+This module defines the Graph and Tree classes, representing graph and tree
+structures within the Lion framework. It provides methods for managing nodes
+and edges, as well as tree-specific operations.
+
+Classes:
+    Graph: Represents a graph structure with nodes and edges.
+    Tree: Represents a tree structure, extending the graph with tree-specific functionalities.
+"""
+
 import contextlib
 from collections import deque
-from typing import Any
+from typing import Any, Optional, List
 
-from lionagi.os.lib import to_list
-from ..abc import (
-    Condition,
-    Actionable,
-    LionTypeError,
-    ItemNotFoundError,
-    LionIDable,
-)
-from ..pile.pile import pile, Pile
-from ..edge.edge import Edge
-from ..node.node import Node
+from pydantic import Field
+
+from lion_core.libs import to_list, SysUtil
+from lion_core.abc import AbstractCondition, LionTypeError, ItemNotFoundError, Actionable
+from lion_core.primitive import pile, Pile
+from .edge import Edge
+from .node import Node
 
 
 class Graph(Node):
@@ -40,9 +47,9 @@ class Graph(Node):
         self,
         head: Node,
         tail: Node,
-        condition: Condition | None = None,
-        bundle=False,
-        label=None,
+        condition: Optional[AbstractCondition] = None,
+        bundle: bool = False,
+        label: Optional[str] = None,
         **kwargs,
     ):
         """Add an edge between two nodes in the graph."""
@@ -76,7 +83,7 @@ class Graph(Node):
         """Add a node to the graph."""
         self.internal_nodes.update(node)
 
-    def get_node(self, item: LionIDable, default=...):
+    def get_node(self, item, default=...):
         """Get a node from the graph by its identifier."""
         return self.internal_nodes.get(item, default)
 
@@ -84,8 +91,8 @@ class Graph(Node):
         self,
         node: Node | str,
         direction: str = "both",
-        label: list | str = None,
-    ) -> Pile[Edge] | None:
+        label: Optional[List[str] | str] = None,
+    ) -> Optional[Pile[Edge]]:
         """Get the edges of a node in the specified direction and with the given label."""
         node = self.internal_nodes[node]
         edges = None
@@ -172,11 +179,8 @@ class Graph(Node):
 
     def to_networkx(self, **kwargs) -> Any:
         """Convert the graph to a NetworkX graph object."""
-        from lionagi.os.lib.sys_util import check_import
-
-        check_import("networkx")
-
-        from networkx import DiGraph
+        SysUtil.check_import("networkx")
+        from networkx import DiGraph  # type: ignore
 
         g = DiGraph(**kwargs)
         for node in self.internal_nodes:
@@ -197,13 +201,11 @@ class Graph(Node):
 
     def display(self, **kwargs):
         """Display the graph using NetworkX and Matplotlib."""
-        from lionagi.os.lib.sys_util import check_import
+        SysUtil.check_import("networkx")
+        SysUtil.check_import("matplotlib", "pyplot")
 
-        check_import("networkx")
-        check_import("matplotlib", "pyplot")
-
-        import networkx as nx
-        import matplotlib.pyplot as plt
+        import networkx as nx  # type: ignore
+        import matplotlib.pyplot as plt  # type: ignore
 
         g = self.to_networkx(**kwargs)
         pos = nx.spring_layout(g)
@@ -235,207 +237,103 @@ class Graph(Node):
         return len(self.internal_nodes)
 
 
-# from collections import deque
-# from typing import Any, List, Union
-# import contextlib
-# from lionagi.os.libs import to_list
-# from ..abc import (
-#     Condition,
-#     Actionable,
-#     LionTypeError,
-#     ItemNotFoundError,
-#     LionIDable,
-# )
-# from ..pile.pile import pile, Pile
-# from ..node.node import Node
-# from ..edge.hyperedge import HyperEdge
-# from .graph import Graph
-
-
-# class HyperGraph(Graph):
-#     """Represents a hypergraph structure with nodes and hyperedges."""
-
-#     @property
-#     def internal_hyperedges(self) -> Pile[HyperEdge]:
-#         """Return a pile of all hyperedges in the hypergraph."""
-#         return pile(
-#             {
-#                 hyperedge.ln_id: hyperedge
-#                 for node in self.internal_nodes
-#                 for hyperedge in node.edges
-#                 if isinstance(hyperedge, HyperEdge)
-#             },
-#             HyperEdge,
-#         )
-
-#     def add_hyperedge(
-#         self,
-#         nodes: List[Node],
-#         condition: Condition | None = None,
-#         bundle=False,
-#         label=None,
-#         **kwargs,
-#     ):
-#         """Add a hyperedge connecting multiple nodes in the hypergraph."""
-#         if any(isinstance(node, Actionable) for node in nodes):
-#             raise LionTypeError("Actionable nodes cannot be part of a hyperedge.")
-
-#         self.internal_nodes.include(nodes)
-
-#         hyperedge = HyperEdge(
-#             nodes=[node.ln_id for node in nodes],
-#             condition=condition,
-#             label=label,
-#             bundle=bundle,
-#             **kwargs,
-#         )
-
-#         for node in nodes:
-#             node.relations["out"].include(hyperedge)
-#             for other_node in nodes:
-#                 if other_node != node:
-#                     other_node.relations["in"].include(hyperedge)
-
-#     def remove_hyperedge(self, hyperedge: Any) -> bool:
-#         """Remove a hyperedge from the hypergraph."""
-#         hyperedge = hyperedge if isinstance(hyperedge, list) else [hyperedge]
-#         for i in hyperedge:
-#             if i not in self.internal_hyperedges:
-#                 raise ItemNotFoundError(f"Hyperedge {i} does not exist in structure.")
-#             with contextlib.suppress(ItemNotFoundError):
-#                 self._remove_hyperedge(i)
-
-#     def _remove_hyperedge(self, hyperedge: HyperEdge | str) -> bool:
-#         """Remove a specific hyperedge from the hypergraph."""
-#         if hyperedge not in self.internal_hyperedges:
-#             raise ItemNotFoundError(
-#                 f"Hyperedge {hyperedge} does not exist in structure."
-#             )
-
-#         hyperedge = self.internal_hyperedges[hyperedge]
-
-#         for node_id in hyperedge.nodes:
-#             node = self.internal_nodes[node_id]
-#             node.relations["out"].exclude(hyperedge)
-#             for other_node_id in hyperedge.nodes:
-#                 if other_node_id != node_id:
-#                     other_node = self.internal_nodes[other_node_id]
-#                     other_node.relations["in"].exclude(hyperedge)
-
-#         return True
-
-#     def get_hyperedges(self, node: Node | str = None) -> Pile[HyperEdge]:
-#         """Get all hyperedges or the hyperedges of a specific node."""
-#         if node:
-#             node = self.internal_nodes[node]
-#             return pile([edge for edge in node.edges if isinstance(edge, HyperEdge)])
-#         return pile(
-#             [edge for edge in self.internal_hyperedges if isinstance(edge, HyperEdge)]
-#         )
-
-#     def display(self, **kwargs):
-#         """Display the hypergraph using NetworkX and Matplotlib."""
-#         from lionagi.os.libs.sys_util import check_import
-
-#         check_import("networkx")
-#         check_import("matplotlib", "pyplot")
-
-#         import networkx as nx
-#         import matplotlib.pyplot as plt
-
-#         g = self.to_networkx(**kwargs)
-#         pos = nx.spring_layout(g)
-#         nx.draw(
-#             g,
-#             pos,
-#             edge_color="black",
-#             width=1,
-#             linewidths=1,
-#             node_size=500,
-#             node_color="orange",
-#             alpha=0.9,
-#             labels=nx.get_node_attributes(g, "class_name"),
-#         )
-
-#         labels = nx.get_edge_attributes(g, "label")
-#         labels = {k: v for k, v in labels.items() if v}
-
-#         if labels:
-#             nx.draw_networkx_edge_labels(
-#                 g, pos, edge_labels=labels, font_color="purple"
-#             )
-
-#         plt.axis("off")
-#         plt.show()
-
-#     def size(self) -> int:
-#         """Return the number of nodes in the hypergraph."""
-#         return len(self.internal_nodes)
-
-#     def relate(
-#         self,
-#         nodes: List[Node],
-#         condition: Condition | None = None,
-#         label: str | None = None,
-#         bundle: bool = False,
-#     ) -> None:
-#         """
-#         Establish directed relationship from this node to multiple other nodes.
-
-#         Args:
-#             nodes: Target nodes to relate to.
-#             condition: Optional condition to associate with edge.
-#             label: Optional label for edge.
-#             bundle: Whether to bundle edge with others. Default False.
-#         """
-#         hyperedge = HyperEdge(
-#             nodes=[self.ln_id] + [node.ln_id for node in nodes],
-#             condition=condition,
-#             bundle=bundle,
-#             label=label,
-#         )
-
-#         self.relations["out"].include(hyperedge)
-#         for node in nodes:
-#             node.relations["in"].include(hyperedge)
-
-
 class Tree(Graph):
-    """
-    Represents a tree structure, extending the graph with tree-specific functionalities.
+    """Represents a tree structure, extending the graph with tree-specific functionalities.
 
     Manages parent-child relationships within the tree.
 
     Attributes:
-        root (TreeNode | None): The root node of the tree. Defaults to None.
+        root (Node | None): The root node of the tree. Defaults to None.
     """
 
-    root: TreeNode | None = Field(
+    root: Optional[Node] = Field(
         default=None, description="The root node of the tree graph."
     )
 
-    def relate_parent_child(
-        self,
-        parent: TreeNode,
-        children,
-        condition: Condition | None = None,
-        bundle: bool = False,
-    ) -> None:
-        """
-        Establishes parent-child relationships between the given parent and child node(s).
+    def add_child(self, parent: Node, child: Node) -> None:
+        """Add a child node to a parent node in the tree.
 
         Args:
-            parent (TreeNode): The parent node.
-            children (list[TreeNode]): A list of child nodes.
-            condition (Condition | None): The condition associated with the relationships, if any.
-            bundle (bool): Indicates whether to bundle the relations into a single
-                           transaction. Defaults to False.
+            parent (Node): The parent node.
+            child (Node): The child node to be added.
         """
-
-        for i in to_list_type(children):
-            i.relate_parent(parent, condition=condition, bundle=bundle)
-
+        self.add_edge(parent, child, label="parent-child")
         if self.root is None:
             self.root = parent
 
-        self.add_node([parent, *children])
+    def get_children(self, node: Node) -> List[Node]:
+        """Get the children of a given node in the tree.
+
+        Args:
+            node (Node): The node to get children for.
+
+        Returns:
+            List[Node]: A list of child nodes.
+        """
+        return [self.internal_nodes[edge.tail] for edge in node.relations["out"]]
+
+    def get_parent(self, node: Node) -> Optional[Node]:
+        """Get the parent of a given node in the tree.
+
+        Args:
+            node (Node): The node to get the parent for.
+
+        Returns:
+            Optional[Node]: The parent node, or None if the node is the root.
+        """
+        parent_edges = list(node.relations["in"])
+        return self.internal_nodes[parent_edges[0].head] if parent_edges else None
+
+    def is_leaf(self, node: Node) -> bool:
+        """Check if a node is a leaf node (has no children).
+
+        Args:
+            node (Node): The node to check.
+
+        Returns:
+            bool: True if the node is a leaf, False otherwise.
+        """
+        return len(node.relations["out"]) == 0
+
+    def get_leaves(self) -> List[Node]:
+        """Get all leaf nodes in the tree.
+
+        Returns:
+            List[Node]: A list of all leaf nodes in the tree.
+        """
+        return [node for node in self.internal_nodes if self.is_leaf(node)]
+
+    def depth(self, node: Node) -> int:
+        """Calculate the depth of a node in the tree.
+
+        Args:
+            node (Node): The node to calculate the depth for.
+
+        Returns:
+            int: The depth of the node (0 for root, 1 for root's children, etc.)
+        """
+        depth = 0
+        current = node
+        while self.get_parent(current):
+            depth += 1
+            current = self.get_parent(current)
+        return depth
+
+    def height(self) -> int:
+        """Calculate the height of the tree.
+
+        Returns:
+            int: The height of the tree (longest path from root to a leaf).
+        """
+        if not self.root:
+            return 0
+
+        def dfs_height(node: Node) -> int:
+            if self.is_leaf(node):
+                return 0
+            return 1 + max(dfs_height(child) for child in self.get_children(node))
+
+        return dfs_height(self.root)
+    
+    
+# Path: lion_core/generic/graph.py

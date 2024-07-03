@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Generator, Sequence
 from collections import deque
 from typing import Type
-from ..abc import LionIDError, Record, Ordering, Element
+from ..abc import LionIDError, Record, Ordering, AbstractElement
 
 
 def get_lion_id(item) -> str:
@@ -32,7 +32,7 @@ def to_list_type(value):
     Raises:
         TypeError: If the value cannot be converted to a list.
     """
-    if isinstance(value, Element) and not isinstance(value, Record):
+    if isinstance(value, AbstractElement) and not isinstance(value, Record):
         return [value]
     if isinstance(value, (Mapping, Record)):
         return list(value.values())
@@ -64,7 +64,7 @@ def validate_order(value) -> list[str]:
     elif isinstance(value, Ordering):
         return value.order
 
-    elif isinstance(value, Element):
+    elif isinstance(value, AbstractElement):
         return [value.ln_id]
 
     try:

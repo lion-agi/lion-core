@@ -1,52 +1,72 @@
+"""
+Pile Module
+
+This module defines the Pile class, a collection of components with ordering and type checking.
+It provides functionality for managing, accessing, and manipulating collections of Component objects.
+"""
+
 from collections.abc import Iterable
-from typing import TypeVar, Type, Any, Generic
+from typing import Any, Generic, Type, TypeVar, Optional, List, Dict, Union
+
+import pandas as pd
 from pydantic import Field, field_validator
-import lion_core.libs as libs
 
+from lion_core.libs import to_df
 from ..abc import (
-    Element,
-    Record,
-    Ordering,
-    LionValueError,
-    LionTypeError,
+    AbstractElement,
     ItemNotFoundError,
+    LionTypeError,
+    LionValueError,
+    Ordering,
+    Record,
 )
+from ..generic.component import Component, Element
+from .util import get_lion_id, is_same_dtype, to_list_type, validate_order
 
-from ..generic.component import Component
+T = TypeVar("T", bound=Element)
 
-from .utils import to_list_type, get_lion_id, validate_order, is_same_dtype
-
-T = TypeVar("T", bound=Component)
-
-
-class Pile(Component, Record, Generic[T]):
+class Pile(Element, Record, Generic[T]):
     """
-    Collection class for managing Element objects.
+    A collection of components with ordering and type checking.
 
-    Facilitates ordered and type-validated storage and access, supporting
-    both index-based and key-based retrieval.
+    The Pile class extends Component and Record, providing a flexible container
+    for managing collections of Component objects. It supports type checking,
+    custom ordering, and various methods for accessing and manipulating the
+    contained items.
 
     Attributes:
-        pile (dict[str, T]): Maps unique identifiers to items.
-        item_type (set[Type[Element]] | None): Allowed item types.
-        name (str | None): Optional name for the pile.
-        order (list[str]): Order of item identifiers.
-        use_obj (bool): If True, treat Record and Ordering as objects.
+        use_obj (bool): Whether to use objects directly.
+        pile (Dict[str, T]): The main storage for items in the Pile.
+        item_type (Optional[Set[Type[AbstractElement]]]): Allowed types for items in the pile.
+        name (Optional[str]): Optional name for the Pile.
+        order (List[str]): List maintaining the order of items in the Pile.
     """
 
     use_obj: bool = False
-    pile: dict[str, T] = Field(default_factory=dict)
-    item_type: set[Type[Element]] | None = Field(default=None)
-    name: str | None = None
-    order: list[str] = Field(default_factory=list)
+    pile: Dict[str, T] = Field(default_factory=dict)
+    item_type: Optional[set[Type[AbstractElement]]] = Field(default=None)
+    name: Optional[str] = None
+    order: List[str] = Field(default_factory=list)
 
     def __init__(
         self,
-        items=None,
-        item_type=None,
-        order=None,
-        use_obj=None,
+        items: Optional[Dict[str, T]] = None,
+        item_type: Optional[set[Type[AbstractElement]]] = None,
+        order: Optional[List[str]] = None,
+        use_obj: Optional[bool] = None,
     ):
+        """
+        Initialize a Pile instance.
+
+        Args:
+            items: Initial items for the pile.
+            item_type: Allowed types for items in the pile.
+            order: Initial order of items.
+            use_obj: Whether to use objects directly.
+
+        Raises:
+            ValueError: If the length of the order does not match the length of the pile.
+        """
         super().__init__()
 
         self.use_obj = use_obj or False
@@ -54,101 +74,133 @@ class Pile(Component, Record, Generic[T]):
         self.item_type = self._validate_item_type(item_type)
 
         order = order or list(self.pile.keys())
-        if not len(order) == len(self):
+        if len(order) != len(self):
             raise ValueError(
                 "The length of the order does not match the length of the pile"
             )
         self.order = order
 
-    def __getitem__(self, key) -> T | "Pile[T]":
+    def __getitem__(self, key: Any) -> Union[T, "Pile[T]"]:
         """
-        Retrieve items from the pile using a key.
-
-        Supports multiple types of key access:
-        - By index or slice (list-like access)
-        - By LionID (dictionary-like access)
-        - By other complex types if item is of LionIDable
+        Get item(s) from the pile by key.
 
         Args:
-            key: Key to retrieve items.
+            key: The key to retrieve items. Can be an index, slice, or key.
 
         Returns:
-            The requested item(s). Single items returned directly,
-            multiple items returned in a new `Pile` instance.
+            The item or a new Pile containing the requested items.
 
         Raises:
-            ItemNotFoundError: If requested item(s) not found.
-            LionTypeError: If provided key is invalid.
+            ItemNotFoundError: If the key is not found in the pile.
         """
         try:
             if isinstance(key, (int, slice)):
-                # Handle list-like index or slice
-                _key = self.order[key]
-                _key = [_key] if isinstance(key, int) else _key
-                _out = [self.pile.get(i) for i in _key]
-                return _out[0] if len(_out) == 1 else pile(_out, self.item_type, _key)
-        except IndexError as e:
+                return self._get_by_index_or_slice(key)
+            return self._get_by_key(key)
+        except (IndexError, KeyError) as e:
             raise ItemNotFoundError(key) from e
 
+    def _get_by_index_or_slice(self, key: Union[int, slice]) -> Union[T, "Pile[T]"]:
+        """
+        Get item(s) by index or slice.
+
+        Args:
+            key: An integer index or slice object.
+
+        Returns:
+            The item or a new Pile containing the requested items.
+        """
+        _key = self.order[key]
+        _key = [_key] if isinstance(key, int) else _key
+        _out = [self.pile.get(i) for i in _key]
+        return _out[0] if len(_out) == 1 else pile(_out, self.item_type, _key)
+
+    def _get_by_key(self, key: Any) -> Union[T, "Pile[T]"]:
+        """
+        Get item(s) by key.
+
+        Args:
+            key: A key or iterable of keys.
+
+        Returns:
+            The item or a new Pile containing the requested items.
+
+        Raises:
+            LionTypeError: If the key is not a valid LionIDable object.
+        """
         keys = to_list_type(key)
-        for idx, item in enumerate(keys):
-            if isinstance(item, str):
-                keys[idx] = item
-                continue
-            if hasattr(item, "ln_id"):
-                keys[idx] = item.ln_id
+        keys = [
+            item.ln_id if hasattr(item, "ln_id") else item
+            for item in keys
+        ]
 
         if not all(keys):
             raise LionTypeError("Invalid item type. Expected LionIDable object(s).")
 
-        try:
-            if len(keys) == 1:
-                return self.pile.get(keys[0])
-            return pile([self.pile.get(i) for i in keys], self.item_type, keys)
-        except KeyError as e:
-            raise ItemNotFoundError(key) from e
+        if len(keys) == 1:
+            return self.pile[keys[0]]
+        return pile([self.pile[i] for i in keys], self.item_type, keys)
 
-    def __setitem__(self, key, item) -> None:
+    def __setitem__(self, key: Any, item: Union[T, Dict[str, T]]) -> None:
         """
-        Set new values in the pile using various key types.
-
-        Handles single/multiple assignments, ensures type consistency.
-        Supports index/slice, LionID, and LionIDable key access.
+        Set item(s) in the pile.
 
         Args:
-            key: Key to set items. Can be index, slice, LionID, LionIDable.
-            item: Item(s) to set. Can be single item or collection.
+            key: The key to set items. Can be an index, slice, or key.
+            item: The item or items to set.
 
         Raises:
-            ValueError: Length mismatch or multiple items to single key.
-            LionTypeError: Item type doesn't match allowed types.
+            ValueError: If the number of items doesn't match the key.
         """
         item = self._validate_pile(item)
 
         if isinstance(key, (int, slice)):
-            # Handle list-like index or slice
-            try:
-                _key = self.order[key]
-            except IndexError as e:
-                raise e
+            self._set_by_index_or_slice(key, item)
+        else:
+            self._set_by_key(key, item)
 
-            if isinstance(_key, str) and len(item) != 1:
-                raise ValueError("Cannot assign multiple items to a single item.")
+    def _set_by_index_or_slice(self, key: Union[int, slice], item: Dict[str, T]) -> None:
+        """
+        Set item(s) by index or slice.
 
-            if isinstance(_key, list) and len(item) != len(_key):
-                raise ValueError(
-                    "The length of values does not match the length of the slice"
-                )
+        Args:
+            key: An integer index or slice object.
+            item: The item or items to set.
 
-            for k, v in item.items():
-                if self.item_type and type(v) not in self.item_type:
-                    raise LionTypeError(f"Invalid item type. Expected {self.item_type}")
+        Raises:
+            IndexError: If the index is invalid.
+            ValueError: If trying to assign multiple items to a single index.
+        """
+        try:
+            _key = self.order[key]
+        except IndexError as e:
+            raise IndexError("Invalid index") from e
 
-                self.pile[k] = v
-                self.order[key] = k
-                self.pile.pop(_key)
-            return
+        if isinstance(_key, str) and len(item) != 1:
+            raise ValueError("Cannot assign multiple items to a single item.")
 
+        if isinstance(_key, list) and len(item) != len(_key):
+            raise ValueError(
+                "The length of values does not match the length of the slice"
+            )
+
+        for k, v in item.items():
+            self._validate_item_type({k: v})
+            self.pile[k] = v
+            self.order[key] = k
+            self.pile.pop(_key)
+
+    def _set_by_key(self, key: Any, item: Dict[str, T]) -> None:
+        """
+        Set item(s) by key.
+
+        Args:
+            key: A key or iterable of keys.
+            item: The item or items to set.
+
+        Raises:
+            ValueError: If the number of keys doesn't match the number of items.
+        """
         if len(to_list_type(key)) != len(item):
             raise ValueError("The length of keys does not match the length of values")
 
@@ -157,16 +209,13 @@ class Pile(Component, Record, Generic[T]):
 
     def __contains__(self, item: Any) -> bool:
         """
-        Check if item(s) are present in the pile.
-
-        Accepts individual items and collections. Returns `True` if all
-        provided items are found, `False` otherwise.
+        Check if an item is in the pile.
 
         Args:
-            item: Item(s) to check. Can be single item or collection.
+            item: The item to check for.
 
         Returns:
-            `True` if all items are found, `False` otherwise.
+            True if the item is in the pile, False otherwise.
         """
         item = to_list_type(item)
         for i in item:
@@ -176,29 +225,21 @@ class Pile(Component, Record, Generic[T]):
                     return False
             except Exception:
                 return False
-
         return True
 
-    def pop(self, key: Any, default=...) -> T | "Pile[T]" | None:
+    def pop(self, key: Any, default: Any = ...) -> Union[T, "Pile[T]", None]:
         """
-        Remove and return item(s) associated with given key.
-
-        Raises `ItemNotFoundError` if key not found and no default given.
-        Returns default if provided and key not found.
+        Remove and return an item from the pile.
 
         Args:
-            key: Key of item(s) to remove and return. Can be single key
-                or collection of keys.
-            default: Default value if key not found. If not specified
-                and key not found, raises `ItemNotFoundError`.
+            key: The key of the item to remove.
+            default: The value to return if the key is not found.
 
         Returns:
-            Removed item(s) associated with key. Single items returned
-            directly, multiple items in new `Pile`. Returns default if
-            provided and key not found.
+            The removed item or a new Pile containing the removed items.
 
         Raises:
-            ItemNotFoundError: If key not found and no default specified.
+            ItemNotFoundError: If the key is not found and no default is provided.
         """
         key = to_list_type(key)
         items = []
@@ -216,64 +257,51 @@ class Pile(Component, Record, Generic[T]):
 
         return pile(items) if len(items) > 1 else items[0]
 
-    def get(self, key: Any, default=...) -> T | "Pile[T]" | None:
+    def get(self, key: Any, default: Any = ...) -> Union[T, "Pile[T]", None]:
         """
-        Retrieve item(s) associated with given key.
-
-        Raises `ItemNotFoundError` if key not found and no default given.
-        Returns default if provided and key not found.
+        Get an item from the pile.
 
         Args:
-            key: Key of item(s) to retrieve. Can be single or collection.
-            default: Default value if key not found. If not specified
-                and key not found, raises `ItemNotFoundError`.
+            key: The key of the item to get.
+            default: The value to return if the key is not found.
 
         Returns:
-            Retrieved item(s) associated with key. Single items returned
-            directly, multiple items in new `Pile`. Returns default if
-            provided and key not found.
+            The item or a new Pile containing the requested items.
 
         Raises:
-            ItemNotFoundError: If key not found and no default specified.
+            ItemNotFoundError: If the key is not found and no default is provided.
         """
         try:
             return self[key]
         except ItemNotFoundError as e:
             if default == ...:
-                raise e
+                raise ItemNotFoundError(str(e)[:15] + ".." if len(str(e)) > 15 else str(e))
             return default
 
-    def update(self, other: Any):
+    def update(self, other: Any) -> None:
         """
-        Update pile with another collection of items.
-
-        Accepts `Pile` or any iterable. Provided items added to current
-        pile, overwriting existing items with same keys.
+        Update the pile with items from another iterable.
 
         Args:
-            other: Collection to update with. Can be any LionIDable
+            other: The iterable to update from.
         """
         p = pile(other)
         self[p] = p
 
-    def clear(self):
-        """Clear all items, resetting pile to empty state."""
+    def clear(self) -> None:
+        """Clear all items from the pile."""
         self.pile.clear()
         self.order.clear()
 
     def include(self, item: Any) -> bool:
         """
-        Include item(s) in pile if not already present.
-
-        Accepts individual items and collections. Adds items if not
-        present. Returns `True` if item(s) in pile after operation,
-        `False` otherwise.
+        Include an item in the pile if it's not already present.
 
         Args:
-            item: Item(s) to include. Can be single item or collection.
+            item: The item to include.
 
         Returns:
-            `True` if item(s) in pile after operation, `False` otherwise.
+            True if the item was included, False if it was already present.
         """
         item = to_list_type(item)
         if item not in self:
@@ -282,17 +310,13 @@ class Pile(Component, Record, Generic[T]):
 
     def exclude(self, item: Any) -> bool:
         """
-        Exclude item(s) from pile if present.
-
-        Accepts individual items and collections. Removes items if
-        present. Returns `True` if item(s) not in pile after operation,
-        `False` otherwise.
+        Exclude an item from the pile if it's present.
 
         Args:
-            item: Item(s) to exclude. Can be single item or collection.
+            item: The item to exclude.
 
         Returns:
-            `True` if item(s) not in pile after operation, `False` else.
+            True if the item was excluded, False if it wasn't present.
         """
         item = to_list_type(item)
         for i in item:
@@ -302,11 +326,10 @@ class Pile(Component, Record, Generic[T]):
 
     def is_homogenous(self) -> bool:
         """
-        Check if all items have the same data type.
+        Check if all items in the pile are of the same type.
 
         Returns:
-            `True` if all items have the same type, `False` otherwise.
-            Empty pile or single-item pile considered homogenous.
+            True if all items are of the same type, False otherwise.
         """
         return len(self.pile) < 2 or all(is_same_dtype(self.pile.values()))
 
@@ -315,41 +338,40 @@ class Pile(Component, Record, Generic[T]):
         Check if the pile is empty.
 
         Returns:
-            bool: `True` if the pile is empty, `False` otherwise.
+            True if the pile is empty, False otherwise.
         """
         return not self.pile
 
     def __iter__(self):
-        """Return an iterator over the items in the pile.
+        """
+        Return an iterator over the items in the pile.
 
         Yields:
-            The items in the pile in the order they were added.
+            The items in the pile in their specified order.
         """
         return iter(self.values())
 
     def __len__(self) -> int:
-        """Get the number of items in the pile.
+        """
+        Get the number of items in the pile.
 
         Returns:
-            int: The number of items in the pile.
+            The number of items in the pile.
         """
         return len(self.pile)
 
     def __add__(self, other: T) -> "Pile":
-        """Create a new pile by including item(s) using `+`.
-
-        Returns a new `Pile` with all items from the current pile plus
-        provided item(s). Raises `LionValueError` if item(s) can't be
-        included.
+        """
+        Create a new Pile with the items from this pile and the other item.
 
         Args:
-            other: Item(s) to include. Can be single item or collection.
+            other: The item to add.
 
         Returns:
-            New `Pile` with all items from current pile plus item(s).
+            A new Pile instance.
 
         Raises:
-            LionValueError: If item(s) can't be included.
+            LionValueError: If the item cannot be included in the pile.
         """
         _copy = self.model_copy(deep=True)
         if _copy.include(other):
@@ -358,23 +380,21 @@ class Pile(Component, Record, Generic[T]):
 
     def __sub__(self, other) -> "Pile":
         """
-        Create a new pile by excluding item(s) using `-`.
-
-        Returns a new `Pile` with all items from the current pile except
-        provided item(s). Raises `ItemNotFoundError` if item(s) not found.
+        Create a new Pile with the items from this pile, excluding the other item.
 
         Args:
-            other: Item(s) to exclude. Can be single item or collection.
+            other: The item to exclude.
 
         Returns:
-            New `Pile` with all items from current pile except item(s).
+            A new Pile instance.
 
         Raises:
-            ItemNotFoundError: If item(s) not found in pile.
+            ItemNotFoundError: If the item is not in the pile.
+            LionValueError: If the item cannot be excluded from the pile.
         """
         _copy = self.model_copy(deep=True)
         if other not in self:
-            raise ItemNotFoundError(other)
+            raise ItemNotFoundError("Item not found in the pile.")
 
         length = len(_copy)
         if not _copy.exclude(other) or len(_copy) == length:
@@ -383,53 +403,59 @@ class Pile(Component, Record, Generic[T]):
 
     def __iadd__(self, other: T) -> "Pile":
         """
-        Include item(s) in the current pile in place using `+=`.
-
-        Modifies the current pile in-place by including item(s). Returns
-        the modified pile.
+        Add an item to this pile in-place.
 
         Args:
-            other: Item(s) to include. Can be single item or collection.
-        """
+            other: The item to add.
 
+        Returns:
+            This Pile instance.
+        """
         return self + other
 
     def __isub__(self, other) -> "Pile":
         """
-        Exclude item(s) from the current pile using `-=`.
-
-        Modifies the current pile in-place by excluding item(s). Returns
-        the modified pile.
+        Remove an item from this pile in-place.
 
         Args:
-            other: Item(s) to exclude. Can be single item or collection.
+            other: The item to remove.
 
         Returns:
-            Modified pile after excluding item(s).
+            This Pile instance.
         """
         return self - other
 
     def __radd__(self, other: T) -> "Pile":
+        """
+        Add this pile to another item, creating a new Pile.
+
+        Args:
+            other: The item to add this pile to.
+
+        Returns:
+            A new Pile instance.
+        """
         return other + self
 
     def size(self) -> int:
-        """Return the total size of the pile."""
-        return sum([len(i) for i in self])
-
-    def insert(self, index, item):
         """
-        Insert item(s) at specific position.
+        Get the total size of the pile.
 
-        Inserts item(s) at specified index. Index must be integer.
-        Raises `IndexError` if index out of range.
+        Returns:
+            The sum of the lengths of all items in the pile.
+        """
+        return sum(len(i) for i in self)
+
+    def insert(self, index: int, item: T) -> None:
+        """
+        Insert an item at a specific index in the pile.
 
         Args:
-            index: Index to insert item(s). Must be integer.
-            item: Item(s) to insert. Can be single item or collection.
+            index: The index at which to insert the item.
+            item: The item to insert.
 
         Raises:
-            ValueError: If index not an integer.
-            IndexError: If index out of range.
+            ValueError: If the index is not an integer.
         """
         if not isinstance(index, int):
             raise ValueError("Index must be an integer for pile insertion.")
@@ -438,57 +464,72 @@ class Pile(Component, Record, Generic[T]):
             self.order.insert(index, k)
             self.pile[k] = v
 
-    def append(self, item: T):
+    def append(self, item: T) -> None:
         """
-        Append item to end of pile.
-
-        Appends item to end of pile. If item is `Pile`, added as single
-        item, preserving structure. Only way to add `Pile` into another.
-        Other methods assume pile as container only.
+        Append an item to the end of the pile.
 
         Args:
-            item: Item to append. Can be any object, including `Pile`.
+            item: The item to append.
         """
         self.pile[item.ln_id] = item
         self.order.append(item.ln_id)
 
-    def keys(self):
-        """Yield the keys of the items in the pile."""
+    def keys(self) -> List[str]:
+        """
+        Get the keys of the pile in their specified order.
+
+        Returns:
+            An iterator over the keys of the pile.
+        """
         return self.order
 
-    def values(self):
-        """Yield the values of the items in the pile."""
-        yield from (self.pile.get(i) for i in self.order)
-
-    def items(self):
+    def values(self) -> Iterable[T]:
         """
-        Yield the items in the pile as (key, value) pairs.
+        Get the values of the pile in their specified order.
 
         Yields:
-            tuple: A tuple containing the key and value of each item in the pile.
+            The values of the pile in order.
+        """
+        yield from (self.pile.get(i) for i in self.order)
+
+    def items(self) -> Iterable[tuple[str, T]]:
+        """
+        Get the items of the pile as (key, value) pairs in their specified order.
+
+        Yields:
+            Tuples of (key, value) for each item in the pile.
         """
         yield from ((i, self.pile.get(i)) for i in self.order)
 
     @field_validator("order", mode="before")
     def _validate_order(cls, value):
+        """
+        Validate the order of items in the pile.
+
+        Args:
+            value: The order to validate.
+
+        Returns:
+            The validated order.
+
+        Raises:
+            ValueError: If the order is invalid.
+        """
         return validate_order(value)
 
-    def _validate_item_type(self, value):
+    def _validate_item_type(self, value: Optional[set[Type[AbstractElement]]]) -> Optional[set[Type[AbstractElement]]]:
         """
         Validate the item type for the pile.
 
-        Ensures that the provided item type is a subclass of Element or iModel.
-        Raises an error if the validation fails.
-
         Args:
-            value: The item type to validate. Can be a single type or a list of types.
+            value: The item type to validate.
 
         Returns:
-            set: A set of validated item types.
+            The validated item type as a set.
 
         Raises:
-            LionTypeError: If an invalid item type is provided.
-            LionValueError: If duplicate item types are detected.
+            LionTypeError: If the item type is not a subclass of AbstractElement.
+            LionValueError: If there are duplicate item types.
         """
         if value is None:
             return None
@@ -496,25 +537,34 @@ class Pile(Component, Record, Generic[T]):
         value = to_list_type(value)
 
         for i in value:
-            if not isinstance(i, type(Element)):
+            if not isinstance(i, type) or not issubclass(i, AbstractElement):
                 raise LionTypeError(
-                    "Invalid item type. Expected a subclass of Component."
+                    "Invalid item type. Expected a subclass of AbstractElement."
                 )
 
         if len(value) != len(set(value)):
             raise LionValueError("Detected duplicated item types in item_type.")
 
-        if len(value) > 0:
-            return set(value)
+        return set(value) if value else None
 
-    def _validate_pile(
-        self,
-        value,
-    ):
+    def _validate_pile(self, value: Any) -> Dict[str, T]:
+        """
+        Validate the items to be added to the pile.
+
+        Args:
+            value: The item or items to validate.
+
+        Returns:
+            A dictionary of validated items.
+
+        Raises:
+            LionTypeError: If an item doesn't match the specified item_type.
+            LionValueError: If the value is invalid for the pile.
+        """
         if value == {}:
             return value
 
-        if isinstance(value, Component):
+        if isinstance(value, Element):
             return {value.ln_id: value}
 
         if self.use_obj:
@@ -524,9 +574,9 @@ class Pile(Component, Record, Generic[T]):
                 return {getattr(i, "ln_id"): i for i in value}
 
         value = to_list_type(value)
-        if getattr(self, "item_type", None) is not None:
+        if self.item_type is not None:
             for i in value:
-                if not type(i) in self.item_type:
+                if not isinstance(i, tuple(self.item_type)):
                     raise LionTypeError(
                         f"Invalid item type in pile. Expected {self.item_type}"
                     )
@@ -538,7 +588,6 @@ class Pile(Component, Record, Generic[T]):
                     v = value[0][k]
                     return {k: v}
 
-                # [item]
                 k = getattr(value[0], "ln_id", None)
                 if k:
                     return {k: value[0]}
@@ -547,121 +596,110 @@ class Pile(Component, Record, Generic[T]):
 
         raise LionValueError("Invalid pile value")
 
-    def to_df(self):
-        """Return the pile as a DataFrame."""
+    def to_df(self) -> pd.DataFrame:
+        """
+        Convert the pile to a pandas DataFrame.
+
+        Returns:
+            A pandas DataFrame representation of the pile.
+        """
         dicts_ = []
         for i in self.values():
             _dict = i.to_dict()
             if _dict.get("embedding", None):
                 _dict["embedding"] = str(_dict.get("embedding"))
             dicts_.append(_dict)
-        return libs.to_df(dicts_)
+        return to_df(dicts_)
 
-    def to_csv(self, file_name, **kwargs):
+    def to_csv(self, file_name: str, **kwargs) -> None:
         """
         Save the pile to a CSV file.
 
         Args:
-            file_name (str): The name of the CSV file.
-            **kwargs: Additional keyword arguments for the CSV writer.
+            file_name: The name of the file to save to.
+            **kwargs: Additional keyword arguments to pass to pandas to_csv method.
         """
         self.to_df().to_csv(file_name, index=False, **kwargs)
 
     @classmethod
-    def from_csv(cls, file_name, **kwargs):
+    def from_csv(cls, file_name: str, **kwargs) -> "Pile[T]":
         """
-        Load a pile from a CSV file.
+        Create a Pile instance from a CSV file.
 
         Args:
-            file_name (str): The name of the CSV file.
-            **kwargs: Additional keyword arguments for the CSV reader.
+            file_name: The name of the CSV file to read from.
+            **kwargs: Additional keyword arguments to pass to pandas read_csv method.
 
         Returns:
-            Pile: The loaded pile.
+            A new Pile instance containing the items from the CSV file.
         """
-        from pandas import read_csv
-
-        df = read_csv(file_name, **kwargs)
-        items = Component.from_obj(df)
+        df = pd.read_csv(file_name, **kwargs)
+        items = [Component.from_dict(i) for _, i in df.iterrows()]
         return cls(items)
 
-    @classmethod
-    def from_df(cls, df):
+    def __list__(self) -> List[T]:
         """
-        Load a pile from a DataFrame.
-
-        Args:
-            df (DataFrame): The DataFrame to load.
+        Convert the pile to a list.
 
         Returns:
-            Pile: The loaded pile.
-        """
-        items = Component.from_obj(df)
-        return cls(items)
-
-    def __list__(self):
-        """
-        Get a list of the items in the pile.
-
-        Returns:
-            list: The items in the pile.
+            A list of all values in the pile.
         """
         return list(self.pile.values())
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
-        Get the string representation of the pile.
+        Get a string representation of the pile.
 
         Returns:
-            str: The string representation of the pile.
+            A string representation of the pile's DataFrame.
         """
-        return self.to_df().__str__()
+        return str(self.to_df())
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
-        Get the representation of the pile.
+        Get a detailed string representation of the pile.
 
         Returns:
-            str: The representation of the pile.
+            A detailed string representation of the pile's DataFrame.
         """
-        return self.to_df().__repr__()
+        return repr(self.to_df())
 
 
 def pile(
-    items: Iterable[T] | None = None,
-    item_type: set[Type] | None = None,
-    order=None,
-    use_obj=None,
-    csv_file=None,
-    df=None,
+    items: Optional[Iterable[T]] = None,
+    item_type: Optional[set[Type]] = None,
+    order: Optional[List[str]] = None,
+    use_obj: Optional[bool] = None,
+    csv_file: Optional[str] = None,
+    df: Optional[pd.DataFrame] = None,
     **kwargs,
 ) -> Pile[T]:
     """
-    Create a new Pile instance.
+    Create a Pile instance with various input options.
 
-    This function provides various ways to create a Pile instance:
-    - Directly from items
-    - From a CSV file
-    - From a DataFrame
+    This function provides a flexible way to create a Pile instance from 
+    different types of input data.
 
     Args:
-        items (Iterable[T] | None): The items to include in the pile.
-        item_type (set[Type] | None): The allowed types of items in the pile.
-        order (list[str] | None): The order of items.
-        use_obj (bool | None): Whether to treat Record and Ordering as objects.
-        csv_file (str | None): The path to a CSV file to load items from.
-        df (DataFrame | None): A DataFrame to load items from.
-        **kwargs: Additional keyword arguments for loading from CSV or DataFrame.
+        items: Initial items for the pile.
+        item_type: Allowed types for items in the pile.
+        order: Initial order of items.
+        use_obj: Whether to use objects directly.
+        csv_file: Path to a CSV file to create the pile from.
+        df: Pandas DataFrame to create the pile from.
+        **kwargs: Additional keyword arguments to pass to Pile constructor or CSV reader.
 
     Returns:
-        Pile[T]: A new Pile instance.
+        A new Pile instance.
 
     Raises:
-        ValueError: If invalid arguments are provided.
+        ValueError: If multiple input sources are provided simultaneously.
     """
+    if sum(x is not None for x in (items, csv_file, df)) > 1:
+        raise ValueError("Only one of items, csv_file, or df should be provided.")
+
     if csv_file:
         return Pile.from_csv(csv_file, **kwargs)
-    if df:
+    if df is not None:
         return Pile.from_df(df)
-
     return Pile(items, item_type, order, use_obj)

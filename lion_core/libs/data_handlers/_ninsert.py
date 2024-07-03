@@ -82,3 +82,6 @@ def ninsert(
         raise TypeError("Cannot use non-integer index on a list")
     else:
         nested_structure[last_part] = value
+        
+        
+# Path: lion_core/libs/data_handlers/_ninsert.py

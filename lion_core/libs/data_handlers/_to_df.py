@@ -201,3 +201,6 @@ def html_to_df(html_str: str) -> DataFrame:
         return None
 
     return DataFrame(data[1:], columns=data[0])
+
+
+# Path: lion_core/libs/data_handlers/_to_df.py

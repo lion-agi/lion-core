@@ -29,3 +29,6 @@ def npop(input_, /, indices, default=None):
             return default
         else:
             raise KeyError(f"Invalid npop. Error: {e}")
+
+
+# Path: lion_core/libs/data_handlers/_npop.py

@@ -1,206 +1,122 @@
 import unittest
-from lionagi.os.collections.abc.component import (
-    Component,
-    LionValueError,
-    LionTypeError,
-)
-import pandas as pd
 from datetime import datetime
 import json
+import pandas as pd
+from pydantic import BaseModel, Field
 
+from lion_core.generic.component import Component
+from lion_core.abc import LionValueError, LionTypeError
+from lion_core.libs import SysUtil
 
 class TestComponent(unittest.TestCase):
 
     def setUp(self):
         """Set up a basic Component instance for testing."""
-        self.component = Component()
+        self.component = Component(content="test content")
 
     def test_initialization(self):
         """Test basic initialization and attributes."""
         self.assertIsInstance(self.component.ln_id, str)
-        self.assertIsInstance(self.component.timestamp, str)
+        self.assertIsInstance(self.component.timestamp, float)
         self.assertIsInstance(self.component.metadata, dict)
-        self.assertIsNone(self.component.content)
-        self.assertEqual(self.component.embedding, [])
+        self.assertEqual(self.component.content, "test content")
+        self.assertIsInstance(self.component.extra_fields, dict)
 
-    def test_setting_attributes(self):
-        """Test setting and updating attributes."""
-        self.component.content = 1
-        self.assertEqual(self.component.content, 1)
-        self.assertIn("content", self.component.metadata["last_updated"])
+    def test_all_fields(self):
+        """Test the all_fields method."""
+        all_fields = self.component.all_fields()
+        self.assertIn("ln_id", all_fields)
+        self.assertIn("timestamp", all_fields)
+        self.assertIn("content", all_fields)
 
-    def test_class_name(self):
-        """Test the class_name property."""
-        self.assertEqual(self.component.class_name, "Component")
+    def test_from_obj(self):
+        """Test the from_obj class method."""
+        obj = {"content": "new content", "extra_data": "extra"}
+        new_component = Component.from_obj(obj, "dict")
+        self.assertEqual(new_component.content, "new content")
+        self.assertEqual(new_component.metadata["extra_data"], "extra")
+
+    def test_from_dict(self):
+        """Test the from_dict class method."""
+        dict_data = {"content": "dict content", "ln_id": "test_id"}
+        new_component = Component.from_dict(dict_data)
+        self.assertEqual(new_component.content, "dict content")
+        self.assertEqual(new_component.ln_id, "test_id")
 
     def test_to_dict(self):
-        """Test converting to dictionary."""
-        self.component.content = "example content"
-        dict_repr = self.component.to_dict()
-        self.assertEqual(dict_repr["content"], "example content")
-        self.assertEqual(dict_repr["lion_class"], "Component")
+        """Test the to_dict method."""
+        self.component.extra_fields["extra_key"] = Field(default="extra_value")
+        dict_data = self.component.to_dict()
+        self.assertEqual(dict_data["content"], "test content")
+        self.assertEqual(dict_data["extra_key"], "extra_value")
+        self.assertEqual(dict_data["lion_class"], "Component")
 
-    def test_to_json_str(self):
-        """Test converting to JSON string."""
-        self.component.content = "example content"
-        json_str = self.component.to_json_str()
-        self.assertIn('"content": "example content"', json_str)
+    def test_add_field(self):
+        """Test adding a new field."""
+        self.component.add_field("new_field", Field(default="new_value"))
+        self.assertIn("new_field", self.component.extra_fields)
+        self.assertEqual(getattr(self.component, "new_field"), "new_value")
 
-    def test_to_xml(self):
-        """Test converting to XML string."""
-        self.component.content = "example content"
-        xml_str = self.component.to_xml()
-        self.assertIn("<content>example content</content>", xml_str)
+    def test_update_field(self):
+        """Test updating an existing field."""
+        self.component.add_field("update_field", Field(default="old_value"))
+        self.component.update_field("update_field", Field(default="new_value"))
+        self.assertEqual(getattr(self.component, "update_field"), "new_value")
 
-    def test_to_pd_series(self):
-        """Test converting to Pandas Series."""
-        self.component.content = "example content"
-        series = self.component.to_pd_series()
-        self.assertEqual(series["content"], "example content")
+    def test_metadata_operations(self):
+        """Test metadata operations."""
+        self.component._meta_set(["test_key"], "test_value")
+        self.assertEqual(self.component._meta_get(["test_key"]), "test_value")
+        self.component._meta_pop(["test_key"])
+        self.assertNotIn("test_key", self.component.metadata)
 
-    def test_from_obj_dict(self):
-        """Test creating a Component from a dictionary."""
-        dict_obj = {"a": 1, "b": 2}
-        new_component = Component.from_obj(dict_obj)
-        self.assertEqual(new_component.metadata["a"], 1)
-        self.assertEqual(new_component.metadata["b"], 2)
-
-    def test_from_obj_str(self):
-        """Test creating a Component from a JSON string."""
-        json_str = '{"a": 1, "b": 2}'
-        new_component = Component.from_obj(json_str)
-        self.assertEqual(new_component.metadata["a"], 1)
-        self.assertEqual(new_component.metadata["b"], 2)
-
-    def test_from_obj_fuzzy_str(self):
-        """Test creating a Component from a fuzzy JSON string."""
-        fuzzy_json_str = '{"name": "John", "age": 30, "city": ["New York", "DC", "LA"]'
-        new_component = Component.from_obj(fuzzy_json_str, fuzzy_parse=True)
-        self.assertEqual(new_component.metadata["name"], "John")
-        self.assertEqual(new_component.metadata["age"], 30)
-        self.assertEqual(new_component.metadata["city"], ["New York", "DC", "LA"])
-
-    def test_from_obj_series(self):
-        """Test creating a Component from a Pandas Series."""
-        series_obj = pd.Series({"a": 1, "b": 2})
-        new_component = Component.from_obj(series_obj)
-        self.assertEqual(new_component.metadata["a"], 1)
-        self.assertEqual(new_component.metadata["b"], 2)
-
-    def test_from_obj_dataframe(self):
-        """Test creating Components from a Pandas DataFrame."""
-        df = pd.DataFrame({"a": [1, 2], "b": [3, 4]}, index=["row1", "row2"])
-        components = Component.from_obj(df)
-        self.assertEqual(len(components), 2)
-        self.assertEqual(components[0].metadata["a"], 1)
-        self.assertEqual(components[0].metadata["b"], 3)
-        self.assertEqual(components[1].metadata["a"], 2)
-        self.assertEqual(components[1].metadata["b"], 4)
-
-    def test_metadata_manipulation(self):
-        """Test manipulation of metadata."""
-        self.component._meta_insert(["new_key"], "new_value")
-        self.assertEqual(self.component.metadata["new_key"], "new_value")
-        self.component._meta_set(["new_key"], "updated_value")
-        self.assertEqual(self.component.metadata["new_key"], "updated_value")
-        nested_value = {"a": 1, "b": 2}
-        self.component._meta_insert(["nested", 0], nested_value)
-        self.assertEqual(self.component.metadata["nested"][0], nested_value)
-        self.assertEqual(self.component._meta_get(["nested", 0, "a"]), 1)
+    def test_str_repr(self):
+        """Test string and representation methods."""
+        str_output = str(self.component)
+        repr_output = repr(self.component)
+        self.assertIn("Component", str_output)
+        self.assertIn("Component", repr_output)
+        self.assertIn("test content", str_output)
+        self.assertIn("test content", repr_output)
 
     def test_invalid_metadata_assignment(self):
         """Test invalid direct assignment to metadata."""
         with self.assertRaises(AttributeError):
             self.component.metadata = {}
 
-    def test_field_annotations(self):
-        """Test field annotations."""
-        annotations = self.component._field_annotations
-        self.assertIn("ln_id", annotations)
-        self.assertIn("timestamp", annotations)
+    def test_subclass_registration(self):
+        """Test subclass registration."""
+        class TestSubclass(Component):
+            pass
+        self.assertIn("TestSubclass", Component._INIT_CLASS)
 
-    def test_dynamic_field_addition(self):
-        """Test adding fields dynamically to the Component."""
-        self.component._add_field(
-            "welcome", str, default="new value", value="hello world again"
-        )
-        self.assertEqual(
-            self.component._get_field_attr("welcome", "default"), "new value"
-        )
-        self.assertEqual(getattr(self.component, "welcome"), "hello world again")
+    def test_converter_registry(self):
+        """Test converter registry functionality."""
+        class DummyConverter:
+            @staticmethod
+            def convert_from(obj, key):
+                return {"content": str(obj)}
+            
+            @staticmethod
+            def convert_to(obj, key):
+                return obj.content
 
-    def test_validation_error_handling(self):
-        """Test handling of validation errors."""
-        with self.assertRaises(LionValueError):
-            Component.from_obj({"ln_id": 12345})  # Invalid ln_id type
+        ConverterRegistry = type("ConverterRegistry", (), {
+            "convert_from": DummyConverter.convert_from,
+            "convert_to": DummyConverter.convert_to
+        })
 
-    def test_str_repr_methods(self):
-        """Test __str__ and __repr__ methods."""
-        self.component.content = "example content"
-        self.assertIn("example content", str(self.component))
-        self.assertIn("example content", repr(self.component))
+        obj = 12345
+        new_component = Component.from_obj(obj, "int")
+        self.assertEqual(new_component.content, "12345")
 
-    def test_embedded_content(self):
-        """Test embedded content handling."""
-        embedding_str = "[1.0, 2.0, 3.0]"
-        self.component.embedding = self.component._validate_embedding(embedding_str)
-        self.assertEqual(self.component.embedding, [1.0, 2.0, 3.0])
+        converted_obj = new_component.to_obj(ConverterRegistry, "str")
+        self.assertEqual(converted_obj, "12345")
 
-    def test_invalid_embedded_content(self):
-        """Test invalid embedded content handling."""
+    def test_validation_error(self):
+        """Test validation error handling."""
         with self.assertRaises(ValueError):
-            self.component._validate_embedding("[1.0, 'invalid', 3.0]")
-
-    def test_timestamp_format(self):
-        """Test if the timestamp is in the correct format."""
-        timestamp = self.component.timestamp
-        try:
-            datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")
-        except ValueError:
-            self.fail("Timestamp is not in the correct format")
-
-    def test_default_field_values(self):
-        """Test the default values of fields."""
-        default_fields = self.component._all_fields
-        self.assertEqual(default_fields["embedding"].default, [])
-        self.assertEqual(default_fields["metadata"].default_factory(), {})
-        self.assertEqual(default_fields["extra_fields"].default_factory(), {})
-        self.assertIsNone(default_fields["content"].default)
-
-    def test_deeply_nested_metadata(self):
-        """Test setting and getting deeply nested metadata."""
-        nested_value = {"level1": {"level2": {"level3": "deep_value"}}}
-        self.component._meta_insert(["nested", 0], nested_value)
-        self.assertEqual(
-            self.component._meta_get(["nested", 0, "level1", "level2", "level3"]),
-            "deep_value",
-        )
-
-    def test_invalid_from_obj_type(self):
-        """Test invalid type in from_obj method."""
-        with self.assertRaises(LionTypeError):
-            Component.from_obj(12345)  # Invalid type
-
-    def test_from_obj_pydantic_model(self):
-        """Test creating a Component from a Pydantic BaseModel."""
-        from pydantic import BaseModel
-
-        class SampleModel(BaseModel):
-            name: str
-            age: int
-
-        sample_instance = SampleModel(name="John Doe", age=30)
-        new_component = Component.from_obj(sample_instance)
-        self.assertEqual(new_component.metadata["name"], "John Doe")
-        self.assertEqual(new_component.metadata["age"], 30)
-
-    def test_json_serialization_deserialization(self):
-        """Test JSON serialization and deserialization."""
-        original_dict = self.component.to_dict()
-        json_str = json.dumps(original_dict)
-        new_component = Component.from_obj(json_str)
-        self.assertEqual(original_dict, new_component.to_dict())
-
+            Component.from_dict({"ln_id": 12345})  # Invalid ln_id type
 
 if __name__ == "__main__":
     unittest.main()
