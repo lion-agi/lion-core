@@ -8,6 +8,7 @@ from lion_core.generic.component import Component
 from lion_core.abc import LionValueError, LionTypeError
 from lion_core.libs import SysUtil
 
+
 class TestComponent(unittest.TestCase):
 
     def setUp(self):
@@ -86,25 +87,32 @@ class TestComponent(unittest.TestCase):
 
     def test_subclass_registration(self):
         """Test subclass registration."""
+
         class TestSubclass(Component):
             pass
+
         self.assertIn("TestSubclass", Component._INIT_CLASS)
 
     def test_converter_registry(self):
         """Test converter registry functionality."""
+
         class DummyConverter:
             @staticmethod
             def convert_from(obj, key):
                 return {"content": str(obj)}
-            
+
             @staticmethod
             def convert_to(obj, key):
                 return obj.content
 
-        ConverterRegistry = type("ConverterRegistry", (), {
-            "convert_from": DummyConverter.convert_from,
-            "convert_to": DummyConverter.convert_to
-        })
+        ConverterRegistry = type(
+            "ConverterRegistry",
+            (),
+            {
+                "convert_from": DummyConverter.convert_from,
+                "convert_to": DummyConverter.convert_to,
+            },
+        )
 
         obj = 12345
         new_component = Component.from_obj(obj, "int")
@@ -117,6 +125,7 @@ class TestComponent(unittest.TestCase):
         """Test validation error handling."""
         with self.assertRaises(ValueError):
             Component.from_dict({"ln_id": 12345})  # Invalid ln_id type
+
 
 if __name__ == "__main__":
     unittest.main()

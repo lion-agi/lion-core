@@ -64,9 +64,10 @@ class Progression(AbstractElement, Ordering):
             return False
         if isinstance(item, Progression):
             return all(i in self.order for i in item.order)
-        if isinstance(item, (AbstractElement, str)) and len(
-            a := get_lion_id(item)
-        ) == 32:
+        if (
+            isinstance(item, (AbstractElement, str))
+            and len(a := get_lion_id(item)) == 32
+        ):
             return a in self.order
         item = self._validate_order(item)
         return all(i in self.order for i in item)
@@ -372,9 +373,7 @@ class Progression(AbstractElement, Ordering):
         return hash((tuple(self.order), self.name))
 
 
-def progression(
-    order: list[str] | None = None, name: str | None = None
-) -> Progression:
+def progression(order: list[str] | None = None, name: str | None = None) -> Progression:
     """Create a new Progression instance.
 
     Args:

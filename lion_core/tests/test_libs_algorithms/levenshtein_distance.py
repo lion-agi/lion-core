@@ -1,5 +1,7 @@
 import unittest
-from lion_core.libs.algorithms.levenshtein_distance import levenshtein_distance  # Adjust the import according to your module structure
+from lion_core.libs.algorithms.levenshtein_distance import (
+    levenshtein_distance,
+)  # Adjust the import according to your module structure
 
 
 class TestLevenshteinDistanceFunction(unittest.TestCase):
@@ -33,5 +35,5 @@ class TestLevenshteinDistanceFunction(unittest.TestCase):
         self.assertEqual(levenshtein_distance("gumbo", "gambol"), 2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

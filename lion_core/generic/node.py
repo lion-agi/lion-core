@@ -201,6 +201,6 @@ class Node(Component, Relatable, Generic[T]):
             f"out_relations={len(self.relations['out'])}, "
             f"metadata={self.metadata})"
         )
-        
-        
+
+
 # Path: lion_core/generic/node.py

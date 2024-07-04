@@ -1,5 +1,8 @@
 import unittest
-from lion_core.libs.algorithms.jaro_distance import jaro_distance, jaro_winkler_similarity
+from lion_core.libs.algorithms.jaro_distance import (
+    jaro_distance,
+    jaro_winkler_similarity,
+)
 
 
 class TestJaroDistanceFunction(unittest.TestCase):
@@ -27,13 +30,17 @@ class TestJaroDistanceFunction(unittest.TestCase):
 class TestJaroWinklerSimilarityFunction(unittest.TestCase):
 
     def test_jaro_winkler_similarity_exact_match(self):
-        self.assertAlmostEqual(jaro_winkler_similarity("string", "string"), 1.0, places=5)
+        self.assertAlmostEqual(
+            jaro_winkler_similarity("string", "string"), 1.0, places=5
+        )
 
     def test_jaro_winkler_similarity_completely_different(self):
         self.assertAlmostEqual(jaro_winkler_similarity("abc", "xyz"), 0.0, places=5)
 
     def test_jaro_winkler_similarity_partial_match(self):
-        self.assertAlmostEqual(jaro_winkler_similarity("dwayne", "duane"), 0.8400, places=4)
+        self.assertAlmostEqual(
+            jaro_winkler_similarity("dwayne", "duane"), 0.8400, places=4
+        )
 
     def test_jaro_winkler_similarity_empty_strings(self):
         self.assertAlmostEqual(jaro_winkler_similarity("", ""), 1.0, places=5)
@@ -43,11 +50,15 @@ class TestJaroWinklerSimilarityFunction(unittest.TestCase):
         self.assertAlmostEqual(jaro_winkler_similarity("", "xyz"), 0.0, places=5)
 
     def test_jaro_winkler_similarity_numeric_strings(self):
-        self.assertAlmostEqual(jaro_winkler_similarity("123456", "123"), 0.8833, places=4)
+        self.assertAlmostEqual(
+            jaro_winkler_similarity("123456", "123"), 0.8833, places=4
+        )
 
     def test_jaro_winkler_similarity_scaling_factor(self):
-        self.assertAlmostEqual(jaro_winkler_similarity("dwayne", "duane", scaling=0.2), 0.8578, places=4)
+        self.assertAlmostEqual(
+            jaro_winkler_similarity("dwayne", "duane", scaling=0.2), 0.8578, places=4
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

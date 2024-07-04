@@ -160,10 +160,7 @@ class HyperEdge(Relation):
         Returns:
             str: A string representation of the HyperEdge.
         """
-        return (
-            f"HyperEdge(nodes={len(self.nodes)}, "
-            f"directed={self.directed})"
-        )
+        return f"HyperEdge(nodes={len(self.nodes)}, " f"directed={self.directed})"
 
     def __repr__(self) -> str:
         """Return a detailed string representation of the HyperEdge.
@@ -185,13 +182,15 @@ class HyperEdge(Relation):
             dict[str, Any]: A dictionary representation of the hyperedge.
         """
         data = super().to_dict()
-        data.update({
-            "nodes": list(self.nodes),
-            "node_weights": self._meta_get("node_weights", {}),
-            "source_nodes": list(self._meta_get("source_nodes", set())),
-            "target_nodes": list(self._meta_get("target_nodes", set())),
-        })
+        data.update(
+            {
+                "nodes": list(self.nodes),
+                "node_weights": self._meta_get("node_weights", {}),
+                "source_nodes": list(self._meta_get("source_nodes", set())),
+                "target_nodes": list(self._meta_get("target_nodes", set())),
+            }
+        )
         return data
-    
-    
+
+
 # Path: lion_core/generic/hypergraph.py

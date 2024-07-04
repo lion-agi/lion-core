@@ -25,6 +25,7 @@ from .util import get_lion_id, is_same_dtype, to_list_type, validate_order
 
 T = TypeVar("T", bound=Element)
 
+
 class Pile(Element, Record, Generic[T]):
     """
     A collection of components with ordering and type checking.
@@ -129,10 +130,7 @@ class Pile(Element, Record, Generic[T]):
             LionTypeError: If the key is not a valid LionIDable object.
         """
         keys = to_list_type(key)
-        keys = [
-            item.ln_id if hasattr(item, "ln_id") else item
-            for item in keys
-        ]
+        keys = [item.ln_id if hasattr(item, "ln_id") else item for item in keys]
 
         if not all(keys):
             raise LionTypeError("Invalid item type. Expected LionIDable object(s).")
@@ -159,7 +157,9 @@ class Pile(Element, Record, Generic[T]):
         else:
             self._set_by_key(key, item)
 
-    def _set_by_index_or_slice(self, key: Union[int, slice], item: Dict[str, T]) -> None:
+    def _set_by_index_or_slice(
+        self, key: Union[int, slice], item: Dict[str, T]
+    ) -> None:
         """
         Set item(s) by index or slice.
 
@@ -275,7 +275,9 @@ class Pile(Element, Record, Generic[T]):
             return self[key]
         except ItemNotFoundError as e:
             if default == ...:
-                raise ItemNotFoundError(str(e)[:15] + ".." if len(str(e)) > 15 else str(e))
+                raise ItemNotFoundError(
+                    str(e)[:15] + ".." if len(str(e)) > 15 else str(e)
+                )
             return default
 
     def update(self, other: Any) -> None:
@@ -517,7 +519,9 @@ class Pile(Element, Record, Generic[T]):
         """
         return validate_order(value)
 
-    def _validate_item_type(self, value: Optional[set[Type[AbstractElement]]]) -> Optional[set[Type[AbstractElement]]]:
+    def _validate_item_type(
+        self, value: Optional[set[Type[AbstractElement]]]
+    ) -> Optional[set[Type[AbstractElement]]]:
         """
         Validate the item type for the pile.
 
@@ -677,7 +681,7 @@ def pile(
     """
     Create a Pile instance with various input options.
 
-    This function provides a flexible way to create a Pile instance from 
+    This function provides a flexible way to create a Pile instance from
     different types of input data.
 
     Args:

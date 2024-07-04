@@ -31,16 +31,13 @@ class Relation(Relatable, Component):
     """
 
     condition: EdgeCondition | None = Field(
-        default=None,
-        description="Optional condition for the relation."
+        default=None, description="Optional condition for the relation."
     )
     label: str | None = Field(
-        default=None,
-        description="Optional label for the relation."
+        default=None, description="Optional label for the relation."
     )
     directed: bool = Field(
-        default=False,
-        description="Indicates if the relation is directed."
+        default=False, description="Indicates if the relation is directed."
     )
 
     async def check_condition(self, obj: Any) -> bool:
@@ -62,18 +59,22 @@ class Relation(Relatable, Component):
 
     def __str__(self) -> str:
         """Return a string representation of the Relation."""
-        return (f"{self.__class__.__name__}("
-                f"label={self.label}, "
-                f"directed={self.directed}, "
-                f"condition={'set' if self.condition else 'not set'})")
+        return (
+            f"{self.__class__.__name__}("
+            f"label={self.label}, "
+            f"directed={self.directed}, "
+            f"condition={'set' if self.condition else 'not set'})"
+        )
 
     def __repr__(self) -> str:
         """Return a detailed string representation of the Relation."""
-        return (f"{self.__class__.__name__}("
-                f"ln_id={repr(self.ln_id)}, "
-                f"label={repr(self.label)}, "
-                f"directed={self.directed}, "
-                f"condition={repr(self.condition)})")
-        
-        
+        return (
+            f"{self.__class__.__name__}("
+            f"ln_id={repr(self.ln_id)}, "
+            f"label={repr(self.label)}, "
+            f"directed={self.directed}, "
+            f"condition={repr(self.condition)})"
+        )
+
+
 # Path: lion_core/generic/relation.py

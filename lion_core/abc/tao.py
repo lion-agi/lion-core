@@ -1,64 +1,45 @@
+# lion_core/abc/tao.py
+
 """
-Core abstractions for the Lion framework.
+LionAGI: Abstract Space Classes
 
-This module defines fundamental abstract base classes that form the
-foundation of the Lion framework's conceptual model. These abstractions
-represent core philosophical and mathematical concepts such as existence,
-measurement, entity, time, state, agency, description, change, and logic.
-
-Classes:
-    Abstraction: The notion of 'being' or 'existing'.
-    AbstractSpace: A Borel Space, representing a set and a σ-field.
-    AbstractElement: A distinct entity within a space.
-    AbstractObservation: A static snapshot state of a space.
-    AbstractObserver: An entity capable of observing a space.
-    AbstractCharacteristic: A property of an element.
-    AbstractEvent: A change in a space.
-    AbstractCondition: A check of state.
+This module defines abstract classes representing fundamental concepts in space
+theory for the LionAGI project. The class hierarchy is inspired by Taoist
+philosophy, following the principle of '道生一，一生二，二生三，三生万物' (Dao
+generates One, One generates Two, Two generates Three, Three generates myriad
+things).
 """
 
-from abc import ABC, abstractmethod
-from typing import Any
+from abc import ABC
 
-class Abstraction(ABC):
-    """The notion of 'being' or 'existing'."""
 
-class AbstractSpace(Abstraction):
+class Tao(ABC):
+    """道 (Dao): The fundamental principle underlying existence and
+    non-existence."""
+
+
+# 一 (One)
+class AbstractSpace(Tao):
     """A Borel Space, the existence of a set and a σ-field."""
 
-class AbstractElement(Abstraction):
-    """A distinct entity within a space."""
 
-class AbstractObservation(Abstraction):
-    """Represents static snapshot state of a space."""
+# 二 (Two)
+class AbstractObservation(Tao):
+    """Represents a static snapshot state of a space or an outcome."""
 
-class AbstractObserver(Abstraction):
+
+class AbstractObserver(Tao):
     """An entity capable of observing a space."""
 
-class AbstractCharacteristic(Abstraction):
+
+# 三 (Three)
+class AbstractElement(Tao):
+    """A distinct entity within a space."""
+
+
+class AbstractCharacteristic(Tao):
     """A property of an element."""
 
-class AbstractEvent(Abstraction):
+
+class AbstractEvent(Tao):
     """Represents a change in a space."""
-
-class AbstractCondition(Abstraction):
-    """Represents a check of state."""
-
-    @abstractmethod
-    async def applies(self, *args: Any, **kwargs: Any) -> bool:
-        """Check if the condition applies.
-
-        Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-            bool: True if the condition applies, False otherwise.
-
-        Raises:
-            NotImplementedError: If the method is not implemented by a subclass.
-        """
-        raise NotImplementedError("Subclasses must implement applies method.")
-    
-    
-# lion_core/abc/tao.py

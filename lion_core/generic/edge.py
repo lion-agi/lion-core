@@ -88,6 +88,6 @@ class Edge(Relation):
             f"label={self.label!r}, condition={self.condition!r}, "
             f"metadata={self.metadata}, content={self.content!r})"
         )
-        
-        
+
+
 # Path: lion_core/generic/edge.py

@@ -53,6 +53,6 @@ class EdgeCondition(AbstractCondition, BaseModel):
             NotImplementedError: If the method is not implemented by a subclass.
         """
         raise NotImplementedError("Subclasses must implement applies method.")
-    
-    
+
+
 # Path: lion_core/abc/edge_condition.py

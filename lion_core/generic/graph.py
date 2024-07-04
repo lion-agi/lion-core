@@ -16,7 +16,12 @@ from typing import Any, Optional, List
 from pydantic import Field
 
 from lion_core.libs import to_list, SysUtil
-from lion_core.abc import AbstractCondition, LionTypeError, ItemNotFoundError, Actionable
+from lion_core.abc import (
+    AbstractCondition,
+    LionTypeError,
+    ItemNotFoundError,
+    Actionable,
+)
 from lion_core.primitive import pile, Pile
 from .edge import Edge
 from .node import Node
@@ -334,6 +339,6 @@ class Tree(Graph):
             return 1 + max(dfs_height(child) for child in self.get_children(node))
 
         return dfs_height(self.root)
-    
-    
+
+
 # Path: lion_core/generic/graph.py

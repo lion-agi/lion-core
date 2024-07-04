@@ -90,10 +90,10 @@ class SysUtil:
 
     @staticmethod
     def install_import(
-            package_name: str,
-            module_name: str = None,
-            import_name: str = None,
-            pip_name: str = None,
+        package_name: str,
+        module_name: str = None,
+        import_name: str = None,
+        pip_name: str = None,
     ) -> None:
         """Attempts to import a package, installing it with pip if not found.
 
@@ -152,12 +152,12 @@ class SysUtil:
 
     @staticmethod
     def check_import(
-            package_name: str,
-            module_name: str | None = None,
-            import_name: str | None = None,
-            pip_name: str | None = None,
-            attempt_install: bool = True,
-            error_message: str = "",
+        package_name: str,
+        module_name: str | None = None,
+        import_name: str | None = None,
+        pip_name: str | None = None,
+        attempt_install: bool = True,
+        error_message: str = "",
     ) -> None:
         """Checks if a package is installed; if not, attempts to install and import it.
 

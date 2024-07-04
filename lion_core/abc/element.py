@@ -1,12 +1,16 @@
-"""Core Element class for the Lion framework.
+# lion_core/abc/element.py
+
+"""
+Core Element class for the Lion framework.
 
 This module defines the Element class, which serves as a base for all
-elements in the Lion framework. It combines AbstractElement and Temporal
-characteristics with Pydantic's BaseModel for robust data validation.
+elements in the Lion framework. It extends AbstractElement and incorporates
+Pydantic's BaseModel for robust data validation.
 
 Classes:
     Element: Base class for all elements in the Lion framework.
 """
+
 
 from __future__ import annotations
 
@@ -18,28 +22,24 @@ from pydantic import Field, BaseModel, ConfigDict, AliasChoices
 from lion_core.setting import LION_ID_CONFIG
 from lion_core.libs import SysUtil
 from .tao import AbstractElement
-from .concepts import Temporal
 
 
 _INIT_CLASS = {}
 
 
-class Element(AbstractElement, Temporal, BaseModel):
+class Element(AbstractElement, BaseModel):
     """Base class for all elements in the Lion framework.
 
-    This class combines AbstractElement and Temporal characteristics
-    with Pydantic's BaseModel for robust data validation and serialization.
+    This class extends AbstractElement and incorporates Pydantic's BaseModel
+    for robust data validation and serialization. It provides a foundation
+    for creating and managing elements within the Lion framework.
 
     Attributes:
         ln_id (str): A unique identifier for the element.
         timestamp (float): Creation timestamp of the element.
 
-    Class Methods:
-        class_name(): Returns the name of the class.
-        from_dict(data: dict): Creates an Element instance from a dictionary.
-
-    Methods:
-        __str__(): Returns a string representation of the Element.
+    Class Attributes:
+        model_config (ConfigDict): Configuration for the Pydantic model.
     """
 
     ln_id: str = Field(
@@ -47,7 +47,7 @@ class Element(AbstractElement, Temporal, BaseModel):
         title="Lion ID",
         description="A unique identifier for the component",
         frozen=True,
-        validation_alias=AliasChoices("id", "id_", "ID", "ID_")
+        validation_alias=AliasChoices("id", "id_", "ID", "ID_"),
     )
 
     timestamp: float = Field(
@@ -88,27 +88,29 @@ class Element(AbstractElement, Temporal, BaseModel):
         timestamp_str = datetime.fromtimestamp(self.timestamp).isoformat(
             timespec="minutes"
         )
-        return f"{self.class_name()}(ln_id={self.ln_id[:6]}.., timestamp={timestamp_str})"
+        return (
+            f"{self.class_name()}(ln_id={self.ln_id[:6]}.., "
+            f"timestamp={timestamp_str})"
+        )
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Element:
         """Create an Element instance from a dictionary.
 
         Args:
-            data (dict[str, Any]): A dictionary containing element data.
+            data: A dictionary containing element data.
 
         Returns:
-            Element: An instance of the Element class or its subclass.
+            An instance of the Element class or its subclass.
 
         Raises:
             ValueError: If the dictionary is invalid for deserialization.
         """
+        if not isinstance(data, dict):
+            raise ValueError("Invalid dictionary for deserialization: Not a dict")
         class_name = data.get("class_name", cls.__name__)
         element_class = _INIT_CLASS.get(class_name, cls)
         try:
             return element_class(**data)
         except Exception as e:
             raise ValueError(f"Invalid dictionary for deserialization: {e}") from e
-        
-        
-# lion_core/abc/element.py

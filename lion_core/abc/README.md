@@ -1,20 +1,54 @@
-## The LION Way
+# The LION Way
 
-Language InterOperable Network (LION) is a [quantum-inspired intelligent cognitive agent](https://www.frontiersin.org/journals/applied-mathematics-and-statistics/articles/10.3389/fams.2022.909873/full), or Agentic Intelligence (AGI), operating system. At its core, LION embraces a unique approach to [artificial intelligence](https://en.wikipedia.org/wiki/Artificial_intelligence) that bridges [quantum](https://en.wikipedia.org/wiki/Quantum_information) and [classical](https://en.wikipedia.org/wiki/Information_theory) information concepts, offering a flexible and philosophically rich framework for modeling [complex systems](https://www.frontiersin.org/journals/complex-systems/articles/10.3389/fcpxs.2023.1080801/full#B6) and [cognition](https://github.com/brendenlake/CCM-site).
+## LION Core: Abstract Base Classes
 
-**Key Features of LION:**
+This folder (`lion-core/abc`) contains the abstract base classes (ABCs) that form the foundation of the LION (Language InterOperable Network) framework's core. These classes define the fundamental abstractions and data models for the LION ecosystem.
 
-1. **Quantum-Classical Integration**: Bridges concepts from quantum and classical systems.
-2. **Property Dualism**: Elements possess various characteristics defining their behavior.
-3. **Measure-Theoretic Foundation**: Provides a rigorous mathematical basis.
-4. **Temporality and Observability**: Core components for modeling dynamic systems.
-5. **Information-Centric Design**: Posits information as a fundamental concept.
-6. **Multidisciplinary Applicability**: Suitable for various scientific and philosophical domains.
+### Purpose
 
-LION's architecture is built on a foundation of [property dualism](https://plato.stanford.edu/entries/dualism/#HisDua), where entities (elements) possess various properties (characteristics) that define the behavior and interactions among these elements. Reflecting on questions about the nature of reality, consciousness, and the limits of knowledge, LION incorporates [observability](https://en.wikipedia.org/wiki/Observable) and measurement at its core. 
+LION Core ABCs serve to:
 
-The framework progresses logically from abstract concepts of existence to concrete, operational constructs. It incorporates [measure-theoretic concepts](<https://en.wikipedia.org/wiki/Measure_(mathematics)>), providing a rigorous mathematical basis for representing both classical and quantum phenomena. This mathematical foundation, coupled with the explicit inclusion of [temporality](https://en.wikipedia.org/wiki/Temporality) and observability, enables LION to model dynamic systems, connecting abstract models with empirical reality. 
+1. Define fundamental abstractions
+2. Structure data models
+3. Enable observability
+4. Establish operational potential
 
-LION's design implies that information might be a more fundamental concept than matter or energy. This perspective, combined with the framework's flexibility, allows LION to be applied across a wide range of domains, from physics and information theory to complex systems modeling and [cognitive science](https://en.wikipedia.org/wiki/Computational_cognition).
+### Key Components
 
+- `AbstractElement`: Base for all LION entities
+- `AbstractCharacteristic`: Defines element properties
+- `AbstractSpace`: Represents conceptual space for elements
+- `AbstractObservable` and `AbstractObserver`: Implement observability
+- `AbstractEvent`: Represents system changes
 
+#### Observables and Observers
+
+An Observable is an entity that can be monitored or measured. An Observer monitors or measures Observables. This pattern enables dynamic, decoupled interactions between system components, allowing complex behaviors to emerge from simple relationships.
+
+### File Structure
+
+- `tao.py`: Fundamental abstract classes
+- `element.py`: Core `Element` class and related abstractions
+- `observable.py`: Observability-related abstractions
+- `space.py`: Space and environment-related abstractions
+- `event.py`: Event-related abstractions
+
+### Relationship to LionAGI
+
+LION Core focuses on fundamental abstractions and data models. LionAGI contains most operational logic, including branching and complex operations. Core provides nouns; AGI provides verbs.
+
+### For Developers and Contributors
+
+- Define what things are, not what they do
+- Fit abstractions into the larger LION ecosystem
+- Separate data models (here) from operational logic (in LionAGI)
+- Support LION Core's observability-focused design
+
+### The LION Way Philosophy
+
+1. **Elemental Thinking**: Build from fundamental, composable elements
+2. **Observability First**: Design systems with core observability
+3. **Separation of Concerns**: Distinguish between entity definitions and operations
+4. **Flexible Foundations**: Create robust abstractions for varied implementations
+
+These ABCs are the essential building blocks of the LION framework, enabling complex, observable, and intelligent systems.

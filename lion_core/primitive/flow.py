@@ -5,9 +5,6 @@ import contextlib
 from pydantic import Field
 
 
-
-
-
 from ..abc import Record, LionTypeError, ItemNotFoundError, AbstractElement
 from .pile import Pile, pile
 from .progression import Progression, progression

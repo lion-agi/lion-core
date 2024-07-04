@@ -245,6 +245,6 @@ class Component(Element):
             f"metadata={truncate_dict(self.metadata)}, "
             f"extra_fields={truncate_dict(self.extra_fields)})"
         )
-        
+
 
 # Path: lion_core/generic/component.py

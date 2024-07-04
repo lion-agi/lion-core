@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 LION_ID_CONFIG = {
-    "n": 28, 
+    "n": 28,
     "random_hyphen": True,
     "num_hyphens": 4,
     "hyphen_start_index": 6,
@@ -10,13 +10,6 @@ LION_ID_CONFIG = {
 }
 
 
-
-
-
-    
-    
-    
-    
 BASE_LION_FIELDS = [
     "ln_id",
     "timestamp",
