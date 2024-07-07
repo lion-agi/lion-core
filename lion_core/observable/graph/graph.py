@@ -23,8 +23,8 @@ from lion_core.abc import (
     Actionable,
 )
 from lion_core.primitive import pile, Pile
-from .edge import Edge
-from .node import Node
+from ..component.edge import Edge
+from ..component.node import Node
 
 
 class Graph(Node):

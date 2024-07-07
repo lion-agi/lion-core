@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from lionagi.os.collections.abc import Progressable
-from lionagi.os.collections import pile, progression, Pile
-from lionagi.os.core.work.work import Work, WorkStatus
-from lionagi.os.core.work.work_queue import WorkQueue
+from lionagi.core.collections.abc import Progressable
+from lionagi.core.collections import pile, progression, Pile
+from lionagi.core.work.work import Work, WorkStatus
+from lionagi.core.work.work_queue import WorkQueue
 
 
 class WorkLog(Progressable):
@@ -30,19 +30,21 @@ class WorkLog(Progressable):
         queue (WorkQueue): A queue to manage the execution of work items.
     """
 
-    def __init__(self, capacity=10, workpile=None):
+    def __init__(self, capacity=10, workpile=None, refresh_time=1):
         """
         Initializes a new instance of WorkLog.
 
         Args:
-            capacity (int): The capacity of the work queue.
+            capacity (int): The capacity of the work queue batch processing.
             workpile (Pile, optional): An optional pile of initial work items.
+            refresh_time (int, optional): The time interval to refresh the work log queue.
+                Defaults to 1.
         """
         self.pile = (
             workpile if workpile and isinstance(workpile, Pile) else pile({}, Work)
         )
         self.pending = progression(workpile) if workpile else progression()
-        self.queue = WorkQueue(capacity=capacity)
+        self.queue = WorkQueue(capacity=capacity, refresh_time=refresh_time)
 
     async def append(self, work: Work):
         """
@@ -56,15 +58,11 @@ class WorkLog(Progressable):
 
     async def forward(self):
         """
-        Forwards pending work items to the queue if capacity allows.
+        Forwards pending work items to the queue.
         """
-        if not self.queue.available_capacity:
-            return
-        else:
-            while len(self.pending) > 0 and self.queue.available_capacity:
-                work: Work = self.pile[self.pending.popleft()]
-                work.status = WorkStatus.IN_PROGRESS
-                await self.queue.enqueue(work)
+        while len(self.pending) > 0:
+            work: Work = self.pile[self.pending.popleft()]
+            await self.queue.enqueue(work)
 
     async def stop(self):
         """

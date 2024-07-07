@@ -96,7 +96,7 @@ from typing import Any, Set
 from pydantic import Field, field_validator
 
 from lion_core.primitive.util import get_lion_id
-from ..generic.relation import Relation
+from ..component.relation import Relation
 
 
 class HyperEdge(Relation):
