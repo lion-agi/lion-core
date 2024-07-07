@@ -21,6 +21,8 @@ from typing import Any
 from lionagi.os.lib.sys_util import get_timestamp
 from lionagi.os.collections.abc import Component
 
+from .base_log import BaseLog
+
 
 class WorkStatus(str, Enum):
     """Enum to represent different statuses of work."""
@@ -31,7 +33,7 @@ class WorkStatus(str, Enum):
     FAILED = "FAILED"
 
 
-class Work(Component):
+class Work(BaseLog):
     """
     A class representing a unit of work.
 

@@ -26,8 +26,8 @@ from functools import singledispatchmethod
 from typing import Any, Callable, List, Union, Tuple
 from lionagi.os.lib import to_list, to_dict, function_to_schema
 from lionagi.os.collections.abc import Actionable
-from ...observable.action.function_calling import FunctionCalling
-from ...observable.action.tool import Tool, TOOL_TYPE
+from ...generic.action.function_calling import FunctionCalling
+from ...generic.action.tool import Tool, TOOL_TYPE
 
 
 class ToolManager(Actionable):

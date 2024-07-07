@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Generator, Sequence
 from collections import deque
 from typing import Type
-from .abc import LionIDError
+from ..abc.concept import LionIDError
 
 
 def get_lion_id(item) -> str:

@@ -119,20 +119,6 @@ class LionRelationError(LionItemError):
         super().__init__(f"{message}{relation_info}")
 
 
-class LionItemOperationError(LionItemError):
-    """Exception raised for errors during item-specific operations."""
-
-    def __init__(
-        self,
-        message: str = "Operation error.",
-        item_id: str | None = None,
-        operation: str | None = None,
-    ):
-        self.operation = operation
-        op_info = f" Operation: {operation}" if operation else ""
-        super().__init__(f"{message}{op_info}", item_id)
-
-
 class LionAccessError(LionException):
     """Exception raised when accessing without proper permissions."""
 

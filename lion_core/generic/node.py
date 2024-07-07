@@ -13,7 +13,7 @@ from typing import Any, List, Dict, Optional, Union, Generic, TypeVar
 
 from pydantic import Field
 
-from lion_core.abc import AbstractCondition, Relatable, LionRelationError
+from lion_core.abc.concept import AbstractCondition, Relatable, LionRelationError
 from lion_core.primitive import Pile, pile, get_lion_id
 from .component import Component
 from .edge import Edge

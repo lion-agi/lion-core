@@ -13,7 +13,7 @@ from typing import Any
 
 from pydantic import Field
 
-from lion_core.abc import Relatable
+from lion_core.abc.concept import Relatable
 from ..element.component import Component
 from .edge_condition import EdgeCondition
 
@@ -96,7 +96,7 @@ from typing import Any, Set
 from pydantic import Field, field_validator
 
 from lion_core.primitive.util import get_lion_id
-from ..component.relation import Relation
+from ..generic.relation import Relation
 
 
 class HyperEdge(Relation):

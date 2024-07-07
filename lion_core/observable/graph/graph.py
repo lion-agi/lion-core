@@ -16,15 +16,15 @@ from typing import Any, Optional, List
 from pydantic import Field
 
 from lion_core.libs import to_list, SysUtil
-from lion_core.abc import (
+from lion_core.abc.concept import (
     AbstractCondition,
     LionTypeError,
     ItemNotFoundError,
     Actionable,
 )
 from lion_core.primitive import pile, Pile
-from ..component.edge import Edge
-from ..component.node import Node
+from ..generic.edge import Edge
+from ..generic.node import Node
 
 
 class Graph(Node):

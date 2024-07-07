@@ -1,5 +1,3 @@
-# lion_core/abc/element.py
-
 """
 Core Element class for the Lion framework.
 
@@ -11,38 +9,24 @@ Classes:
     Element: Base class for all elements in the Lion framework.
 """
 
-
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any
+from datetime import datetime, time
+from typing import Any, Type, TypeVar
 
 from pydantic import Field, BaseModel, ConfigDict, AliasChoices
 
-from lion_core.settings._setting import LION_ID_CONFIG
+from lion_core.util.settings import LION_ID_CONFIG
 from lion_core.libs import SysUtil
-from lion_core.settings import lion_category
-from .tao import AbstractElement
+from .concept import AbstractElement
+
+
+T = TypeVar("T", bound=AbstractElement)
 
 
 _INIT_CLASS = {}
 
 
-@lion_category(
-    abstraction_level="abstract",
-    functionality="base",
-    core_concept="element",
-    domain_specificity="core",
-    visibility_scope="internal",
-    optimization_level="unoptimized",
-    testing_category="not_tested",
-    documentation_status="undocumented",
-    version_control="experimental",
-    author="ocean",
-    created_at="2024-07-01",
-    parent_class=["AbstractElement", "BaseModel"],
-    filepaths=["lion_core", "abc", "element.py"],
-)
 class Element(AbstractElement, BaseModel):
     """Base class for all elements in the Lion framework.
 
@@ -66,7 +50,7 @@ class Element(AbstractElement, BaseModel):
         validation_alias=AliasChoices("id", "id_", "ID", "ID_"),
     )
 
-    timestamp: float = Field(
+    timestamp: time = Field(
         default_factory=SysUtil.time,
         title="Creation Timestamp",
         frozen=True,
@@ -80,7 +64,7 @@ class Element(AbstractElement, BaseModel):
         use_enum_values=True,
     )
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls: Type[Element], **kwargs):
         """Register subclasses in the _INIT_CLASS dictionary."""
         super().__init_subclass__(**kwargs)
         if cls.__name__ not in _INIT_CLASS:
@@ -131,8 +115,17 @@ class Element(AbstractElement, BaseModel):
         except Exception as e:
             raise ValueError(f"Invalid dictionary for deserialization: {e}") from e
 
+    def to_dict(self, **kwargs) -> dict[str, Any]:
+        """Convert the Element instance to a dictionary.
 
-class Log(Element): ...
+        Returns:
+            dict: A dictionary representation of the Element instance.
+        """
+        kwargs["by_alias"] = kwargs.pop("by_alias", True)
+        return {
+            "class_name": self.class_name(),
+            **self.model_dump(by_alias=True, **kwargs),
+        }
 
 
-class Work(Log): ...
+# File: lion_core/abc/element.py

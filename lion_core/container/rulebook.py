@@ -1,4 +1,4 @@
-from ...observable.rule.base import Rule
+from ...generic.rule.base import Rule
 
 
 """

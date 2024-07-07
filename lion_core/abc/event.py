@@ -1,6 +1,4 @@
-from functools import partial
-from .tao import AbstractEvent
-from ..settings import lion_category
+from .concept import AbstractEvent
 
 
 class Event(AbstractEvent):
@@ -15,17 +13,8 @@ class Rule(Condition):
     pass
 
 
-class EdgeCondition(Condition):
-    pass
-
-
 class Signal(Event):
     pass
 
 
-class StartMail(Signal):
-    pass
-
-
-class FunctionCalling(Event):
-    pass
+# File: lion_core/abc/event.py

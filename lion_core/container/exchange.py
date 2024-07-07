@@ -1,6 +1,6 @@
 from typing import TypeVar, Generic
 from pydantic import Field
-from lion_core.abc import Sendable
+from lion_core.abc.concept import Sendable
 from ..element.element import Element
 from .pile import Pile, pile
 from .progression import Progression, progression
