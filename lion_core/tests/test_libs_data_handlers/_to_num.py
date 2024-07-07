@@ -11,13 +11,13 @@ class TestToNumFunction(unittest.TestCase):
         self.assertEqual(to_num("3.14", num_type=float), 3.14)
 
     def test_to_num_fraction(self):
-        self.assertAlmostEqual(to_num("2/3", num_type=float), 2/3)
+        self.assertAlmostEqual(to_num("2/3", num_type=float), 2 / 3)
 
     def test_to_num_scientific_notation(self):
         self.assertEqual(to_num("1e3", num_type=float), 1e3)
 
     def test_to_num_complex(self):
-        self.assertEqual(to_num("1+2j", num_type=complex), 1+2j)
+        self.assertEqual(to_num("1+2j", num_type=complex), 1 + 2j)
 
     def test_to_num_precision(self):
         self.assertEqual(to_num("3.14159", num_type=float, precision=2), 3.14)
@@ -50,5 +50,5 @@ class TestToNumFunction(unittest.TestCase):
             to_num("0b1010")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

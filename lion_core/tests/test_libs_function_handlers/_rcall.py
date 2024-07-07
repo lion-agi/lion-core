@@ -62,7 +62,14 @@ class TestRCallFunction(unittest.IsolatedAsyncioTestCase):
 
     async def test_rcall_with_backoff_factor(self):
         with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-            await rcall(async_func_with_error, 3, retries=2, delay=0.1, backoff_factor=2, default=0)
+            await rcall(
+                async_func_with_error,
+                3,
+                retries=2,
+                delay=0.1,
+                backoff_factor=2,
+                default=0,
+            )
             mock_sleep.assert_any_call(0.1)
             mock_sleep.assert_any_call(0.2)
 
@@ -80,5 +87,5 @@ class TestRCallFunction(unittest.IsolatedAsyncioTestCase):
             mock_print.assert_any_call("Attempt 1/2 failed: mock error, retrying...")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

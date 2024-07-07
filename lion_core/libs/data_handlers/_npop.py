@@ -23,7 +23,9 @@ def npop(input_, /, indices, default=None):
 
     last_key = indices[-1]
     try:
-        return current.pop(last_key, )
+        return current.pop(
+            last_key,
+        )
     except Exception as e:
         if default:
             return default

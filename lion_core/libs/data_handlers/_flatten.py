@@ -54,7 +54,9 @@ def flatten(
             dictionary.
     """
     if not isinstance(parent_key, str):
-        raise TypeError(f"Unsupported key type: {type(parent_key).__name__}. Only string keys are acceptable.")
+        raise TypeError(
+            f"Unsupported key type: {type(parent_key).__name__}. Only string keys are acceptable."
+        )
     if inplace:
         if not isinstance(nested_structure, dict):
             raise ValueError("Object must be a dictionary when 'inplace' is True.")
@@ -150,7 +152,9 @@ def _dynamic_flatten_in_place(
 
         for k, v in items:
             if not isinstance(k, str):
-                raise TypeError(f"Unsupported key type: {type(k).__name__}. Only string keys are acceptable.")
+                raise TypeError(
+                    f"Unsupported key type: {type(k).__name__}. Only string keys are acceptable."
+                )
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
 
             if isinstance(v, dict) and (max_depth is None or current_depth < max_depth):
@@ -208,7 +212,9 @@ def _dynamic_flatten_generator(
     if isinstance(nested_structure, dict):
         for k, v in nested_structure.items():
             if not isinstance(k, str):
-                raise TypeError(f"Unsupported key type: {type(k).__name__}. Only string keys are acceptable.")
+                raise TypeError(
+                    f"Unsupported key type: {type(k).__name__}. Only string keys are acceptable."
+                )
             new_key = parent_key + (k,)
             yield from _dynamic_flatten_generator(
                 v, new_key, sep, max_depth, current_depth + 1, dict_only
@@ -221,7 +227,6 @@ def _dynamic_flatten_generator(
             )
     else:
         yield sep.join(parent_key), nested_structure
-
 
 
 # Path: lion_core/libs/data_handlers/_flatten.py

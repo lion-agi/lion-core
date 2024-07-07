@@ -11,10 +11,14 @@ class TestToListFunction(unittest.TestCase):
         self.assertEqual(to_list([1, 2, 3]), [1, 2, 3])
 
     def test_to_list_with_flatten(self):
-        self.assertEqual(to_list([1, [2, 3], [4, [5, 6]]], flatten=True), [1, 2, 3, 4, 5, 6])
+        self.assertEqual(
+            to_list([1, [2, 3], [4, [5, 6]]], flatten=True), [1, 2, 3, 4, 5, 6]
+        )
 
     def test_to_list_with_no_flatten(self):
-        self.assertEqual(to_list([1, [2, 3], [4, [5, 6]]], flatten=False), [1, [2, 3], [4, [5, 6]]])
+        self.assertEqual(
+            to_list([1, [2, 3], [4, [5, 6]]], flatten=False), [1, [2, 3], [4, [5, 6]]]
+        )
 
     def test_to_list_with_dropna(self):
         self.assertEqual(to_list([1, None, 2], dropna=True), [1, 2])
@@ -38,5 +42,5 @@ class TestToListFunction(unittest.TestCase):
         self.assertEqual(to_list({"key": "value"}), [{"key": "value"}])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

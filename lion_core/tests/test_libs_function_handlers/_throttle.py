@@ -21,7 +21,8 @@ class TestThrottle(unittest.IsolatedAsyncioTestCase):
         self.current_time += seconds
 
     def test_throttle_sync(self):
-        with patch.object(SysUtil, 'time', new_callable=lambda: self.mock_time):
+        with patch.object(SysUtil, "time", new_callable=lambda: self.mock_time):
+
             @self.throttle
             def sync_func():
                 return "called"
@@ -39,7 +40,8 @@ class TestThrottle(unittest.IsolatedAsyncioTestCase):
             self.assertGreaterEqual(end_time - start_time, 0.5)
 
     async def test_throttle_async(self):
-        with patch.object(SysUtil, 'time', new_callable=lambda: self.mock_time):
+        with patch.object(SysUtil, "time", new_callable=lambda: self.mock_time):
+
             @self.throttle.__call_async__
             async def async_func():
                 return "called"
@@ -57,7 +59,8 @@ class TestThrottle(unittest.IsolatedAsyncioTestCase):
             self.assertGreaterEqual(end_time - start_time, 0.5)
 
     def test_throttle_sync_exact_interval(self):
-        with patch.object(SysUtil, 'time', new_callable=lambda: self.mock_time):
+        with patch.object(SysUtil, "time", new_callable=lambda: self.mock_time):
+
             @self.throttle
             def sync_func():
                 return "called"
@@ -72,7 +75,8 @@ class TestThrottle(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(result, "called")
 
     async def test_throttle_async_exact_interval(self):
-        with patch.object(SysUtil, 'time', new_callable=lambda: self.mock_time):
+        with patch.object(SysUtil, "time", new_callable=lambda: self.mock_time):
+
             @self.throttle.__call_async__
             async def async_func():
                 return "called"
@@ -87,7 +91,8 @@ class TestThrottle(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(result, "called")
 
     def test_throttle_sync_exceed_interval(self):
-        with patch.object(SysUtil, 'time', new_callable=lambda: self.mock_time):
+        with patch.object(SysUtil, "time", new_callable=lambda: self.mock_time):
+
             @self.throttle
             def sync_func():
                 return "called"
@@ -102,7 +107,8 @@ class TestThrottle(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(result, "called")
 
     async def test_throttle_async_exceed_interval(self):
-        with patch.object(SysUtil, 'time', new_callable=lambda: self.mock_time):
+        with patch.object(SysUtil, "time", new_callable=lambda: self.mock_time):
+
             @self.throttle.__call_async__
             async def async_func():
                 return "called"
@@ -117,5 +123,5 @@ class TestThrottle(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(result, "called")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

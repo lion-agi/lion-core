@@ -66,7 +66,7 @@ class TestMCallFunction(unittest.IsolatedAsyncioTestCase):
         inputs = [1, 2, 3, 4, 5]
         funcs = [async_func_with_error] * 5
         result = await mcall(inputs, funcs, error_map=error_map)
-        self.assertEqual(result, [2, 4, 'handled: mock error', 8, 10])
+        self.assertEqual(result, [2, 4, "handled: mock error", 8, 10])
 
     async def test_mcall_with_max_concurrent(self):
         inputs = [1, 2, 3, 4, 5]
@@ -95,5 +95,5 @@ class TestMCallFunction(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, [11, 12, 13, 14, 15])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

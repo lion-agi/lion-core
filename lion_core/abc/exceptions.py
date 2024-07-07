@@ -77,6 +77,15 @@ class LionItemError(LionException):
         super().__init__(f"{message}{item_info}")
 
 
+class LionIDError(LionItemError):
+    """Exception raised when an item does not have a Lion ID."""
+
+    def __init__(
+        self, message: str = "Item must contain a Lion ID.", item_id: str | None = None
+    ):
+        super().__init__(message, item_id)
+
+
 class ItemNotFoundError(LionItemError):
     """Exception raised when an item is not found."""
 

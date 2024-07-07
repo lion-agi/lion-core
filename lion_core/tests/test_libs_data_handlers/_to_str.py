@@ -2,6 +2,7 @@ import unittest
 import json
 from lion_core.libs.data_handlers._to_str import to_str
 
+
 class TestToStrFunction(unittest.TestCase):
 
     def test_to_str_with_dict(self):
@@ -47,5 +48,5 @@ class TestToStrFunction(unittest.TestCase):
         self.assertEqual(result, expected)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

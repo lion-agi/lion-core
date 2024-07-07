@@ -115,12 +115,12 @@ def _merge_dicts(
     Returns:
         dict[Any, Any]: The merged dictionary.
     """
-    merged_dict = {}                # {'a': [1, 2]}
+    merged_dict = {}  # {'a': [1, 2]}
     sequence_counters = defaultdict(int)
     list_values = {}
 
-    for d in iterables:             # [{'a': [1, 2]}, {'a': [3, 4]}]
-        for key, value in d.items():        # {'a': [3, 4]}
+    for d in iterables:  # [{'a': [1, 2]}, {'a': [3, 4]}]
+        for key, value in d.items():  # {'a': [3, 4]}
             if key not in merged_dict or dict_update:
                 if (
                     key in merged_dict
@@ -129,7 +129,7 @@ def _merge_dicts(
                 ):
                     _deep_merge_dicts(merged_dict[key], value)
                 else:
-                    merged_dict[key] = value      # {'a': [1, 2]}
+                    merged_dict[key] = value  # {'a': [1, 2]}
                     if isinstance(value, list):
                         list_values[key] = True
             elif dict_sequence:
@@ -137,7 +137,9 @@ def _merge_dicts(
                 new_key = f"{key}{sequence_counters[key]}"
                 merged_dict[new_key] = value
             else:
-                if not isinstance(merged_dict[key], list) or list_values.get(key, False):
+                if not isinstance(merged_dict[key], list) or list_values.get(
+                    key, False
+                ):
                     merged_dict[key] = [merged_dict[key]]
                 merged_dict[key].append(value)
 

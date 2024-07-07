@@ -6,27 +6,32 @@ from lion_core.libs.function_handlers._util import (
     is_coroutine_func,
     custom_error_handler,
     max_concurrent,
-    throttle
+    throttle,
 )
+
 
 # Mock and Helper Functions
 def sync_func(x: int) -> int:
     return x + 1
 
+
 async def async_func(x: int) -> int:
     await asyncio.sleep(0.1)
     return x + 1
+
 
 def sync_func_with_error(x: int) -> int:
     if x == 3:
         raise ValueError("mock error")
     return x + 1
 
+
 async def async_func_with_error(x: int) -> int:
     await asyncio.sleep(0.1)
     if x == 3:
         raise ValueError("mock error")
     return x + 1
+
 
 def mock_handler(e: Exception) -> str:
     return f"handled: {str(e)}"
@@ -71,13 +76,17 @@ class TestUtilityFunctions(unittest.IsolatedAsyncioTestCase):
     async def test_max_concurrent_with_error(self):
         async_limited_func_with_error = max_concurrent(async_func_with_error, limit=1)
         with self.assertRaises(ValueError):
-            await asyncio.gather(async_limited_func_with_error(1), async_limited_func_with_error(3))
+            await asyncio.gather(
+                async_limited_func_with_error(1), async_limited_func_with_error(3)
+            )
 
     async def test_throttle_with_error(self):
         throttled_func_with_error = throttle(async_func_with_error, period=0.5)
         with self.assertRaises(ValueError):
-            await asyncio.gather(throttled_func_with_error(1), throttled_func_with_error(3))
+            await asyncio.gather(
+                throttled_func_with_error(1), throttled_func_with_error(3)
+            )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

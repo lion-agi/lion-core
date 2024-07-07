@@ -19,14 +19,30 @@ from typing import Any
 
 from pydantic import Field, BaseModel, ConfigDict, AliasChoices
 
-from lion_core.setting import LION_ID_CONFIG
+from lion_core.settings._setting import LION_ID_CONFIG
 from lion_core.libs import SysUtil
+from lion_core.settings import lion_category
 from .tao import AbstractElement
 
 
 _INIT_CLASS = {}
 
 
+@lion_category(
+    abstraction_level="abstract",
+    functionality="base",
+    core_concept="element",
+    domain_specificity="core",
+    visibility_scope="internal",
+    optimization_level="unoptimized",
+    testing_category="not_tested",
+    documentation_status="undocumented",
+    version_control="experimental",
+    author="ocean",
+    created_at="2024-07-01",
+    parent_class=["AbstractElement", "BaseModel"],
+    filepaths=["lion_core", "abc", "element.py"],
+)
 class Element(AbstractElement, BaseModel):
     """Base class for all elements in the Lion framework.
 
@@ -114,3 +130,9 @@ class Element(AbstractElement, BaseModel):
             return element_class(**data)
         except Exception as e:
             raise ValueError(f"Invalid dictionary for deserialization: {e}") from e
+
+
+class Log(Element): ...
+
+
+class Work(Log): ...

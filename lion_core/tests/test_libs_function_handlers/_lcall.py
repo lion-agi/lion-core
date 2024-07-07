@@ -81,10 +81,17 @@ class TestLCallFunction(unittest.IsolatedAsyncioTestCase):
     async def test_lcall_with_backoff_factor(self):
         inputs = [1, 2, 3]
         with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-            await lcall(mock_func_with_error, inputs, retries=2, delay=0.1, backoff_factor=2, default=0)
+            await lcall(
+                mock_func_with_error,
+                inputs,
+                retries=2,
+                delay=0.1,
+                backoff_factor=2,
+                default=0,
+            )
             mock_sleep.assert_any_call(0.1)
             mock_sleep.assert_any_call(0.2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

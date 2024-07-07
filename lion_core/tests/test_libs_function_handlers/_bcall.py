@@ -42,7 +42,9 @@ class TestBCallFunction(unittest.IsolatedAsyncioTestCase):
     async def test_bcall_with_retries(self):
         inputs = [1, 2, 3, 4, 5]
         batches = []
-        async for batch in bcall(inputs, async_func_with_error, batch_size=2, retries=1, default=0):
+        async for batch in bcall(
+            inputs, async_func_with_error, batch_size=2, retries=1, default=0
+        ):
             batches.append(batch)
         self.assertEqual(batches, [[2, 4], [0, 8], [10]])
 
@@ -56,9 +58,11 @@ class TestBCallFunction(unittest.IsolatedAsyncioTestCase):
         error_map = {ValueError: mock_handler}
         inputs = [1, 2, 3, 4, 5]
         batches = []
-        async for batch in bcall(inputs, async_func_with_error, batch_size=2, error_map=error_map):
+        async for batch in bcall(
+            inputs, async_func_with_error, batch_size=2, error_map=error_map
+        ):
             batches.append(batch)
-        self.assertEqual(batches, [[2, 4], ['handled: mock error', 8], [10]])
+        self.assertEqual(batches, [[2, 4], ["handled: mock error", 8], [10]])
 
     async def test_bcall_with_max_concurrent(self):
         inputs = [1, 2, 3, 4, 5]
@@ -78,7 +82,9 @@ class TestBCallFunction(unittest.IsolatedAsyncioTestCase):
         inputs = [1, 2, 3]
         with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
             batches = []
-            async for batch in bcall(inputs, async_func, batch_size=2, initial_delay=0.5):
+            async for batch in bcall(
+                inputs, async_func, batch_size=2, initial_delay=0.5
+            ):
                 batches.append(batch)
             mock_sleep.assert_any_call(0.5)
             self.assertEqual(batches, [[2, 4], [6]])
@@ -95,5 +101,5 @@ class TestBCallFunction(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(batches, [[11, 12], [13, 14], [15]])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

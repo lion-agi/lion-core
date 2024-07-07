@@ -60,7 +60,9 @@ def nset(
                 target_container[index] = [] if isinstance(next_index, int) else {}
         elif isinstance(target_container, dict):
             if isinstance(index, int):
-                raise TypeError(f"Unsupported key type: {type(index).__name__}. Only string keys are acceptable.")
+                raise TypeError(
+                    f"Unsupported key type: {type(index).__name__}. Only string keys are acceptable."
+                )
             if index not in target_container:
                 next_index = _indices[i + 1]
                 target_container[index] = [] if isinstance(next_index, int) else {}
@@ -77,7 +79,9 @@ def nset(
         target_container[last_index] = value
     elif isinstance(target_container, dict):
         if isinstance(last_index, int):
-            raise TypeError(f"Unsupported key type: {type(last_index).__name__}. Only string keys are acceptable.")
+            raise TypeError(
+                f"Unsupported key type: {type(last_index).__name__}. Only string keys are acceptable."
+            )
         target_container[last_index] = value
     else:
         raise TypeError("Cannot set value on non-list/dict element")

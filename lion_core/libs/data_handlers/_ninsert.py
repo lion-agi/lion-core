@@ -53,7 +53,9 @@ def ninsert(
     for i, part in enumerate(indices[:-1]):
         if isinstance(part, int):
             if isinstance(nested_structure, dict):
-                raise TypeError(f"Unsupported key type: {type(part).__name__}. Only string keys are acceptable.")
+                raise TypeError(
+                    f"Unsupported key type: {type(part).__name__}. Only string keys are acceptable."
+                )
             while len(nested_structure) <= part:
                 nested_structure.append(None)
             if nested_structure[part] is None or not isinstance(
@@ -74,7 +76,9 @@ def ninsert(
     last_part = indices[-1]
     if isinstance(last_part, int):
         if isinstance(nested_structure, dict):
-            raise TypeError(f"Unsupported key type: {type(last_part).__name__}. Only string keys are acceptable.")
+            raise TypeError(
+                f"Unsupported key type: {type(last_part).__name__}. Only string keys are acceptable."
+            )
         while len(nested_structure) <= last_part:
             nested_structure.append(None)
         nested_structure[last_part] = value
@@ -82,6 +86,6 @@ def ninsert(
         raise TypeError("Cannot use non-integer index on a list")
     else:
         nested_structure[last_part] = value
-        
-        
+
+
 # Path: lion_core/libs/data_handlers/_ninsert.py

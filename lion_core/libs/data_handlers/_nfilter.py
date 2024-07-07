@@ -78,5 +78,4 @@ def _filter_list(lst: list[Any], condition: Callable[[Any], bool]) -> list[Any]:
     ]
 
 
-
 # Path: lion_core/libs/data_handlers/_nfilter.py

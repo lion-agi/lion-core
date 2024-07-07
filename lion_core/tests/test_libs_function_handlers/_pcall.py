@@ -4,22 +4,28 @@ from unittest.mock import patch, AsyncMock
 
 from lion_core.libs.function_handlers._pcall import pcall
 
+
 async def async_func() -> int:
     await asyncio.sleep(0.1)
     return 2
 
+
 def sync_func() -> int:
     return 2
+
 
 async def async_func_with_error() -> int:
     await asyncio.sleep(0.1)
     raise ValueError("mock error")
 
+
 def sync_func_with_error() -> int:
     raise ValueError("mock error")
 
+
 async def mock_handler(e: Exception) -> str:
     return f"handled: {str(e)}"
+
 
 class TestPCallFunction(unittest.IsolatedAsyncioTestCase):
 
@@ -49,7 +55,16 @@ class TestPCallFunction(unittest.IsolatedAsyncioTestCase):
         error_map = {ValueError: mock_handler}
         funcs = [async_func_with_error for _ in range(5)]
         result = await pcall(funcs, error_map=error_map)
-        self.assertEqual(result, ['handled: mock error', 'handled: mock error', 'handled: mock error', 'handled: mock error', 'handled: mock error'])
+        self.assertEqual(
+            result,
+            [
+                "handled: mock error",
+                "handled: mock error",
+                "handled: mock error",
+                "handled: mock error",
+                "handled: mock error",
+            ],
+        )
 
     async def test_pcall_with_max_concurrent(self):
         funcs = [async_func for _ in range(5)]
@@ -74,5 +89,5 @@ class TestPCallFunction(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, [2, 2, 2, 2, 2])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

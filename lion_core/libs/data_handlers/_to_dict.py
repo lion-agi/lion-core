@@ -168,9 +168,11 @@ def xml_to_dict(input_: Any) -> dict[str, Any]:
     """
 
     from lion_core.libs.sys_util import SysUtil
+
     SysUtil.check_import("xmltodict")
 
     import xmltodict
+
     return xmltodict.parse(input_)
 
 

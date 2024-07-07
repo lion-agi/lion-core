@@ -55,7 +55,10 @@ class TestUCallFunction(unittest.IsolatedAsyncioTestCase):
     #     self.assertEqual(result, "handled: mock error")
 
     async def test_ucall_with_no_event_loop(self):
-        with patch("asyncio.get_running_loop", side_effect=RuntimeError("no running event loop")):
+        with patch(
+            "asyncio.get_running_loop",
+            side_effect=RuntimeError("no running event loop"),
+        ):
             result = await ucall(sync_func, 1)
             self.assertEqual(result, 2)
 
@@ -72,5 +75,5 @@ class TestUCallFunction(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, 3)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

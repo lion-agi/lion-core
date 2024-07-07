@@ -136,17 +136,11 @@ async def lcall(
     if timing:
         if dropna:
             return [
-                (result[1], result[2])
-                for result in results
-                if result[1] is not None
+                (result[1], result[2]) for result in results if result[1] is not None
             ]
         else:
             return [(result[1], result[2]) for result in results]
     else:
         if dropna:
-            return [
-                result[1]
-                for result in results
-                if result[1] is not None
-            ]
+            return [result[1] for result in results if result[1] is not None]
         return [result[1] for result in results]
