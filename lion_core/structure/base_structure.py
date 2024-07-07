@@ -1,0 +1,16 @@
+from lion_core.collections.container import Ordering
+
+
+class Structure(Ordering): ...
+
+
+class GraphStructure(Structure): ...
+
+
+class ChainStructure(GraphStructure): ...
+
+
+class TreeStructure(GraphStructure): ...
+
+
+class ForestStructure(TreeStructure): ...

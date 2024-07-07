@@ -1,4 +1,4 @@
-from .catalog import KnowledgeCatalog
+from .knowledge_catalog import KnowledgeCatalog
 
 
 class KnowledgeBase:

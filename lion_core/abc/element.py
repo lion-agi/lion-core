@@ -18,7 +18,7 @@ from pydantic import Field, BaseModel, ConfigDict, AliasChoices
 
 from lion_core.util.settings import LION_ID_CONFIG
 from lion_core.libs import SysUtil
-from .concept import AbstractElement
+from .concept import AbstractElement, Observable, Temporal
 
 
 T = TypeVar("T", bound=AbstractElement)
@@ -27,7 +27,7 @@ T = TypeVar("T", bound=AbstractElement)
 _INIT_CLASS = {}
 
 
-class Element(AbstractElement, BaseModel):
+class Element(AbstractElement, Observable, Temporal, BaseModel):
     """Base class for all elements in the Lion framework.
 
     This class extends AbstractElement and incorporates Pydantic's BaseModel
