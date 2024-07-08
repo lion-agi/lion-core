@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Any
 
 
 class Tao(ABC):
@@ -18,7 +18,7 @@ class AbstractElement(Tao):
     """An abstract observable entity in a space."""
 
     @abstractmethod
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the element to a dictionary representation."""
         pass
 
