@@ -1,7 +1,7 @@
 from itertools import product
 
 
-def levenshtein_distance(a: str, b: str) -> int:
+def levenshtein_distance(a, b):
     """
     Calculate the Levenshtein distance between two strings.
 
@@ -10,11 +10,11 @@ def levenshtein_distance(a: str, b: str) -> int:
     substitutions) required to change one word into the other.
 
     Args:
-        a: The first string to compare.
-        b: The second string to compare.
+        a (str): The first string to compare.
+        b (str): The second string to compare.
 
     Returns:
-        The Levenshtein distance between the two strings.
+        int: The Levenshtein distance between the two strings.
 
     Algorithm:
     1. Initialize a 2D array with dimensions (len(a)+1) x (len(b)+1).
@@ -22,6 +22,7 @@ def levenshtein_distance(a: str, b: str) -> int:
     3. Use dynamic programming to compute the distance by considering
        insertions, deletions, and substitutions.
     4. Return the computed distance.
+
     """
     m, n = len(a), len(b)
 
@@ -36,11 +37,14 @@ def levenshtein_distance(a: str, b: str) -> int:
 
     # Compute the distance
     for i, j in product(range(1, m + 1), range(1, n + 1)):
-        cost = int(a[i - 1] != b[j - 1])
+        cost = 0 if a[i - 1] == b[j - 1] else 1
         d[i][j] = min(
-            d[i - 1][j] + 1,      # deletion
-            d[i][j - 1] + 1,      # insertion
+            d[i - 1][j] + 1,  # deletion
+            d[i][j - 1] + 1,  # insertion
             d[i - 1][j - 1] + cost,  # substitution
         )
 
     return d[m][n]
+
+
+# Path: lion_core/libs/algorithms/levenshtein_distance.py
