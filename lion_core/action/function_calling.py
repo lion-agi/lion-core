@@ -1,6 +1,12 @@
+"""
+This module defines the FunctionCalling class, which represents a callable
+function with its arguments.
+"""
+
 from typing import Any, Callable
-from lion_core.abc.event import Action
-from lion_core.libs import ucall
+
+from ..abc.event import Action
+from ..libs import ucall
 
 
 class FunctionCalling(Action):
@@ -11,14 +17,12 @@ class FunctionCalling(Action):
     suitable for use in event-driven scenarios.
 
     Attributes:
-        function: The function to be called.
-        arguments: Arguments to pass to the function.
+        function (Callable[..., Any]): The function to be called.
+        arguments (dict[str, Any]): Arguments to pass to the function.
     """
 
     def __init__(
-        self,
-        function: Callable[..., Any],
-        arguments: dict[str, Any] | None = None
+        self, function: Callable[..., Any], arguments: dict[str, Any] | None = None
     ) -> None:
         """Initialize a new instance of FunctionCalling.
 
@@ -34,7 +38,7 @@ class FunctionCalling(Action):
         """Asynchronously invoke the stored function with the arguments.
 
         Returns:
-            The result of the function call.
+            Any: The result of the function call.
 
         Raises:
             Exception: Any exception that occurs during function execution.
@@ -45,7 +49,7 @@ class FunctionCalling(Action):
         """Return a string representation of the function call.
 
         Returns:
-            A string representation of the function call.
+            str: A string representation of the function call.
         """
         return f"{self.function.__name__}({self.arguments})"
 
@@ -53,7 +57,12 @@ class FunctionCalling(Action):
         """Return a string representation of the FunctionCalling object.
 
         Returns:
-            A string representation of the FunctionCalling object.
+            str: A string representation of the FunctionCalling object.
         """
-        return (f"FunctionCalling(function={self.function.__name__}, "
-                f"arguments={self.arguments})")
+        return (
+            f"FunctionCalling(function={self.function.__name__}, "
+            f"arguments={self.arguments})"
+        )
+
+
+# File: lion_core/action/function_calling.py

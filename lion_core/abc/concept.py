@@ -1,9 +1,11 @@
+"""Core abstract base classes for the Lion framework."""
+
 from abc import ABC, abstractmethod
 from typing import Any
 
 
 class Tao(ABC):
-    """A way to existence"""
+    """A way to existence."""
 
     pass
 

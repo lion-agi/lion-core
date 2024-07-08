@@ -1,110 +1,139 @@
-"""
-Copyright 2024 HaiyangLi
+"""Defines the Tool class for callable tools with processing capabilities."""
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+import json
+from typing import Any, Callable
 
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
-from typing import Callable, Union, List, Dict, Any
 from pydantic import Field, field_serializer
-from lion_core.libs import ucall
-from lionagi.os.collections.abc import Actionable
-from lion_core.element.node import Node
-from .function_calling import FunctionCalling
+
+from lion_core.generic.component import Component
+from lion_core.libs import function_to_schema, to_list
 
 
-class Tool(Node, Actionable):
-    """
-    Class representing a Tool with capabilities for pre-processing, post-processing,
-    and parsing function results.
+class Tool(Component):
+    """Represents a callable tool with pre/post-processing capabilities.
+
+    Encapsulates a function with its metadata, schema, and processing
+    functions.
 
     Attributes:
-        function (Callable): The callable function or capability of the tool.
-        schema_ (Union[Dict, None]): Schema in OpenAI format.
-        pre_processor (Union[Callable, None]): Function to preprocess input arguments.
-        pre_processor_kwargs (Union[Dict, None]): Keyword arguments for the pre-processor.
-        post_processor (Union[Callable, None]): Function to post-process the result.
-        post_processor_kwargs (Union[Dict, None]): Keyword arguments for the post-processor.
-        parser (Union[Callable, None]): Function to parse the result to a JSON serializable format.
+        function: The callable function of the tool.
+        schema: Schema of the function in OpenAI format.
+        pre_processor: Function to preprocess input arguments.
+        pre_processor_kwargs: Keyword arguments for the pre-processor.
+        post_processor: Function to post-process the result.
+        post_processor_kwargs: Keyword arguments for the post-processor.
+        parser: Function to parse the result to JSON serializable format.
     """
 
-    function: Callable = Field(
+    function: Callable[..., Any] = Field(
         ...,
-        description="The callable function or capability of the tool.",
+        description="The callable function of the tool.",
+    )
+    schema: dict[str, Any] | None = Field(
+        default=None,
+        description="Schema of the function in OpenAI format.",
+    )
+    pre_processor: Callable[..., dict[str, Any]] | None = Field(
+        default=None,
+        description="Function to preprocess input arguments.",
+    )
+    pre_processor_kwargs: dict[str, Any] | None = Field(
+        default=None,
+        description="Keyword arguments for the pre-processor.",
+    )
+    post_processor: Callable[..., Any] | None = Field(
+        default=None,
+        description="Function to post-process the result.",
+    )
+    post_processor_kwargs: dict[str, Any] | None = Field(
+        default=None,
+        description="Keyword arguments for the post-processor.",
+    )
+    parser: Callable[[Any], Any] | None = Field(
+        default=None,
+        description="Function to parse result to JSON serializable format.",
     )
 
-    schema_: Union[Dict, None] = Field(
-        None,
-        description="Schema in OpenAI format.",
+    def __init__(self, **data):
+        """Initialize a Tool instance."""
+        super().__init__(**data)
+        if self.schema is None:
+            self.schema = function_to_schema(self.function)
+
+    @field_serializer(
+        "function",
+        "pre_processor",
+        "post_processor",
+        "parser",
+        "pre_processor_kwargs",
+        "post_processor_kwargs",
+        mode="before",
     )
-
-    pre_processor: Union[Callable, None] = None
-    pre_processor_kwargs: Union[Dict, None] = None
-
-    post_processor: Union[Callable, None] = None
-    post_processor_kwargs: Union[Dict, None] = None
-
-    parser: Union[Callable, None] = None  # Parse result to JSON serializable format
-
-    @field_serializer("function", check_fields=False)
-    def serialize_func(self, func: Callable) -> str:
-        """
-        Serialize the function for storage or transmission.
+    def serialize_field(self, v: Any) -> str | None:
+        """Serialize various fields of the Tool class.
 
         Args:
-            func (Callable): The function to serialize.
+            v: The value to serialize.
 
         Returns:
-            str: The name of the function.
+            Serialized representation of the value, or None if not applicable.
         """
-        return func.__name__
+        if callable(v):
+            return v.__name__
+        elif isinstance(v, dict):
+            return json.dumps(v)
+        return None
 
     @property
-    def name(self) -> str:
-        """
-        Get the name of the function from the schema.
+    def function_name(self) -> str:
+        """Get the name of the function from the schema.
 
         Returns:
             str: The name of the function.
         """
-        return self.schema_["function"]["name"]
-
-    async def invoke(self, kwargs: Dict = {}) -> Any:
-        """
-        Invoke the tool's function with optional pre-processing and post-processing.
-
-        Args:
-            kwargs (Dict): The arguments to pass to the function.
-
-        Returns:
-            Any: The result of the function call.
-        """
-        if self.pre_processor:
-            pre_process_kwargs = self.pre_processor_kwargs or {}
-            kwargs = await ucall(self.pre_processor(kwargs, **pre_process_kwargs))
-            if not isinstance(kwargs, dict):
-                raise ValueError("Pre-processor must return a dictionary.")
-
-        func_call_ = FunctionCalling(function=self.function, arguments=kwargs)
-        try:
-            result = await func_call_.invoke()
-        except Exception:
-            return None
-
-        if self.post_processor:
-            post_process_kwargs = self.post_processor_kwargs or {}
-            result = await ucall(self.post_processor(result, **post_process_kwargs))
-
-        return result if not self.parser else self.parser(result)
+        return self.schema["function"]["name"]
 
 
-TOOL_TYPE = Union[bool, Tool, str, List[Union[Tool, str, Dict]], Dict]
+def func_to_tool(
+    func_: Callable[..., Any] | list[Callable[..., Any]],
+    parser: Callable[[Any], Any] | list[Callable[[Any], Any]] | None = None,
+    docstring_style: str = "google",
+    **kwargs,
+) -> list[Tool]:
+    """Convert functions to Tool objects.
+
+    Args:
+        func_: The function(s) to convert into tool(s).
+        parser: Parser(s) to associate with the function(s).
+        docstring_style: The style of the docstring parser to use.
+        **kwargs: Additional keyword arguments for the Tool constructor.
+
+    Returns:
+        A list of Tool objects created from the provided function(s).
+
+    Raises:
+        ValueError: If the length of parsers doesn't match the functions.
+    """
+    funcs = to_list(func_, flatten=True, dropna=True)
+    parsers = to_list(parser, flatten=True, dropna=True)
+
+    if parser and len(funcs) != len(parsers) != 1:
+        raise ValueError(
+            "Length of parser must match length of func, "
+            "except if you only pass one."
+        )
+
+    tools = []
+    for idx, func in enumerate(funcs):
+        tool = Tool(
+            function=func,
+            schema=function_to_schema(func, style=docstring_style),
+            parser=parsers[idx] if parser and len(parsers) > 1 else parser,
+            **kwargs,
+        )
+        tools.append(tool)
+
+    return tools
+
+
+# File: lion_core/action/tool.py

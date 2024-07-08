@@ -167,7 +167,7 @@ def xml_to_dict(input_: Any) -> dict[str, Any]:
         dict[str, Any]: The dictionary representation of the XML structure.
     """
 
-    from lion_core.libs.sys_util import SysUtil
+    from lion_core.util.sys_util import SysUtil
 
     SysUtil.check_import("xmltodict")
 

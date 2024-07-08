@@ -1,7 +1,8 @@
 from typing import TypeVar, Generic
 from pydantic import Field
-from lion_core.abc.concept import Sendable
-from ..element.element import Element
+from ..abc.element import Element
+from ..communication.base import BaseMail
+from ..abc.element import Element
 from .pile import Pile, pile
 from .progression import Progression, progression
 
@@ -110,7 +111,7 @@ class Exchange(Element, Generic[T]):
                     return False
             return True
 
-    def _include(self, item: Sendable, direction) -> bool:
+    def _include(self, item: BaseMail, direction) -> bool:
         """
         Helper method to include an item in the exchange in a specified direction.
 

@@ -14,7 +14,7 @@ Helper Functions:
 """
 
 from typing import Any, Generator, Dict, List, Optional, Tuple
-from lion_core.libs.sys_util import SysUtil
+from lion_core.util.sys_util import SysUtil
 from lion_core.libs.data_handlers._to_list import to_list
 from lion_core.libs.data_handlers._to_dict import to_dict
 

@@ -9,7 +9,7 @@ Functions:
 
 import asyncio
 from typing import Any, Callable, Optional, Dict
-from lion_core.libs.sys_util import SysUtil
+from lion_core.util.sys_util import SysUtil
 from lion_core.libs.function_handlers._ucall import ucall
 
 

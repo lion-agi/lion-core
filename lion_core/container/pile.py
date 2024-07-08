@@ -1,549 +1,769 @@
-"""
-Pile Module
+from __future__ import annotations
+from collections.abc import Sequence
+from typing import Any, TypeVar, Type, Iterable, AsyncIterable, ClassVar
+import asyncio
 
-This module defines the Pile class, a collection of components with ordering and type checking.
-It provides functionality for managing, accessing, and manipulating collections of Component objects.
-"""
+from pydantic import Field, PrivateAttr
+from pydantic.config import ConfigDict
 
-from collections.abc import Iterable
-from typing import Any, Generic, Type, TypeVar, Optional, List, Dict, Union
-
-import pandas as pd
-from pydantic import Field, field_validator
-
-from lion_core.libs import to_df
-from ..abc import (
-    AbstractElement,
-    ItemNotFoundError,
-    LionTypeError,
-    LionValueError,
-    Ordering,
-    Record,
-)
-from ..element.component import Component, Element
-from ..primitive.util import get_lion_id, is_same_dtype, to_list_type, validate_order
+from lion_core.libs import to_list
+from lion_core.abc.space import Record, Ordering
+from lion_core.abc.element import Element
+from lion_core.exceptions import ItemNotFoundError, LionTypeError, LionValueError
+from lion_core.util.sys_util import SysUtil
+from lion_core.generic.component import Component
+from .util import convert_to_lion_object, PileLoader, PileLoaderRegistry
 
 T = TypeVar("T", bound=Element)
 
 
-class Pile(Element, Record, Generic[T]):
-    """
-    A collection of components with ordering and type checking.
+class Pile(Component, Record[T]):
+    """A flexible, ordered collection of Elements with nested structure support.
 
-    The Pile class extends Component and Record, providing a flexible container
-    for managing collections of Component objects. It supports type checking,
-    custom ordering, and various methods for accessing and manipulating the
-    contained items.
+    Pile provides a powerful interface for storing, retrieving, and manipulating
+    collections of Elements. It supports various access patterns, including
+    key-based, index-based, and slice-based access, as well as nested structures.
 
     Attributes:
-        use_obj (bool): Whether to use objects directly.
-        pile (Dict[str, T]): The main storage for items in the Pile.
-        item_type (Optional[Set[Type[AbstractElement]]]): Allowed types for items in the pile.
-        name (Optional[str]): Optional name for the Pile.
-        order (List[str]): List maintaining the order of items in the Pile.
+        use_obj (bool): Flag to determine if objects should be used directly.
+        _pile (dict[str, T]): The internal storage for pile items.
+        item_type (set[Type[Element]] | None): Set of allowed types for items.
+        order (list[str]): List specifying the order of items in the pile.
     """
 
-    use_obj: bool = False
-    pile: Dict[str, T] = Field(default_factory=dict)
-    item_type: Optional[set[Type[AbstractElement]]] = Field(default=None)
-    name: Optional[str] = None
-    order: List[str] = Field(default_factory=list)
+    use_obj: bool = Field(
+        default=False,
+        description="Flag to determine if objects should be used directly.",
+    )
+    _pile: dict[str, T] = PrivateAttr(default_factory=dict)
+    item_type: set[Type[Element]] | None = Field(
+        default=None, description="Set of allowed types for items in the pile."
+    )
+    order: list[str] = Field(
+        default_factory=list,
+        description="List specifying the order of items in the pile.",
+    )
+    _loaders: ClassVar[dict[str, Type["PileLoader"]]] = {}
+    model_config = ConfigDict(extra="forbid")
 
     def __init__(
         self,
-        items: Optional[Dict[str, T]] = None,
-        item_type: Optional[set[Type[AbstractElement]]] = None,
-        order: Optional[List[str]] = None,
-        use_obj: Optional[bool] = None,
+        items: Any = None,
+        item_type: set[Type[Element]] | None = None,
+        order: list[str] | None = None,
+        use_obj: bool = False,
+        **kwargs,
     ):
-        """
-        Initialize a Pile instance.
+        """Initialize a Pile instance.
 
         Args:
             items: Initial items for the pile.
             item_type: Allowed types for items in the pile.
             order: Initial order of items.
             use_obj: Whether to use objects directly.
+            **kwargs: Additional keyword arguments for the Component constructor.
 
-        Raises:
-            ValueError: If the length of the order does not match the length of the pile.
+        Example:
+            >>> from lion_core.abc.element import Element
+            >>> class MyElement(Element):
+            ...     pass
+            >>> pile = Pile({"a": MyElement(), "b": MyElement()}, item_type={MyElement})
+            >>> len(pile)
+            2
         """
-        super().__init__()
-
-        self.use_obj = use_obj or False
-        self.pile = self._validate_pile(items or {})
+        super().__init__(**kwargs)
+        self.use_obj = use_obj
+        self._pile = self._validate_pile(items or {})
         self.item_type = self._validate_item_type(item_type)
+        self.order = order or list(self._pile.keys())
 
-        order = order or list(self.pile.keys())
-        if len(order) != len(self):
-            raise ValueError(
-                "The length of the order does not match the length of the pile"
-            )
-        self.order = order
-
-    def __getitem__(self, key: Any) -> Union[T, "Pile[T]"]:
-        """
-        Get item(s) from the pile by key.
+    def __getitem__(self, key: Any) -> T | Pile[T]:
+        """Get item(s) from the pile by key, index, slice, or iterable.
 
         Args:
-            key: The key to retrieve items. Can be an index, slice, or key.
+            key: The key, index, slice, or iterable of keys/indices.
 
         Returns:
-            The item or a new Pile containing the requested items.
+            The requested item(s) or a new Pile containing the requested items.
 
         Raises:
-            ItemNotFoundError: If the key is not found in the pile.
+            ItemNotFoundError: If the key or index is not found in the pile.
+
+        Examples:
+            >>> pile = Pile({"a": Element(), "b": Element(), "c": Element()})
+            >>> pile["a"]  # Returns the element with key "a"
+            >>> pile[0]  # Returns the first element
+            >>> pile[1:3]  # Returns a new Pile with elements at index 1 and 2
+            >>> pile[["a", "c"]]  # Returns a new Pile with elements "a" and "c"
+            >>> pile[[0, 2]]  # Returns a new Pile with the first and third elements
+            >>> pile[slice(0, 2), slice(1, 3)]  # Returns a Pile of Piles for multiple slices
         """
-        try:
-            if isinstance(key, (int, slice)):
-                return self._get_by_index_or_slice(key)
-            return self._get_by_key(key)
-        except (IndexError, KeyError) as e:
-            raise ItemNotFoundError(key) from e
-
-    def _get_by_index_or_slice(self, key: Union[int, slice]) -> Union[T, "Pile[T]"]:
-        """
-        Get item(s) by index or slice.
-
-        Args:
-            key: An integer index or slice object.
-
-        Returns:
-            The item or a new Pile containing the requested items.
-        """
-        _key = self.order[key]
-        _key = [_key] if isinstance(key, int) else _key
-        _out = [self.pile.get(i) for i in _key]
-        return _out[0] if len(_out) == 1 else pile(_out, self.item_type, _key)
-
-    def _get_by_key(self, key: Any) -> Union[T, "Pile[T]"]:
-        """
-        Get item(s) by key.
-
-        Args:
-            key: A key or iterable of keys.
-
-        Returns:
-            The item or a new Pile containing the requested items.
-
-        Raises:
-            LionTypeError: If the key is not a valid LionIDable object.
-        """
-        keys = to_list_type(key)
-        keys = [item.ln_id if hasattr(item, "ln_id") else item for item in keys]
-
-        if not all(keys):
-            raise LionTypeError("Invalid item type. Expected LionIDable object(s).")
-
-        if len(keys) == 1:
-            return self.pile[keys[0]]
-        return pile([self.pile[i] for i in keys], self.item_type, keys)
-
-    def __setitem__(self, key: Any, item: Union[T, Dict[str, T]]) -> None:
-        """
-        Set item(s) in the pile.
-
-        Args:
-            key: The key to set items. Can be an index, slice, or key.
-            item: The item or items to set.
-
-        Raises:
-            ValueError: If the number of items doesn't match the key.
-        """
-        item = self._validate_pile(item)
-
         if isinstance(key, (int, slice)):
-            self._set_by_index_or_slice(key, item)
+            return self._get_by_index_or_slice(key)
+        elif isinstance(key, Iterable) and not isinstance(key, str):
+            return self._get_by_iterable(key)
         else:
-            self._set_by_key(key, item)
+            return self._get_by_key(key)
 
-    def _set_by_index_or_slice(
-        self, key: Union[int, slice], item: Dict[str, T]
-    ) -> None:
-        """
-        Set item(s) by index or slice.
-
-        Args:
-            key: An integer index or slice object.
-            item: The item or items to set.
-
-        Raises:
-            IndexError: If the index is invalid.
-            ValueError: If trying to assign multiple items to a single index.
-        """
+    def _get_by_key(self, key: Any) -> T:
+        """Get item by key."""
         try:
-            _key = self.order[key]
-        except IndexError as e:
-            raise IndexError("Invalid index") from e
+            key = SysUtil.get_lion_id(key)
+            return self._pile[key]
+        except (ValueError, KeyError):
+            raise ItemNotFoundError(f"Key {key} not found in pile.")
 
-        if isinstance(_key, str) and len(item) != 1:
-            raise ValueError("Cannot assign multiple items to a single item.")
+    def _get_by_index_or_slice(self, key: int | slice) -> T | Pile[T]:
+        """Get item(s) by index or slice."""
+        try:
+            if isinstance(key, int):
+                return self._pile[self.order[key]]
+            else:
+                _keys = self.order[key]
+                return Pile({k: self._pile[k] for k in _keys}, self.item_type, _keys)
+        except IndexError:
+            raise ItemNotFoundError(f"Index {key} out of range.")
 
-        if isinstance(_key, list) and len(item) != len(_key):
-            raise ValueError(
-                "The length of values does not match the length of the slice"
-            )
+    def _get_by_iterable(self, keys: Iterable) -> Pile[T] | Pile[Pile[T]]:
+        """Get items by iterable of keys, indices, or slices.
 
-        for k, v in item.items():
-            self._validate_item_type({k: v})
-            self.pile[k] = v
-            self.order[key] = k
-            self.pile.pop(_key)
-
-    def _set_by_key(self, key: Any, item: Dict[str, T]) -> None:
+        If there is more than one slice object in the input, this method returns
+        a Pile of Piles. Otherwise, it returns a flat Pile.
         """
-        Set item(s) by key.
+        result = {}
+        result_order = []
+        slice_count = 0
 
-        Args:
-            key: A key or iterable of keys.
-            item: The item or items to set.
-
-        Raises:
-            ValueError: If the number of keys doesn't match the number of items.
-        """
-        if len(to_list_type(key)) != len(item):
-            raise ValueError("The length of keys does not match the length of values")
-
-        self.pile.update(item)
-        self.order.extend(item.keys())
-
-    def __contains__(self, item: Any) -> bool:
-        """
-        Check if an item is in the pile.
-
-        Args:
-            item: The item to check for.
-
-        Returns:
-            True if the item is in the pile, False otherwise.
-        """
-        item = to_list_type(item)
-        for i in item:
+        for k in keys:
             try:
-                a = i if isinstance(i, str) else get_lion_id(i)
-                if a not in self.pile:
-                    return False
-            except Exception:
-                return False
-        return True
+                if isinstance(k, int):
+                    k = self.order[k]
+                    item = self._get_by_key(k)
+                elif isinstance(k, slice):
+                    item = self._get_by_index_or_slice(k)
+                    slice_count += 1
+                    k = f"slice({k.start}:{k.stop}:{k.step})"
+                else:
+                    item = self._get_by_key(k)
 
-    def pop(self, key: Any, default: Any = ...) -> Union[T, "Pile[T]", None]:
-        """
-        Remove and return an item from the pile.
+                result[k] = item
+                result_order.append(k)
+            except ItemNotFoundError:
+                continue  # Skip items that are not found
+
+        if slice_count > 1:
+            # Return a Pile of Piles for multiple slices
+            return Pile(
+                {
+                    k: (v if isinstance(v, Pile) else Pile({k: v}))
+                    for k, v in result.items()
+                },
+                item_type={Pile},
+                order=result_order,
+            )
+        else:
+            # Return a flat Pile
+            flat_result = {}
+            flat_order = []
+            for k in result_order:
+                v = result[k]
+                if isinstance(v, Pile):
+                    flat_result.update(v._pile)
+                    flat_order.extend(v.order)
+                else:
+                    flat_result[k] = v
+                    flat_order.append(k)
+            return Pile(flat_result, self.item_type, flat_order)
+
+    def __setitem__(self, key: Any, value: T | dict[str, T]) -> None:
+        """Set item(s) in the pile.
 
         Args:
-            key: The key of the item to remove.
-            default: The value to return if the key is not found.
-
-        Returns:
-            The removed item or a new Pile containing the removed items.
+            key: The key, index, slice, or iterable of keys/indices to set items.
+            value: The item or dictionary of items to set.
 
         Raises:
-            ItemNotFoundError: If the key is not found and no default is provided.
+            ValueError: If the number of items doesn't match the specified
+                        keys/indices.
+
+        Examples:
+            >>> pile = Pile()
+            >>> pile["a"] = Element()  # Sets an element with key "a"
+            >>> pile[0] = Element()  # Sets an element at the first position
+            >>> pile[1:3] = {"b": Element(), "c": Element()}  # Sets elements at positions 1 and 2
+            >>> pile[["d", "e"]] = {"d": Element(), "e": Element()}  # Sets elements with keys "d" and "e"
         """
-        key = to_list_type(key)
-        items = []
+        if isinstance(key, (int, slice)):
+            self._set_by_index_or_slice(key, value)
+        elif isinstance(key, Iterable) and not isinstance(key, str):
+            self._set_by_iterable(key, value)
+        else:
+            self._set_by_key(key, value)
 
-        for i in key:
-            if i not in self:
-                if default == ...:
-                    raise ItemNotFoundError(i)
-                return default
+    def _set_by_key(self, key: Any, value: T) -> None:
+        """Set item by key."""
+        key = SysUtil.get_lion_id(key)
+        self._pile[key] = value
+        if key not in self.order:
+            self.order.append(key)
 
-        for i in key:
-            _id = get_lion_id(i)
-            items.append(self.pile.pop(_id))
-            self.order.remove(_id)
+    def _set_by_index_or_slice(self, key: int | slice, value: T | dict[str, T]) -> None:
+        """Set item(s) by index or slice."""
+        if isinstance(key, int):
+            if key < 0:
+                key = len(self) + key
+            if key < 0 or key >= len(self):
+                raise IndexError("Pile index out of range")
+            existing_key = self.order[key]
+            if isinstance(value, dict):
+                if len(value) != 1:
+                    raise ValueError("Cannot assign multiple items to a single index")
+                new_key, new_value = next(iter(value.items()))
+            else:
+                new_key, new_value = existing_key, value
+            self._pile[new_key] = new_value
+            self.order[key] = new_key
+        else:  # slice
+            if isinstance(value, dict):
+                items = value
+            elif isinstance(value, Pile):
+                items = value._pile
+            else:
+                raise ValueError("Slice assignment expects a dict or Pile")
 
-        return pile(items) if len(items) > 1 else items[0]
+            slice_range = range(*key.indices(len(self)))
+            if len(slice_range) != len(items):
+                raise ValueError("Slice assignment length does not match value length")
 
-    def get(self, key: Any, default: Any = ...) -> Union[T, "Pile[T]", None]:
+            for i, (new_key, new_value) in zip(slice_range, items.items()):
+                self._pile[new_key] = new_value
+                if i < len(self.order):
+                    self.order[i] = new_key
+                else:
+                    self.order.append(new_key)
+
+    def _set_by_iterable(self, keys: Iterable, values: dict[str, T] | Pile[T]) -> None:
+        """Set items by iterable of keys or indices."""
+        if isinstance(values, Pile):
+            values = values._pile
+        elif not isinstance(values, dict):
+            raise ValueError("Expected a dictionary or Pile for multiple assignments")
+
+        if len(keys) != len(values):
+            raise ValueError("Number of keys does not match number of values")
+
+        for k, v in zip(keys, values.values()):
+            if isinstance(k, int):
+                self._set_by_index_or_slice(k, {next(iter(values.keys())): v})
+            else:
+                self._set_by_key(k, v)
+
+    def __len__(self) -> int:
+        """Get the number of items in the pile.
+
+        Returns:
+            The number of items in the pile.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> len(pile)
+            2
         """
-        Get an item from the pile.
+        return len(self.order)
+
+    def __iter__(self) -> Iterable[T]:
+        """Return an iterator over the items in the pile.
+
+        Yields:
+            The items in the pile in their specified order.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> for item in pile:
+            ...     print(item)  # Prints each element
+        """
+        for key in self.order:
+            yield self._pile[key]
+
+    async def __aiter__(self) -> AsyncIterable[T]:
+        """Return an async iterator over the items in the pile.
+
+        Yields:
+            The items in the pile in their specified order.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> async for item in pile:
+            ...     print(item)  # Prints each element asynchronously
+        """
+        for key in self.order:
+            yield self._pile[key]
+
+    def keys(self) -> Iterable[str]:
+        """Get the keys of the pile in their specified order.
+
+        Returns:
+            An iterable of keys in the pile.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> list(pile.keys())
+            ['a', 'b']
+        """
+        return self.order
+
+    def values(self) -> Iterable[T]:
+        """Get the values of the pile in their specified order.
+
+        Returns:
+            An iterable of values in the pile.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> list(pile.values())  # Returns [Element(), Element()]
+        """
+        return (self._pile[key] for key in self.order)
+
+    def items(self) -> Iterable[tuple[str, T]]:
+        """Get the items of the pile as (key, value) pairs in their order.
+
+        Returns:
+            An iterable of (key, value) tuples.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> list(pile.items())  # Returns [('a', Element()), ('b', Element())]
+        """
+        return ((key, self._pile[key]) for key in self.order)
+
+    def get(self, key: Any, default: Any = ...) -> T | None:
+        """Get an item from the pile with a default value if not found.
 
         Args:
             key: The key of the item to get.
-            default: The value to return if the key is not found.
+            default: The default value to return if the key is not found.
 
         Returns:
-            The item or a new Pile containing the requested items.
+            The item if found, otherwise the default value.
 
         Raises:
             ItemNotFoundError: If the key is not found and no default is provided.
+
+        Example:
+            >>> pile = Pile({"a": Element()})
+            >>> pile.get("a")  # Returns Element()
+            >>> pile.get("b", None)  # Returns None
         """
         try:
             return self[key]
-        except ItemNotFoundError as e:
-            if default == ...:
-                raise ItemNotFoundError(
-                    str(e)[:15] + ".." if len(str(e)) > 15 else str(e)
-                )
+        except ItemNotFoundError:
+            if default is ...:
+                raise
             return default
 
-    def update(self, other: Any) -> None:
-        """
-        Update the pile with items from another iterable.
+    async def aget(self, key: Any, default: Any = ...) -> T | None:
+        """Asynchronously get an item from the pile.
+
+        This method is a coroutine.
 
         Args:
-            other: The iterable to update from.
-        """
-        p = pile(other)
-        self[p] = p
-
-    def clear(self) -> None:
-        """Clear all items from the pile."""
-        self.pile.clear()
-        self.order.clear()
-
-    def include(self, item: Any) -> bool:
-        """
-        Include an item in the pile if it's not already present.
-
-        Args:
-            item: The item to include.
+            key: The key of the item to get.
+            default: The default value to return if the key is not found.
 
         Returns:
-            True if the item was included, False if it was already present.
-        """
-        item = to_list_type(item)
-        if item not in self:
-            self[item] = item
-        return item in self
+            The item if found, otherwise the default value.
 
-    def exclude(self, item: Any) -> bool:
+        Raises:
+            ItemNotFoundError: If the key is not found and no default is provided.
+
+        Example:
+            >>> pile = Pile({"a": Element()})
+            >>> await pile.aget("a")  # Returns Element()
+            >>> await pile.aget("b", None)  # Returns None
         """
-        Exclude an item from the pile if it's present.
+        return await asyncio.to_thread(self.get, key, default)
+
+    def pop(self, key: Any) -> T:
+        """Remove and return an item from the pile.
+
+        Args:
+            key: The key of the item to remove.
+
+        Returns:
+            The removed item.
+
+        Raises:
+            ItemNotFoundError: If the key is not found in the pile.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> pile.pop("a")  # Returns and removes Element()
+            >>> pile.pop("c")  # Raises ItemNotFoundError
+        """
+        try:
+            key = SysUtil.get_lion_id(key)
+            item = self._pile.pop(key)
+            self.order.remove(key)
+            return item
+        except (ValueError, KeyError):
+            raise ItemNotFoundError(f"Key {key} not found in pile.")
+
+    def pop(self, key: Any) -> T:
+        """Remove and return an item from the pile.
+
+        Args:
+            key: The key of the item to remove.
+
+        Returns:
+            The removed item.
+
+        Raises:
+            ItemNotFoundError: If the key is not found in the pile.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> pile.pop("a")  # Returns and removes Element()
+            >>> pile.pop("c")  # Raises ItemNotFoundError
+        """
+        try:
+            key = SysUtil.get_lion_id(key)
+            item = self._pile.pop(key)
+            self.order.remove(key)
+            return item
+        except (ValueError, KeyError):
+            raise ItemNotFoundError(f"Key {key} not found in pile.")
+
+    async def apop(self, key: Any) -> T:
+        """Asynchronously remove and return an item from the pile.
+
+        This method is a coroutine.
+
+        Args:
+            key: The key of the item to remove.
+
+        Returns:
+            The removed item.
+
+        Raises:
+            ItemNotFoundError: If the key is not found in the pile.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> await pile.apop("a")  # Returns and removes Element()
+            >>> await pile.apop("c")  # Raises ItemNotFoundError
+        """
+        return await asyncio.to_thread(self.pop, key)
+
+    def remove(self, item: T) -> None:
+        """Remove an item from the pile.
+
+        Args:
+            item: The item to remove.
+
+        Raises:
+            ItemNotFoundError: If the item is not found in the pile.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> element = pile["a"]
+            >>> pile.remove(element)  # Removes the element
+            >>> pile.remove(element)  # Raises ItemNotFoundError
+        """
+        key = SysUtil.get_lion_id(item)
+        if key in self._pile:
+            del self._pile[key]
+            self.order.remove(key)
+        else:
+            raise ItemNotFoundError(f"Item {key} not found in pile.")
+
+    async def aremove(self, item: T) -> None:
+        """Asynchronously remove an item from the pile.
+
+        This method is a coroutine.
+
+        Args:
+            item: The item to remove.
+
+        Raises:
+            ItemNotFoundError: If the item is not found in the pile.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> element = pile["a"]
+            >>> await pile.aremove(element)  # Removes the element
+            >>> await pile.aremove(element)  # Raises ItemNotFoundError
+        """
+        await asyncio.to_thread(self.remove, item)
+
+    def exclude(self, item: T) -> bool:
+        """Exclude an item from the pile.
 
         Args:
             item: The item to exclude.
 
         Returns:
-            True if the item was excluded, False if it wasn't present.
-        """
-        item = to_list_type(item)
-        for i in item:
-            if item in self:
-                self.pop(i)
-        return item not in self
+            True if the item was not in the pile or was successfully removed,
+            False if an error occurred during removal.
 
-    def is_homogenous(self) -> bool:
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> element = pile["a"]
+            >>> pile.exclude(element)  # Returns True
+            >>> pile.exclude(Element())  # Returns True (item wasn't in pile)
         """
-        Check if all items in the pile are of the same type.
+        key = SysUtil.get_lion_id(item)
+        if key not in self._pile:
+            return True
+        try:
+            del self._pile[key]
+            self.order.remove(key)
+            return True
+        except Exception:
+            return False
+
+    async def aexclude(self, item: T) -> bool:
+        """Asynchronously exclude an item from the pile.
+
+        This method is a coroutine.
+
+        Args:
+            item: The item to exclude.
 
         Returns:
-            True if all items are of the same type, False otherwise.
+            True if the item was not in the pile or was successfully removed,
+            False if an error occurred during removal.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> element = pile["a"]
+            >>> await pile.aexclude(element)  # Returns True
+            >>> await pile.aexclude(Element())  # Returns True (item wasn't in pile)
         """
-        return len(self.pile) < 2 or all(is_same_dtype(self.pile.values()))
+        return await asyncio.to_thread(self.exclude, item)
+
+    def include(self, item: T) -> bool:
+        """Include an item in the pile.
+
+        Args:
+            item: The item to include.
+
+        Returns:
+            True if the item was already in the pile or was successfully added,
+            False if an error occurred during addition.
+
+        Example:
+            >>> pile = Pile()
+            >>> element = Element()
+            >>> pile.include(element)  # Returns True
+            >>> pile.include(element)  # Returns True (item was already in pile)
+        """
+        key = SysUtil.get_lion_id(item)
+        if key in self._pile:
+            return True
+        try:
+            self._pile[key] = item
+            self.order.append(key)
+            return True
+        except Exception:
+            return False
+
+    async def ainclude(self, item: T) -> bool:
+        """Asynchronously include an item in the pile.
+
+        This method is a coroutine.
+
+        Args:
+            item: The item to include.
+
+        Returns:
+            True if the item was already in the pile or was successfully added,
+            False if an error occurred during addition.
+
+        Example:
+            >>> pile = Pile()
+            >>> element = Element()
+            >>> await pile.ainclude(element)  # Returns True
+            >>> await pile.ainclude(element)  # Returns True (item was already in pile)
+        """
+        return await asyncio.to_thread(self.include, item)
+
+    def clear(self) -> None:
+        """Remove all items from the pile.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> pile.clear()
+            >>> len(pile)
+            0
+        """
+        self._pile.clear()
+        self.order.clear()
+
+    async def aclear(self) -> None:
+        """Asynchronously remove all items from the pile.
+
+        This method is a coroutine.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> await pile.aclear()
+            >>> len(pile)
+            0
+        """
+        await asyncio.to_thread(self.clear)
 
     def is_empty(self) -> bool:
-        """
-        Check if the pile is empty.
+        """Check if the pile is empty.
 
         Returns:
             True if the pile is empty, False otherwise.
-        """
-        return not self.pile
 
-    def __iter__(self):
+        Example:
+            >>> pile = Pile()
+            >>> pile.is_empty()
+            True
+            >>> pile["a"] = Element()
+            >>> pile.is_empty()
+            False
         """
-        Return an iterator over the items in the pile.
+        return len(self.order) == 0
 
-        Yields:
-            The items in the pile in their specified order.
-        """
-        return iter(self.values())
-
-    def __len__(self) -> int:
-        """
-        Get the number of items in the pile.
+    def size(self) -> int:
+        """Get the number of items in the pile.
 
         Returns:
             The number of items in the pile.
-        """
-        return len(self.pile)
 
-    def __add__(self, other: T) -> "Pile":
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> pile.size()
+            2
         """
-        Create a new Pile with the items from this pile and the other item.
+        return len(self.order)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert the Pile to a dictionary.
+
+        Returns:
+            A dictionary representation of the Pile.
+
+        Example:
+            >>> pile = Pile({"a": Element(), "b": Element()})
+            >>> pile_dict = pile.to_dict()
+            >>> isinstance(pile_dict, dict)
+            True
+        """
+        return {
+            "items": {k: v.to_dict() for k, v in self._pile.items()},
+            "item_type": (
+                [t.__name__ for t in self.item_type] if self.item_type else None
+            ),
+            "order": self.order,
+            "use_obj": self.use_obj,
+        }
+
+    @classmethod
+    def from_dict(cls: Type[Pile[T]], data: dict[str, Any]) -> Pile[T]:
+        """Create a Pile instance from a dictionary.
 
         Args:
-            other: The item to add.
+            data: A dictionary containing Pile data.
 
         Returns:
             A new Pile instance.
 
-        Raises:
-            LionValueError: If the item cannot be included in the pile.
+        Example:
+            >>> pile_data = {
+            ...     "items": {"a": {"ln_id": "a"}, "b": {"ln_id": "b"}},
+            ...     "item_type": ["Element"],
+            ...     "order": ["a", "b"],
+            ...     "use_obj": False
+            ... }
+            >>> pile = Pile.from_dict(pile_data)
+            >>> isinstance(pile, Pile)
+            True
         """
-        _copy = self.model_copy(deep=True)
-        if _copy.include(other):
-            return _copy
-        raise LionValueError("Item cannot be included in the pile.")
+        items = {}
+        for key, item_data in data.get("items", {}).items():
+            if isinstance(item_data, dict) and "lion_class" in item_data:
+                items[key] = Component.from_dict(item_data)
+            else:
+                items[key] = item_data
 
-    def __sub__(self, other) -> "Pile":
-        """
-        Create a new Pile with the items from this pile, excluding the other item.
+        item_type = None
+        if data.get("item_type"):
+            item_type = set()
+            for type_name in data["item_type"]:
+                try:
+                    type_class = SysUtil._get_class(type_name)
+                    if issubclass(type_class, Element):
+                        item_type.add(type_class)
+                    else:
+                        raise LionTypeError(f"{type_name} is not a subclass of Element")
+                except ValueError as e:
+                    raise LionTypeError(f"Unable to find class {type_name}: {e}")
+
+        return cls(
+            items=items,
+            item_type=item_type,
+            order=data.get("order"),
+            use_obj=data.get("use_obj", False),
+        )
+
+    def flatten(self, recursive: bool = True, max_depth: int = None) -> Pile[T]:
+        """Recursively flatten a nested Pile into a flat Pile.
 
         Args:
-            other: The item to exclude.
+            recursive: If True, flatten nested Piles recursively.
+            max_depth: Maximum depth to flatten. None means no limit.
 
         Returns:
-            A new Pile instance.
+            A new Pile instance with nested structures flattened.
 
-        Raises:
-            ItemNotFoundError: If the item is not in the pile.
-            LionValueError: If the item cannot be excluded from the pile.
+        Example:
+            >>> element1, element2, element3, element4 = Element(), Element(), Element(), Element()
+            >>> nested_pile = Pile({
+            ...     "a": element1,
+            ...     "b": Pile({"c": element2, "d": Pile({"e": element3})}),
+            ...     "f": element4
+            ... })
+            >>> flat_pile = nested_pile.flatten()
+            >>> list(flat_pile.keys())  # Returns ['a', 'c', 'e', 'f']
+            >>> len(flat_pile)  # Returns 4
         """
-        _copy = self.model_copy(deep=True)
-        if other not in self:
-            raise ItemNotFoundError("Item not found in the pile.")
+        flattened_items = {}
+        flattened_order = []
 
-        length = len(_copy)
-        if not _copy.exclude(other) or len(_copy) == length:
-            raise LionValueError("Item cannot be excluded from the pile.")
-        return _copy
+        def _flatten(pile: Pile, prefix: str = "", depth: int = 0):
+            for key in pile.order:
+                value = pile._pile[key]
+                if (
+                    isinstance(value, Pile)
+                    and recursive
+                    and (max_depth is None or depth < max_depth)
+                ):
+                    _flatten(value, f"{prefix}{key}.", depth + 1)
+                else:
+                    flat_key = f"{prefix}{key}"
+                    flattened_items[flat_key] = value
+                    flattened_order.append(flat_key)
 
-    def __iadd__(self, other: T) -> "Pile":
-        """
-        Add an item to this pile in-place.
-
-        Args:
-            other: The item to add.
-
-        Returns:
-            This Pile instance.
-        """
-        return self + other
-
-    def __isub__(self, other) -> "Pile":
-        """
-        Remove an item from this pile in-place.
-
-        Args:
-            other: The item to remove.
-
-        Returns:
-            This Pile instance.
-        """
-        return self - other
-
-    def __radd__(self, other: T) -> "Pile":
-        """
-        Add this pile to another item, creating a new Pile.
-
-        Args:
-            other: The item to add this pile to.
-
-        Returns:
-            A new Pile instance.
-        """
-        return other + self
-
-    def size(self) -> int:
-        """
-        Get the total size of the pile.
-
-        Returns:
-            The sum of the lengths of all items in the pile.
-        """
-        return sum(len(i) for i in self)
-
-    def insert(self, index: int, item: T) -> None:
-        """
-        Insert an item at a specific index in the pile.
-
-        Args:
-            index: The index at which to insert the item.
-            item: The item to insert.
-
-        Raises:
-            ValueError: If the index is not an integer.
-        """
-        if not isinstance(index, int):
-            raise ValueError("Index must be an integer for pile insertion.")
-        item = self._validate_pile(item)
-        for k, v in item.items():
-            self.order.insert(index, k)
-            self.pile[k] = v
-
-    def append(self, item: T) -> None:
-        """
-        Append an item to the end of the pile.
-
-        Args:
-            item: The item to append.
-        """
-        self.pile[item.ln_id] = item
-        self.order.append(item.ln_id)
-
-    def keys(self) -> List[str]:
-        """
-        Get the keys of the pile in their specified order.
-
-        Returns:
-            An iterator over the keys of the pile.
-        """
-        return self.order
-
-    def values(self) -> Iterable[T]:
-        """
-        Get the values of the pile in their specified order.
-
-        Yields:
-            The values of the pile in order.
-        """
-        yield from (self.pile.get(i) for i in self.order)
-
-    def items(self) -> Iterable[tuple[str, T]]:
-        """
-        Get the items of the pile as (key, value) pairs in their specified order.
-
-        Yields:
-            Tuples of (key, value) for each item in the pile.
-        """
-        yield from ((i, self.pile.get(i)) for i in self.order)
-
-    @field_validator("order", mode="before")
-    def _validate_order(cls, value):
-        """
-        Validate the order of items in the pile.
-
-        Args:
-            value: The order to validate.
-
-        Returns:
-            The validated order.
-
-        Raises:
-            ValueError: If the order is invalid.
-        """
-        return validate_order(value)
+        _flatten(self)
+        return Pile(flattened_items, item_type=self.item_type, order=flattened_order)
 
     def _validate_item_type(
-        self, value: Optional[set[Type[AbstractElement]]]
-    ) -> Optional[set[Type[AbstractElement]]]:
-        """
-        Validate the item type for the pile.
-
-        Args:
-            value: The item type to validate.
-
-        Returns:
-            The validated item type as a set.
-
-        Raises:
-            LionTypeError: If the item type is not a subclass of AbstractElement.
-            LionValueError: If there are duplicate item types.
-        """
+        self, value: set[Type[Element]] | None
+    ) -> set[Type[Element]] | None:
+        """Validate and convert the item_type field."""
         if value is None:
             return None
 
-        value = to_list_type(value)
+        value = SysUtil.to_list(value)
 
         for i in value:
-            if not isinstance(i, type) or not issubclass(i, AbstractElement):
+            if not isinstance(i, type) or not issubclass(i, Element):
                 raise LionTypeError(
-                    "Invalid item type. Expected a subclass of AbstractElement."
+                    "Invalid item type. Expected a subclass of Element."
                 )
 
         if len(value) != len(set(value)):
@@ -551,22 +771,10 @@ class Pile(Element, Record, Generic[T]):
 
         return set(value) if value else None
 
-    def _validate_pile(self, value: Any) -> Dict[str, T]:
-        """
-        Validate the items to be added to the pile.
-
-        Args:
-            value: The item or items to validate.
-
-        Returns:
-            A dictionary of validated items.
-
-        Raises:
-            LionTypeError: If an item doesn't match the specified item_type.
-            LionValueError: If the value is invalid for the pile.
-        """
+    def _validate_pile(self, value: Any) -> dict[str, T]:
+        """Validate and convert the items to be added to the pile."""
         if value == {}:
-            return value
+            return {}
 
         if isinstance(value, Element):
             return {value.ln_id: value}
@@ -577,7 +785,7 @@ class Pile(Element, Record, Generic[T]):
             if isinstance(value[0], (Record, Ordering)):
                 return {getattr(i, "ln_id"): i for i in value}
 
-        value = to_list_type(value)
+        value = to_list(value, flatten=True, dropna=True)
         if self.item_type is not None:
             for i in value:
                 if not isinstance(i, tuple(self.item_type)):
@@ -600,110 +808,149 @@ class Pile(Element, Record, Generic[T]):
 
         raise LionValueError("Invalid pile value")
 
-    def to_df(self) -> pd.DataFrame:
-        """
-        Convert the pile to a pandas DataFrame.
-
-        Returns:
-            A pandas DataFrame representation of the pile.
-        """
-        dicts_ = []
-        for i in self.values():
-            _dict = i.to_dict()
-            if _dict.get("embedding", None):
-                _dict["embedding"] = str(_dict.get("embedding"))
-            dicts_.append(_dict)
-        return to_df(dicts_)
-
-    def to_csv(self, file_name: str, **kwargs) -> None:
-        """
-        Save the pile to a CSV file.
-
-        Args:
-            file_name: The name of the file to save to.
-            **kwargs: Additional keyword arguments to pass to pandas to_csv method.
-        """
-        self.to_df().to_csv(file_name, index=False, **kwargs)
+    @classmethod
+    def register_loader(cls, key: str, loader: Type["PileLoader"]) -> None:
+        """Register a PileLoader for a specific key."""
+        cls._loaders[key] = loader
 
     @classmethod
-    def from_csv(cls, file_name: str, **kwargs) -> "Pile[T]":
+    def get_loader(cls, key: str) -> Type["PileLoader"]:
+        """Get a registered PileLoader by key."""
+        if key not in cls._loaders:
+            raise KeyError(f"No loader registered for key: {key}")
+        return cls._loaders[key]
+
+    @classmethod
+    def load(cls, data: Any, loader_key: str | None = None) -> "Pile":
         """
-        Create a Pile instance from a CSV file.
+        Load a Pile from the given data using the specified loader.
+
+        If no loader_key is provided, it attempts to use a suitable
+        registered loader or falls back to from_dict.
 
         Args:
-            file_name: The name of the CSV file to read from.
-            **kwargs: Additional keyword arguments to pass to pandas read_csv method.
+            data: The data to load into a Pile.
+            loader_key: Optional key to specify which loader to use.
 
         Returns:
-            A new Pile instance containing the items from the CSV file.
-        """
-        df = pd.read_csv(file_name, **kwargs)
-        items = [Component.from_dict(i) for _, i in df.iterrows()]
-        return cls(items)
+            A new Pile instance.
 
-    def __list__(self) -> List[T]:
+        Raises:
+            LionValueError: If the specified loader can't handle the data.
+            LionTypeError: If no suitable loader is found for the data.
         """
-        Convert the pile to a list.
+        if loader_key:
+            loader = cls.get_loader(loader_key)
+            if loader.can_load(data):
+                return loader.load(data)
+            raise LionValueError(f"Loader {loader_key} cannot load the provided data")
 
-        Returns:
-            A list of all values in the pile.
-        """
-        return list(self.pile.values())
+        # Try registered loaders
+        for loader in cls._loaders.values():
+            if loader.can_load(data):
+                return loader.load(data)
 
-    def __str__(self) -> str:
-        """
-        Get a string representation of the pile.
+        # Fallback to from_dict if data is a dict
+        if isinstance(data, dict):
+            return cls.from_dict(data)
 
-        Returns:
-            A string representation of the pile's DataFrame.
-        """
-        return str(self.to_df())
+        # If data is iterable, convert items to Lion objects
+        if isinstance(data, (list, tuple, set)):
+            items = {
+                f"item_{i}": convert_to_lion_object(item) for i, item in enumerate(data)
+            }
+            return cls(items)
 
-    def __repr__(self) -> str:
-        """
-        Get a detailed string representation of the pile.
-
-        Returns:
-            A detailed string representation of the pile's DataFrame.
-        """
-        return repr(self.to_df())
+        raise LionTypeError(
+            f"No suitable loader found for the provided data type: {type(data)}"
+        )
 
 
 def pile(
-    items: Optional[Iterable[T]] = None,
-    item_type: Optional[set[Type]] = None,
-    order: Optional[List[str]] = None,
-    use_obj: Optional[bool] = None,
-    csv_file: Optional[str] = None,
-    df: Optional[pd.DataFrame] = None,
-    **kwargs,
-) -> Pile[T]:
+    data: Any = None,
+    loader: PileLoader | str | None = None,
+    registry: PileLoaderRegistry | None = None,
+    item_type: Type[Element] | set[Type[Element]] | None = None,
+    order: list[str] | None = None,
+    use_obj: bool = False,
+) -> "Pile[T]":
     """
-    Create a Pile instance with various input options.
+    Create a Pile instance from various sources.
 
-    This function provides a flexible way to create a Pile instance from
-    different types of input data.
+    This function provides a flexible way to create a Pile, supporting
+    different input types and various ways to specify loaders.
 
     Args:
-        items: Initial items for the pile.
-        item_type: Allowed types for items in the pile.
-        order: Initial order of items.
-        use_obj: Whether to use objects directly.
-        csv_file: Path to a CSV file to create the pile from.
-        df: Pandas DataFrame to create the pile from.
-        **kwargs: Additional keyword arguments to pass to Pile constructor or CSV reader.
+        data: The data to load into the Pile. Can be None, a dictionary,
+              an iterable, or any type supported by the provided loader.
+        loader: Optional PileLoader object or a string key for a loader.
+        registry: Optional PileLoaderRegistry to use or register.
+        item_type: Optional type or set of types allowed for items in the Pile.
+        order: Optional list specifying the order of items in the Pile.
+        use_obj: Flag to determine if objects should be used directly.
 
     Returns:
         A new Pile instance.
 
     Raises:
-        ValueError: If multiple input sources are provided simultaneously.
-    """
-    if sum(x is not None for x in (items, csv_file, df)) > 1:
-        raise ValueError("Only one of items, csv_file, or df should be provided.")
+        LionValueError: If the provided loader can't handle the data.
+        LionTypeError: If the data type is not supported.
+        KeyError: If a loader key is provided but not found in the registry.
 
-    if csv_file:
-        return Pile.from_csv(csv_file, **kwargs)
-    if df is not None:
-        return Pile.from_df(df)
-    return Pile(items, item_type, order, use_obj)
+    Examples:
+        >>> pile()  # Creates an empty Pile
+        >>> pile({"a": Element(), "b": Element()})  # Creates a Pile from a dict
+        >>> pile([Element(), Element()])  # Creates a Pile from a list
+        >>> pile(data=my_dataframe, loader=DataFrameLoader())  # Uses a custom loader
+        >>> pile(data=my_dataframe, loader="dataframe")  # Uses a registered loader
+        >>> pile(data=my_data, registry=my_registry)  # Uses a custom registry
+    """
+    from .pile import Pile  # Local import to avoid circular dependency
+
+    if data is None:
+        return Pile(item_type=item_type, order=order, use_obj=use_obj)
+
+    # Handle registry
+    if registry is not None:
+        Pile._loaders.update(registry._loaders)
+
+    # Handle loader
+    if isinstance(loader, str):
+        if registry is not None and loader in registry._loaders:
+            loader_obj = registry._loaders[loader]
+        elif loader in Pile._loaders:
+            loader_obj = Pile._loaders[loader]
+        else:
+            raise KeyError(
+                f"Loader key '{loader}' not found in registry or Pile loaders"
+            )
+        Pile.register_loader(loader, loader_obj)
+    elif isinstance(loader, PileLoader):
+        loader_obj = loader
+        # Generate a unique key for this loader if not already registered
+        loader_key = next(
+            (k for k, v in Pile._loaders.items() if v == loader_obj), None
+        )
+        if loader_key is None:
+            loader_key = f"loader_{len(Pile._loaders)}"
+        Pile.register_loader(loader_key, loader_obj)
+    else:
+        loader_obj = None
+
+    # Load data
+    if loader_obj is not None:
+        if loader_obj.can_load(data):
+            loaded_data = loader_obj.from_obj(data)
+        else:
+            raise LionValueError("Provided loader cannot load the given data")
+    elif isinstance(data, (dict, list, tuple, set)):
+        loaded_data = data
+    else:
+        # If no loader provided and data is not a standard container,
+        # treat it as a single item
+        loaded_data = [data]
+
+    return Pile(loaded_data, item_type=item_type, order=order, use_obj=use_obj)
+
+
+# File: lion_core/container/pile.py

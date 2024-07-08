@@ -1,61 +1,62 @@
+"""System utility module for the Lion framework."""
+
+from __future__ import annotations
+from collections.abc import Sequence
+from typing import Any, Type
+from pathlib import Path
 import os
 import copy
 import sys
 import subprocess
 import importlib
+import importlib.metadata
 import platform
-from pathlib import Path
 import re
-
-from hashlib import sha256
 import random
+from functools import lru_cache
+from hashlib import sha256
 from datetime import datetime, timezone
 import logging
-from typing import Any
+
+from ..exceptions import LionIDError
 
 
 class SysUtil:
+    """Utility class providing various system-related functionalities."""
 
     @staticmethod
     def time(
         tz: timezone = timezone.utc,
-        type_: str = "timestamp",  # timestamp, datetime
+        type_: str = "timestamp",
         iso: bool = False,
-        sep: str = ...,
-        timespec: str = ...,
-    ):
-
-        match type_:
-            case "timestamp":
-                return datetime.now(tz=tz).timestamp()
-            case "datetime":
-                if iso:
-                    return datetime.now(tz=tz).isoformat(sep=sep, timespec=timespec)
-                return datetime.now(tz=tz)
+        sep: str | None = None,
+        timespec: str | None = None,
+    ) -> float | str | datetime:
+        """Get current time in various formats."""
+        now = datetime.now(tz=tz)
+        if type_ == "timestamp":
+            return now.timestamp()
+        if iso:
+            return now.isoformat(sep=sep, timespec=timespec)
+        return now
 
     @staticmethod
-    def copy(
-        obj: Any,
-        deep: bool = True,
-        num: int = 1,
-    ):
-        def _copy():
-            if deep:
-                return copy.deepcopy(obj)
-            return copy.copy(obj)
-
-        return [_copy() for _ in range(num)] if num > 1 else _copy()
+    def copy(obj: Any, deep: bool = True, num: int = 1) -> Any:
+        """Create one or more copies of an object."""
+        copy_func = copy.deepcopy if deep else copy.copy
+        return [copy_func(obj) for _ in range(num)] if num > 1 else copy_func(obj)
 
     @staticmethod
     def id(
-        n: int = 32,  # the number of characters to be generated
-        prefix: str = None,  # the prefix of the generated id
-        postfix: str = None,  # the postfix of the generated id
-        random_hyphen: bool = False,  # whether to insert random hyphens
-        num_hyphens: int = None,  # the number of hyphens to insert
-        hyphen_start_index: int = None,  # the index where the hyphens can start being inserted
-        hyphen_end_index: int = None,  # the index where the hyphens need to stop being inserted
-    ):
+        n: int = 32,
+        prefix: str | None = None,
+        postfix: str | None = None,
+        random_hyphen: bool = False,
+        num_hyphens: int | None = None,
+        hyphen_start_index: int | None = None,
+        hyphen_end_index: int | None = None,
+    ) -> str:
+        """Generate a unique identifier."""
         _t = SysUtil.time(type_="datetime", iso=True).encode()
         _r = os.urandom(16)
         _id = sha256(_t + _r).hexdigest()[:n]
@@ -69,47 +70,28 @@ class SysUtil:
             )
 
         if prefix:
-            _id = prefix + _id
-
+            _id = f"{prefix}{_id}"
         if postfix:
-            _id = _id + postfix
+            _id = f"{_id}{postfix}"
 
         return _id
 
     @staticmethod
     def get_cpu_architecture() -> str:
-        """Returns a string identifying the CPU architecture.
-
-        This method categorizes some architectures as 'apple_silicon'.
-
-        Returns:
-                str: A string identifying the CPU architecture ('apple_silicon' or 'other_cpu').
-        """
+        """Get the CPU architecture."""
         arch: str = platform.machine().lower()
         return "apple_silicon" if "arm" in arch or "aarch64" in arch else "other_cpu"
 
     @staticmethod
     def install_import(
         package_name: str,
-        module_name: str = None,
-        import_name: str = None,
-        pip_name: str = None,
+        module_name: str | None = None,
+        import_name: str | None = None,
+        pip_name: str | None = None,
     ) -> None:
-        """Attempts to import a package, installing it with pip if not found.
-
-        This method tries to import a specified module or attribute. If the import fails, it attempts
-        to install the package using pip and then retries the import.
-
-        Args:
-                package_name: The base name of the package to import.
-                module_name: The submodule name to import from the package, if applicable. Defaults to None.
-                import_name: The specific name to import from the module or package. Defaults to None.
-                pip_name: The pip package name if different from `package_name`. Defaults to None.
-
-        Prints a message indicating success or attempts installation if the import fails.
-        """
-        pip_name: str = pip_name or package_name
-        full_import_path: str = (
+        """Attempt to import a package, installing it if not found."""
+        pip_name = pip_name or package_name
+        full_import_path = (
             f"{package_name}.{module_name}" if module_name else package_name
         )
 
@@ -121,12 +103,8 @@ class SysUtil:
                 __import__(full_import_path)
             print(f"Successfully imported {import_name or full_import_path}.")
         except ImportError:
-            print(
-                f"Module {full_import_path} or attribute {import_name} not found. Installing {pip_name}..."
-            )
+            print(f"Installing {pip_name}...")
             subprocess.check_call([sys.executable, "-m", "pip", "install", pip_name])
-
-            # Retry the import after installation
             if import_name:
                 module = __import__(full_import_path, fromlist=[import_name])
                 getattr(module, import_name)
@@ -135,20 +113,13 @@ class SysUtil:
 
     @staticmethod
     def import_module(module_path: str):
+        """Import a module by its path."""
         return importlib.import_module(module_path)
 
     @staticmethod
     def is_package_installed(package_name: str) -> bool:
-        """Checks if a package is currently installed.
-
-        Args:
-                package_name: The name of the package to check.
-
-        Returns:
-                A boolean indicating whether the package is installed.
-        """
-        package_spec = importlib.util.find_spec(package_name)
-        return package_spec is not None
+        """Check if a package is installed."""
+        return importlib.util.find_spec(package_name) is not None
 
     @staticmethod
     def check_import(
@@ -159,22 +130,9 @@ class SysUtil:
         attempt_install: bool = True,
         error_message: str = "",
     ) -> None:
-        """Checks if a package is installed; if not, attempts to install and import it.
-
-        This method first checks if a package is installed using `is_package_installed`. If not found,
-        it attempts to install the package using `install_import` and then retries the import.
-
-        Args:
-                package_name: The name of the package to check and potentially install.
-                module_name: The submodule name to import from the package, if applicable. Defaults to None.
-                import_name: The specific name to import from the module or package. Defaults to None.
-                pip_name: The pip package name if different from `package_name`. Defaults to None.
-                attempt_install: If attempt to install the package if uninstalled. Defaults to True.
-                error_message: Error message when the package is not installed and not attempt to install.
-        """
+        """Check if a package is installed, attempt to install if not."""
         try:
             if not SysUtil.is_package_installed(package_name):
-                # print("check")
                 if attempt_install:
                     logging.info(
                         f"Package {package_name} not found. Attempting to install."
@@ -187,13 +145,13 @@ class SysUtil:
                     raise ImportError(
                         f"Package {package_name} not found. {error_message}"
                     )
-        except ImportError as e:  # More specific exception handling
+        except ImportError as e:
             logging.error(f"Failed to import {package_name}. Error: {e}")
             raise ValueError(f"Failed to import {package_name}. Error: {e}") from e
 
     @staticmethod
-    def list_installed_packages() -> list:
-        """list all installed packages using importlib.metadata."""
+    def list_installed_packages() -> list[str]:
+        """List all installed packages."""
         return [dist.metadata["Name"] for dist in importlib.metadata.distributions()]
 
     @staticmethod
@@ -226,9 +184,9 @@ class SysUtil:
         dir_exist_ok: bool = True,
         time_prefix: bool = False,
         timestamp_format: str | None = None,
-        random_hash_digits=0,
+        random_hash_digits: int = 0,
     ) -> Path:
-
+        """Generate a new file path with optional timestamp and random hash."""
         directory = Path(directory)
         if not re.match(r"^[\w,\s-]+\.[A-Za-z]{1,5}$", filename):
             raise ValueError(
@@ -261,12 +219,12 @@ class SysUtil:
 
     @staticmethod
     def _insert_random_hyphens(
-        s: str,  # the string to insert hyphens into
-        num_hyphens: int = 1,  # the number of hyphens to insert
-        start_index: int = None,  # where the hyphens can start being inserted
-        end_index: int = None,  # where the hyphens need to stop being inserted
+        s: str,
+        num_hyphens: int = 1,
+        start_index: int | None = None,
+        end_index: int | None = None,
     ) -> str:
-
+        """Insert random hyphens into a string."""
         if len(s) < 2:
             return s
 
@@ -274,18 +232,62 @@ class SysUtil:
         postfix = s[end_index:] if end_index else ""
         modifiable_part = s[start_index:end_index] if start_index else s
 
-        # Determine positions to insert the hyphens
         positions = random.sample(range(len(modifiable_part)), num_hyphens)
         positions.sort()
 
-        # Insert hyphens at the chosen positions
         for pos in reversed(positions):
             modifiable_part = modifiable_part[:pos] + "-" + modifiable_part[pos:]
 
-        # Combine the unmodifiable prefix with the modified part
         return prefix + modifiable_part + postfix
 
     @staticmethod
-    def _get_cpu_architecture() -> str:
-        arch: str = platform.machine().lower()
-        return "apple_silicon" if "arm" in arch or "aarch64" in arch else "other_cpu"
+    def get_lion_id(item: Any) -> str:
+        """Get the Lion ID of an item."""
+        if isinstance(item, Sequence) and len(item) == 1:
+            item = item[0]
+        if isinstance(item, str) and len(item) == 32:
+            return item
+        if getattr(item, "ln_id", None) is not None:
+            return item.ln_id
+        raise LionIDError("Item must contain a lion id.")
+
+    @staticmethod
+    def is_same_dtype(
+        input_: list | dict, dtype: Type | None = None, return_dtype: bool = False
+    ) -> bool | tuple[bool, Type]:
+        """Check if all elements in input have the same data type."""
+        if not input_:
+            return True if not return_dtype else (True, None)
+
+        iterable = input_.values() if isinstance(input_, dict) else input_
+        first_element_type = type(next(iter(iterable), None))
+
+        dtype = dtype or first_element_type
+        result = all(isinstance(element, dtype) for element in iterable)
+        return (result, dtype) if return_dtype else result
+
+    @staticmethod
+    @lru_cache
+    def mor(class_name: str) -> type:
+        """
+        Module Object Registry function for dynamic class loading.
+
+        This function attempts to find and return a class based on its name.
+        It searches through all loaded modules in sys.modules.
+
+        Args:
+            class_name: The name of the class to find.
+
+        Returns:
+            The requested class.
+
+        Raises:
+            ValueError: If the class is not found in any loaded module.
+        """
+        for module_name, module in sys.modules.items():
+            if hasattr(module, class_name):
+                return getattr(module, class_name)
+        raise ValueError(f"Class '{class_name}' not found in any loaded module")
+
+
+# File: lion_core/util/sysutil.py

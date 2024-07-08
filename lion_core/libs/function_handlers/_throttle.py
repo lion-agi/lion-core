@@ -13,7 +13,7 @@ import time
 import asyncio
 import functools
 from typing import Any, Callable, Union
-from lion_core.libs.sys_util import SysUtil
+from lion_core.util.sys_util import SysUtil
 
 
 class Throttle:

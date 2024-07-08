@@ -14,25 +14,23 @@ Functions:
 from __future__ import annotations
 
 import contextlib
-from typing import Any, Iterator, Tuple
+from typing import Any, Iterator
 
 from pydantic import Field, field_validator
 
-from lion_core.libs import SysUtil
-from ..abc import Ordering, ItemNotFoundError, AbstractElement
-from ..primitive.util import validate_order, get_lion_id
+from lion_core.util.sys_util import SysUtil
+from lion_core.abc.space import Ordering
+from lion_core.abc.element import Element
+from lion_core.exceptions import ItemNotFoundError
+from .util import validate_order
 
 
-class Progression(AbstractElement, Ordering):
+class Progression(Element, Ordering):
     """A collection of ordered items with various manipulation methods.
 
-    This class provides functionality for managing, accessing, and modifying
-    ordered sequences of items. It supports various operations such as
-    appending, extending, removing, and accessing items by index or slice.
-
-    Attributes:
-        name (str | None): The name of the progression.
-        order (list[str]): The ordered list of item IDs in the progression.
+    Provides functionality for managing, accessing, and modifying ordered
+    sequences of items. Supports operations such as appending, extending,
+    removing, and accessing items by index or slice.
     """
 
     name: str | None = Field(
@@ -52,21 +50,14 @@ class Progression(AbstractElement, Ordering):
         return validate_order(value)
 
     def __contains__(self, item: Any) -> bool:
-        """Check if an item or items are in the progression.
-
-        Args:
-            item: The item or items to check for.
-
-        Returns:
-            True if the item(s) are in the progression, False otherwise.
-        """
+        """Check if item(s) are in the progression."""
         if not item:
             return False
         if isinstance(item, Progression):
             return all(i in self.order for i in item.order)
         if (
-            isinstance(item, (AbstractElement, str))
-            and len(a := get_lion_id(item)) == 32
+            isinstance(item, (Element, str))
+            and len(a := SysUtil.get_lion_id(item)) == 32
         ):
             return a in self.order
         item = self._validate_order(item)
@@ -84,10 +75,9 @@ class Progression(AbstractElement, Ordering):
         """Get the values of the progression."""
         yield from self.order
 
-    def items(self) -> Iterator[Tuple[int, str]]:
+    def items(self) -> Iterator[tuple[int, str]]:
         """Get the items of the progression as (index, value) pairs."""
-        for idx, item in enumerate(self.order):
-            yield idx, item
+        yield from enumerate(self.order)
 
     def size(self) -> int:
         """Get the size of the progression."""
@@ -98,20 +88,12 @@ class Progression(AbstractElement, Ordering):
         return self.model_copy()
 
     def append(self, item: Any) -> None:
-        """Append an item to the end of the progression.
-
-        Args:
-            item: The item to append.
-        """
-        id_ = get_lion_id(item)
+        """Append an item to the end of the progression."""
+        id_ = SysUtil.get_lion_id(item)
         self.order.append(id_)
 
     def extend(self, item: Progression | Any) -> None:
-        """Extend the progression from the right with item(s).
-
-        Args:
-            item: The item(s) to extend the progression with.
-        """
+        """Extend the progression from the right with item(s)."""
         if isinstance(item, Progression):
             self.order.extend(item.order)
             return
@@ -123,9 +105,6 @@ class Progression(AbstractElement, Ordering):
 
         If the item is not already in the progression, it will be added.
 
-        Args:
-            item: The item(s) to include.
-
         Returns:
             True if the item(s) were included, False if already present.
         """
@@ -134,17 +113,7 @@ class Progression(AbstractElement, Ordering):
         return item in self
 
     def __getitem__(self, key: int | slice) -> str | Progression:
-        """Get an item or slice of items from the progression.
-
-        Args:
-            key: The index or slice to retrieve.
-
-        Returns:
-            The item(s) at the specified index or slice.
-
-        Raises:
-            ItemNotFoundError: If the index is out of range.
-        """
+        """Get an item or slice of items from the progression."""
         with contextlib.suppress(IndexError):
             a = self.order[key]
             if isinstance(a, list) and len(a) > 1:
@@ -156,14 +125,7 @@ class Progression(AbstractElement, Ordering):
         raise ItemNotFoundError(f"index {key}")
 
     def remove(self, item: Any) -> None:
-        """Remove the next occurrence of an item from the progression.
-
-        Args:
-            item: The item to remove.
-
-        Raises:
-            ItemNotFoundError: If the item is not found in the progression.
-        """
+        """Remove the next occurrence of an item from the progression."""
         if item in self:
             item = self._validate_order(item)
             l_ = SysUtil.copy(self.order)
@@ -181,31 +143,14 @@ class Progression(AbstractElement, Ordering):
         return self.order
 
     def popleft(self) -> str:
-        """Remove and return the leftmost item from the progression.
-
-        Returns:
-            The leftmost item.
-
-        Raises:
-            ItemNotFoundError: If the progression is empty.
-        """
+        """Remove and return the leftmost item from the progression."""
         try:
             return self.order.pop(0)
         except IndexError as e:
             raise ItemNotFoundError("None") from e
 
     def pop(self, index: int | None = None) -> str:
-        """Remove and return an item from the progression.
-
-        Args:
-            index: The index of the item to remove. If None, removes the last.
-
-        Returns:
-            The removed item.
-
-        Raises:
-            ItemNotFoundError: If index is out of range or progression is empty.
-        """
+        """Remove and return an item from the progression."""
         try:
             return self.order.pop(index)
         except IndexError as e:
@@ -214,8 +159,7 @@ class Progression(AbstractElement, Ordering):
     def exclude(self, item: int | Any) -> bool:
         """Exclude an item or items from the progression.
 
-        Args:
-            item: The item(s) to exclude. If int, excludes that many from left.
+        If item is int, excludes that many items from the left.
 
         Returns:
             True if the item(s) were excluded, False otherwise.
@@ -239,77 +183,37 @@ class Progression(AbstractElement, Ordering):
         return a not in self
 
     def __add__(self, other: Any) -> Progression:
-        """Add an item or items to the end of the progression.
-
-        Args:
-            other: The item(s) to add.
-
-        Returns:
-            A new Progression instance with the added item(s).
-        """
+        """Add an item or items to the end of the progression."""
         _copy = self.copy()
         _copy.include(other)
         return _copy
 
     def __radd__(self, other: Any) -> Progression:
-        """Add this progression to another item or progression.
-
-        Args:
-            other: The item or progression to add this progression to.
-
-        Returns:
-            A new Progression instance with the combined items.
-        """
+        """Add this progression to another item or progression."""
         if not isinstance(other, Progression):
             _copy = self.copy()
             l_ = SysUtil.copy(_copy.order)
-            l_.insert(0, get_lion_id(other))
+            l_.insert(0, SysUtil.get_lion_id(other))
             _copy.order = l_
             return _copy
 
         return other + self
 
     def __setitem__(self, key: int | slice, value: Any) -> None:
-        """Set an item or slice of items in the progression.
-
-        Args:
-            key: The index or slice to set.
-            value: The value(s) to set.
-        """
+        """Set an item or slice of items in the progression."""
         a = self._validate_order(value)
         self.order[key] = a
 
     def __iadd__(self, other: Any) -> Progression:
-        """Add an item or items to the end of the progression in-place.
-
-        Args:
-            other: The item(s) to add.
-
-        Returns:
-            This Progression instance with the added item(s).
-        """
+        """Add an item or items to the end of the progression in-place."""
         return self + other
 
     def __isub__(self, other: Any) -> Progression:
-        """Remove an item or items from the beginning of the progression.
-
-        Args:
-            other: The item(s) to remove.
-
-        Returns:
-            This Progression instance with the item(s) removed.
-        """
+        """Remove an item or items from the beginning of the progression."""
         return self - other
 
     def __sub__(self, other: Any) -> Progression:
-        """Remove an item or items from the progression.
-
-        Args:
-            other: The item(s) to remove.
-
-        Returns:
-            A new Progression instance with the item(s) removed.
-        """
+        """Remove an item or items from the progression."""
         _copy = self.copy()
         _copy.remove(other)
         return _copy
@@ -339,11 +243,7 @@ class Progression(AbstractElement, Ordering):
         self.order = []
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert the progression to a dictionary.
-
-        Returns:
-            A dictionary representation of the progression.
-        """
+        """Convert the progression to a dictionary."""
         return {
             "ln_id": self.ln_id,
             "created": self.timestamp,
@@ -356,14 +256,7 @@ class Progression(AbstractElement, Ordering):
         return True
 
     def __eq__(self, other: object) -> bool:
-        """Compare two Progression instances for equality.
-
-        Args:
-            other: The object to compare with.
-
-        Returns:
-            True if the progressions are equal, False otherwise.
-        """
+        """Compare two Progression instances for equality."""
         if not isinstance(other, Progression):
             return NotImplemented
         return self.order == other.order and self.name == other.name
@@ -384,3 +277,6 @@ def progression(order: list[str] | None = None, name: str | None = None) -> Prog
         A new Progression instance.
     """
     return Progression(order=order, name=name)
+
+
+# File: lion_core/container/progression.py
