@@ -1,4 +1,2 @@
 pydantic >= 2.2.0
-pandas
 # qutip
-# networkx

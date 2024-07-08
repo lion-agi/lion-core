@@ -1,4 +1,4 @@
-from lion_core.abc.concept import Element
+from lion_core.abc.element import Element
 
 
 class BaseLog(Element):

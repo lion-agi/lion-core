@@ -103,6 +103,7 @@ class BaseHyperEdge(Component):
         return sum(len(node_set) for node_set in self.nodes.values())
 
 
+# ponder on it
 class DirectedMixin:
     """Mixin for directed hyperedges.
 
@@ -142,38 +143,38 @@ class DirectedMixin:
         raise ValueError(f"Node {node_id} not found in the hyperedge.")
 
 
-class WeightedMixin:
-    """Mixin for weighted hyperedges.
+# class WeightedMixin:
+#     """Mixin for weighted hyperedges.
 
-    This mixin adds weight-related methods to a hyperedge.
-    """
+#     This mixin adds weight-related methods to a hyperedge.
+#     """
 
-    weights: Dict[str, float] = Field(
-        default_factory=dict,
-        description="Dictionary of node weights.",
-    )
+#     weights: Dict[str, float] = Field(
+#         default_factory=dict,
+#         description="Dictionary of node weights.",
+#     )
 
-    def set_weight(self, node: Any, weight: float) -> None:
-        """Set the weight for a node in the hyperedge.
+#     def set_weight(self, node: Any, weight: float) -> None:
+#         """Set the weight for a node in the hyperedge.
 
-        Args:
-            node: The node to set the weight for.
-            weight: The weight to set.
-        """
-        node_id = SysUtil.get_lion_id(node)
-        self.weights[node_id] = weight
+#         Args:
+#             node: The node to set the weight for.
+#             weight: The weight to set.
+#         """
+#         node_id = SysUtil.get_lion_id(node)
+#         self.weights[node_id] = weight
 
-    def get_weight(self, node: Any) -> float:
-        """Get the weight of a node in the hyperedge.
+#     def get_weight(self, node: Any) -> float:
+#         """Get the weight of a node in the hyperedge.
 
-        Args:
-            node: The node to get the weight for.
+#         Args:
+#             node: The node to get the weight for.
 
-        Returns:
-            The weight of the node, or 1.0 if not set.
-        """
-        node_id = SysUtil.get_lion_id(node)
-        return self.weights.get(node_id, 1.0)
+#         Returns:
+#             The weight of the node, or 1.0 if not set.
+#         """
+#         node_id = SysUtil.get_lion_id(node)
+#         return self.weights.get(node_id, 1.0)
 
 
 # File: lion_core/generic/base_hyper_edge.py

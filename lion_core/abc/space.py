@@ -9,19 +9,15 @@ from .element import Element
 T = TypeVar("T", bound=Element)
 
 
-class Container(Element, AbstractSpace):
+class Container(AbstractSpace):
     """A container that is both an element and an abstract space."""
-
-    pass
 
 
 class Ordering(Container):
     """A container with a defined order."""
 
-    pass
 
-
-class Record(Container, Generic[T], ABC):
+class Collective(Container, Generic[T], ABC):
     """
     An abstract base class for record-like structures in the Lion framework.
 
@@ -171,7 +167,7 @@ class Record(Container, Generic[T], ABC):
         pass
 
     @abstractmethod
-    def copy(self) -> "Record[T]":
+    def copy(self) -> "Collective[T]":
         """
         Create a shallow copy of the record.
 

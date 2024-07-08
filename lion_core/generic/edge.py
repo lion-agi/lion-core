@@ -14,6 +14,7 @@ from pydantic import Field, field_validator, BaseModel, ConfigDict
 from .component import Component
 from lion_core.abc.event import Condition
 from ..util.sys_util import SysUtil
+from .base_hyper_edge import DirectedMixin
 from .hyper_edge import HyperEdge
 
 
@@ -30,20 +31,21 @@ class Edge(HyperEdge):
         tail (str): The identifier of the tail node of the edge.
     """
 
-    head: str = Field(..., description="The identifier of the head node of the edge.")
-    tail: str = Field(..., description="The identifier of the tail node of the edge.")
+    # need correcting
+    # # head: str = Field(..., description="The identifier of the head node of the edge.")
+    # # tail: str = Field(..., description="The identifier of the tail node of the edge.")
 
-    def __init__(self, head: Any, tail: Any, **data: Any):
-        """Initialize an Edge instance.
+    # def __init__(self, head: Any, tail: Any, **data: Any):
+    #     """Initialize an Edge instance.
 
-        Args:
-            head (Any): The head node of the edge.
-            tail (Any): The tail node of the edge.
-            **data: Additional keyword arguments for other attributes.
-        """
-        super().__init__([head, tail], **data)
-        self.head = SysUtil.get_lion_id(head)
-        self.tail = SysUtil.get_lion_id(tail)
+    #     Args:
+    #         head (Any): The head node of the edge.
+    #         tail (Any): The tail node of the edge.
+    #         **data: Additional keyword arguments for other attributes.
+    #     """
+    #     super().__init__([head, tail], **data)
+    #     self.head = SysUtil.get_lion_id(head)
+    #     self.tail = SysUtil.get_lion_id(tail)
 
     @field_validator("head", "tail", mode="before")
     @classmethod

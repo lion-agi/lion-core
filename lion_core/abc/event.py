@@ -1,10 +1,10 @@
 """Abstract event classes for the Lion framework."""
 
 from abc import abstractmethod
-from .concept import AbstractEvent
+from .concept import AbstractElement
 
 
-class Event(AbstractEvent):
+class Event(AbstractElement):
     """Base class for concrete events."""
 
     pass

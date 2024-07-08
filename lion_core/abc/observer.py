@@ -4,29 +4,32 @@ from abc import ABC, abstractmethod
 from .concept import AbstractObserver
 
 
-class Manager(AbstractObserver, ABC):
+class Manager(AbstractObserver):
     """Abstract base class for managers."""
 
-    pass
 
-
-class BaseAgent(AbstractObserver, ABC):
+class BaseAgent(Manager):
     """Abstract base class for agents."""
 
-    pass
 
-
-class BaseWorker(AbstractObserver, ABC):
+class BaseWorker(Manager):
     """Abstract base class for workers."""
-
-    pass
 
 
 class BaseExecutor(AbstractObserver):
     """Abstract base class for executors."""
 
     @abstractmethod
-    async def execute(self, *args, **kwargs):
+    async def forward(self, *args, **kwargs):
+        """Execute the observer's task."""
+        pass
+
+
+class BaseProcessor(AbstractObserver):
+    """Abstract base class for executors."""
+
+    @abstractmethod
+    async def process(self, *args, **kwargs):
         """Execute the observer's task."""
         pass
 

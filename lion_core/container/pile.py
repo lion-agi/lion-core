@@ -7,7 +7,7 @@ from pydantic import Field, PrivateAttr
 from pydantic.config import ConfigDict
 
 from lion_core.libs import to_list
-from lion_core.abc.space import Record, Ordering
+from lion_core.abc.space import Collective, Ordering
 from lion_core.abc.element import Element
 from lion_core.exceptions import ItemNotFoundError, LionTypeError, LionValueError
 from lion_core.util.sys_util import SysUtil
@@ -17,7 +17,7 @@ from .util import convert_to_lion_object, PileLoader, PileLoaderRegistry
 T = TypeVar("T", bound=Element)
 
 
-class Pile(Component, Record[T]):
+class Pile(Component, Collective[T]):
     """A flexible, ordered collection of Elements with nested structure support.
 
     Pile provides a powerful interface for storing, retrieving, and manipulating
@@ -782,7 +782,7 @@ class Pile(Component, Record[T]):
         if self.use_obj:
             if not isinstance(value, list):
                 value = [value]
-            if isinstance(value[0], (Record, Ordering)):
+            if isinstance(value[0], (Collective, Ordering)):
                 return {getattr(i, "ln_id"): i for i in value}
 
         value = to_list(value, flatten=True, dropna=True)

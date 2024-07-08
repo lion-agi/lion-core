@@ -48,6 +48,14 @@ class Component(Element):
         default_factory=dict,
         description="Additional metadata for the component",
     )
+
+    content: Any = Field(
+        default=None,
+        description="The main content of the Element",
+    )
+
+    embedding: list = Field(default_factory=list)
+
     _extra_fields: dict[str, Any] = PrivateAttr(default_factory=dict)
 
     _class_registry: ClassVar[dict[str, Type[Component]]] = {}
@@ -85,139 +93,141 @@ class Component(Element):
         except ValueError as e:
             raise ValueError(f"Unable to find class {class_name}: {e}")
 
-    @classmethod
-    def from_obj(cls: Type[T], obj: Any, converter_key: str) -> T:
-        """Create a Component instance from any object using a converter.
+    # Refactor to use converter
 
-        Args:
-            obj: The object to convert.
-            converter_key: The key for the converter to use.
+    # @classmethod
+    # def from_obj(cls: Type[T], obj: Any, converter_key: str) -> T:
+    #     """Create a Component instance from any object using a converter.
 
-        Returns:
-            An instance of the Component class or its subclass.
-        """
-        dict_data = convert_from(obj, converter_key)
-        return cls.from_dict(dict_data)
+    #     Args:
+    #         obj: The object to convert.
+    #         converter_key: The key for the converter to use.
 
-    @classmethod
-    def from_dict(
-        cls: Type[T],
-        data: dict[str, Any],
-        validation_config: dict[str, Any] = {},
-        **kwargs,
-    ) -> T:
-        """Create a Component or its subclass instance from a dictionary.
+    #     Returns:
+    #         An instance of the Component class or its subclass.
+    #     """
+    #     dict_data = convert_from(obj, converter_key)
+    #     return cls.from_dict(dict_data)
 
-        This method overrides Element's from_dict to handle additional
-        attributes specific to Component.
+    # @classmethod
+    # def from_dict(
+    #     cls: Type[T],
+    #     data: dict[str, Any],
+    #     validation_config: dict[str, Any] = {},
+    #     **kwargs,
+    # ) -> T:
+    #     """Create a Component or its subclass instance from a dictionary.
 
-        Args:
-            data: The dictionary to create the instance from.
-            validation_config: Configuration for validation.
-            **kwargs: Additional keyword arguments.
+    #     This method overrides Element's from_dict to handle additional
+    #     attributes specific to Component.
 
-        Returns:
-            An instance of the Component class or its subclass.
+    #     Args:
+    #         data: The dictionary to create the instance from.
+    #         validation_config: Configuration for validation.
+    #         **kwargs: Additional keyword arguments.
 
-        Raises:
-            ValueError: If the dictionary is invalid for deserialization.
-        """
-        try:
-            # Combine input data with additional kwargs
-            combined_data = {**data, **kwargs}
+    #     Returns:
+    #         An instance of the Component class or its subclass.
 
-            # Extract the class name and remove it from the data
-            lion_class = combined_data.pop("lion_class", cls.__name__)
+    #     Raises:
+    #         ValueError: If the dictionary is invalid for deserialization.
+    #     """
+    #     try:
+    #         # Combine input data with additional kwargs
+    #         combined_data = {**data, **kwargs}
 
-            # Extract Component-specific data
-            metadata = combined_data.pop("metadata", {})
-            content = combined_data.pop("content", None)
-            extra_fields = combined_data.pop("extra_fields", {})
+    #         # Extract the class name and remove it from the data
+    #         lion_class = combined_data.pop("lion_class", cls.__name__)
 
-            # Get the appropriate class
-            target_class = cls._get_class(lion_class)
+    #         # Extract Component-specific data
+    #         metadata = combined_data.pop("metadata", {})
+    #         content = combined_data.pop("content", None)
+    #         extra_fields = combined_data.pop("extra_fields", {})
 
-            # Use Element's from_dict for base attributes
-            base_instance = super().from_dict(combined_data)
+    #         # Get the appropriate class
+    #         target_class = cls._get_class(lion_class)
 
-            # Create the instance using the target class
-            instance = target_class(
-                **base_instance.model_dump(),
-                metadata=metadata,
-                content=content,
-            )
+    #         # Use Element's from_dict for base attributes
+    #         base_instance = super().from_dict(combined_data)
 
-            # Add extra fields
-            for name, value in extra_fields.items():
-                if isinstance(value, dict):
-                    instance.add_field(name, FieldInfo(**value))
-                else:
-                    instance.add_field(name, FieldInfo(default=value))
+    #         # Create the instance using the target class
+    #         instance = target_class(
+    #             **base_instance.model_dump(),
+    #             metadata=metadata,
+    #             content=content,
+    #         )
 
-            # Perform any additional validation
-            return target_class.model_validate(
-                instance.model_dump(), **validation_config
-            )
-        except ValidationError as e:
-            raise ValueError("Invalid dictionary for deserialization.") from e
+    #         # Add extra fields
+    #         for name, value in extra_fields.items():
+    #             if isinstance(value, dict):
+    #                 instance.add_field(name, FieldInfo(**value))
+    #             else:
+    #                 instance.add_field(name, FieldInfo(default=value))
 
-    @model_validator(mode="before")
-    @classmethod
-    def _process_generic_dict(cls, data: Any) -> Any:
-        """Process input data before model validation.
+    #         # Perform any additional validation
+    #         return target_class.model_validate(
+    #             instance.model_dump(), **validation_config
+    #         )
+    #     except ValidationError as e:
+    #         raise ValueError("Invalid dictionary for deserialization.") from e
 
-        Args:
-            data: The input data to process.
+    # @model_validator(mode="before")
+    # @classmethod
+    # def _process_generic_dict(cls, data: Any) -> Any:
+    #     """Process input data before model validation.
 
-        Returns:
-            The processed data.
-        """
-        if not isinstance(data, dict):
-            return data
+    #     Args:
+    #         data: The input data to process.
 
-        meta_ = data.pop("metadata", {})
-        extra_fields = data.pop("extra_fields", {})
+    #     Returns:
+    #         The processed data.
+    #     """
+    #     if not isinstance(data, dict):
+    #         return data
 
-        for key in list(data.keys()):
-            if key not in BASE_LION_FIELDS and key not in cls.model_fields:
-                extra_fields[key] = data.pop(key)
+    #     meta_ = data.pop("metadata", {})
+    #     extra_fields = data.pop("extra_fields", {})
 
-        if not data.get("content", None):
-            for field in ["data", "text", "page_content", "chunk_content"]:
-                if field in extra_fields:
-                    data["content"] = extra_fields.pop(field)
-                    break
+    #     for key in list(data.keys()):
+    #         if key not in BASE_LION_FIELDS and key not in cls.model_fields:
+    #             extra_fields[key] = data.pop(key)
 
-        data["metadata"] = meta_
-        data["_extra_fields"] = extra_fields
-        return data
+    #     if not data.get("content", None):
+    #         for field in ["data", "text", "page_content", "chunk_content"]:
+    #             if field in extra_fields:
+    #                 data["content"] = extra_fields.pop(field)
+    #                 break
 
-    def to_obj(self, converter_key: str) -> Any:
-        """Convert this Component instance to another object type.
+    #     data["metadata"] = meta_
+    #     data["_extra_fields"] = extra_fields
+    #     return data
 
-        Args:
-            converter_key: The key for the converter to use.
+    # def to_obj(self, converter_key: str) -> Any:
+    #     """Convert this Component instance to another object type.
 
-        Returns:
-            The converted object.
-        """
-        return convert_to(self, converter_key)
+    #     Args:
+    #         converter_key: The key for the converter to use.
 
-    def to_dict(self, **kwargs) -> dict[str, Any]:
-        """Convert the component to a dictionary.
+    #     Returns:
+    #         The converted object.
+    #     """
+    #     return convert_to(self, converter_key)
 
-        Args:
-            **kwargs: Additional keyword arguments for model_dump.
+    # def to_dict(self, **kwargs) -> dict[str, Any]:
+    #     """Convert the component to a dictionary.
 
-        Returns:
-            A dictionary representation of the component.
-        """
-        dict_ = super().to_dict(**kwargs)
-        dict_["extra_fields"] = {
-            k: v.model_dump() if isinstance(v, FieldInfo) else v
-            for k, v in self._extra_fields.items()
-        }
-        return dict_
+    #     Args:
+    #         **kwargs: Additional keyword arguments for model_dump.
+
+    #     Returns:
+    #         A dictionary representation of the component.
+    #     """
+    #     dict_ = super().to_dict(**kwargs)
+    #     dict_["extra_fields"] = {
+    #         k: v.model_dump() if isinstance(v, FieldInfo) else v
+    #         for k, v in self._extra_fields.items()
+    #     }
+    #     return dict_
 
     @field_serializer("metadata")
     def serialize_dict(self, value: dict[str, Any], _info) -> dict[str, Any]:
