@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple
-import pandas as pd
+
+# import pandas as pd
 from .util import Part
 
 
@@ -33,7 +34,7 @@ def validate_table(part: Part) -> Tuple[bool, bool]:
 
 def create_table_part(
     part: Part,
-    table: pd.DataFrame,
+    table,
     node_id: Optional[str],
     page_number: Optional[int],
     idx: int,
@@ -82,7 +83,3 @@ def merge_consecutive_text_parts(parts: List[Part]) -> List[Part]:
         else:
             merged_parts.append(part)
     return merged_parts
-
-
-def markdown_to_dataframe(md: str) -> pd.DataFrame:
-    return pd.read_csv(pd.compat.StringIO(md), sep="|", engine="python")

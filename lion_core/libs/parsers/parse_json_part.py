@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple
-import pandas as pd
+
+# import pandas as pd
 from .util import Part
 
 

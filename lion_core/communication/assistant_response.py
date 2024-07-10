@@ -24,10 +24,6 @@ class AssistantResponse(RoledMessage):
 
     Inherits from `RoledMessage` and provides attributes specific to assistant responses.
 
-    Attributes:
-        assistant_response (Any): The content of the assistant's response.
-        sender (str): The sender of the response.
-        recipient (str): The recipient of the response.
     """
 
     def __init__(

@@ -1,10 +1,10 @@
 """Abstract space classes for the Lion framework."""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Iterable, TypeVar, Generic
 
-from .concept import AbstractSpace
-from .element import Element
+from ..abc.concept import AbstractSpace
+from ..abc.element import Element
 
 T = TypeVar("T", bound=Element)
 
@@ -17,7 +17,7 @@ class Ordering(Container):
     """A container with a defined order."""
 
 
-class Collective(Container, Generic[T], ABC):
+class Collective(Container, Generic[T]):
     """
     An abstract base class for record-like structures in the Lion framework.
 
@@ -51,16 +51,6 @@ class Collective(Container, Generic[T], ABC):
         pass
 
     @abstractmethod
-    def __delitem__(self, key: Any) -> None:
-        """
-        Remove an item or items from the record.
-
-        Args:
-            key: The key or index of the item(s) to remove.
-        """
-        pass
-
-    @abstractmethod
     def __len__(self) -> int:
         """
         Get the number of items in the record.
@@ -78,19 +68,7 @@ class Collective(Container, Generic[T], ABC):
         Yields:
             Items in the record.
         """
-        pass
 
-    @abstractmethod
-    def __contains__(self, item: Any) -> bool:
-        """
-        Check if an item is in the record.
-
-        Args:
-            item: The item to check for.
-
-        Returns:
-            True if the item is in the record, False otherwise.
-        """
         pass
 
     @abstractmethod
@@ -235,4 +213,4 @@ class Collective(Container, Generic[T], ABC):
         return not self.is_empty()
 
 
-# File: lion_core/abc/space.py
+# File: lion_core/container/base.py

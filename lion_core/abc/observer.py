@@ -1,6 +1,6 @@
 """Abstract observer classes for the Lion framework."""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from .concept import AbstractObserver
 
 
@@ -8,12 +8,12 @@ class Manager(AbstractObserver):
     """Abstract base class for managers."""
 
 
-class BaseAgent(Manager):
-    """Abstract base class for agents."""
-
-
-class BaseWorker(Manager):
-    """Abstract base class for workers."""
+# class BaseAgent(Manager):
+#     """Abstract base class for agents."""
+#
+#
+# class BaseWorker(Manager):
+#     """Abstract base class for workers."""
 
 
 class BaseExecutor(AbstractObserver):

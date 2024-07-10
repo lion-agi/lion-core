@@ -103,3 +103,6 @@ class Edge(HyperEdge):
             f"label={self.label!r}, condition={self.condition!r}, "
             f"metadata={self.metadata}, content={self.content!r})"
         )
+
+
+# File: lion_core/generic/edge.py

@@ -1,6 +1,8 @@
 from enum import Enum
-from ..mail.mail import Field, BaseMail
-from ..node.node import Node
+from pydantic import Field
+from .mail import BaseMail
+from lion_core.generic.node import Node
+from lion_core.abc.element import Element
 
 
 # Enums for defining message fields and roles
