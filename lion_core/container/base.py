@@ -68,19 +68,7 @@ class Collective(Container, Generic[T], ABC):
         Yields:
             Items in the record.
         """
-        pass
 
-    @abstractmethod
-    def __contains__(self, item: Any) -> bool:
-        """
-        Check if an item is in the record.
-
-        Args:
-            item: The item to check for.
-
-        Returns:
-            True if the item is in the record, False otherwise.
-        """
         pass
 
     @abstractmethod

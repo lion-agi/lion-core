@@ -37,8 +37,7 @@ class SysUtil:
         if type_ == "timestamp":
             return now.timestamp()
         if iso:
-            return (now.isoformat(sep=sep, timespec=timespec) 
-                    if sep else now.isoformat())
+            return now.isoformat(sep=sep, timespec=timespec) if sep else now.isoformat()
         return now
 
     @staticmethod

@@ -1,50 +1,71 @@
 """
-Core Element class for the Lion framework.
+Module defining the core Element class for the Lion framework.
 
-Defines the Element class, serving as a base for all elements in the
-framework. Extends AbstractElement and uses Pydantic's BaseModel for
-data validation and serialization.
+This module contains the Element class, which serves as the foundation
+for all objects within the Lion framework. It provides essential
+attributes and methods for identification, timestamping, and dynamic
+class management.
 
-Classes:
-    Element: Base class for all elements in the Lion framework.
+The Element class is designed to be extensible and integrates with
+Pydantic for robust data validation and serialization.
+
+Key components:
+- Element: The base class for all Lion framework objects.
+- LION_CLASS_REGISTRY: Global registry for Element subclasses.
+
+Usage:
+    from lion_core.abc.element import Element
+
+    class MyCustomElement(Element):
+        # Custom attributes and methods
+
+    instance = MyCustomElement()
 """
 
 from __future__ import annotations
 
-from datetime import datetime, time
-from typing import Any, TypeVar, ClassVar, Type
+from datetime import time
+from typing import Any
 
-from pydantic import Field, BaseModel, ConfigDict, AliasChoices
+from pydantic import BaseModel, ConfigDict, Field, AliasChoices
 
-from ..settings import LION_ID_CONFIG
-from ..util.sys_util import SysUtil
-from .concept import AbstractElement
-from .characteristic import Observable, Temporal
-
-
-T = TypeVar("T", bound="Element")
+from lion_core.abc.concept import AbstractElement
+from lion_core.abc.characteristic import Observable, Temporal
+from lion_core.settings import LION_ID_CONFIG
+from lion_core.util.sys_util import SysUtil
+from lion_core.util.class_registry_util import LION_CLASS_REGISTRY, get_class
 
 
 class Element(BaseModel, AbstractElement, Observable, Temporal):
-    """Base class for all elements in the Lion framework.
+    """
+    Base class for all elements in the Lion framework.
 
-    This class extends AbstractElement and incorporates Pydantic's BaseModel
-    for robust data validation and serialization. It provides a foundation
-    for creating and managing elements within the Lion framework.
+    This class provides core functionality for identification, timestamping,
+    and class registration. It integrates with Pydantic for data validation
+    and uses mixins for additional characteristics.
 
     Attributes:
-        ln_id (str): A unique identifier for the element.
-        timestamp (time): Creation timestamp of the element.
+        ln_id: A unique identifier for the element.
+        timestamp: The creation timestamp of the element.
 
-    Class Attributes:
-        model_config (ConfigDict): Configuration for the Pydantic model.
-        _class_registry (ClassVar[dict]): Registry for subclasses.
+    Class Methods:
+        __pydantic_init_subclass__: Automatically registers subclasses.
+        _get_class: Retrieves classes by name from the registry.
+        class_name: Returns the name of the class.
+
+    Usage:
+        class MyElement(Element):
+            custom_field: str
+
+        element = MyElement(custom_field="value")
+        print(element.ln_id)  # Unique identifier
+        print(element.timestamp)  # Creation time
     """
 
     ln_id: str = Field(
         default_factory=lambda: SysUtil.id(**LION_ID_CONFIG),
         title="Lion ID",
-        description="A unique identifier for the component",
+        description="A unique identifier for the element",
         frozen=True,
         validation_alias=AliasChoices("id", "id_", "ID", "ID_"),
     )
@@ -63,120 +84,63 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         use_enum_values=True,
     )
 
-    _class_registry: ClassVar[dict[str, Type[Element]]] = {}
-
     @classmethod
-    def __pydantic_init_subclass__(cls, **kwargs):
-        """Initialize subclass and register it in the class registry."""
-        super().__pydantic_init_subclass__(**kwargs)
-        cls._class_registry[cls.__name__] = cls
-
-    @classmethod
-    def _get_class(cls, class_name: str) -> Type[Element]:
+    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
         """
-        Get the class by name, using the class registry or MOR if not found.
+        Initialize and register subclasses in the global class registry.
+
+        This method is automatically called when a subclass of Element
+        is created, ensuring that all subclasses are properly registered
+        for dynamic class retrieval.
 
         Args:
-            class_name (str): The name of the class to retrieve.
+            **kwargs: Additional keyword arguments passed to the superclass.
+        """
+        super().__pydantic_init_subclass__(**kwargs)
+        LION_CLASS_REGISTRY[cls.__name__] = cls
+
+    @classmethod
+    def _get_class(cls, class_name: str) -> type[Element]:
+        """
+        Retrieve a class by name from the registry or dynamically import it.
+
+        This method uses the get_class utility function to find and return
+        the requested class, ensuring it's a subclass of Element.
+
+        Args:
+            class_name: The name of the class to retrieve.
 
         Returns:
-            Type[Element]: The requested class.
+            The requested class.
 
         Raises:
-            ValueError: If the class is not found in the registry or by MOR.
+            ValueError: If the class is not found or not a subclass of Element.
         """
-        if class_name in cls._class_registry:
-            return cls._class_registry[class_name]
-
-        try:
-            found_class = SysUtil.mor(class_name)
-            if issubclass(found_class, Element):
-                cls._class_registry[class_name] = found_class
-                return found_class
-            else:
-                raise ValueError(f"{class_name} is not a subclass of Element")
-        except ValueError as e:
-            raise ValueError(f"Unable to find class {class_name}: {e}")
-
-    # @classmethod
-    # def from_dict(
-    #     cls: Type[T],
-    #     data: dict[str, Any],
-    #     validation_config: dict[str, Any] = {},
-    #     **kwargs,
-    # ) -> T:
-    #     """Create an Element or its subclass instance from a dictionary.
-
-    #     This method creates an instance based on the 'lion_class' key in the
-    #     input dictionary. It uses the appropriate class to create the instance
-    #     and performs validation.
-
-    #     Args:
-    #         data: The dictionary to create the instance from.
-    #         validation_config: Configuration for validation.
-    #         **kwargs: Additional keyword arguments.
-
-    #     Returns:
-    #         An instance of the Element class or its subclass.
-
-    #     Raises:
-    #         ValueError: If the dictionary is invalid for deserialization.
-    #     """
-    #     try:
-    #         # Combine input data with additional kwargs
-    #         combined_data = {**data, **kwargs}
-
-    #         # Extract the class name and remove it from the data
-    #         lion_class = combined_data.pop("lion_class", cls.__name__)
-
-    #         # Get the appropriate class
-    #         target_class = cls._get_class(lion_class)
-
-    #         # Create and validate the instance
-    #         instance = target_class(**combined_data)
-    #         return target_class.model_validate(
-    #             instance.model_dump(), **validation_config
-    #         )
-    #     except Exception as e:
-    #         raise ValueError(f"Invalid data for deserialization: {e}")
+        return get_class(class_name, Element)
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name of the class.
+        """
+        Get the name of the class.
 
         Returns:
-            str: The name of the class.
+            The name of the class.
         """
         return cls.__name__
 
     def __str__(self) -> str:
-        """Return a string representation of the Element.
+        """
+        Return a string representation of the Element.
 
         Returns:
-            str: A string representation of the Element.
+            A string containing the class name, truncated ln_id,
+            and formatted timestamp.
         """
-        timestamp_str = datetime.fromtimestamp(self.timestamp).isoformat(
-            timespec="minutes"
-        )
+        timestamp_str = self.timestamp.isoformat(timespec="minutes")
         return (
             f"{self.class_name()}(ln_id={self.ln_id[:6]}.., "
             f"timestamp={timestamp_str})"
         )
-
-    # def to_dict(self, **kwargs) -> dict[str, Any]:
-    #     """Convert the Element instance to a dictionary.
-
-    #     Args:
-    #         **kwargs: Additional arguments to pass to model_dump.
-
-    #     Returns:
-    #         dict: A dictionary representation of the Element instance.
-    #     """
-    #     kwargs["by_alias"] = kwargs.get("by_alias", True)
-    #     return {
-    #         "lion_class": self.class_name(),
-    #         **self.model_dump(**kwargs),
-    #     }
 
 
 # File: lion_core/abc/element.py
