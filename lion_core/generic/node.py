@@ -203,4 +203,4 @@ class Node(Component, Relatable, Generic[T]):
         )
 
 
-# Path: lion_core/generic/node.py
+# File: lion_core/generic/node.py
