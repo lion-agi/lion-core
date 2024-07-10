@@ -225,4 +225,4 @@ class Collective(Container, Generic[T], ABC):
         return not self.is_empty()
 
 
-# File: lion_core/abc/space.py
+# File: lion_core/container/base.py
