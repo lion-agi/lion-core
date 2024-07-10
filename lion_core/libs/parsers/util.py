@@ -1,5 +1,4 @@
 from typing import Any, Dict, Optional
-import pandas as pd
 
 md_json_char_map = {"'": '\\"', "\n": "\\n", "\r": "\\r", "\t": "\\t"}
 
@@ -22,7 +21,7 @@ class Part:
         content: Any,
         title_level: Optional[int] = None,
         table_output: Optional[Any] = None,
-        table: Optional[pd.DataFrame] = None,
+        table = None,                           # pd.DataFrame
         markdown: Optional[str] = None,
         page_number: Optional[int] = None,
     ):

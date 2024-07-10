@@ -19,7 +19,7 @@ from typing import Any, Iterator
 from pydantic import Field, field_validator
 
 from lion_core.util.sys_util import SysUtil
-from lion_core.abc.space import Ordering
+from lion_core.container.base import Ordering
 from lion_core.abc.element import Element
 from lion_core.exceptions import ItemNotFoundError
 from .util import validate_order

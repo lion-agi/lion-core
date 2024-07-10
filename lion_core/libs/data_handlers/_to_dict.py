@@ -13,17 +13,13 @@ Functions:
     xml_to_dict: Converts an XML element and its children to a dictionary.
 """
 
-from collections import defaultdict
 from collections.abc import Mapping
 import json
 from typing import Any, Union
-from pandas import DataFrame, isna
-
 
 def to_dict(
     input_: Any,
     /,
-    as_list: bool = True,
     use_model_dump: bool = True,
     str_type="json",
     **kwargs: Any,
@@ -52,7 +48,6 @@ def to_dict(
         out = [
             to_dict(
                 i,
-                as_list=as_list,
                 use_model_dump=use_model_dump,
                 str_type=str_type,
                 **kwargs,
@@ -62,7 +57,6 @@ def to_dict(
     else:
         out = _to_dict(
             input_,
-            df_as_list=as_list,
             use_model_dump=use_model_dump,
             str_type=str_type,
             **kwargs,
@@ -80,7 +74,6 @@ def to_dict(
 def _to_dict(
     input_: Any,
     /,
-    df_as_list: bool = True,
     use_model_dump: bool = True,
     str_type="json",
     **kwargs: Any,
@@ -90,8 +83,6 @@ def _to_dict(
 
     Args:
         input_ (Any): The input data to convert.
-        df_as_list (bool, optional): If True, converts DataFrame rows to a
-            list of dictionaries. Defaults to True.
         use_model_dump (bool, optional): If True, use model_dump method if
             available. Defaults to True.
         **kwargs: Additional arguments to pass to conversion methods.
@@ -121,10 +112,6 @@ def _to_dict(
             return a
         raise ValueError("Input string cannot be converted into a dictionary.")
 
-    if isinstance(input_, DataFrame):
-        if df_as_list:
-            return [replace_nans(row.to_dict(**kwargs)) for _, row in input_.iterrows()]
-
     if use_model_dump and hasattr(input_, "model_dump"):
         return input_.model_dump(**kwargs)
 
@@ -141,19 +128,6 @@ def _to_dict(
         return dict(input_)
     except Exception as e:
         raise e
-
-
-def replace_nans(d: dict) -> dict:
-    """
-    Replace NaN values in a dictionary with None.
-
-    Args:
-        d (dict): The dictionary to process.
-
-    Returns:
-        dict: The processed dictionary with NaN values replaced by None.
-    """
-    return {k: (None if isna(v) else v) for k, v in d.items()}
 
 
 def xml_to_dict(input_: Any) -> dict[str, Any]:

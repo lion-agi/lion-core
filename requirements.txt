@@ -1,2 +1,2 @@
 pydantic >= 2.2.0
-# qutip
+numpy

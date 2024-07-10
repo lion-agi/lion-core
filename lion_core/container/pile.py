@@ -7,12 +7,12 @@ from pydantic import Field, PrivateAttr
 from pydantic.config import ConfigDict
 
 from lion_core.libs import to_list
-from lion_core.abc.space import Collective, Ordering
+from lion_core.container.base import Collective, Ordering
 from lion_core.abc.element import Element
 from lion_core.exceptions import ItemNotFoundError, LionTypeError, LionValueError
 from lion_core.util.sys_util import SysUtil
 from lion_core.generic.component import Component
-from .util import convert_to_lion_object, PileLoader, PileLoaderRegistry
+from .util import convert_to_lion_object, PileLoader, PileLoaderRegistry, to_list_type
 
 T = TypeVar("T", bound=Element)
 
@@ -44,7 +44,6 @@ class Pile(Component, Collective[T]):
         description="List specifying the order of items in the pile.",
     )
     _loaders: ClassVar[dict[str, Type["PileLoader"]]] = {}
-    model_config = ConfigDict(extra="forbid")
 
     def __init__(
         self,
@@ -299,6 +298,18 @@ class Pile(Component, Collective[T]):
         for key in self.order:
             yield self._pile[key]
 
+    def __contains__(self, item: Any) -> bool:
+        item = to_list_type(item)
+        for i in item:
+            try:
+                a = i if isinstance(i, str) else SysUtil.get_lion_id(i)
+                if a not in self.pile:
+                    return False
+            except Exception:
+                return False
+
+        return True
+
     def keys(self) -> Iterable[str]:
         """Get the keys of the pile in their specified order.
 
@@ -382,31 +393,6 @@ class Pile(Component, Collective[T]):
             >>> await pile.aget("b", None)  # Returns None
         """
         return await asyncio.to_thread(self.get, key, default)
-
-    def pop(self, key: Any) -> T:
-        """Remove and return an item from the pile.
-
-        Args:
-            key: The key of the item to remove.
-
-        Returns:
-            The removed item.
-
-        Raises:
-            ItemNotFoundError: If the key is not found in the pile.
-
-        Example:
-            >>> pile = Pile({"a": Element(), "b": Element()})
-            >>> pile.pop("a")  # Returns and removes Element()
-            >>> pile.pop("c")  # Raises ItemNotFoundError
-        """
-        try:
-            key = SysUtil.get_lion_id(key)
-            item = self._pile.pop(key)
-            self.order.remove(key)
-            return item
-        except (ValueError, KeyError):
-            raise ItemNotFoundError(f"Key {key} not found in pile.")
 
     def pop(self, key: Any) -> T:
         """Remove and return an item from the pile.
@@ -611,6 +597,33 @@ class Pile(Component, Collective[T]):
             0
         """
         await asyncio.to_thread(self.clear)
+
+    def update(self, other: Any):
+        """
+        Update pile with another collection of items.
+
+        Accepts `Pile` or any iterable. Provided items added to current
+        pile, overwriting existing items with same keys.
+
+        Args:
+            other: Collection to update with. Can be any LionIDable
+        """
+        p = pile(other)
+        self[p] = p
+        
+    async def aupdate(self, other: Any):
+        """
+        Asynchronously update pile with another collection of items.
+
+        This method is a coroutine.
+
+        Accepts `Pile` or any iterable. Provided items added to current
+        pile, overwriting existing items with same keys.
+
+        Args:
+            other: Collection to update with. Can be any LionIDable
+        """
+        await asyncio.to_thread(self.update, other)
 
     def is_empty(self) -> bool:
         """Check if the pile is empty.

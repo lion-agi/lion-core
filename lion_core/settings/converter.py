@@ -7,7 +7,7 @@ for managing conversions between Component objects and other types.
 
 from typing import Any, Type, Dict, Protocol
 from abc import abstractmethod
-from ..element.element import Element
+from lion_core.abc.concept import AbstractElement
 
 
 class Converter(Protocol):
@@ -21,7 +21,7 @@ class Converter(Protocol):
 
     @classmethod
     @abstractmethod
-    def to_obj(cls, component: Element) -> Any:
+    def to_obj(cls, component: AbstractElement) -> Any:
         """Convert a Component to another object type."""
         pass
 
@@ -50,7 +50,9 @@ class ConverterRegistry:
         return converter.from_obj(obj)
 
     @classmethod
-    def convert_to(cls, component: Element, key: str) -> Any:
+    def convert_to(cls, component: AbstractElement, key: str) -> Any:
         """Convert a Component to another object using the specified converter."""
         converter = cls.get(key)
         return converter.to_obj(component)
+
+

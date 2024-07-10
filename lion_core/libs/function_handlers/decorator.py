@@ -1,12 +1,11 @@
 import asyncio
 from typing import Any, Callable, List, Dict, Optional
-from functools import wraps, lru_cache
-from aiocache import cached
+from functools import wraps
 
-from lionagi.os.libs.function_handlers._throttle import Throttle
-from lionagi.os.libs.function_handlers._util import is_coroutine_func, force_async
-from lionagi.os.libs.function_handlers._ucall import ucall
-from lionagi.os.libs.function_handlers._rcall import rcall
+from ._throttle import Throttle
+from ._util import is_coroutine_func, force_async
+from ._ucall import ucall
+from ._rcall import rcall
 
 
 class CallDecorator:
@@ -204,43 +203,5 @@ class CallDecorator:
                 )
 
             return async_wrapper
-
-        return decorator
-
-    @staticmethod
-    def cache(ttl: int = 600, maxsize: int = None) -> Callable:
-        """Decorator to cache the result of a function call.
-
-        Args:
-            ttl (int): Time-to-live for the cache in seconds. Defaults to 600.
-            maxsize (int): Maximum size of the cache. Defaults to None.
-
-        Returns:
-            Callable: The decorated function.
-        """
-
-        def decorator(func: Callable) -> Callable:
-            if is_coroutine_func(func):
-
-                @cached(ttl=ttl)
-                async def cached_async(*args, **kwargs) -> Any:
-                    return await func(*args, **kwargs)
-
-                @wraps(func)
-                async def async_wrapper(*args, **kwargs) -> Any:
-                    return await cached_async(*args, **kwargs)
-
-                return async_wrapper
-            else:
-
-                @lru_cache(maxsize=maxsize)
-                def cached_sync(*args, **kwargs) -> Any:
-                    return func(*args, **kwargs)
-
-                @wraps(func)
-                def sync_wrapper(*args, **kwargs) -> Any:
-                    return cached_sync(*args, **kwargs)
-
-                return sync_wrapper
 
         return decorator

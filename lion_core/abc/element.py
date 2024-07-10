@@ -25,7 +25,7 @@ from .characteristic import Observable, Temporal
 T = TypeVar("T", bound="Element")
 
 
-class Element(AbstractElement, Observable, Temporal, BaseModel):
+class Element(BaseModel, AbstractElement, Observable, Temporal):
     """Base class for all elements in the Lion framework.
 
     This class extends AbstractElement and incorporates Pydantic's BaseModel

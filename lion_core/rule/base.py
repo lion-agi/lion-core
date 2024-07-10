@@ -16,7 +16,7 @@ limitations under the License.
 
 from abc import abstractmethod
 from typing import Any, List, Dict
-from pandas import Series
+# from pandas import Series
 from lionagi.os.lib.sys_util import get_timestamp
 
 from ..abc import FieldError, Condition, Actionable, Component
@@ -217,22 +217,22 @@ class Rule(Component, Condition, Actionable):
             "num_invoked": len(self.invoked_log),
         }
 
-    def __str__(self) -> str:
-        """
-        Returns a string representation of the rule using a pandas Series.
+    # def __str__(self) -> str:
+    #     """
+    #     Returns a string representation of the rule using a pandas Series.
 
-        Returns:
-            str: A string representation of the rule.
-        """
-        series = Series(self._to_dict())
-        return series.__str__()
+    #     Returns:
+    #         str: A string representation of the rule.
+    #     """
+    #     series = Series(self._to_dict())
+    #     return series.__str__()
 
-    def __repr__(self) -> str:
-        """
-        Returns a string representation of the rule using a pandas Series.
+    # def __repr__(self) -> str:
+    #     """
+    #     Returns a string representation of the rule using a pandas Series.
 
-        Returns:
-            str: A string representation of the rule.
-        """
-        series = Series(self._to_dict())
-        return series.__repr__()
+    #     Returns:
+    #         str: A string representation of the rule.
+    #     """
+    #     series = Series(self._to_dict())
+    #     return series.__repr__()

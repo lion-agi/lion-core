@@ -3,8 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Iterable, TypeVar, Generic
 
-from .concept import AbstractSpace
-from .element import Element
+from ..abc.concept import AbstractSpace
+from ..abc.element import Element
 
 T = TypeVar("T", bound=Element)
 
@@ -47,16 +47,6 @@ class Collective(Container, Generic[T], ABC):
         Args:
             key: The key or index to set.
             value: The value to set.
-        """
-        pass
-
-    @abstractmethod
-    def __delitem__(self, key: Any) -> None:
-        """
-        Remove an item or items from the record.
-
-        Args:
-            key: The key or index of the item(s) to remove.
         """
         pass
 
