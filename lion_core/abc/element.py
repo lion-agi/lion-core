@@ -100,25 +100,6 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         LION_CLASS_REGISTRY[cls.__name__] = cls
 
     @classmethod
-    def _get_class(cls, class_name: str) -> type[Element]:
-        """
-        Retrieve a class by name from the registry or dynamically import it.
-
-        This method uses the get_class utility function to find and return
-        the requested class, ensuring it's a subclass of Element.
-
-        Args:
-            class_name: The name of the class to retrieve.
-
-        Returns:
-            The requested class.
-
-        Raises:
-            ValueError: If the class is not found or not a subclass of Element.
-        """
-        return get_class(class_name, Element)
-
-    @classmethod
     def class_name(cls) -> str:
         """
         Get the name of the class.
