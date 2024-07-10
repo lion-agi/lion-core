@@ -1,15 +1,18 @@
 from typing import Dict, Set, List, Tuple
 from collections import defaultdict
 
+
 class RelationManager:
     def __init__(self):
         self.node_to_edges: Dict[str, Set[str]] = defaultdict(set)
-        self.edge_to_nodes: Dict[str, Dict[str, Set[str]]] = defaultdict(lambda: defaultdict(set))
+        self.edge_to_nodes: Dict[str, Dict[str, Set[str]]] = defaultdict(
+            lambda: defaultdict(set)
+        )
 
     def add_relation(self, edge_id: str, node_ids: Dict[str, Set[str]]) -> None:
         """
         Add a relation between an edge and its nodes.
-        
+
         Args:
             edge_id: The ID of the edge.
             node_ids: A dictionary with keys 'head', 'tail', or 'nodes' containing sets of node IDs.

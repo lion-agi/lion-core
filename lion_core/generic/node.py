@@ -13,11 +13,12 @@ from typing import Any, List, Dict, Optional, Union, Generic, TypeVar
 
 from pydantic import Field
 
-from lion_core.abc.concept import AbstractCondition, Relatable, LionRelationError
-from lion_core.primitive import Pile, pile, get_lion_id
+# from lion_core.abc.concept import AbstractCondition, Relatable, LionRelationError
+from lion_core.container.pile import Pile, pile, get_lion_id
 from .component import Component
 from .edge import Edge
 from .hyperedge import HyperEdge
+from lion_core.exceptions import LionRelationError
 
 T = TypeVar("T")
 

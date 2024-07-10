@@ -12,6 +12,7 @@ Functions:
 
 from collections.abc import Mapping, Iterable
 from typing import Any, Generator, List
+from pydantic import BaseModel
 
 
 def to_list(
@@ -42,7 +43,7 @@ def to_list(
         return []
 
     if not isinstance(input_, Iterable) or isinstance(
-        input_, (str, bytes, bytearray, Mapping)
+        input_, (str, bytes, bytearray, Mapping, BaseModel)
     ):
         return [input_]
 

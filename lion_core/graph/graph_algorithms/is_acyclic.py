@@ -23,7 +23,7 @@ def is_acyclic(graph: BaseGraph) -> bool:
         for edge_id in graph.relation_manager.get_node_edges(node_id):
             edge = graph.edges[edge_id]
             edge_nodes = graph.relation_manager.get_edge_nodes(edge_id)
-            
+
             if isinstance(edge, Edge):
                 neighbor = edge.tail if edge.head == node_id else edge.head
                 if neighbor in recursion_stack:

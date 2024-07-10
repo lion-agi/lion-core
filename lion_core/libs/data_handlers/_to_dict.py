@@ -17,6 +17,7 @@ from collections.abc import Mapping
 import json
 from typing import Any, Union
 
+
 def to_dict(
     input_: Any,
     /,

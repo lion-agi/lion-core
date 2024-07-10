@@ -21,7 +21,7 @@ class Part:
         content: Any,
         title_level: Optional[int] = None,
         table_output: Optional[Any] = None,
-        table = None,                           # pd.DataFrame
+        table=None,  # pd.DataFrame
         markdown: Optional[str] = None,
         page_number: Optional[int] = None,
     ):

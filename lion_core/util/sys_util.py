@@ -29,8 +29,8 @@ class SysUtil:
         tz: timezone = timezone.utc,
         type_: str = "timestamp",
         iso: bool = False,
-        sep: str | None = None,
-        timespec: str | None = None,
+        sep: str | None = "T",
+        timespec: str | None = "auto",
     ) -> float | str | datetime:
         """Get current time in various formats."""
         now = datetime.now(tz=tz)

@@ -1,6 +1,6 @@
 """Abstract space classes for the Lion framework."""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Iterable, TypeVar, Generic
 
 from ..abc.concept import AbstractSpace
@@ -17,7 +17,7 @@ class Ordering(Container):
     """A container with a defined order."""
 
 
-class Collective(Container, Generic[T], ABC):
+class Collective(Container, Generic[T]):
     """
     An abstract base class for record-like structures in the Lion framework.
 

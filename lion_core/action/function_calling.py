@@ -3,10 +3,11 @@ This module defines the FunctionCalling class, which represents a callable
 function with its arguments.
 """
 
-from typing import Any, Callable
+from typing import Any
 
-from ..abc.event import Action
-from ..libs import ucall
+from lion_core.abc.event import Action
+from lion_core.libs import ucall
+from .tool import Tool
 
 
 class FunctionCalling(Action):
@@ -17,21 +18,21 @@ class FunctionCalling(Action):
     suitable for use in event-driven scenarios.
 
     Attributes:
-        function (Callable[..., Any]): The function to be called.
+        func_tool (Callable[..., Any]): The function to be called.
         arguments (dict[str, Any]): Arguments to pass to the function.
     """
 
     def __init__(
-        self, function: Callable[..., Any], arguments: dict[str, Any] | None = None
+        self, func_tool: Tool, arguments: dict[str, Any] | None = None
     ) -> None:
         """Initialize a new instance of FunctionCalling.
 
         Args:
-            function: The function to be called.
+            func_tool: The function to be called.
             arguments: Arguments to pass to the function. Defaults to None.
         """
         super().__init__()
-        self.function: Callable[..., Any] = function
+        self.func_tool: Tool = func_tool
         self.arguments: dict[str, Any] = arguments or {}
 
     async def invoke(self) -> Any:
@@ -43,7 +44,30 @@ class FunctionCalling(Action):
         Raises:
             Exception: Any exception that occurs during function execution.
         """
-        return await ucall(self.function, **self.arguments)
+        kwargs = self.arguments
+        if self.func_tool.pre_processor:
+            kwargs = await ucall(
+                self.func_tool.pre_processor,
+                self.arguments,
+                **self.func_tool.pre_process_kwargs,
+            )
+            if not isinstance(kwargs, dict):
+                raise ValueError("Pre-processor must return a dictionary.")
+
+        try:
+            result = await ucall(self.func_tool.function, **kwargs)
+        except Exception:
+            raise
+
+        if self.func_tool.post_processor:
+            post_process_kwargs = self.func_tool.post_processor_kwargs or {}
+            result = await ucall(
+                self.func_tool.post_processor, result, **post_process_kwargs
+            )
+
+        return (
+            result if self.func_tool.parser is None else self.func_tool.parser(result)
+        )
 
     def __str__(self) -> str:
         """Return a string representation of the function call.
@@ -51,7 +75,7 @@ class FunctionCalling(Action):
         Returns:
             str: A string representation of the function call.
         """
-        return f"{self.function.__name__}({self.arguments})"
+        return f"{self.func_tool.function_name}({self.arguments})"
 
     def __repr__(self) -> str:
         """Return a string representation of the FunctionCalling object.
@@ -60,7 +84,7 @@ class FunctionCalling(Action):
             str: A string representation of the FunctionCalling object.
         """
         return (
-            f"FunctionCalling(function={self.function.__name__}, "
+            f"FunctionCalling(function={self.func_tool.function_name.__name__}, "
             f"arguments={self.arguments})"
         )
 

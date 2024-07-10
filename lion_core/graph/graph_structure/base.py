@@ -46,7 +46,7 @@ class BaseGraph(Node):
         label: str | None = None,
         directed: bool = False,
         weighted: bool = False,
-        **kwargs
+        **kwargs,
     ) -> Edge | HyperEdge:
         """
         Add an edge or hyperedge between nodes in the graph.
@@ -72,19 +72,29 @@ class BaseGraph(Node):
 
         if len(nodes) == 2:
             edge = Edge(
-                head=nodes[0], tail=nodes[1], condition=condition,
-                label=label, directed=directed, weighted=weighted, **kwargs
+                head=nodes[0],
+                tail=nodes[1],
+                condition=condition,
+                label=label,
+                directed=directed,
+                weighted=weighted,
+                **kwargs,
             )
             node_dict = (
-                {'head': {edge.head}, 'tail': {edge.tail}} if directed
-                else {'nodes': set(node_ids)}
+                {"head": {edge.head}, "tail": {edge.tail}}
+                if directed
+                else {"nodes": set(node_ids)}
             )
         else:
             edge = HyperEdge(
-                nodes=nodes, directed=directed, weighted=weighted,
-                condition=condition, label=label, **kwargs
+                nodes=nodes,
+                directed=directed,
+                weighted=weighted,
+                condition=condition,
+                label=label,
+                **kwargs,
             )
-            node_dict = edge.nodes if directed else {'nodes': set(node_ids)}
+            node_dict = edge.nodes if directed else {"nodes": set(node_ids)}
 
         self.edges[edge.ln_id] = edge
         for node in nodes:
@@ -135,7 +145,7 @@ class BaseGraph(Node):
         self,
         node: Node | str,
         edge_type: type | None = None,
-        label: str | Sequence[str] | None = None
+        label: str | Sequence[str] | None = None,
     ) -> list[Edge | HyperEdge]:
         """
         Get the edges of a node, optionally filtered by type and label.
@@ -194,12 +204,18 @@ class BaseGraph(Node):
             for edge_id in self.relation_manager.get_node_edges(node_id):
                 edge = self.edges[edge_id]
                 edge_nodes = self.relation_manager.get_edge_nodes(edge_id)
-                if (isinstance(edge, Edge) and edge.directed and
-                    node_id in edge_nodes['tail']):
+                if (
+                    isinstance(edge, Edge)
+                    and edge.directed
+                    and node_id in edge_nodes["tail"]
+                ):
                     is_head = False
                     break
-                elif (isinstance(edge, HyperEdge) and edge.directed and
-                      node_id in edge_nodes.get('tail', set())):
+                elif (
+                    isinstance(edge, HyperEdge)
+                    and edge.directed
+                    and node_id in edge_nodes.get("tail", set())
+                ):
                     is_head = False
                     break
             if is_head and not isinstance(node, Actionable):

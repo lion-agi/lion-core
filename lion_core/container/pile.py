@@ -610,7 +610,7 @@ class Pile(Component, Collective[T]):
         """
         p = pile(other)
         self[p] = p
-        
+
     async def aupdate(self, other: Any):
         """
         Asynchronously update pile with another collection of items.

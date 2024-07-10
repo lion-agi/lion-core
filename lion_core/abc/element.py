@@ -71,7 +71,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
     )
 
     timestamp: time = Field(
-        default_factory=SysUtil.time,
+        default_factory=lambda: SysUtil.time(type_="datetime"),
         title="Creation Timestamp",
         frozen=True,
         alias="created",

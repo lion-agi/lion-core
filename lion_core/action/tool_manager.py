@@ -1,11 +1,14 @@
 """Defines the ToolManager class for managing tools in the system."""
 
+from functools import singledispatchmethod
 from typing import Any, Callable
 
-from ..abc.observer import Manager
-from ..libs import ucall, to_list
+from lion_core.libs import fuzzy_parse_json
+from lion_core.abc.observer import Manager
+from lion_core.libs import ucall, to_list
 from .function_calling import FunctionCalling
 from .tool import Tool, func_to_tool
+from lion_core.communication.action_request import ActionRequest
 
 ToolType = bool | Tool | str | list[Tool | str | dict[str, Any]] | dict[str, Any]
 
@@ -83,52 +86,57 @@ class ToolManager(Manager):
             bool: True if all tools were registered successfully.
         """
         tools_list = to_list(tools)
+        print(tools_list)
         return all(self.register_tool(tool) for tool in tools_list)
 
-    async def invoke(self, func_calling: Any) -> Any:
-        """Invoke a function based on the provided function calling description.
+    @singledispatchmethod
+    def match_tool(self, func_call: Any) -> "FunctionCalling":
+        raise TypeError(f"Unsupported type {type(func_call)}")
 
-        Args:
-            func_calling: The function calling description.
+    @match_tool.register(tuple)
+    def _(self, func_call: tuple) -> "FunctionCalling":
+        if len(func_call) == 2:
+            function_name = func_call[0]
+            arguments = func_call[1]
+            tool = self.registry.get(function_name)
+            if not tool:
+                raise ValueError(f"Function {function_name} is not registered.")
+            return FunctionCalling(func_tool=tool, arguments=arguments)
+        else:
+            raise ValueError(f"Invalid function call {func_call}")
 
-        Returns:
-            Any: The result of the function invocation.
+    @match_tool.register(dict)
+    def _(self, func_call: dict[str, Any]) -> "FunctionCalling":
+        if len(func_call) == 2 and ({"function", "arguments"} <= func_call.keys()):
+            function_name = func_call["function"]
+            tool = self.registry.get(function_name)
+            if not tool:
+                raise ValueError(f"Function {function_name} is not registered.")
+            return FunctionCalling(func_tool=tool, arguments=func_call["arguments"])
+        raise ValueError(f"Invalid function call {func_call}")
 
-        Raises:
-            ValueError: If func_calling is not provided or the function
-                        is not registered.
-        """
-        if not func_calling:
-            raise ValueError("func_calling is required.")
-
-        if not isinstance(func_calling, FunctionCalling):
-            func_calling = FunctionCalling(
-                function=func_calling.function, arguments=func_calling.arguments
-            )
-
-        tool = self.registry.get(func_calling.function.__name__)
+    @match_tool.register(ActionRequest)
+    def _(self, func_call: ActionRequest) -> "FunctionCalling":
+        tool = self.registry.get(func_call.function)
         if not tool:
-            raise ValueError(
-                f"Function {func_calling.function.__name__} is not registered."
-            )
+            raise ValueError(f"Function {func_call.function} is not registered.")
+        return FunctionCalling(func_tool=tool, arguments=func_call.arguments)
 
-        kwargs = func_calling.arguments
-        if tool.pre_processor:
-            pre_process_kwargs = tool.pre_processor_kwargs or {}
-            kwargs = await ucall(tool.pre_processor, kwargs, **pre_process_kwargs)
-            if not isinstance(kwargs, dict):
-                raise ValueError("Pre-processor must return a dictionary.")
-
+    @match_tool.register(str)
+    def _(self, func_call: str) -> "FunctionCalling":
+        _call = None
         try:
-            result = await func_calling.invoke()
-        except Exception:
-            return None
+            _call = fuzzy_parse_json(func_call)
+        except Exception as e:
+            raise ValueError(f"Invalid function call {func_call}") from e
 
-        if tool.post_processor:
-            post_process_kwargs = tool.post_processor_kwargs or {}
-            result = await ucall(tool.post_processor, result, **post_process_kwargs)
+        if isinstance(_call, dict):
+            return self.match_tool(_call)
+        raise ValueError(f"Invalid function call {func_call}")
 
-        return result if tool.parser is None else tool.parser(result)
+    async def invoke(self, func_call: Any):
+        function_calling = self.match_tool(func_call)
+        return await function_calling.invoke()
 
     @property
     def schema_list(self) -> list[dict[str, Any]]:
@@ -137,9 +145,9 @@ class ToolManager(Manager):
         Returns:
             list[dict[str, Any]]: List of tool schemas.
         """
-        return [tool.schema for tool in self.registry.values()]
+        return [tool.schema_ for tool in self.registry.values()]
 
-    def get_tool_schema(self, tools: ToolType, **kwargs) -> dict[str, Any]:
+    def get_tool_schema(self, tools: ToolType = False, **kwargs) -> dict[str, Any]:
         """Retrieve the schema for specific tools or all tools.
 
         Args:
@@ -149,7 +157,7 @@ class ToolManager(Manager):
         Returns:
             dict[str, Any]: Tool schemas.
         """
-        if isinstance(tools, bool):
+        if isinstance(tools, bool) and tools is True:
             tool_kwarg = {"tools": self.schema_list}
         else:
             tool_kwarg = {"tools": self._get_tool_schema(tools)}
@@ -173,7 +181,7 @@ class ToolManager(Manager):
         elif isinstance(tool, Tool) or isinstance(tool, str):
             name = tool.function_name if isinstance(tool, Tool) else tool
             if name in self.registry:
-                return self.registry[name].schema
+                return self.registry[name].schema_
             raise ValueError(f"Tool {name} is not registered.")
         elif isinstance(tool, list):
             return [self._get_tool_schema(t) for t in tool]

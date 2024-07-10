@@ -14,18 +14,13 @@ from typing import Any, TypeVar, ClassVar, Type
 
 from pydantic import (
     Field,
-    ValidationError,
-    model_validator,
     field_serializer,
-    PrivateAttr,
 )
 from pydantic.fields import FieldInfo
 
 from ..abc.element import Element
 from ..libs import nget, ninsert, nset, npop
 from ..util.sys_util import SysUtil
-from ..util.converter import convert_from, convert_to
-from ..settings._setting import BASE_LION_FIELDS
 
 
 T = TypeVar("T", bound="Component")
@@ -41,7 +36,7 @@ class Component(Element):
     Attributes:
         metadata (dict[str, Any]): Additional metadata for the component.
         content (Any): The main content of the component.
-        _extra_fields (dict[str, Any]): Extra fields not in the base model.
+        extra_fields (dict[str, Any]): Extra fields not in the base model.
     """
 
     metadata: dict[str, Any] = Field(
@@ -56,7 +51,7 @@ class Component(Element):
 
     embedding: list = Field(default_factory=list)
 
-    _extra_fields: dict[str, Any] = PrivateAttr(default_factory=dict)
+    extra_fields: dict[str, Any] = Field(default_factory=dict)
 
     _class_registry: ClassVar[dict[str, Type[Component]]] = {}
 
@@ -243,18 +238,13 @@ class Component(Element):
         return {k: v for k, v in value.items() if v is not None}
 
     @property
-    def extra_fields(self) -> dict[str, Any]:
-        """Get all extra fields of the component."""
-        return self._extra_fields
-
-    @property
     def all_fields(self) -> dict[str, Any]:
         """Get all fields of the component, including extra fields."""
-        return {**self.model_fields, **self._extra_fields}
+        return {**self.model_fields, **self.extra_fields}
 
     def add_field(
         self,
-        field_name: str,
+        name: str,
         value: Any = ...,
         annotation: Any = None,
         default: Any = None,
@@ -264,7 +254,7 @@ class Component(Element):
         """Add a new field to the component's extra fields.
 
         Args:
-            field_name: The name of the field to add.
+            name: The name of the field to add.
             value: The value of the field.
             annotation: Type annotation for the field.
             default: Default value for the field.
@@ -274,36 +264,44 @@ class Component(Element):
         Raises:
             ValueError: If the field already exists.
         """
-        if field_name in self.all_fields:
-            raise ValueError(f"Field '{field_name}' already exists")
+        if name in self.all_fields:
+            raise ValueError(f"Field '{name}' already exists")
 
         if field_obj is None:
             field_obj = Field(default=default, **kwargs)
             field_obj.annotation = annotation
 
-        self._extra_fields[field_name] = field_obj
-        if value is ...:
-            setattr(self, field_name, SysUtil.copy(field_obj.default))
-        else:
-            setattr(self, field_name, SysUtil.copy(value))
+        self.extra_fields[name] = field_obj
 
-        self._add_last_update(field_name)
+        instance_value = (
+            SysUtil.copy(value) if value is not ... else SysUtil.copy(field_obj.default)
+        )
+        if field_obj.default_factory and value is ...:
+            instance_value = field_obj.default_factory()
+        setattr(self, name, instance_value)
 
-    def update_field(self, name: str, field: FieldInfo) -> None:
+        self._add_last_update(name)
+
+    def update_field(self, name: str, field_obj: FieldInfo, value: Any = ...) -> None:
         """Update an existing field in the component's extra fields.
 
         Args:
             name: The name of the field to update.
-            field: The new FieldInfo object for the field.
+            field_obj: The new FieldInfo object for the field.
+            value: The new value for the field.
 
         Raises:
             ValueError: If the field does not exist in extra fields.
         """
-        if name not in self._extra_fields:
+        if name not in self.extra_fields:
             raise ValueError(f"Field '{name}' does not exist in extra fields")
-        self._extra_fields[name] = field
-        current_value = getattr(self, name, field.default)
-        setattr(self, name, SysUtil.copy(current_value))
+        self.extra_fields[name] = field_obj
+        instance_value = (
+            value if SysUtil.copy(value) is not ... else SysUtil.copy(field_obj.default)
+        )
+        if field_obj.default_factory and value is ...:
+            instance_value = field_obj.default_factory()
+        setattr(self, name, instance_value)
         self._add_last_update(name)
 
     def _add_last_update(self, name: str) -> None:
@@ -312,7 +310,7 @@ class Component(Element):
         Args:
             name: The name of the field being updated.
         """
-        current_time = SysUtil.time()
+        current_time = SysUtil.time(type_="datetime", iso=True)
         nset(self.metadata, ["last_updated", name], current_time)
 
     def meta_pop(self, indices: list[str], default: Any = ...) -> Any:
@@ -372,14 +370,12 @@ class Component(Element):
         """
         if name == "metadata":
             raise AttributeError("Cannot directly assign to metadata.")
+        if name in self.extra_fields:
+            object.__setattr__(self, name, value)
+        else:
+            super().__setattr__(name, value)
 
-        if name in self._extra_fields:
-            if isinstance(self._extra_fields[name], FieldInfo):
-                self._extra_fields[name].default = value
-            else:
-                self._extra_fields[name] = FieldInfo(default=value)
-
-        super().__setattr__(name, value)
+        # super().__setattr__(name, value)
         self._add_last_update(name)
 
     def __getattr__(self, name: str) -> Any:
@@ -394,8 +390,8 @@ class Component(Element):
         Raises:
             AttributeError: If the attribute does not exist.
         """
-        if name in self._extra_fields:
-            return self._extra_fields[name].default
+        if name in self.extra_fields:
+            return self.extra_fields[name].default
         raise AttributeError(
             f"'{self.__class__.__name__}' object has no attribute '{name}'"
         )
@@ -412,7 +408,7 @@ class Component(Element):
             f"timestamp={self.timestamp.isoformat()}, "
             f"content='{content_preview}', "
             f"metadata_keys={list(self.metadata.keys())}, "
-            f"extra_fields_keys={list(self._extra_fields.keys())})"
+            f"extra_fields_keys={list(self.extra_fields.keys())})"
         )
 
     def __repr__(self) -> str:
@@ -444,7 +440,7 @@ class Component(Element):
             f"timestamp={self.timestamp.isoformat()}, "
             f"content={content_repr}, "
             f"metadata={truncate_dict(self.metadata)}, "
-            f"extra_fields={truncate_dict(self._extra_fields)})"
+            f"extra_fields={truncate_dict(self.extra_fields)})"
         )
 
 

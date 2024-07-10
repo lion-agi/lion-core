@@ -54,5 +54,3 @@ class ConverterRegistry:
         """Convert a Component to another object using the specified converter."""
         converter = cls.get(key)
         return converter.to_obj(component)
-
-

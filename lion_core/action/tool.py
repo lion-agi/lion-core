@@ -6,10 +6,11 @@ from typing import Any, Callable
 from pydantic import Field, field_serializer
 
 from lion_core.generic.component import Component
+from lion_core.abc.element import Element
 from lion_core.libs import function_to_schema, to_list
 
 
-class Tool(Component):
+class Tool(Element):
     """Represents a callable tool with pre/post-processing capabilities.
 
     Encapsulates a function with its metadata, schema, and processing
@@ -17,7 +18,7 @@ class Tool(Component):
 
     Attributes:
         function: The callable function of the tool.
-        schema: Schema of the function in OpenAI format.
+        schema_: Schema of the function in OpenAI format.
         pre_processor: Function to preprocess input arguments.
         pre_processor_kwargs: Keyword arguments for the pre-processor.
         post_processor: Function to post-process the result.
@@ -29,7 +30,7 @@ class Tool(Component):
         ...,
         description="The callable function of the tool.",
     )
-    schema: dict[str, Any] | None = Field(
+    schema_: dict[str, Any] | None = Field(
         default=None,
         description="Schema of the function in OpenAI format.",
     )
@@ -57,8 +58,8 @@ class Tool(Component):
     def __init__(self, **data):
         """Initialize a Tool instance."""
         super().__init__(**data)
-        if self.schema is None:
-            self.schema = function_to_schema(self.function)
+        if self.schema_ is None:
+            self.schema_ = function_to_schema(self.function)
 
     @field_serializer(
         "function",
@@ -67,7 +68,6 @@ class Tool(Component):
         "parser",
         "pre_processor_kwargs",
         "post_processor_kwargs",
-        mode="before",
     )
     def serialize_field(self, v: Any) -> str | None:
         """Serialize various fields of the Tool class.
@@ -91,7 +91,20 @@ class Tool(Component):
         Returns:
             str: The name of the function.
         """
-        return self.schema["function"]["name"]
+        return self.schema_["function"]["name"]
+
+    def __str__(self) -> str:
+        """Return a string representation of the Element.
+
+        Returns:
+            str: A string representation of the Element.
+        """
+        timestamp_str = self.timestamp.isoformat(timespec="minutes")
+        return (
+            f"{self.class_name()}(ln_id={self.ln_id[:6]}.., "
+            f"timestamp={timestamp_str}), "
+            f"schema_={json.dumps(self.schema_, indent=4)}"
+        )
 
 
 def func_to_tool(
@@ -114,21 +127,18 @@ def func_to_tool(
     Raises:
         ValueError: If the length of parsers doesn't match the functions.
     """
-    funcs = to_list(func_, flatten=True, dropna=True)
-    parsers = to_list(parser, flatten=True, dropna=True)
+    funcs = to_list(func_)
+    parsers = to_list(parser)
 
-    if parser and len(funcs) != len(parsers) != 1:
-        raise ValueError(
-            "Length of parser must match length of func, "
-            "except if you only pass one."
-        )
+    if parser and len(funcs) != len(parsers):
+        raise ValueError("Length of parser must match length of func, ")
 
     tools = []
     for idx, func in enumerate(funcs):
         tool = Tool(
             function=func,
-            schema=function_to_schema(func, style=docstring_style),
-            parser=parsers[idx] if parser and len(parsers) > 1 else parser,
+            schema_=function_to_schema(func, style=docstring_style),
+            parser=parsers[idx] if parser else None,
             **kwargs,
         )
         tools.append(tool)
