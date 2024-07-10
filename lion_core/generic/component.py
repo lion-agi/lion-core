@@ -61,33 +61,6 @@ class Component(Element):
         super().__pydantic_init_subclass__(**kwargs)
         cls._class_registry[cls.__name__] = cls
 
-    @classmethod
-    def _get_class(cls, class_name: str) -> Type[Component]:
-        """
-        Get the class by name, using the class registry or MOR if not found.
-
-        Args:
-            class_name (str): The name of the class to retrieve.
-
-        Returns:
-            Type[Component]: The requested class.
-
-        Raises:
-            ValueError: If the class is not found in the registry or by MOR.
-        """
-        if class_name in cls._class_registry:
-            return cls._class_registry[class_name]
-
-        try:
-            found_class = SysUtil.mor(class_name)
-            if issubclass(found_class, Component):
-                cls._class_registry[class_name] = found_class
-                return found_class
-            else:
-                raise ValueError(f"{class_name} is not a subclass of Component")
-        except ValueError as e:
-            raise ValueError(f"Unable to find class {class_name}: {e}")
-
     # Refactor to use converter
 
     # @classmethod
@@ -247,7 +220,6 @@ class Component(Element):
         name: str,
         value: Any = ...,
         annotation: Any = None,
-        default: Any = None,
         field_obj: FieldInfo | None = None,
         **kwargs,
     ) -> None:
@@ -257,7 +229,6 @@ class Component(Element):
             name: The name of the field to add.
             value: The value of the field.
             annotation: Type annotation for the field.
-            default: Default value for the field.
             field_obj: A pre-configured FieldInfo object.
             **kwargs: Additional keyword arguments for Field.
 
@@ -267,10 +238,32 @@ class Component(Element):
         if name in self.all_fields:
             raise ValueError(f"Field '{name}' already exists")
 
-        if field_obj is None:
-            field_obj = Field(default=default, **kwargs)
-            field_obj.annotation = annotation
+        self.update_field(
+            name=name, value=value, annotation=annotation, field_obj=field_obj, **kwargs
+        )
 
+    def update_field(
+        self,
+        name: str,
+        value: Any = ...,
+        annotation: Any = None,
+        field_obj: FieldInfo | None = None,
+        **kwargs,
+    ) -> None:
+        """Update an existing field in the component's extra fields.
+
+        Args:
+            name: The name of the field to add.
+            value: The value of the field.
+            annotation: Type annotation for the field.
+            field_obj: A pre-configured FieldInfo object.
+            **kwargs: Additional keyword arguments for Field.
+        """
+
+        if field_obj is None:
+            field_obj = Field(**kwargs)
+        if annotation:
+            field_obj.annotation = annotation
         self.extra_fields[name] = field_obj
 
         instance_value = (
@@ -280,28 +273,6 @@ class Component(Element):
             instance_value = field_obj.default_factory()
         setattr(self, name, instance_value)
 
-        self._add_last_update(name)
-
-    def update_field(self, name: str, field_obj: FieldInfo, value: Any = ...) -> None:
-        """Update an existing field in the component's extra fields.
-
-        Args:
-            name: The name of the field to update.
-            field_obj: The new FieldInfo object for the field.
-            value: The new value for the field.
-
-        Raises:
-            ValueError: If the field does not exist in extra fields.
-        """
-        if name not in self.extra_fields:
-            raise ValueError(f"Field '{name}' does not exist in extra fields")
-        self.extra_fields[name] = field_obj
-        instance_value = (
-            value if SysUtil.copy(value) is not ... else SysUtil.copy(field_obj.default)
-        )
-        if field_obj.default_factory and value is ...:
-            instance_value = field_obj.default_factory()
-        setattr(self, name, instance_value)
         self._add_last_update(name)
 
     def _add_last_update(self, name: str) -> None:

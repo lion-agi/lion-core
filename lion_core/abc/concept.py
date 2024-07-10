@@ -14,12 +14,12 @@ class AbstractSpace(ABC):
 class AbstractElement(ABC):
     """An abstract observable entity in a space."""
 
-    @abstractmethod
-    def convert_to(self, new_type: type | str = "dict", **kwargs) -> Any: ...
-
-    @classmethod
-    @abstractmethod
-    def convert_from(cls, data, new_type: type | str = "dict", **kwargs) -> Any: ...
+    # @abstractmethod
+    # def convert_to(self, new_type: type | str = "dict", **kwargs) -> Any: ...
+    #
+    # @classmethod
+    # @abstractmethod
+    # def convert_from(cls, data, new_type: type | str = "dict", **kwargs) -> Any: ...
 
 
 class AbstractObserver(ABC):
