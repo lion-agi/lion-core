@@ -1,17 +1,15 @@
 from __future__ import annotations
-import asyncio
-from collections.abc import Iterable
-from typing import Any, TypeVar, Type, AsyncIterable
+from typing import Any, TypeVar, Type, Iterable
 
 from pydantic import Field
 
-from lion_core.container.base import Collective, Ordering
+from lion_core.container.base import Collective
 from lion_core.abc.element import Element
 from lion_core.exceptions import ItemNotFoundError, LionItemError, LionTypeError, LionValueError
 from lion_core.util.sys_util import SysUtil
 from lion_core.generic.component import Component
 from .progression import Progression
-from .util import PileLoader, PileLoaderRegistry, convert_to_lion_object, to_list_type
+from .util import to_list_type
 
 T = TypeVar("T", bound=Element)
 
@@ -98,8 +96,8 @@ class Pile(Component, Collective[T]):
 
         try:
             if len(keys) == 1:
-                return self.pile.get(keys[0])
-            return Pile([self.pile.get(i) for i in keys], self.item_type, keys)
+                return self.pile[keys[0]]
+            return Pile([self.pile[i] for i in keys], self.item_type, keys)
         except KeyError as e:
             raise LionItemError(key) from e
 
@@ -132,12 +130,12 @@ class Pile(Component, Collective[T]):
                 )
 
             for k, v in item.items():
-                if self.item_type and type(v) not in self.item_type:
+                if self.item_type and not isinstance(v, tuple(self.item_type)):
                     raise LionTypeError(f"Invalid item type. Expected {self.item_type}")
 
                 self.pile[k] = v
                 self.order[key] = k
-                self.pile.pop(_key)
+                self.pile.pop(_key, None)
             return
 
         if len(to_list_type(key)) != len(item):
@@ -167,71 +165,28 @@ class Pile(Component, Collective[T]):
         return True
 
     def __len__(self) -> int:
-        """Get the number of items in the pile.
-
-        Returns:
-            The number of items in the pile.
-
-        Example:
-            >>> pile = Pile({"a": Element(), "b": Element()})
-            >>> len(pile)
-            2
-        """
+        """Get the number of items in the pile."""
         return len(self.order)
 
     def __iter__(self) -> Iterable[T]:
-        """Return an iterator over the items in the pile.
-
-        Yields:
-            The items in the pile in their specified order.
-
-        Example:
-            >>> pile = Pile({"a": Element(), "b": Element()})
-            >>> for item in pile:
-            ...     print(item)  # Prints each element
-        """
-        for key in self.order:
-            yield self.pile[key]
+        """Return an iterator over the items in the pile."""
+        yield from (self.pile[key] for key in self.order)
 
     def keys(self) -> Iterable[str]:
-        """Get the keys of the pile in their specified order.
-
-        Returns:
-            An iterable of keys in the pile.
-
-        Example:
-            >>> pile = Pile({"a": Element(), "b": Element()})
-            >>> list(pile.keys())
-            ['a', 'b']
-        """
+        """Get the keys of the pile in their specified order."""
         return self.order
 
     def values(self) -> Iterable[T]:
-        """Get the values of the pile in their specified order.
-
-        Returns:
-            An iterable of values in the pile.
-
-        Example:
-            >>> pile = Pile({"a": Element(), "b": Element()})
-            >>> list(pile.values())  # Returns [Element(), Element()]
-        """
+        """Get the values of the pile in their specified order."""
         return (self.pile[key] for key in self.order)
 
     def items(self) -> Iterable[tuple[str, T]]:
-        """Get the items of the pile as (key, value) pairs in their order.
-
-        Returns:
-            An iterable of (key, value) tuples.
-
-        Example:
-            >>> pile = Pile({"a": Element(), "b": Element()})
-            >>> list(pile.items())  # Returns [('a', Element()), ('b', Element())]
-        """
+        """Get the items of the pile as (key, value) pairs in their order."""
         return ((key, self.pile[key]) for key in self.order)
 
     def get(self, key: Any, default: Any = ...) -> T | None:
-        """Get an item from the pile with a default value if not found.
+        """
+        Get an item from the pile with a default value if not found.
 
         Args:
             key: The key of the item to get.
@@ -242,11 +197,6 @@ class Pile(Component, Collective[T]):
 
         Raises:
             ItemNotFoundError: If the key is not found and no default is provided.
-
-        Example:
-            >>> pile = Pile({"a": Element()})
-            >>> pile.get("a")  # Returns Element()
-            >>> pile.get("b", None)  # Returns None
         """
         try:
             return self[key]
@@ -256,7 +206,8 @@ class Pile(Component, Collective[T]):
             return default
 
     def pop(self, key: Any) -> T:
-        """Remove and return an item from the pile.
+        """
+        Remove and return an item from the pile.
 
         Args:
             key: The key of the item to remove.
@@ -266,35 +217,24 @@ class Pile(Component, Collective[T]):
 
         Raises:
             ItemNotFoundError: If the key is not found in the pile.
-
-        Example:
-            >>> pile = Pile({"a": Element(), "b": Element()})
-            >>> pile.pop("a")  # Returns and removes Element()
-            >>> pile.pop("c")  # Raises ItemNotFoundError
         """
         try:
             key = SysUtil.get_lion_id(key)
             item = self.pile.pop(key)
             self.order.remove(key)
             return item
-        except (ValueError, KeyError):
-            raise ItemNotFoundError(f"Key {key} not found in pile.")
-
+        except (ValueError, KeyError) as e:
+            raise ItemNotFoundError(f"Key {key} not found in pile.") from e
 
     def remove(self, item: T) -> None:
-        """Remove an item from the pile.
+        """
+        Remove an item from the pile.
 
         Args:
             item: The item to remove.
 
         Raises:
             ItemNotFoundError: If the item is not found in the pile.
-
-        Example:
-            >>> pile = Pile({"a": Element(), "b": Element()})
-            >>> element = pile["a"]
-            >>> pile.remove(element)  # Removes the element
-            >>> pile.remove(element)  # Raises ItemNotFoundError
         """
         key = SysUtil.get_lion_id(item)
         if key in self.pile:
@@ -304,7 +244,8 @@ class Pile(Component, Collective[T]):
             raise ItemNotFoundError(f"Item {key} not found in pile.")
 
     def exclude(self, item: T) -> bool:
-        """Exclude an item from the pile.
+        """
+        Exclude an item from the pile.
 
         Args:
             item: The item to exclude.
@@ -312,12 +253,6 @@ class Pile(Component, Collective[T]):
         Returns:
             True if the item was not in the pile or was successfully removed,
             False if an error occurred during removal.
-
-        Example:
-            >>> pile = Pile({"a": Element(), "b": Element()})
-            >>> element = pile["a"]
-            >>> pile.exclude(element)  # Returns True
-            >>> pile.exclude(Element())  # Returns True (item wasn't in pile)
         """
         key = SysUtil.get_lion_id(item)
         if key not in self.pile:
@@ -330,7 +265,8 @@ class Pile(Component, Collective[T]):
             return False
 
     def include(self, item: T) -> bool:
-        """Include an item in the pile.
+        """
+        Include an item in the pile.
 
         Args:
             item: The item to include.
@@ -338,12 +274,6 @@ class Pile(Component, Collective[T]):
         Returns:
             True if the item was already in the pile or was successfully added,
             False if an error occurred during addition.
-
-        Example:
-            >>> pile = Pile()
-            >>> element = Element()
-            >>> pile.include(element)  # Returns True
-            >>> pile.include(element)  # Returns True (item was already in pile)
         """
         key = SysUtil.get_lion_id(item)
         if key in self.pile:
@@ -356,82 +286,25 @@ class Pile(Component, Collective[T]):
             return False
 
     def clear(self) -> None:
-        """Remove all items from the pile.
-
-        Example:
-            >>> pile = Pile({"a": Element(), "b": Element()})
-            >>> pile.clear()
-            >>> len(pile)
-            0
-        """
+        """Remove all items from the pile."""
         self.pile.clear()
         self.order.clear()
 
-    def update(self, other: Any):
-        """
-        Update pile with another collection of items.
-
-        Accepts `Pile` or any iterable. Provided items added to current
-        pile, overwriting existing items with same keys.
-
-        Args:
-            other: Collection to update with. Can be any LionIDable
-        """
-        p = pile(other)
-        self[p] = p
+    def update(self, other: Any) -> None:
+        """Update the pile with items from another pile or iterable."""
+        self[other] = other
 
     def is_empty(self) -> bool:
-        """Check if the pile is empty.
-
-        Returns:
-            True if the pile is empty, False otherwise.
-
-        Example:
-            >>> pile = Pile()
-            >>> pile.is_empty()
-            True
-            >>> pile["a"] = Element()
-            >>> pile.is_empty()
-            False
-        """
+        """Check if the pile is empty."""
         return len(self.order) == 0
 
     def size(self) -> int:
-        """Get the number of items in the pile.
-
-        Returns:
-            The number of items in the pile.
-
-        Example:
-            >>> pile = Pile({"a": Element(), "b": Element()})
-            >>> pile.size()
-            2
-        """
+        """Get the number of items in the pile."""
         return len(self.order)
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert the Pile to a dictionary.
-
-        Returns:
-            A dictionary representation of the Pile.
-
-        Example:
-            >>> pile = Pile({"a": Element(), "b": Element()})
-            >>> pile_dict = pile.to_dict()
-            >>> isinstance(pile_dict, dict)
-            True
-        """
-        return {
-            "items": {k: v.to_dict() for k, v in self.pile.items()},
-            "item_type": (
-                [t.__name__ for t in self.item_type] if self.item_type else None
-            ),
-            "order": self.order,
-            "use_obj": self.use_obj,
-        }
         
-    def flatten(self, recursive: bool = True, max_depth: int = None) -> Pile[T]:
-        """Recursively flatten a nested Pile into a flat Pile.
+    def flatten(self, recursive: bool = True, max_depth: int | None = None) -> Pile[T]:
+        """
+        Recursively flatten a nested Pile into a flat Pile.
 
         Args:
             recursive: If True, flatten nested Piles recursively.
@@ -439,17 +312,6 @@ class Pile(Component, Collective[T]):
 
         Returns:
             A new Pile instance with nested structures flattened.
-
-        Example:
-            >>> element1, element2, element3, element4 = Element(), Element(), Element(), Element()
-            >>> nested_pile = Pile({
-            ...     "a": element1,
-            ...     "b": Pile({"c": element2, "d": Pile({"e": element3})}),
-            ...     "f": element4
-            ... })
-            >>> flat_pile = nested_pile.flatten()
-            >>> list(flat_pile.keys())  # Returns ['a', 'c', 'e', 'f']
-            >>> len(flat_pile)  # Returns 4
         """
         flattened_items = {}
         flattened_order = []
@@ -496,14 +358,13 @@ class Pile(Component, Collective[T]):
         if value == {}:
             return {}
 
-        if isinstance(value, Element):
-            return {value.ln_id: value}
-
         if self.use_obj:
             if not isinstance(value, list):
                 value = [value]
-            if isinstance(value[0], (Collective, Ordering)):
+            if isinstance(value[0], Collective):
                 return {getattr(i, "ln_id"): i for i in value}
+            if isinstance(value, Element):
+                return {value.ln_id: value}
 
         value = to_list_type(value)
         if self.item_type is not None:
@@ -516,7 +377,7 @@ class Pile(Component, Collective[T]):
         if isinstance(value, list):
             if len(value) == 1:
                 if isinstance(value[0], dict) and value[0] != {}:
-                    k = list(value[0].keys())[0]
+                    k = next(iter(value[0]))
                     v = value[0][k]
                     return {k: v}
 
@@ -545,9 +406,6 @@ def pile(
     item_type: Type[Element] | set[Type[Element]] | None = None,
     order: list[str] | None = None,
     use_obj: bool = False,
-) -> "Pile[T]":
-    
+) -> Pile[T]:
+    """Create a new Pile instance."""
     return Pile(items, item_type, order, use_obj)
-    
-    
-# File: lion_core/container/pile.py

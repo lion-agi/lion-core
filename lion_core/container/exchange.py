@@ -1,21 +1,23 @@
-from typing import TypeVar, Generic
+from typing import TypeVar, Generic, List
 from pydantic import Field
+
 from ..abc.element import Element
 from ..communication.base import BaseMail
-from ..abc.element import Element
+from .base import Container
 from .pile import Pile, pile
 from .progression import Progression, progression
 
 T = TypeVar("T")
 
 
-class Exchange(Element, Generic[T]):
+class Exchange(Element, Container, Generic[T]):
     """
     Item exchange system designed to handle incoming and outgoing flows of items.
 
     Attributes:
         pile (Pile[T]): The pile of items in the exchange.
-        pending_ins (dict[str, Progression]): The pending incoming items to the exchange.
+        pending_ins (dict[str, Progression]): The pending incoming items to the
+            exchange.
         pending_outs (Progression): The progression of pending outgoing items.
     """
 
@@ -38,7 +40,7 @@ class Exchange(Element, Generic[T]):
         title="pending outgoing items",
     )
 
-    def __contains__(self, item):
+    def __contains__(self, item: T) -> bool:
         """
         Check if an item is in the pile.
 
@@ -53,7 +55,10 @@ class Exchange(Element, Generic[T]):
     @property
     def unassigned(self) -> Pile[T]:
         """
-        if the item is not in the pending_ins or pending_outs, it is unassigned.
+        Get unassigned items that are not in pending_ins or pending_outs.
+
+        Returns:
+            Pile[T]: A pile of unassigned items.
         """
         return pile(
             [
@@ -67,16 +72,16 @@ class Exchange(Element, Generic[T]):
         )
 
     @property
-    def senders(self) -> list[str]:
+    def senders(self) -> List[str]:
         """
         Get the list of senders for the pending incoming items.
 
         Returns:
-            list[str]: The list of sender IDs.
+            List[str]: The list of sender IDs.
         """
         return list(self.pending_ins.keys())
 
-    def exclude(self, item) -> bool:
+    def exclude(self, item: T) -> bool:
         """
         Exclude an item from the exchange.
 
@@ -88,17 +93,17 @@ class Exchange(Element, Generic[T]):
         """
         return (
             self.pile.exclude(item)
-            and all([v.exclude(item) for v in self.pending_ins.values()])
+            and all(v.exclude(item) for v in self.pending_ins.values())
             and self.pending_outs.exclude(item)
         )
 
-    def include(self, item, direction=None) -> bool:
+    def include(self, item: T, direction: str | None = None) -> bool:
         """
         Include an item in the exchange in a specified direction.
 
         Args:
             item: The item to include.
-            direction (str): The direction to include the item ('in' or 'out').
+            direction: The direction to include the item ('in' or 'out').
 
         Returns:
             bool: True if the item was successfully included, False otherwise.
@@ -106,18 +111,16 @@ class Exchange(Element, Generic[T]):
         if self.pile.include(item):
             item = self.pile[item]
             item = [item] if not isinstance(item, list) else item
-            for i in item:
-                if not self._include(i, direction=direction):
-                    return False
-            return True
+            return all(self._include(i, direction=direction) for i in item)
+        return False
 
-    def _include(self, item: BaseMail, direction) -> bool:
+    def _include(self, item: BaseMail, direction: str | None) -> bool:
         """
         Helper method to include an item in the exchange in a specified direction.
 
         Args:
-            item (Sendable): The item to include.
-            direction (str): The direction to include the item ('in' or 'out').
+            item: The item to include.
+            direction: The direction to include the item ('in' or 'out').
 
         Returns:
             bool: True if the item was successfully included, False otherwise.
@@ -132,20 +135,8 @@ class Exchange(Element, Generic[T]):
 
         return True
 
-    def to_dict(self) -> dict:
-        """
-        Convert the exchange to a dictionary.
-
-        Returns:
-            dict: The dictionary representation of the exchange.
-        """
-        return self.model_dump(by_alias=True)
-
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return True
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.pile)
-
-
-# File: lion_core/container/exchange.py
