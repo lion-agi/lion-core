@@ -1,17 +1,22 @@
 """Core abstract base classes for the Lion framework."""
 
 from abc import ABC, abstractmethod
-from typing import Any
 
 
-class AbstractSpace(ABC):
+class Node(ABC):
+    """
+    aka Tao, the foundation abstraction in the Lion framework. 
+    Represents existence. 
+    """
+    
+class AbstractSpace(Node):
     """An abstract expanse or region."""
 
     @abstractmethod
     def __contains__(self, item) -> bool: ...
 
 
-class AbstractElement(ABC):
+class AbstractElement(Node):
     """An abstract observable entity in a space."""
 
     # @abstractmethod
@@ -22,7 +27,7 @@ class AbstractElement(ABC):
     # def convert_from(cls, data, new_type: type | str = "dict", **kwargs) -> Any: ...
 
 
-class AbstractObserver(ABC):
+class AbstractObserver(Node):
     """An abstract entity capable of making observations."""
 
 

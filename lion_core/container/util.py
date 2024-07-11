@@ -10,7 +10,7 @@ data loading into Pile objects.
 
 from collections.abc import Mapping, Generator, Sequence
 from collections import deque
-from typing import Any, TypeVar, Type, Protocol, Union, Dict, cast
+from typing import Any, TypeVar, Type, Protocol, Union, Dict, runtime_checkable
 
 from lion_core.abc.element import Element
 from lion_core.generic.component import Component
@@ -21,28 +21,28 @@ from lion_core.container.base import Ordering, Collective
 T = TypeVar("T", bound=Element)
 
 
-def to_list_type(value: Any) -> list[Any]:
+def to_list_type(value: Any) -> list:
     """
     Convert the provided value to a list.
 
-    This function handles various input types including Element, Mapping,
-    Record, tuple, list, set, Generator, and deque. It ensures that the
-    output is always a list, facilitating consistent data handling.
+    This function ensures that the input value is converted to a list,
+    regardless of its original type. It handles various types including
+    Component, Mapping, Record, tuple, list, set, Generator, and deque.
 
     Args:
         value: The value to convert to a list.
 
     Returns:
-        A list containing the converted value(s).
+        list: The converted list.
 
     Raises:
         TypeError: If the value cannot be converted to a list.
     """
-    if isinstance(value, Element) and not isinstance(value, Collective):
+    if isinstance(value, Component) and not isinstance(value, (Collective, Ordering)):
         return [value]
     if isinstance(value, (Mapping, Collective)):
         return list(value.values())
-    if isinstance(value, (tuple, set, Generator, deque, list)):
+    if isinstance(value, (tuple, list, set, Generator, deque)):
         return list(value)
     return [value]
 
@@ -66,7 +66,7 @@ def validate_order(value: Any) -> list[str]:
     """
     if value is None:
         return []
-    if isinstance(value, str) and len(value) == 32:
+    if isinstance(value, str) and value.startswith("ln") and len(value) == 34:
         return [value]
     if isinstance(value, Ordering):
         return value.order
@@ -74,44 +74,13 @@ def validate_order(value: Any) -> list[str]:
         return [value.ln_id]
 
     try:
-        return [i for item in to_list_type(value) if (i := SysUtil.get_lion_id(item))]
+        return [i for item in to_list_type(value) 
+                if (i := SysUtil.get_lion_id(item))]
     except Exception as e:
         raise LionIDError("Must only contain valid Lion IDs.") from e
 
 
-def convert_to_lion_object(item: Any) -> Element:
-    """
-    Convert an item to a Lion framework object (Element or its subclass).
-
-    This function handles the conversion of various input types to Lion
-    framework objects. It can process existing Element instances,
-    dictionaries with 'lion_class' specifications, and other data types.
-
-    Args:
-        item: The item to convert to a Lion framework object.
-
-    Returns:
-        An instance of Element or its subclass.
-
-    Note:
-        If the input is not an Element or a dictionary with 'lion_class',
-        it will be wrapped in a basic Element instance.
-    """
-    if isinstance(item, Element):
-        return item
-    if isinstance(item, dict):
-        if "lion_class" in item:
-            try:
-                class_type = SysUtil.mor(item["lion_class"])
-                if issubclass(class_type, Component):
-                    return Component.from_dict(item)
-                return class_type.from_dict(item)
-            except ValueError:
-                return Element.from_dict(item)
-        return Element.from_dict(item)
-    return Element(content=item)
-
-
+@runtime_checkable
 class PileLoader(Protocol[T]):
     """
     Protocol defining the interface for pile loader classes.
@@ -234,6 +203,3 @@ def load_pile(
         LionTypeError: If no suitable loader is found for the data.
     """
     return PileLoaderRegistry.load_from(obj, key)
-
-
-# File: lion_core/container/util.py
