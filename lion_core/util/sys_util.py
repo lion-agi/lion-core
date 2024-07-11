@@ -245,7 +245,10 @@ class SysUtil:
         """Get the Lion ID of an item."""
         if isinstance(item, Sequence) and len(item) == 1:
             item = item[0]
-        if isinstance(item, str) and len(item) == 32:
+        if isinstance(item, str) and (
+            (item.startswith("ln") and len(item) == 34) or
+            (len(item) == 32)  # for backward compatibility
+        ):
             return item
         if getattr(item, "ln_id", None) is not None:
             return item.ln_id

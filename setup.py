@@ -9,7 +9,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
     requirements = fh.read().splitlines()
 
 setup(
-    name="lion-core",
+    name="lion_core",
     version="0.1.0",
     author="HaiyangLi",
     author_email="",
