@@ -74,8 +74,7 @@ def validate_order(value: Any) -> list[str]:
         return [value.ln_id]
 
     try:
-        return [i for item in to_list_type(value) 
-                if (i := SysUtil.get_lion_id(item))]
+        return [i for item in to_list_type(value) if (i := SysUtil.get_lion_id(item))]
     except Exception as e:
         raise LionIDError("Must only contain valid Lion IDs.") from e
 

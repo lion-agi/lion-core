@@ -5,13 +5,19 @@ from pydantic import Field
 
 from lion_core.container.base import Collective
 from lion_core.abc.element import Element
-from lion_core.exceptions import ItemNotFoundError, LionItemError, LionTypeError, LionValueError
+from lion_core.exceptions import (
+    ItemNotFoundError,
+    LionItemError,
+    LionTypeError,
+    LionValueError,
+)
 from lion_core.util.sys_util import SysUtil
 from lion_core.generic.component import Component
 from .progression import Progression
 from .util import to_list_type
 
 T = TypeVar("T", bound=Element)
+
 
 class Pile(Component, Collective[T]):
     """
@@ -44,7 +50,7 @@ class Pile(Component, Collective[T]):
         item_type: set[Type[Element]] | None = None,
         order: Progression | None = None,
         use_obj: bool = False,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize a Pile instance.
@@ -301,7 +307,7 @@ class Pile(Component, Collective[T]):
     def size(self) -> int:
         """Get the number of items in the pile."""
         return len(self.order)
-        
+
     def flatten(self, recursive: bool = True, max_depth: int | None = None) -> Pile[T]:
         """
         Recursively flatten a nested Pile into a flat Pile.
@@ -400,6 +406,7 @@ class Pile(Component, Collective[T]):
             return f"Pile({next(iter(self.pile.values())).__repr__()})"
         else:
             return f"Pile({length})"
+
 
 def pile(
     items: Any = None,

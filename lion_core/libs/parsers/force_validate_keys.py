@@ -1,5 +1,4 @@
 from typing import Any, Union, Callable
-import numpy as np
 from lion_core.libs.algorithms.jaro_distance import jaro_winkler_similarity
 
 
@@ -75,12 +74,16 @@ def force_validate_keys(
                 used_keys.add(k)
                 old_used_keys.add(k)
             else:
-                # Calculate similarity scores for each potential match
-                scores = np.array([score_func(k, field) for field in fields_set])
-                if len(scores) == 0:
+                # Calculate scores
+                scores = [score_func(k, field) for field in fields_set]
+
+                # Check if scores list is empty
+                if not scores:
                     break
+
                 # Find the index of the highest score
-                max_score_index = np.argmax(scores)
+                max_score_index = scores.index(max(scores))
+                
                 # Select the best match based on the highest score
                 best_match = list(fields_set)[max_score_index]
 

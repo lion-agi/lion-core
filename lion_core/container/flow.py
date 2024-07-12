@@ -54,14 +54,8 @@ class Flow(Element):
             return pile({}, Progression, use_obj=True)
         if isinstance(value, dict):
             return pile(value, Progression, use_obj=True)
-        if (
-            isinstance(value, list)
-            and value
-            and isinstance(value[0], Progression)
-        ):
-            return pile(
-                {i.ln_id: i for i in value}, Progression, use_obj=True
-            )
+        if isinstance(value, list) and value and isinstance(value[0], Progression):
+            return pile({i.ln_id: i for i in value}, Progression, use_obj=True)
         return pile({}, Progression, use_obj=True)
 
     def all_orders(self) -> list[list[str]]:
@@ -91,9 +85,7 @@ class Flow(Element):
     def items(self):
         yield from self.sequences.items()
 
-    def get(
-        self, seq: str | None = None, default: Any = ...
-    ) -> Progression | None:
+    def get(self, seq: str | None = None, default: Any = ...) -> Progression | None:
         """
         Retrieves a sequence by name or returns the default sequence.
 
@@ -122,9 +114,7 @@ class Flow(Element):
                 seq = self.registry[seq]
 
         return (
-            self.sequences[seq]
-            if default == ...
-            else self.sequences.get(seq, default)
+            self.sequences[seq] if default == ... else self.sequences.get(seq, default)
         )
 
     def __getitem__(self, seq: str | None = None) -> Progression:
@@ -144,10 +134,7 @@ class Flow(Element):
         )
 
     def shape(self) -> dict[str, int]:
-        return {
-            key: len(self.sequences[value])
-            for key, value in self.registry.items()
-        }
+        return {key: len(self.sequences[value]) for key, value in self.registry.items()}
 
     def size(self) -> int:
         return sum(len(seq) for seq in self.all_orders())
@@ -159,9 +146,7 @@ class Flow(Element):
     def include(
         self, seq: Any = None, item: Any = None, name: str | None = None
     ) -> bool:
-        _sequence = self._find_sequence(seq, None) or self._find_sequence(
-            name, None
-        )
+        _sequence = self._find_sequence(seq, None) or self._find_sequence(name, None)
         if not _sequence:
             if not item and not name:
                 return False
@@ -314,9 +299,7 @@ class Flow(Element):
     def __next__(self):
         return next(iter(self))
 
-    def _find_sequence(
-        self, sequence: Any = None, default: Any = ...
-    ) -> str | None:
+    def _find_sequence(self, sequence: Any = None, default: Any = ...) -> str | None:
         """
         Finds the sequence ID in the registry or sequences.
 
@@ -338,9 +321,7 @@ class Flow(Element):
             raise ItemNotFoundError("No sequence found.")
 
         if sequence in self.sequences:
-            return (
-                sequence.ln_id if isinstance(sequence, Progression) else sequence
-            )
+            return sequence.ln_id if isinstance(sequence, Progression) else sequence
 
         if sequence in self.registry:
             return self.registry[sequence]
@@ -397,5 +378,6 @@ def flow(sequences: Any = None, default_name: str | None = None) -> Flow:
                 raise e
         flow.register(seq)
     return flow
+
 
 # File: lion_core/container/flow.py

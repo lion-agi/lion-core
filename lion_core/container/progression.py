@@ -128,7 +128,9 @@ class Progression(Element, Ordering):
             if isinstance(key, slice):
                 a = self.order[key]
                 if len(a) < abs(key.stop - key.start):
-                    raise ItemNotFoundError(f"Requested more items than available: {key}")
+                    raise ItemNotFoundError(
+                        f"Requested more items than available: {key}"
+                    )
                 return Progression(order=a)
 
             a = self.order[key]
