@@ -35,7 +35,7 @@ class Container(AbstractSpace):
     @abstractmethod
     def __iter__(self) -> Any:
         """Return an iterator for the ordering."""
-        
+
     @abstractmethod
     def __next__(self) -> Any:
         """Return the next item in the ordering."""
@@ -170,5 +170,6 @@ class Collective(Container, Generic[T]):
     @abstractmethod
     def get(self, key: Any, default: Any = ...) -> T:
         """Return item at key if key in ordering, else default."""
+
 
 # File: lion_core/container/base.py

@@ -176,7 +176,7 @@ class Pile(Component, Collective[T]):
 
     def __iter__(self) -> Iterable[T]:
         """Return an iterator over the items in the pile."""
-        yield from (self.pile[key] for key in self.order)
+        yield from (self.pile[key] for key in self.order if key in self.pile)
 
     def keys(self) -> Iterable[str]:
         """Get the keys of the pile in their specified order."""
@@ -227,7 +227,7 @@ class Pile(Component, Collective[T]):
         try:
             key = SysUtil.get_lion_id(key)
             item = self.pile.pop(key)
-            self.order.remove(key)
+            self.order.exclude(key)
             return item
         except (ValueError, KeyError) as e:
             raise ItemNotFoundError(f"Key {key} not found in pile.") from e
@@ -245,7 +245,7 @@ class Pile(Component, Collective[T]):
         key = SysUtil.get_lion_id(item)
         if key in self.pile:
             del self.pile[key]
-            self.order.remove(key)
+            self.order.exclude(key)
         else:
             raise ItemNotFoundError(f"Item {key} not found in pile.")
 
@@ -339,25 +339,39 @@ class Pile(Component, Collective[T]):
         _flatten(self)
         return Pile(flattened_items, item_type=self.item_type, order=flattened_order)
 
-    def _validate_item_type(
-        self, value: set[Type[Element]] | None
-    ) -> set[Type[Element]] | None:
-        """Validate and convert the item_type field."""
+    def _validate_item_type(self, value):
+        """
+        Validate the item type for the pile.
+
+        Ensures that the provided item type is a subclass of Element or iModel.
+        Raises an error if the validation fails.
+
+        Args:
+            value: The item type to validate. Can be a single type or a list of types.
+
+        Returns:
+            set: A set of validated item types.
+
+        Raises:
+            LionTypeError: If an invalid item type is provided.
+            LionValueError: If duplicate item types are detected.
+        """
         if value is None:
             return None
 
-        value = SysUtil.to_list(value)
+        value = to_list_type(value)
 
         for i in value:
-            if not isinstance(i, type) or not issubclass(i, Element):
+            if not issubclass(i, Element):
                 raise LionTypeError(
-                    "Invalid item type. Expected a subclass of Element."
+                    "Invalid item type. Expected a subclass of Component."
                 )
 
         if len(value) != len(set(value)):
             raise LionValueError("Detected duplicated item types in item_type.")
 
-        return set(value) if value else None
+        if len(value) > 0:
+            return set(value)
 
     def _validate_pile(self, value: Any) -> dict[str, T]:
         """Validate and convert the items to be added to the pile."""
@@ -406,6 +420,139 @@ class Pile(Component, Collective[T]):
             return f"Pile({next(iter(self.pile.values())).__repr__()})"
         else:
             return f"Pile({length})"
+
+    def __iter__(self) -> Iterable[T]:
+        """Return an iterator over the items in the pile."""
+        yield from (self.pile[key] for key in self.order if key in self.pile)
+
+    def __next__(self):
+        try:
+            return next(iter(self))
+        except StopIteration:
+            raise StopIteration("End of pile")
+
+    def __delitem__(self, index) -> None:
+        del self[index]
+
+    def append(self, item: T):
+        """
+        Append item to end of pile.
+
+        Appends item to end of pile. If item is `Pile`, added as single
+        item, preserving structure. Only way to add `Pile` into another.
+        Other methods assume pile as container only.
+
+        Args:
+            item: Item to append. Can be any lion object, including `Pile`.
+        """
+        self.pile[item.ln_id] = item
+        self.order.append(item.ln_id)
+
+    def __list__(self) -> list[T]:
+        a = []
+        for i in self:
+            if not i in a:
+                a.append(i)
+        return a[:]
+
+    def __add__(self, other: T) -> Pile:
+        """Create a new pile by including item(s) using `+`.
+
+        Returns a new `Pile` with all items from the current pile plus
+        provided item(s). Raises `LionValueError` if item(s) can't be
+        included.
+
+        Args:
+            other: Item(s) to include. Can be single item or collection.
+
+        Returns:
+            New `Pile` with all items from current pile plus item(s).
+
+        Raises:
+            LionValueError: If item(s) can't be included.
+        """
+        _copy = self.model_copy(deep=True)
+        if _copy.include(other):
+            return _copy
+        raise LionValueError("Item cannot be included in the pile.")
+
+    def __sub__(self, other) -> Pile:
+        """
+        Create a new pile by excluding item(s) using `-`.
+
+        Returns a new `Pile` with all items from the current pile except
+        provided item(s). Raises `ItemNotFoundError` if item(s) not found.
+
+        Args:
+            other: Item(s) to exclude. Can be single item or collection.
+
+        Returns:
+            New `Pile` with all items from current pile except item(s).
+
+        Raises:
+            ItemNotFoundError: If item(s) not found in pile.
+        """
+        _copy = self.model_copy(deep=True)
+        if other not in self:
+            raise ItemNotFoundError(other)
+
+        length = len(_copy)
+        if not _copy.exclude(other) or len(_copy) == length:
+            raise LionValueError("Item cannot be excluded from the pile.")
+        return _copy
+
+    def __iadd__(self, other: T) -> Pile:
+        """
+        Include item(s) in the current pile in place using `+=`.
+
+        Modifies the current pile in-place by including item(s). Returns
+        the modified pile.
+
+        Args:
+            other: Item(s) to include. Can be single item or collection.
+        """
+
+        return self + other
+
+    def __isub__(self, other) -> "Pile":
+        """
+        Exclude item(s) from the current pile using `-=`.
+
+        Modifies the current pile in-place by excluding item(s). Returns
+        the modified pile.
+
+        Args:
+            other: Item(s) to exclude. Can be single item or collection.
+
+        Returns:
+            Modified pile after excluding item(s).
+        """
+        return self - other
+
+    def __radd__(self, other: T) -> "Pile":
+        return other + self
+
+    def insert(self, index, item):
+        """
+        Insert item(s) at specific position.
+
+        Inserts item(s) at specified index. Index must be integer.
+        Raises `IndexError` if index out of range.
+
+        Args:
+            index: Index to insert item(s). Must be integer.
+            item: Item(s) to insert. Can be single item or collection.
+
+        Raises:
+            ValueError: If index not an integer.
+            IndexError: If index out of range.
+        """
+        if not isinstance(index, int):
+            raise ValueError("Index must be an integer for pile insertion.")
+        item = self._validate_pile(item)
+        for k, v in item.items():
+            self.order.insert(index, k)
+            self.pile[k] = v
 
 
 def pile(

@@ -376,7 +376,7 @@ class Component(Element):
         return (
             f"{self.__class__.__name__}("
             f"ln_id={self.ln_id[:8]}..., "
-            f"timestamp={self.timestamp.isoformat()}, "
+            f"timestamp={self._created_datetime}, "
             f"content='{content_preview}', "
             f"metadata_keys={list(self.metadata.keys())}, "
             f"extra_fields_keys={list(self.extra_fields.keys())})"
@@ -408,7 +408,7 @@ class Component(Element):
         return (
             f"{self.__class__.__name__}("
             f"ln_id={repr(self.ln_id)}, "
-            f"timestamp={self.timestamp.isoformat()}, "
+            f"timestamp={self._created_datetime}, "
             f"content={content_repr}, "
             f"metadata={truncate_dict(self.metadata)}, "
             f"extra_fields={truncate_dict(self.extra_fields)})"

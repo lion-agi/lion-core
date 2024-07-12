@@ -113,6 +113,15 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         """
         return cls.__name__
 
+    @property
+    def _created_datetime(self) -> datetime:
+        """Get the creation datetime of the Element.
+
+        Returns:
+            datetime: The creation datetime of the Element.
+        """
+        return datetime.fromtimestamp(self.timestamp, tz = TIME_CONFIG['tz']).isoformat(timespec="minutes")
+
     def __str__(self) -> str:
         """Return a string representation of the Element.
 
@@ -136,6 +145,6 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
     
     def __eq__(self, other: Any) -> bool:
         """check ln_id equality with another object."""
-        if "ln_id" not in other.__dict__:
+        if not hasattr(other, "ln_id"):
             return False
         return self.ln_id == other.ln_id

@@ -55,16 +55,16 @@ class Progression(Element, Ordering):
         """Check if item(s) are in the progression."""
         if item is None or not self.order:
             return False
-        
+
         if isinstance(item, str):
             if is_str_id(item):
                 return item in self.order
-        
+
         # for progression, we have two cases
         # first we check whether the progression.order is a subset of self.order
         if isinstance(item, Ordering) and item.order <= self.order:
             return True
-        
+
         # if not, we treat progression input as an ordinary element
         if isinstance(item, Element):
             return item.ln_id in self.order
@@ -120,11 +120,11 @@ class Progression(Element, Ordering):
             return next(iter(self.order))
         except StopIteration:
             raise StopIteration("No more items in the progression")
-        
+
     def size(self) -> int:
         """Get the size of the progression."""
         return len(self)
-    
+
     def clear(self) -> None:
         """Clear the progression."""
         self.order.clear()
@@ -149,7 +149,7 @@ class Progression(Element, Ordering):
         """Append an item to the end of the progression."""
         id_ = SysUtil.get_lion_id(item)
         self.order.extend(id_)
-        
+
     def pop(self, index: int | None = None) -> str:
         """Remove and return an item from the progression."""
         try:
@@ -282,6 +282,10 @@ class Progression(Element, Ordering):
             a = a[:50] + "..."
         return f"Progression(name={self.name}, size={len(self)}, items={a})"
 
+    def insert(self, index: int, item: Any) -> None:
+        """Insert an item at the specified index."""
+        self.order.insert(index, SysUtil.get_lion_id(item))
+
 
 def progression(order: list[str] | None = None, name: str | None = None) -> Progression:
     """Create a new Progression instance.
@@ -294,5 +298,6 @@ def progression(order: list[str] | None = None, name: str | None = None) -> Prog
         A new Progression instance.
     """
     return Progression(order=order, name=name)
+
 
 # File: lion_core/container/progression.py
