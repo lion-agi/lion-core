@@ -27,7 +27,7 @@ Usage:
 
 from __future__ import annotations
 
-from datetime import time
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, AliasChoices
@@ -37,6 +37,7 @@ from lion_core.abc.characteristic import Observable, Temporal
 from lion_core.settings import LION_ID_CONFIG
 from lion_core.util.sys_util import SysUtil
 from lion_core.util.class_registry_util import LION_CLASS_REGISTRY
+from ..settings._setting import TIME_CONFIG
 
 
 class Element(BaseModel, AbstractElement, Observable, Temporal):
@@ -73,9 +74,10 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         frozen=True,
         validation_alias=AliasChoices("id", "id_", "ID", "ID_"),
     )
-
-    timestamp: time = Field(
-        default_factory=lambda: SysUtil.time(type_="datetime"),
+    
+    # we use timestamp to do easy time data manipulation
+    timestamp: float = Field(
+        default_factory=lambda: SysUtil.time(type_="timestamp"),
         title="Creation Timestamp",
         frozen=True,
         alias="created",
@@ -118,8 +120,22 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
             str: A string containing the class name, truncated ln_id,
                  and formatted timestamp.
         """
-        timestamp_str = self.timestamp.isoformat(timespec="minutes")
+        timestamp = datetime.fromtimestamp(self.timestamp, tz = TIME_CONFIG['tz'])
+        timestamp_str = timestamp.isoformat(timespec="minutes")
         return (
             f"{self.class_name()}(ln_id={self.ln_id[:6]}.., "
             f"timestamp={timestamp_str})"
         )
+        
+    def __hash__(self) -> int:
+        return hash(self.ln_id)
+    
+    def __bool__(self) -> bool:
+        """element is always considered True."""
+        return True
+    
+    def __eq__(self, other: Any) -> bool:
+        """check ln_id equality with another object."""
+        if "ln_id" not in other.__dict__:
+            return False
+        return self.ln_id == other.ln_id

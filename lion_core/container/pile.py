@@ -10,6 +10,7 @@ from lion_core.exceptions import (
     LionItemError,
     LionTypeError,
     LionValueError,
+    LionIDError,
 )
 from lion_core.util.sys_util import SysUtil
 from lion_core.generic.component import Component
@@ -163,10 +164,9 @@ class Pile(Component, Collective[T]):
         item = to_list_type(item)
         for i in item:
             try:
-                a = i if isinstance(i, str) else SysUtil.get_lion_id(i)
-                if a not in self.pile:
+                if SysUtil.get_lion_id(i) not in self.pile:
                     return False
-            except Exception:
+            except LionIDError:
                 return False
         return True
 

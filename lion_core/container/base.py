@@ -1,7 +1,7 @@
 """Abstract space classes for the Lion framework."""
 
 from abc import abstractmethod
-from typing import Any, Iterable, TypeVar, Generic
+from typing import Any, TypeVar, Generic, Optional
 
 from ..abc.concept import AbstractSpace
 from ..abc.element import Element
@@ -12,147 +12,65 @@ T = TypeVar("T", bound=Element)
 class Container(AbstractSpace):
     """A container that is both an element and an abstract space."""
 
-
-class Ordering(Container):
-    """A container with a defined order."""
-
-
-class Collective(Container, Generic[T]):
-    """
-    An abstract base class for record-like structures in the Lion framework.
-
-    This class defines a set of common operations that should be implemented
-    by its subclasses to provide consistent behavior across different types
-    of records or collections.
-    """
-
     @abstractmethod
-    def __getitem__(self, key: Any) -> T:
-        """
-        Retrieve an item or items from the record.
-
-        Args:
-            key: The key or index to retrieve items.
-
-        Returns:
-            The item(s) corresponding to the given key.
-        """
-        pass
-
-    @abstractmethod
-    def __setitem__(self, key: Any, value: T) -> None:
-        """
-        Set an item or items in the record.
-
-        Args:
-            key: The key or index to set.
-            value: The value to set.
-        """
-        pass
+    def __list__(self) -> list:
+        """Return the ordering as a list."""
 
     @abstractmethod
     def __len__(self) -> int:
-        """
-        Get the number of items in the record.
-
-        Returns:
-            The number of items in the record.
-        """
-        pass
+        """Return the number of items."""
 
     @abstractmethod
-    def __iter__(self) -> Iterable[T]:
-        """
-        Return an iterator over the items in the record.
-
-        Yields:
-            Items in the record.
-        """
-
-        pass
+    def __getitem__(self, index: int) -> Any:
+        """Get item at index."""
 
     @abstractmethod
-    def keys(self) -> Iterable[Any]:
-        """
-        Get the keys or indices of the record.
-
-        Returns:
-            An iterable of keys or indices.
-        """
-        pass
+    def __setitem__(self, index: int, item: Any) -> None:
+        """Set item at index."""
 
     @abstractmethod
-    def values(self) -> Iterable[T]:
-        """
-        Get the values of the record.
-
-        Returns:
-            An iterable of values.
-        """
-        pass
+    def __delitem__(self, index: int) -> None:
+        """Delete item at index."""
 
     @abstractmethod
-    def items(self) -> Iterable[tuple[Any, T]]:
-        """
-        Get the items of the record as (key, value) pairs.
-
-        Returns:
-            An iterable of (key, value) tuples.
-        """
-        pass
+    def __iter__(self) -> Any:
+        """Return an iterator for the ordering."""
+        
+    @abstractmethod
+    def __next__(self) -> Any:
+        """Return the next item in the ordering."""
 
     @abstractmethod
-    def get(self, key: Any, default: Any = None) -> T:
-        """
-        Get an item from the record with a default value if not found.
-
-        Args:
-            key: The key of the item to get.
-            default: The default value to return if the key is not found.
-
-        Returns:
-            The item if found, otherwise the default value.
-        """
-        pass
-
-    @abstractmethod
-    def pop(self, key: Any, default: Any = None) -> T:
-        """
-        Remove and return an item from the record.
-
-        Args:
-            key: The key of the item to remove.
-            default: The default value to return if the key is not found.
-
-        Returns:
-            The removed item if found, otherwise the default value.
-        """
-        pass
+    def size(self) -> int:
+        """Return the size of the container. Similar to numpy.size()"""
 
     @abstractmethod
     def clear(self) -> None:
-        """Remove all items from the record."""
-        pass
+        """Remove all items from the container."""
 
     @abstractmethod
-    def update(self, other: Any) -> None:
-        """
-        Update the record with items from another record or iterable.
-
-        Args:
-            other: The record or iterable to update from.
-        """
-        pass
+    def copy(self) -> "Container":
+        """Return a shallow copy of the container."""
 
     @abstractmethod
-    def copy(self) -> "Collective[T]":
-        """
-        Create a shallow copy of the record.
+    def keys(self) -> Any:
+        """Return a key for the ordering."""
 
-        Returns:
-            A new Record instance with the same items.
-        """
-        pass
+    @abstractmethod
+    def values(self) -> Any:
+        """Return the values of the ordering."""
+
+    @abstractmethod
+    def items(self) -> Any:
+        """Return the items of the ordering as (key, value) pairs."""
+
+    @abstractmethod
+    def append(self, *args, **kwargs) -> None:
+        """Add an item to the end of the ordering."""
+
+    @abstractmethod
+    def pop(self, *args, **kwargs) -> Any:
+        """Remove and return item at index (default last)."""
 
     @abstractmethod
     def include(self, item: T) -> bool:
@@ -166,7 +84,6 @@ class Collective(Container, Generic[T]):
             True if the item was included, False if exception occurred or
             the item wasn't a member of the record when function exited.
         """
-        pass
 
     @abstractmethod
     def exclude(self, item: T) -> bool:
@@ -180,7 +97,6 @@ class Collective(Container, Generic[T]):
             True if the item was excluded, False if exception occurred or
             the item still is a member of the record when function exited.
         """
-        pass
 
     @abstractmethod
     def is_empty(self) -> bool:
@@ -190,18 +106,6 @@ class Collective(Container, Generic[T]):
         Returns:
             True if the record is empty, False otherwise.
         """
-        pass
-
-    @abstractmethod
-    def size(self) -> int:
-        """
-        Get the total size of the record.
-
-        Returns:
-            The total size of the record, which may differ from __len__
-            depending on the implementation.
-        """
-        pass
 
     def __bool__(self) -> bool:
         """
@@ -212,5 +116,59 @@ class Collective(Container, Generic[T]):
         """
         return not self.is_empty()
 
+
+class Ordering(Container):
+    """A container with a defined order."""
+
+    @abstractmethod
+    def __reverse__(self) -> "Ordering":
+        """Return a reversed copy of the ordering."""
+
+    @abstractmethod
+    def __eq__(self, other: Any) -> bool:
+        """Return True if the orderings are equal, False otherwise."""
+
+    @abstractmethod
+    def index(self, item: Any, start: int = 0, end: Optional[int] = None) -> int:
+        """Return first index of item. Raise ValueError if not found."""
+
+    @abstractmethod
+    def remove(self, item: Any) -> None:
+        """Remove the first occurrence of an item from the ordering."""
+
+    @abstractmethod
+    def popleft(self) -> Any:
+        """Remove and return first item in the ordering."""
+
+    @abstractmethod
+    def extend(self, *args, **kwargs) -> None:
+        """Add multiple items to the end of the ordering."""
+
+    @abstractmethod
+    def count(self, *args, **kwargs) -> int:
+        """Return number of occurrences of item."""
+
+
+class Collective(Container, Generic[T]):
+    """
+    An abstract base class for record-like structures in the Lion framework.
+
+    This class defines a set of common operations that should be implemented
+    by its subclasses to provide consistent behavior across different types
+    of records or collections.
+    """
+
+    @abstractmethod
+    def update(self, other: Any) -> None:
+        """
+        Update the record with items from another record or iterable.
+
+        Args:
+            other: The record or iterable to update from.
+        """
+
+    @abstractmethod
+    def get(self, key: Any, default: Any = ...) -> T:
+        """Return item at key if key in ordering, else default."""
 
 # File: lion_core/container/base.py

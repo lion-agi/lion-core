@@ -18,6 +18,8 @@ from hashlib import sha256
 from datetime import datetime, timezone
 import logging
 
+from ..settings._setting import TIME_CONFIG
+from ..abc.concept import AbstractElement
 from ..exceptions import LionIDError
 
 
@@ -26,7 +28,7 @@ class SysUtil:
 
     @staticmethod
     def time(
-        tz: timezone = timezone.utc,
+        tz: timezone = TIME_CONFIG['tz'],
         type_: str = "timestamp",
         iso: bool = False,
         sep: str | None = "T",
@@ -122,6 +124,7 @@ class SysUtil:
         return importlib.util.find_spec(package_name) is not None
 
     @staticmethod
+    @lru_cache
     def check_import(
         package_name: str,
         module_name: str | None = None,
@@ -241,6 +244,7 @@ class SysUtil:
         return prefix + modifiable_part + postfix
 
     @staticmethod
+    @lru_cache
     def get_lion_id(item: Any) -> str:
         """Get the Lion ID of an item."""
         if isinstance(item, Sequence) and len(item) == 1:
@@ -250,7 +254,7 @@ class SysUtil:
             (len(item) == 32)  # for backward compatibility
         ):
             return item
-        if getattr(item, "ln_id", None) is not None:
+        if isinstance(item, AbstractElement):
             return item.ln_id
         raise LionIDError("Item must contain a lion id.")
 

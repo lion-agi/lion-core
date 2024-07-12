@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 md_json_char_map = {"'": '\\"', "\n": "\\n", "\r": "\\r", "\t": "\\t"}
 

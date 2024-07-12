@@ -1,3 +1,5 @@
+from datetime import timezone
+
 LION_ID_CONFIG = {
     "n": 28,
     "random_hyphen": True,
@@ -17,3 +19,7 @@ BASE_LION_FIELDS = [
     "created",
     "embedding",
 ]
+
+TIME_CONFIG = {
+    "tz": timezone.utc,
+}
