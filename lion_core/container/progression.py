@@ -15,23 +15,70 @@ from .util import validate_order, is_str_id, to_list_type
 
 class Progression(Element, Ordering):
     """
-    A container of ordered items with various manipulation methods.
+    A flexible, ordered sequence container for managing and manipulating lists of items.
 
-    This class provides functionality for managing, accessing, and modifying
-    ordered sequences of items. It supports common operations such as appending,
-    extending, removing, and accessing items by index or slice. The class
-    maintains order using unique identifiers (Lion IDs) for each item.
+    The Progression class is a core component in the Lion framework, designed to maintain
+    an ordered list of item identifiers (Lion IDs) while providing a rich set of operations
+    for manipulation and access. It combines list-like functionality with additional
+    features specific to the Lion framework.
+
+    Key features:
+    - Maintains an ordered list of item identifiers (Lion IDs)
+    - Supports both list-like indexing and Lion ID-based operations
+    - Provides methods for adding, removing, and manipulating items
+    - Implements common sequence operations (len, iter, contain, etc.)
+    - Supports arithmetic operations for combining progressions
 
     Attributes:
-        name (str | None): The name of the progression.
-        order (list[str]): The ordered list of item identifiers.
+        name (str | None): Optional name for the progression.
+        order (list[str]): The ordered list of item identifiers (Lion IDs).
 
-    Example:
-        >>> prog = Progression(name="My Progression")
-        >>> prog.append(item1)
-        >>> prog.extend([item2, item3])
-        >>> first_item = prog[0]
-        >>> sub_prog = prog[1:3]
+    Args:
+        order (list[str] | None, optional): Initial order of items.
+        name (str | None, optional): Name for the progression.
+
+    Examples:
+        >>> from lion_core.abc.element import Element
+        >>> class MyElement(Element):
+        ...     value: int
+        >>> p = Progression(name="My Progression")
+        >>> e1, e2, e3 = MyElement(value=1), MyElement(value=2), MyElement(value=3)
+        >>> p.append(e1)
+        >>> p.extend([e2, e3])
+        >>> len(p)
+        3
+        >>> p[0]  # Returns the Lion ID of the first element
+        'ln_...'
+        >>> p[1:]  # Returns a new Progression with the last two elements
+        Progression(['ln_...', 'ln_...'])
+        >>> e2 in p
+        True
+        >>> p.pop()  # Removes and returns the last item's Lion ID
+        'ln_...'
+        >>> p += MyElement(value=4)  # Appends a new element
+        >>> p.index(e2)
+        1
+        >>> q = Progression([MyElement(value=5), MyElement(value=6)])
+        >>> r = p + q  # Creates a new combined Progression
+        >>> len(r)
+        5
+
+    Notes:
+        - The Progression class works with Lion IDs, which are unique identifiers
+          for Element objects in the Lion framework.
+        - When adding or manipulating items, the class automatically extracts
+          and uses the Lion IDs of the provided Element objects.
+        - The class supports both integer indexing and slicing, similar to Python lists.
+        - Arithmetic operations (+, -, +=, -=) are supported for combining and
+          modifying progressions.
+
+    Raises:
+        ItemNotFoundError: When trying to access or remove a non-existent item.
+        IndexError: When attempting operations with invalid indices.
+
+    See Also:
+        Element: The base class for items that can be stored in a Progression.
+        Ordering: The base class defining the interface for ordered collections in Lion.
     """
 
     name: str | None = Field(

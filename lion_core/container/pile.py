@@ -22,13 +22,71 @@ T = TypeVar("T", bound=Element)
 
 class Pile(Component, Collective[T]):
     """
-    A flexible, ordered collection of Elements.
+    A flexible, ordered collection of Elements that provides both list-like and dictionary-like access.
+
+    The Pile class is a core container in the Lion framework, designed to store and manage
+    collections of Element objects. It maintains both the order of items and allows fast
+    access by unique identifiers.
+
+    Key features:
+    - Maintains order of items while allowing dict-like access
+    - Supports type checking of items (optional)
+    - Flexible item retrieval (by index, slice, or LionID)
+    - Implements common container methods (len, iter, contain)
+    - Supports standard operations like update, clear, and flatten
 
     Attributes:
-        use_obj (bool): If True, treat Record and Ordering as objects.
-        pile (dict[str, T]): Maps unique identifiers to items.
-        item_type (set[Type[Element]] | None): Allowed item types.
-        order (Progression): Order of item identifiers.
+        use_obj (bool): If True, treat Record and Ordering objects directly.
+        pile (dict[str, T]): Internal storage mapping unique identifiers to items.
+        item_type (set[Type[Element]] | None): Set of allowed types for items in the pile.
+        order (list[str]): List maintaining the order of item identifiers.
+
+    Args:
+        items (Any, optional): Initial items to populate the pile.
+        item_type (set[Type[Element]] | None, optional): Allowed types for items.
+        order (list[str] | None, optional): Initial order of items.
+        use_obj (bool, optional): Whether to use objects directly. Defaults to False.
+
+    Examples:
+        >>> from lion_core.abc.element import Element
+        >>> class MyElement(Element):
+        ...     value: int
+        >>> p = Pile([MyElement(value=i) for i in range(3)])
+        >>> len(p)
+        3
+        >>> p[0].value
+        0
+        >>> p[1:].values()
+        [MyElement(value=1), MyElement(value=2)]
+        >>> 'ln_' in p  # Assuming 'ln_' is the start of a LionID
+        True
+        >>> p.append(MyElement(value=3))
+        >>> p.pop(0).value
+        0
+        >>> p2 = Pile(item_type={MyElement})
+        >>> p2.include(MyElement(value=4))
+        True
+        >>> p2.include("not an element")
+        False  # Raises LionTypeError
+
+    Notes:
+        - The Pile class is designed to work with Element subclasses, which must have
+          a unique 'ln_id' attribute.
+        - When `use_obj` is True, certain objects like Record and Ordering are treated
+          directly rather than being decomposed.
+        - The class supports both list-like operations (indexing, slicing) and
+          dict-like operations (key access) for flexibility.
+        - Type checking is performed when `item_type` is specified, ensuring only
+          allowed types are added to the Pile.
+
+    Raises:
+        LionTypeError: If an item of an invalid type is added when `item_type` is set.
+        ItemNotFoundError: When trying to access or remove a non-existent item.
+        ValueError: If there's a mismatch between items and provided order.
+
+    See Also:
+        Element: The base class for items that can be stored in a Pile.
+        Collective: The base class defining the interface for collections in Lion.
     """
 
     use_obj: bool = Field(
@@ -122,7 +180,7 @@ class Pile(Component, Collective[T]):
             return pile([self.pile.get(i) for i in keys], self.item_type, keys)
         except KeyError as e:
             raise ItemNotFoundError(key) from e
-        
+
     def __setitem__(self, key, item) -> None:
         """
         Set new values in the pile using various key types.
@@ -169,7 +227,7 @@ class Pile(Component, Collective[T]):
 
         self.pile.update(item)
         self.order.extend(item.keys())
-        
+
     def __contains__(self, item: Any) -> bool:
         """
         Check if item(s) are present in the pile.
@@ -384,7 +442,11 @@ class Pile(Component, Collective[T]):
                     flattened_order.append(flat_key)
 
         _flatten(self)
-        return Pile(flattened_items, item_type=self.item_type, order=to_list(flattened_order, flatten=True))
+        return Pile(
+            flattened_items,
+            item_type=self.item_type,
+            order=to_list(flattened_order, flatten=True),
+        )
 
     def _validate_item_type(self, value):
         """
