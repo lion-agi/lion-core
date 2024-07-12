@@ -4,23 +4,23 @@ from typing import Any, TypeVar, Type, Iterable
 from pydantic import Field
 
 from lion_core.libs import to_list
-from lion_core.container.base import Collective, Container
+from lion_core.util.sys_util import SysUtil
 from lion_core.abc.element import Element
 from lion_core.exceptions import (
     ItemNotFoundError,
     LionTypeError,
     LionValueError,
     LionIDError,
+    LionItemError,
 )
-from lion_core.util.sys_util import SysUtil
-from lion_core.generic.component import Component
+from .base import Collective, Container
 from .progression import Progression
 from .util import to_list_type
 
 T = TypeVar("T", bound=Element)
 
 
-class Pile(Component, Collective[T]):
+class Pile(Element, Collective[T]):
     """
     A flexible, ordered collection of Elements that provides both list-like and dictionary-like access.
 
@@ -128,7 +128,7 @@ class Pile(Component, Collective[T]):
 
         order = order or list(self.pile.keys())
         if not len(order) == len(self):
-            raise ValueError(
+            raise LionValueError(
                 "The length of the order does not match the length of the pile"
             )
         self.order = order
@@ -161,7 +161,7 @@ class Pile(Component, Collective[T]):
                 _out = [self.pile.get(i) for i in _key]
                 return _out[0] if len(_out) == 1 else pile(_out, self.item_type, _key)
         except IndexError as e:
-            raise ItemNotFoundError(key) from e
+            raise ItemNotFoundError from e
 
         keys = to_list_type(key)
         for idx, item in enumerate(keys):
@@ -172,14 +172,14 @@ class Pile(Component, Collective[T]):
                 keys[idx] = item.ln_id
 
         if not all(keys):
-            raise LionTypeError("Invalid item type. Expected LionIDable object(s).")
+            raise LionIDError
 
         try:
             if len(keys) == 1:
                 return self.pile.get(keys[0])
             return pile([self.pile.get(i) for i in keys], self.item_type, keys)
         except KeyError as e:
-            raise ItemNotFoundError(key) from e
+            raise ItemNotFoundError from e
 
     def __setitem__(self, key, item) -> None:
         """
@@ -215,7 +215,7 @@ class Pile(Component, Collective[T]):
 
             for k, v in item.items():
                 if self.item_type and type(v) not in self.item_type:
-                    raise LionTypeError(f"Invalid item type. Expected {self.item_type}")
+                    raise LionTypeError(f"Invalid item type.", self.item_type, type(v))
 
                 self.pile[k] = v
                 self.order[key] = k
@@ -321,7 +321,7 @@ class Pile(Component, Collective[T]):
         for i in key:
             if i not in self:
                 if default == ...:
-                    raise ItemNotFoundError(i)
+                    raise ItemNotFoundError
                 return default
 
         for i in key:
@@ -344,9 +344,9 @@ class Pile(Component, Collective[T]):
         key = SysUtil.get_lion_id(item)
         if key in self.pile:
             del self.pile[key]
-            self.order.exclude(key)
+            self.order.remove(key)
         else:
-            raise ItemNotFoundError(f"Item {key} not found in pile.")
+            raise ItemNotFoundError
 
     def include(self, item: Any) -> bool:
         """
@@ -473,7 +473,7 @@ class Pile(Component, Collective[T]):
         for i in value:
             if not issubclass(i, Element):
                 raise LionTypeError(
-                    "Invalid item type. Expected a subclass of Component."
+                    "Item type must be a subclass of Element.", Element, type(i)
                 )
 
         if len(value) != len(set(value)):
@@ -564,6 +564,9 @@ class Pile(Component, Collective[T]):
                 a.append(i)
         return a[:]
 
+    def copy(self):
+        return self.model_copy(deep=True)
+
     def __add__(self, other: T) -> Pile:
         """Create a new pile by including item(s) using `+`.
 
@@ -580,10 +583,10 @@ class Pile(Component, Collective[T]):
         Raises:
             LionValueError: If item(s) can't be included.
         """
-        _copy = self.model_copy(deep=True)
+        _copy = self.copy()
         if _copy.include(other):
             return _copy
-        raise LionValueError("Item cannot be included in the pile.")
+        raise LionItemError("Item cannot be included in the pile.")
 
     def __sub__(self, other) -> Pile:
         """
@@ -601,13 +604,13 @@ class Pile(Component, Collective[T]):
         Raises:
             ItemNotFoundError: If item(s) not found in pile.
         """
-        _copy = self.model_copy(deep=True)
+        _copy = self.copy()
         if other not in self:
-            raise ItemNotFoundError(other)
+            raise ItemNotFoundError
 
         length = len(_copy)
         if not _copy.exclude(other) or len(_copy) == length:
-            raise LionValueError("Item cannot be excluded from the pile.")
+            raise LionItemError("Item cannot be excluded from the pile.")
         return _copy
 
     def __iadd__(self, other: T) -> Pile:
@@ -620,12 +623,13 @@ class Pile(Component, Collective[T]):
         Args:
             other: Item(s) to include. Can be single item or collection.
         """
-
-        return self + other
+        if self.include(other):
+            return self
+        raise LionItemError("Item cannot be included in the pile.")
 
     def __isub__(self, other) -> "Pile":
         """
-        Exclude item(s) from the current pile using `-=`.
+        Exclude item(s) from the current pile in palce using `-=`.
 
         Modifies the current pile in-place by excluding item(s). Returns
         the modified pile.
@@ -636,7 +640,8 @@ class Pile(Component, Collective[T]):
         Returns:
             Modified pile after excluding item(s).
         """
-        return self - other
+        self.remove(other)
+        return self
 
     def __radd__(self, other: T) -> "Pile":
         return other + self
@@ -657,7 +662,7 @@ class Pile(Component, Collective[T]):
             IndexError: If index out of range.
         """
         if not isinstance(index, int):
-            raise ValueError("Index must be an integer for pile insertion.")
+            raise LionTypeError("Index must be an integer.", int, type(index))
         item = self._validate_pile(item)
         for k, v in item.items():
             self.order.insert(index, k)
