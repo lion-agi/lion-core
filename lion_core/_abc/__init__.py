@@ -1,6 +1,6 @@
 from .concept import AbstractObserver, AbstractElement, AbstractSpace
-from .characteristic import Observable, Temporal  # Quantum, Probabilistic
-from .observer import Manager, BaseExecutor, BaseProcessor
+from .characteristic import Observable, Temporal  # Quantum, Probabilistic, Stochastic
+from .observer import BaseManager, BaseExecutor, BaseProcessor
 from .event import Signal, Condition, Action
 from .container import Container, Collective, Ordering, Index
 
@@ -11,7 +11,7 @@ __all__ = [
     "AbstractObserver",
     "Observable",
     "Temporal",
-    "Manager",
+    "BaseManager",
     "BaseExecutor",
     "BaseProcessor",
     "Signal",
@@ -22,7 +22,8 @@ __all__ = [
     "Ordering",
     "Index",
     # "Quantum",
-    # "Probabilistic",
+    # "Probabilistic", 
+    # "Stochastic"
 ]
 
-# File: lion_core/abc/__init__.py
+# File: lion_core/_abc/__init__.py
