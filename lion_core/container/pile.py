@@ -1,3 +1,15 @@
+"""
+Defines the Pile class for managing flexible Element collections in Lion.
+
+This module provides the Pile class, a versatile container combining list-like
+and dictionary-like behaviors for storing and manipulating Element objects. It
+supports type checking, ordered access, and various collection operations.
+
+Key components:
+- Pile: Main class for managing collections of Elements.
+- pile: Utility function for creating Pile instances.
+"""
+
 from __future__ import annotations
 from typing import Any, TypeVar, Type, Iterable
 
@@ -5,7 +17,7 @@ from pydantic import Field
 
 from lion_core.libs import to_list
 from lion_core.util.sys_util import SysUtil
-from lion_core.abc.element import Element
+from lion_core.element import Element
 from lion_core.exceptions import (
     ItemNotFoundError,
     LionTypeError,
@@ -13,80 +25,27 @@ from lion_core.exceptions import (
     LionIDError,
     LionItemError,
 )
-from .base import Collective, Container
+from .._abc.container import Collective, Container
 from .progression import Progression
 from .util import to_list_type
+from lion_core.util.undefined import LN_UNDEFINED
 
 T = TypeVar("T", bound=Element)
 
 
 class Pile(Element, Collective[T]):
     """
-    A flexible, ordered collection of Elements that provides both list-like and dictionary-like access.
+    A flexible, ordered collection of Elements with list and dict-like access.
 
-    The Pile class is a core container in the Lion framework, designed to store and manage
-    collections of Element objects. It maintains both the order of items and allows fast
-    access by unique identifiers.
-
-    Key features:
-    - Maintains order of items while allowing dict-like access
-    - Supports type checking of items (optional)
-    - Flexible item retrieval (by index, slice, or LionID)
-    - Implements common container methods (len, iter, contain)
-    - Supports standard operations like update, clear, and flatten
+    The Pile class is a core container in the Lion framework, designed to store
+    and manage collections of Element objects. It maintains both the order of
+    items and allows fast access by unique identifiers.
 
     Attributes:
         use_obj (bool): If True, treat Record and Ordering objects directly.
-        pile (dict[str, T]): Internal storage mapping unique identifiers to items.
-        item_type (set[Type[Element]] | None): Set of allowed types for items in the pile.
+        pile (dict[str, T]): Internal storage mapping identifiers to items.
+        item_type (set[Type[Element]] | None): Set of allowed item types.
         order (list[str]): List maintaining the order of item identifiers.
-
-    Args:
-        items (Any, optional): Initial items to populate the pile.
-        item_type (set[Type[Element]] | None, optional): Allowed types for items.
-        order (list[str] | None, optional): Initial order of items.
-        use_obj (bool, optional): Whether to use objects directly. Defaults to False.
-
-    Examples:
-        >>> from lion_core.abc.element import Element
-        >>> class MyElement(Element):
-        ...     value: int
-        >>> p = Pile([MyElement(value=i) for i in range(3)])
-        >>> len(p)
-        3
-        >>> p[0].value
-        0
-        >>> p[1:].values()
-        [MyElement(value=1), MyElement(value=2)]
-        >>> 'ln_' in p  # Assuming 'ln_' is the start of a LionID
-        True
-        >>> p.append(MyElement(value=3))
-        >>> p.pop(0).value
-        0
-        >>> p2 = Pile(item_type={MyElement})
-        >>> p2.include(MyElement(value=4))
-        True
-        >>> p2.include("not an element")
-        False  # Raises LionTypeError
-
-    Notes:
-        - The Pile class is designed to work with Element subclasses, which must have
-          a unique 'ln_id' attribute.
-        - When `use_obj` is True, certain objects like Record and Ordering are treated
-          directly rather than being decomposed.
-        - The class supports both list-like operations (indexing, slicing) and
-          dict-like operations (key access) for flexibility.
-        - Type checking is performed when `item_type` is specified, ensuring only
-          allowed types are added to the Pile.
-
-    Raises:
-        LionTypeError: If an item of an invalid type is added when `item_type` is set.
-        ItemNotFoundError: When trying to access or remove a non-existent item.
-        ValueError: If there's a mismatch between items and provided order.
-
-    See Also:
-        Element: The base class for items that can be stored in a Pile.
-        Collective: The base class defining the interface for collections in Lion.
     """
 
     use_obj: bool = Field(
@@ -118,7 +77,6 @@ class Pile(Element, Collective[T]):
             item_type: Allowed types for items in the pile.
             order: Initial order of items (as Progression).
             use_obj: Whether to use objects directly.
-            **kwargs: Additional keyword arguments for the Component constructor.
         """
         super().__init__()
 
@@ -248,41 +206,61 @@ class Pile(Element, Collective[T]):
         return True
 
     def __len__(self) -> int:
-        """Get the number of items in the pile."""
+        """
+        Get the number of items in the pile.
+
+        Returns:
+            int: The number of items in the pile.
+        """
         return len(self.pile)
 
     def __iter__(self) -> Iterable[T]:
-        """Return an iterator over the items in the pile."""
+        """
+        Return an iterator over the items in the pile.
+
+        Yields:
+            The items in the pile in their specified order.
+        """
+
         yield from (self.pile[key] for key in self.order if key in self.pile)
 
     def keys(self) -> Iterable[str]:
-        """Get the keys of the pile in their specified order."""
+        """
+        Get the keys of the pile in their specified order.
+
+        Returns:
+            An iterable of keys (LionIDs) in the pile.
+        """
         return self.order
 
     def values(self) -> Iterable[T]:
-        """Get the values of the pile in their specified order."""
+        """
+        Get the values of the pile in their specified order.
+
+        Returns:
+            An iterable of values (Elements) in the pile.
+        """
         return (self.pile[key] for key in self.order)
 
     def items(self) -> Iterable[tuple[str, T]]:
-        """Get the items of the pile as (key, value) pairs in their order."""
+        """
+        Get the items of the pile as (key, value) pairs in their order.
+
+        Returns:
+            An iterable of (key, value) pairs.
+        """
         return ((key, self.pile[key]) for key in self.order)
 
-    def get(self, key: Any, default=...) -> T | "Pile[T]" | None:
+    def get(self, key: Any, default=LN_UNDEFINED) -> T | "Pile[T]" | None:
         """
         Retrieve item(s) associated with given key.
 
-        Raises `ItemNotFoundError` if key not found and no default given.
-        Returns default if provided and key not found.
-
         Args:
             key: Key of item(s) to retrieve. Can be single or collection.
-            default: Default value if key not found. If not specified
-                and key not found, raises `ItemNotFoundError`.
+            default: Default value if key not found.
 
         Returns:
-            Retrieved item(s) associated with key. Single items returned
-            directly, multiple items in new `Pile`. Returns default if
-            provided and key not found.
+            Retrieved item(s) or default if key not found.
 
         Raises:
             ItemNotFoundError: If key not found and no default specified.
@@ -290,27 +268,20 @@ class Pile(Element, Collective[T]):
         try:
             return self[key]
         except ItemNotFoundError as e:
-            if default == ...:
+            if default is LN_UNDEFINED:
                 raise e
             return default
 
-    def pop(self, key: Any, default=...) -> T | "Pile[T]" | None:
+    def pop(self, key: Any, default=LN_UNDEFINED) -> T | "Pile[T]" | None:
         """
         Remove and return item(s) associated with given key.
 
-        Raises `ItemNotFoundError` if key not found and no default given.
-        Returns default if provided and key not found.
-
         Args:
-            key: Key of item(s) to remove and return. Can be single key
-                or collection of keys.
-            default: Default value if key not found. If not specified
-                and key not found, raises `ItemNotFoundError`.
+            key: Key of item(s) to remove. Can be single or collection.
+            default: Default value if key not found.
 
         Returns:
-            Removed item(s) associated with key. Single items returned
-            directly, multiple items in new `Pile`. Returns default if
-            provided and key not found.
+            Removed item(s) or default if key not found.
 
         Raises:
             ItemNotFoundError: If key not found and no default specified.
@@ -320,7 +291,7 @@ class Pile(Element, Collective[T]):
 
         for i in key:
             if i not in self:
-                if default == ...:
+                if default is LN_UNDEFINED:
                     raise ItemNotFoundError
                 return default
 
@@ -352,15 +323,11 @@ class Pile(Element, Collective[T]):
         """
         Include item(s) in pile if not already present.
 
-        Accepts individual items and collections. Adds items if not
-        present. Returns `True` if item(s) in pile after operation,
-        `False` otherwise.
-
         Args:
             item: Item(s) to include. Can be single item or collection.
 
         Returns:
-            `True` if item(s) in pile after operation, `False` otherwise.
+            bool: True if item(s) in pile after operation, False otherwise.
         """
         item = to_list_type(item)
         if item not in self:
@@ -371,16 +338,13 @@ class Pile(Element, Collective[T]):
         """
         Exclude item(s) from pile if present.
 
-        Accepts individual items and collections. Removes items if
-        present. Returns `True` if item(s) not in pile after operation,
-        `False` otherwise.
-
         Args:
             item: Item(s) to exclude. Can be single item or collection.
 
         Returns:
-            `True` if item(s) not in pile after operation, `False` else.
+            bool: True if item(s) not in pile after operation, False otherwise.
         """
+
         item = to_list_type(item)
         for i in item:
             if item in self:
@@ -396,21 +360,28 @@ class Pile(Element, Collective[T]):
         """
         Update pile with another collection of items.
 
-        Accepts `Pile` or any iterable. Provided items added to current
-        pile, overwriting existing items with same keys.
-
         Args:
-            other: Collection to update with. Can be any LionIDable
+            other: Collection to update with. Can be any LionIDable.
         """
         p = pile(other)
         self[p] = p
 
     def is_empty(self) -> bool:
-        """Check if the pile is empty."""
+        """
+        Check if the pile is empty.
+
+        Returns:
+            bool: True if the pile is empty, False otherwise.
+        """
         return self.order == []
 
     def size(self) -> int:
-        """Get the number of items in the pile."""
+        """
+        Get the number of items in the pile.
+
+        Returns:
+            int: The number of items in the pile.
+        """
         return len(self.order)
 
     def flatten(self, recursive: bool = True, max_depth: int | None = None) -> Pile[T]:
@@ -547,10 +518,6 @@ class Pile(Element, Collective[T]):
         """
         Append item to end of pile.
 
-        Appends item to end of pile. If item is `Pile`, added as single
-        item, preserving structure. Only way to add `Pile` into another.
-        Other methods assume pile as container only.
-
         Args:
             item: Item to append. Can be any lion object, including `Pile`.
         """
@@ -558,6 +525,12 @@ class Pile(Element, Collective[T]):
         self.order.append(item.ln_id)
 
     def __list__(self) -> list[T]:
+        """
+        Convert the pile to a list of unique items.
+
+        Returns:
+            list: A list containing unique items from the pile.
+        """
         a = []
         for i in self:
             if not i in a:
@@ -565,23 +538,26 @@ class Pile(Element, Collective[T]):
         return a[:]
 
     def copy(self):
+        """
+        Create a deep copy of the pile.
+
+        Returns:
+            Pile: A new Pile instance with the same items.
+        """
         return self.model_copy(deep=True)
 
     def __add__(self, other: T) -> Pile:
-        """Create a new pile by including item(s) using `+`.
-
-        Returns a new `Pile` with all items from the current pile plus
-        provided item(s). Raises `LionValueError` if item(s) can't be
-        included.
+        """
+        Create a new pile by including item(s) using `+`.
 
         Args:
             other: Item(s) to include. Can be single item or collection.
 
         Returns:
-            New `Pile` with all items from current pile plus item(s).
+            Pile: New Pile with all items from current pile plus item(s).
 
         Raises:
-            LionValueError: If item(s) can't be included.
+            LionItemError: If item(s) can't be included.
         """
         _copy = self.copy()
         if _copy.include(other):
@@ -592,14 +568,11 @@ class Pile(Element, Collective[T]):
         """
         Create a new pile by excluding item(s) using `-`.
 
-        Returns a new `Pile` with all items from the current pile except
-        provided item(s). Raises `ItemNotFoundError` if item(s) not found.
-
         Args:
             other: Item(s) to exclude. Can be single item or collection.
 
         Returns:
-            New `Pile` with all items from current pile except item(s).
+            Pile: New Pile with all items from current pile except item(s).
 
         Raises:
             ItemNotFoundError: If item(s) not found in pile.
@@ -617,28 +590,26 @@ class Pile(Element, Collective[T]):
         """
         Include item(s) in the current pile in place using `+=`.
 
-        Modifies the current pile in-place by including item(s). Returns
-        the modified pile.
-
         Args:
             other: Item(s) to include. Can be single item or collection.
+
+        Returns:
+            Pile: The modified pile.
         """
+
         if self.include(other):
             return self
         raise LionItemError("Item cannot be included in the pile.")
 
     def __isub__(self, other) -> "Pile":
         """
-        Exclude item(s) from the current pile in palce using `-=`.
-
-        Modifies the current pile in-place by excluding item(s). Returns
-        the modified pile.
+        Exclude item(s) from the current pile in place using `-=`.
 
         Args:
             other: Item(s) to exclude. Can be single item or collection.
 
         Returns:
-            Modified pile after excluding item(s).
+            Pile: The modified pile.
         """
         self.remove(other)
         return self
@@ -649,9 +620,6 @@ class Pile(Element, Collective[T]):
     def insert(self, index, item):
         """
         Insert item(s) at specific position.
-
-        Inserts item(s) at specified index. Index must be integer.
-        Raises `IndexError` if index out of range.
 
         Args:
             index: Index to insert item(s). Must be integer.
@@ -675,5 +643,17 @@ def pile(
     order: list[str] | None = None,
     use_obj: bool = False,
 ) -> Pile[T]:
-    """Create a new Pile instance."""
+    """
+    Create a new Pile instance.
+
+    Args:
+        items: Initial items for the pile.
+        item_type: Allowed types for items in the pile.
+        order: Initial order of items.
+        use_obj: Whether to use objects directly.
+
+    Returns:
+        Pile[T]: A new Pile instance.
+    """
+
     return Pile(items, item_type, order, use_obj)

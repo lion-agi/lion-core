@@ -10,205 +10,26 @@ Classes:
 """
 
 from __future__ import annotations
-from typing import Any, TypeVar, ClassVar, Type
+from typing import Any, TypeVar
 
-from pydantic import (
-    Field,
-    field_serializer,
-)
+from pydantic import Field
 from pydantic.fields import FieldInfo
 
-from ..abc.element import Element
-from ..libs import nget, ninsert, nset, npop
-from ..util.sys_util import SysUtil
+from lion_core.libs import nset
+from lion_core.util import SysUtil, LN_UNDEFINED
+from lion_core.exceptions import LionValueError
+
+from .base import BaseComponent
+
+T = TypeVar("T", bound="BaseComponent")
 
 
-T = TypeVar("T", bound="Component")
+class Component(BaseComponent):
 
-
-class Component(Element):
-    """Extended base class for components in the Lion framework.
-
-    This class builds upon the Element class, adding support for metadata,
-    extra fields, and content. It provides methods for conversion,
-    serialization, and field management.
-
-    Attributes:
-        metadata (dict[str, Any]): Additional metadata for the component.
-        content (Any): The main content of the component.
-        extra_fields (dict[str, Any]): Extra fields not in the base model.
-    """
-
-    metadata: dict[str, Any] = Field(
+    extra_fields: dict[str, Any] = Field(
         default_factory=dict,
-        description="Additional metadata for the component",
+        description="Instance-specific fields for the component.",
     )
-
-    content: Any = Field(
-        default=None,
-        description="The main content of the Element",
-    )
-
-    embedding: list = Field(default_factory=list)
-
-    extra_fields: dict[str, Any] = Field(default_factory=dict)
-
-    _class_registry: ClassVar[dict[str, Type[Component]]] = {}
-
-    @classmethod
-    def __pydantic_init_subclass__(cls, **kwargs):
-        """Initialize subclass and register it in the class registry."""
-        super().__pydantic_init_subclass__(**kwargs)
-        cls._class_registry[cls.__name__] = cls
-
-    # Refactor to use converter
-
-    # @classmethod
-    # def from_obj(cls: Type[T], obj: Any, converter_key: str) -> T:
-    #     """Create a Component instance from any object using a converter.
-
-    #     Args:
-    #         obj: The object to convert.
-    #         converter_key: The key for the converter to use.
-
-    #     Returns:
-    #         An instance of the Component class or its subclass.
-    #     """
-    #     dict_data = convert_from(obj, converter_key)
-    #     return cls.from_dict(dict_data)
-
-    # @classmethod
-    # def from_dict(
-    #     cls: Type[T],
-    #     data: dict[str, Any],
-    #     validation_config: dict[str, Any] = {},
-    #     **kwargs,
-    # ) -> T:
-    #     """Create a Component or its subclass instance from a dictionary.
-
-    #     This method overrides Element's from_dict to handle additional
-    #     attributes specific to Component.
-
-    #     Args:
-    #         data: The dictionary to create the instance from.
-    #         validation_config: Configuration for validation.
-    #         **kwargs: Additional keyword arguments.
-
-    #     Returns:
-    #         An instance of the Component class or its subclass.
-
-    #     Raises:
-    #         ValueError: If the dictionary is invalid for deserialization.
-    #     """
-    #     try:
-    #         # Combine input data with additional kwargs
-    #         combined_data = {**data, **kwargs}
-
-    #         # Extract the class name and remove it from the data
-    #         lion_class = combined_data.pop("lion_class", cls.__name__)
-
-    #         # Extract Component-specific data
-    #         metadata = combined_data.pop("metadata", {})
-    #         content = combined_data.pop("content", None)
-    #         extra_fields = combined_data.pop("extra_fields", {})
-
-    #         # Get the appropriate class
-    #         target_class = cls._get_class(lion_class)
-
-    #         # Use Element's from_dict for base attributes
-    #         base_instance = super().from_dict(combined_data)
-
-    #         # Create the instance using the target class
-    #         instance = target_class(
-    #             **base_instance.model_dump(),
-    #             metadata=metadata,
-    #             content=content,
-    #         )
-
-    #         # Add extra fields
-    #         for name, value in extra_fields.items():
-    #             if isinstance(value, dict):
-    #                 instance.add_field(name, FieldInfo(**value))
-    #             else:
-    #                 instance.add_field(name, FieldInfo(default=value))
-
-    #         # Perform any additional validation
-    #         return target_class.model_validate(
-    #             instance.model_dump(), **validation_config
-    #         )
-    #     except ValidationError as e:
-    #         raise ValueError("Invalid dictionary for deserialization.") from e
-
-    # @model_validator(mode="before")
-    # @classmethod
-    # def _process_generic_dict(cls, data: Any) -> Any:
-    #     """Process input data before model validation.
-
-    #     Args:
-    #         data: The input data to process.
-
-    #     Returns:
-    #         The processed data.
-    #     """
-    #     if not isinstance(data, dict):
-    #         return data
-
-    #     meta_ = data.pop("metadata", {})
-    #     extra_fields = data.pop("extra_fields", {})
-
-    #     for key in list(data.keys()):
-    #         if key not in BASE_LION_FIELDS and key not in cls.model_fields:
-    #             extra_fields[key] = data.pop(key)
-
-    #     if not data.get("content", None):
-    #         for field in ["data", "text", "page_content", "chunk_content"]:
-    #             if field in extra_fields:
-    #                 data["content"] = extra_fields.pop(field)
-    #                 break
-
-    #     data["metadata"] = meta_
-    #     data["_extra_fields"] = extra_fields
-    #     return data
-
-    # def to_obj(self, converter_key: str) -> Any:
-    #     """Convert this Component instance to another object type.
-
-    #     Args:
-    #         converter_key: The key for the converter to use.
-
-    #     Returns:
-    #         The converted object.
-    #     """
-    #     return convert_to(self, converter_key)
-
-    # def to_dict(self, **kwargs) -> dict[str, Any]:
-    #     """Convert the component to a dictionary.
-
-    #     Args:
-    #         **kwargs: Additional keyword arguments for model_dump.
-
-    #     Returns:
-    #         A dictionary representation of the component.
-    #     """
-    #     dict_ = super().to_dict(**kwargs)
-    #     dict_["extra_fields"] = {
-    #         k: v.model_dump() if isinstance(v, FieldInfo) else v
-    #         for k, v in self._extra_fields.items()
-    #     }
-    #     return dict_
-
-    @field_serializer("metadata")
-    def serialize_dict(self, value: dict[str, Any], _info) -> dict[str, Any]:
-        """Custom serializer for dictionary fields.
-
-        Args:
-            value: The dictionary to serialize.
-            _info: Additional serialization information (unused).
-
-        Returns:
-            The serialized dictionary.
-        """
-        return {k: v for k, v in value.items() if v is not None}
 
     @property
     def all_fields(self) -> dict[str, Any]:
@@ -218,7 +39,7 @@ class Component(Element):
     def add_field(
         self,
         name: str,
-        value: Any = ...,
+        value: Any = LN_UNDEFINED,
         annotation: Any = None,
         field_obj: FieldInfo | None = None,
         **kwargs,
@@ -236,7 +57,7 @@ class Component(Element):
             ValueError: If the field already exists.
         """
         if name in self.all_fields:
-            raise ValueError(f"Field '{name}' already exists")
+            raise LionValueError(f"Field '{name}' already exists")
 
         self.update_field(
             name=name, value=value, annotation=annotation, field_obj=field_obj, **kwargs
@@ -245,34 +66,67 @@ class Component(Element):
     def update_field(
         self,
         name: str,
-        value: Any = ...,
-        annotation: Any = None,
-        field_obj: FieldInfo | None = None,
+        value: Any = LN_UNDEFINED,
+        annotation: Any = LN_UNDEFINED,
+        field_obj: FieldInfo | Any = LN_UNDEFINED,
         **kwargs,
     ) -> None:
-        """Update an existing field in the component's extra fields.
-
-        Args:
-            name: The name of the field to add.
-            value: The value of the field.
-            annotation: Type annotation for the field.
-            field_obj: A pre-configured FieldInfo object.
-            **kwargs: Additional keyword arguments for Field.
+        """similar to dictionary update but for single field,
+        if not existed, it will create a new field, otherwise update info of the field.
         """
 
-        if field_obj is None:
+        # pydanitc Field object cannot have both default and default_factory
+        if "default" in kwargs and "default_factory" in kwargs:
+            raise ValueError("Cannot provide both 'default' and 'default_factory'")
+
+        # if we are not provided with a field object,
+        if field_obj is LN_UNDEFINED:
+
+            # we first check we check whether the field already exist
+            field_obj = self.all_fields.get(name, LN_UNDEFINED)
+
+        # if not, we create a new field object
+        if field_obj is LN_UNDEFINED:
             field_obj = Field(**kwargs)
-        if annotation:
+
+            # and add it to the extra fields
+            self.extra_fields[name] = field_obj
+
+        # if already exist, we update the field object with the provided kwargs
+        else:
+            for k, v in kwargs.items():
+                setattr(field_obj, k, v)
+
+        # if annotation is provided, we update the field object annotation directly
+        if not annotation is LN_UNDEFINED:
             field_obj.annotation = annotation
-        self.extra_fields[name] = field_obj
+        else:
 
-        instance_value = (
-            SysUtil.copy(value) if value is not ... else SysUtil.copy(field_obj.default)
-        )
-        if field_obj.default_factory and value is ...:
-            instance_value = field_obj.default_factory()
-        setattr(self, name, instance_value)
+            # else we assign Any if no existing annotation
+            if not field_obj.annotation:
+                field_obj.annotation = Any
 
+        # now we can check value
+        if not value is LN_UNDEFINED:
+            value = SysUtil.copy(value)
+
+        else:
+            # if there is already existing value, we return
+            if getattr(self, name, LN_UNDEFINED) is not LN_UNDEFINED:
+                return
+
+            # if not, we check whether there is a default value or default factory
+            if hasattr(field_obj, "default"):
+                value = SysUtil.copy(field_obj.default)
+
+            elif hasattr(field_obj, "default_factory"):
+                value = field_obj.default_factory()
+
+            # if not, we set it to None
+            else:
+                value = None
+
+        setattr(self, name, value)
         self._add_last_update(name)
 
     def _add_last_update(self, name: str) -> None:
@@ -282,52 +136,7 @@ class Component(Element):
             name: The name of the field being updated.
         """
         current_time = SysUtil.time(type_="datetime", iso=True)
-        nset(self.metadata, ["last_updated", name], current_time)
-
-    def meta_pop(self, indices: list[str], default: Any = ...) -> Any:
-        """Remove and return an item from the metadata.
-
-        Args:
-            indices: The path to the item in the metadata.
-            default: The default value to return if the item is not found.
-
-        Returns:
-            The removed item or the default value.
-        """
-        return npop(self.metadata, indices, default)
-
-    def meta_insert(self, indices: list[str], value: Any) -> None:
-        """Insert a value into the metadata at the specified indices.
-
-        Args:
-            indices: The path where to insert the value.
-            value: The value to insert.
-        """
-        ninsert(self.metadata, indices, value)
-
-    def meta_set(self, indices: list[str], value: Any) -> None:
-        """Set a value in the metadata at the specified indices.
-
-        Args:
-            indices: The path where to set the value.
-            value: The value to set.
-        """
-        if not self.meta_get(indices):
-            self.meta_insert(indices, value)
-        else:
-            nset(self.metadata, indices, value)
-
-    def meta_get(self, indices: list[str], default: Any = ...) -> Any:
-        """Get a value from the metadata at the specified indices.
-
-        Args:
-            indices: The path to the value in the metadata.
-            default: The default value to return if the item is not found.
-
-        Returns:
-            The value at the specified indices or the default value.
-        """
-        return nget(self.metadata, indices, default)
+        self.metadata.set(["last_updated", name], current_time)
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Set an attribute and update the last update timestamp.
@@ -410,7 +219,7 @@ class Component(Element):
             f"ln_id={repr(self.ln_id)}, "
             f"timestamp={self._created_datetime}, "
             f"content={content_repr}, "
-            f"metadata={truncate_dict(self.metadata)}, "
+            f"metadata={truncate_dict(self.metadata.serialize())}, "
             f"extra_fields={truncate_dict(self.extra_fields)})"
         )
 
