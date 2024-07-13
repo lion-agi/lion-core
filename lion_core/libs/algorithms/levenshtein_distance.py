@@ -1,28 +1,27 @@
 from itertools import product
 
 
-def levenshtein_distance(a, b):
+def levenshtein_distance(a: str, b: str) -> int:
     """
     Calculate the Levenshtein distance between two strings.
 
-    The Levenshtein distance is a measure of the difference between two sequences.
-    It is the minimum number of single-character edits (insertions, deletions, or
-    substitutions) required to change one word into the other.
+    The Levenshtein distance is the minimum number of single-character edits
+    (insertions, deletions, or substitutions) required to change one word
+    into the other.
 
     Args:
-        a (str): The first string to compare.
-        b (str): The second string to compare.
+        a: The first string to compare.
+        b: The second string to compare.
 
     Returns:
-        int: The Levenshtein distance between the two strings.
+        The Levenshtein distance between the two strings.
 
     Algorithm:
-    1. Initialize a 2D array with dimensions (len(a)+1) x (len(b)+1).
-    2. Populate the base case values for transforming prefixes.
-    3. Use dynamic programming to compute the distance by considering
-       insertions, deletions, and substitutions.
-    4. Return the computed distance.
-
+        1. Initialize a 2D array with dimensions (len(a)+1) x (len(b)+1).
+        2. Populate the base case values for transforming prefixes.
+        3. Use dynamic programming to compute the distance by considering
+           insertions, deletions, and substitutions.
+        4. Return the computed distance.
     """
     m, n = len(a), len(b)
 

@@ -1,28 +1,34 @@
-def jaro_distance(s, t):
+"""
+Jaro distance and Jaro-Winkler similarity calculation functions.
+
+This module provides functions for calculating the Jaro distance and
+Jaro-Winkler similarity between two strings. These measures are useful
+for comparing the similarity of short strings, such as names or codes.
+"""
+
+
+def jaro_distance(s: str, t: str) -> float:
     """
     Calculate the Jaro distance between two strings.
 
-    The Jaro distance is a measure of similarity between two strings. The higher
-    the Jaro distance for two strings is, the more similar the strings are. The
-    value is between 0 and 1, with 1 meaning an exact match and 0 meaning no
-    similarity.
+    The Jaro distance is a measure of similarity between two strings.
+    It ranges from 0 (no similarity) to 1 (exact match).
 
     Args:
-        s (str): The first string to compare.
-        t (str): The second string to compare.
+        s: The first string to compare.
+        t: The second string to compare.
 
     Returns:
-        float: The Jaro distance between the two strings.
+        The Jaro distance between the two strings.
 
     Algorithm:
-    1. Calculate lengths of both strings. If both are empty, return 1.0.
-    2. Determine the match distance as half the length of the longer string
-       minus one.
-    3. Initialize match flags for both strings.
-    4. Identify matches within the match distance.
-    5. Count transpositions.
-    6. Compute and return the Jaro distance.
-
+        1. Calculate lengths of both strings. If both are empty, return 1.0.
+        2. Determine the match distance as half the length of the longer string
+           minus one.
+        3. Initialize match flags for both strings.
+        4. Identify matches within the match distance.
+        5. Count transpositions.
+        6. Compute and return the Jaro distance.
     """
     s_len = len(s)
     t_len = len(t)
@@ -78,28 +84,24 @@ def jaro_distance(s, t):
     ) / 3.0
 
 
-def jaro_winkler_similarity(s, t, scaling=0.1):
+def jaro_winkler_similarity(s: str, t: str, scaling: float = 0.1) -> float:
     """
     Calculate the Jaro-Winkler similarity between two strings.
 
-    The Jaro-Winkler similarity is an extension of the Jaro distance, adding a
-    prefix scale factor to give more favorable ratings to strings that match
-    from the beginning for a set prefix length.
+    An extension of Jaro distance, giving more weight to common prefixes.
 
     Args:
-        s (str): The first string to compare.
-        t (str): The second string to compare.
-        scaling (float, optional): The scaling factor for the prefix length.
-                                   Defaults to 0.1.
+        s: The first string to compare.
+        t: The second string to compare.
+        scaling: The scaling factor for the prefix length. Defaults to 0.1.
 
     Returns:
-        float: The Jaro-Winkler similarity between the two strings.
+        The Jaro-Winkler similarity between the two strings.
 
     Algorithm:
-    1. Calculate the Jaro distance.
-    2. Determine the length of the common prefix up to 4 characters.
-    3. Adjust the Jaro distance with the prefix scaling factor.
-
+        1. Calculate the Jaro distance.
+        2. Determine the length of the common prefix up to 4 characters.
+        3. Adjust the Jaro distance with the prefix scaling factor.
     """
     jaro_sim = jaro_distance(s, t)
 

@@ -1,72 +1,77 @@
 """
-Utility functions and classes for the Lion framework's container module.
+Utility functions and classes for Lion framework data handling and conversion.
 
-This module provides essential utility functions for data conversion and 
-validation, as well as the infrastructure for the PileLoader system. It 
-includes functions for type conversion, order validation, and Element 
-creation, along with the PileLoader protocol and registry for flexible 
-data loading into Pile objects.
+This module provides:
+1. Functions for validating Lion IDs and converting data types.
+2. A PileLoader system for flexible data loading into Pile objects.
+
+Key components:
+- Utility functions: is_str_id, to_list_type, validate_order
+- PileLoader: Protocol for implementing custom data loaders
+- PileLoaderRegistry: Management of PileLoader implementations
+- Helper functions: register_pile_loader, load_pile
 """
 
-from collections.abc import Mapping, Generator, Sequence
 from collections import deque
-from typing import Any, TypeVar, Type, Protocol, Union, Dict, runtime_checkable
+from collections.abc import Generator, Mapping
+from typing import (
+    Any,
+    Dict,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    Protocol,
+    runtime_checkable,
+)
 
-from lion_core.abc.element import Element
-from lion_core.generic.component import Component
-from lion_core.exceptions import LionIDError, LionTypeError, LionValueError
-from lion_core.util.sys_util import SysUtil
-from lion_core.container.base import Ordering, Collective
+from lion_core.abc import Collective, Ordering
+from lion_core.exceptions import LionIDError, LionValueError, LionTypeError
+from lion_core.sys_util import SysUtil
+from lion_core.element import Element
 
-T = TypeVar("T", bound=Element)
+T = TypeVar("T")
 
 
-def to_list_type(value: Any) -> list:
+def to_list_type(value: Any) -> list[Any]:
     """
-    Convert the provided value to a list.
-
-    This function ensures that the input value is converted to a list,
-    regardless of its original type. It handles various types including
-    Component, Mapping, Record, tuple, list, set, Generator, and deque.
+    Convert input to a list format compatible with Lion framework.
 
     Args:
-        value: The value to convert to a list.
+        value: Input of any type to be converted.
 
     Returns:
-        list: The converted list.
-
-    Raises:
-        TypeError: If the value cannot be converted to a list.
+        A list representation of the input value.
     """
-    if isinstance(value, Component) and not isinstance(value, (Collective, Ordering)):
-        return [value]
-    if isinstance(value, (Mapping, Collective)):
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value] if is_str_id(value) else []
+    if isinstance(value, (Collective, Mapping)):
         return list(value.values())
-    if isinstance(value, (tuple, list, set, Generator, deque)):
+    if isinstance(value, Element):
+        return [value]
+    if isinstance(value, (list, tuple, set, deque, Generator)):
         return list(value)
     return [value]
 
 
 def validate_order(value: Any) -> list[str]:
     """
-    Validate and convert the order field to a list of strings.
-
-    This function ensures that the input value represents a valid order
-    and converts it to a standardized list of strings. It handles various
-    input types including string, Ordering, and Element.
+    Validate and standardize order representation for Lion framework.
 
     Args:
-        value: The value to validate and convert.
+        value: Input to be validated and converted.
 
     Returns:
-        A list of strings representing the validated and converted order.
+        A list of strings representing valid Lion IDs.
 
     Raises:
-        LionIDError: If the value contains invalid types or Lion IDs.
+        LionIDError: If input contains invalid types or Lion IDs.
     """
     if value is None:
         return []
-    if isinstance(value, str) and value.startswith("ln") and len(value) == 34:
+    if isinstance(value, str) and is_str_id(value):
         return [value]
     if isinstance(value, Ordering):
         return value.order
@@ -74,30 +79,48 @@ def validate_order(value: Any) -> list[str]:
         return [value.ln_id]
 
     try:
-        return [i for item in to_list_type(value) 
-                if (i := SysUtil.get_lion_id(item))]
+        result = []
+        for item in to_list_type(value):
+            if isinstance(item, str) and is_str_id(item):
+                result.append(item)
+            elif isinstance(item, Element):
+                result.append(item.ln_id)
+            else:
+                id_ = SysUtil.get_lion_id(item)
+                if id_:
+                    result.append(id_)
+        return result
     except Exception as e:
         raise LionIDError("Must only contain valid Lion IDs.") from e
 
 
 @runtime_checkable
 class PileLoader(Protocol[T]):
-    """
-    Protocol defining the interface for pile loader classes.
-
-    This protocol ensures that all pile loader implementations provide
-    the necessary methods for loading data into Pile objects.
-    """
+    """Protocol defining the interface for pile loader classes."""
 
     @classmethod
-    def from_obj(cls, obj: T) -> Union[Dict[str, Element], Sequence[Element]]:
-        """Convert an object to a dictionary or sequence of Elements."""
-        ...
+    def from_obj(cls, obj: T) -> Union[Dict[str, T], Sequence[T]]:
+        """
+        Convert an object to a dictionary or sequence of Elements.
+
+        Args:
+            obj: Object to convert.
+
+        Returns:
+            Dictionary or sequence of Elements.
+        """
 
     @classmethod
     def can_load(cls, obj: Any) -> bool:
-        """Check if the loader can handle the given object."""
-        ...
+        """
+        Check if the loader can handle the given object.
+
+        Args:
+            obj: Object to check.
+
+        Returns:
+            True if the loader can handle the object, False otherwise.
+        """
 
 
 class PileLoaderRegistry:
@@ -203,3 +226,6 @@ def load_pile(
         LionTypeError: If no suitable loader is found for the data.
     """
     return PileLoaderRegistry.load_from(obj, key)
+
+
+# File: lion_core/container/util.py

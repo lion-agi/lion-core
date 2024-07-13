@@ -4,11 +4,6 @@ Module for converting various input types into string representations.
 Provides functions to convert a variety of data structures into strings,
 with options for custom model dumping, stripping, and converting to
 lowercase.
-
-Functions:
-    to_str: Convert the input to a string representation.
-    _to_str: Helper function to convert the input to a string representation.
-    strip_lower: Convert the input to a stripped and lowercase string representation.
 """
 
 import json
@@ -20,6 +15,7 @@ from lion_core.libs.data_handlers._to_dict import to_dict
 def to_str(
     input_: Any,
     /,
+    *,
     use_model_dump: bool = True,
     strip_lower: bool = False,
     **kwargs: Any,
@@ -33,15 +29,13 @@ def to_str(
     converts it to lowercase.
 
     Args:
-        input_ (Any): The input to be converted to a string.
-        use_model_dump (bool, optional): Whether to use a custom model dump
-            function. Defaults to True.
-        strip_lower (bool, optional): Whether to strip and convert the
-            string to lowercase. Defaults to False.
-        **kwargs (Any): Additional keyword arguments to pass to json.dumps.
+        input_: The input to be converted to a string.
+        use_model_dump: Whether to use a custom model dump function.
+        strip_lower: Whether to strip and convert the string to lowercase.
+        **kwargs: Additional keyword arguments to pass to json.dumps.
 
     Returns:
-        str: The string representation of the input.
+        The string representation of the input.
 
     Raises:
         ValueError: If the input cannot be converted to a string.
@@ -74,21 +68,24 @@ def to_str(
 
 
 def _to_str(
-    input_: Any, /, use_model_dump: bool = None, strip_lower: bool = None, **kwargs: Any
+    input_: Any,
+    /,
+    *,
+    use_model_dump: bool | None = None,
+    strip_lower: bool | None = None,
+    **kwargs: Any,
 ) -> str:
     """
     Helper function to convert the input to a string representation.
 
     Args:
-        input_ (Any): The input to be converted to a string.
-        use_model_dump (bool, optional): Whether to use a custom model dump
-            function. Defaults to None.
-        strip_lower (bool, optional): Whether to strip and convert the string
-            to lowercase. Defaults to None.
-        **kwargs (Any): Additional keyword arguments to pass to json.dumps.
+        input_: The input to be converted to a string.
+        use_model_dump: Whether to use a custom model dump function.
+        strip_lower: Whether to strip and convert the string to lowercase.
+        **kwargs: Additional keyword arguments to pass to json.dumps.
 
     Returns:
-        str: The string representation of the input.
+        The string representation of the input.
 
     Raises:
         ValueError: If the input cannot be converted to a string.
@@ -126,11 +123,11 @@ def strip_lower(input_: str, /, **kwargs: Any) -> str:
     Convert the input to a stripped and lowercase string representation.
 
     Args:
-        input_ (str): The input string to be processed.
-        **kwargs (Any): Additional keyword arguments to pass to to_str.
+        input_: The input string to be processed.
+        **kwargs: Additional keyword arguments to pass to to_str.
 
     Returns:
-        str: The stripped and lowercase string representation of the input.
+        The stripped and lowercase string representation of the input.
 
     Raises:
         ValueError: If the input cannot be converted to a string.

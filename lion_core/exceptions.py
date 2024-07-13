@@ -1,5 +1,3 @@
-# lion_core/abc/exceptions.py
-
 """
 Exceptions for the Lion framework.
 
@@ -18,7 +16,6 @@ Exceptions:
     LionAccessError: Error when accessing without proper permissions.
     LionQuantumError: Errors in quantum-related operations.
 """
-
 
 from typing import Any
 

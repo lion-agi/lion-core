@@ -1,11 +1,12 @@
 from typing import TypeVar, Generic, List
 from pydantic import Field
 
-from ..abc.element import Element
-from ..communication.base import BaseMail
-from .base import Container
-from .pile import Pile, pile
-from .progression import Progression, progression
+from lion_core.abc import Container
+from lion_core.element import Element
+from lion_core.container.pile import Pile, pile
+from lion_core.container.progression import Progression, progression
+from lion_core.communication.base import BaseMail
+
 
 T = TypeVar("T")
 

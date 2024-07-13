@@ -1,47 +1,48 @@
 """
-This module provides a unified call handler to execute functions asynchronously
-with custom error handling.
+Provide a unified call handler to execute functions asynchronously.
 
-The following functionalities are provided:
-- ucall: Execute a function asynchronously with error handling.
+This module offers ucall for executing functions asynchronously with custom
+error handling capabilities.
 """
 
 import asyncio
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, TypeVar
+
 from lion_core.libs.function_handlers._util import (
     is_coroutine_func,
     custom_error_handler,
     force_async,
 )
 
+T = TypeVar("T")
+ErrorHandler = Callable[[Exception], Any]
+
 
 async def ucall(
-    func: Callable,
+    func: Callable[..., T],
     *args: Any,
-    error_map: Optional[Dict[type, Callable]] = None,
+    error_map: dict[type, ErrorHandler] | None = None,
     **kwargs: Any,
-) -> Any:
+) -> T:
     """
     Execute a function asynchronously with error handling.
 
-    This function checks if the given function is a coroutine. If not, it
-    forces it to run asynchronously. It then executes the function, ensuring
-    the proper handling of event loops. If an error occurs, it applies custom
-    error handling based on the provided error map.
+    Checks if the given function is a coroutine. If not, forces it to run
+    asynchronously. Executes the function, ensuring proper handling of event
+    loops. If an error occurs, applies custom error handling based on the
+    provided error map.
 
     Args:
-        func (Callable): The function to be executed.
-        *args (Any): Positional arguments to pass to the function.
-        error_map (Optional[Dict[type, Callable]]): A dictionary mapping
-            exception types to error handling functions. Defaults to None.
-        **kwargs (Any): Additional keyword arguments to pass to the function.
+        func: The function to be executed.
+        *args: Positional arguments to pass to the function.
+        error_map: A dictionary mapping exception types to error handlers.
+        **kwargs: Additional keyword arguments to pass to the function.
 
     Returns:
-        Any: The result of the function call.
+        The result of the function call.
 
     Raises:
-        Exception: Propagates any exception raised during the function
-            execution.
+        Exception: Propagates any exception raised during function execution.
     """
     try:
         if not is_coroutine_func(func):
@@ -65,3 +66,6 @@ async def ucall(
         if error_map:
             custom_error_handler(e, error_map)
         raise e
+
+
+# File: lion_core/libs/function_handlers/_util.py

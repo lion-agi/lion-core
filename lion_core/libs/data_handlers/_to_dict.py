@@ -5,40 +5,33 @@ Provides functions to convert a variety of data structures, including
 DataFrames, JSON strings, and XML elements, into dictionaries or lists
 of dictionaries. Handles special cases such as replacing NaN values
 with None.
-
-Functions:
-    to_dict: Converts various types of input into a dictionary.
-    _to_dict: Helper function to convert the input into a dictionary.
-    replace_nans: Replaces NaN values in a dictionary with None.
-    xml_to_dict: Converts an XML element and its children to a dictionary.
 """
 
 from collections.abc import Mapping
 import json
-from typing import Any, Union
+from typing import Any, TypeVar
+
+T = TypeVar("T", bound=dict[str, Any] | list[dict[str, Any]])
 
 
 def to_dict(
     input_: Any,
     /,
     use_model_dump: bool = True,
-    str_type="json",
+    str_type: str = "json",
     **kwargs: Any,
-) -> Union[dict, list[dict]]:
+) -> T:
     """
-    Convert various types of input into a dictionary.
+    Convert various types of input into a dictionary or list of dictionaries.
 
     Args:
-        input_ (Any): The input data to convert.
-        as_list (bool, optional): If True, converts DataFrame rows to a list
-            of dictionaries. Defaults to True.
-        use_model_dump (bool, optional): If True, use model_dump method if
-            available. Defaults to True.
-        str_type (str): The type of string to convert. Defaults to "json", can also be "xml".
+        input_: The input data to convert.
+        use_model_dump: If True, use model_dump method if available.
+        str_type: The type of string to convert. Can be "json" or "xml".
         **kwargs: Additional arguments to pass to conversion methods.
 
     Returns:
-        dict | list[dict]: The converted dictionary or list of dictionaries.
+        The converted dictionary or list of dictionaries.
 
     Raises:
         json.JSONDecodeError: If the input string cannot be parsed as JSON.
@@ -76,20 +69,20 @@ def _to_dict(
     input_: Any,
     /,
     use_model_dump: bool = True,
-    str_type="json",
+    str_type: str = "json",
     **kwargs: Any,
-) -> dict:
+) -> dict[str, Any]:
     """
     Helper function to convert the input into a dictionary.
 
     Args:
-        input_ (Any): The input data to convert.
-        use_model_dump (bool, optional): If True, use model_dump method if
-            available. Defaults to True.
+        input_: The input data to convert.
+        use_model_dump: If True, use model_dump method if available.
+        str_type: The type of string to convert. Can be "json" or "xml".
         **kwargs: Additional arguments to pass to conversion methods.
 
     Returns:
-        dict: The converted dictionary.
+        The converted dictionary.
 
     Raises:
         json.JSONDecodeError: If the input string cannot be parsed as JSON.
@@ -131,18 +124,21 @@ def _to_dict(
         raise e
 
 
-def xml_to_dict(input_: Any) -> dict[str, Any]:
+def xml_to_dict(input_: str) -> dict[str, Any]:
     """
-    Convert an XML element and its children to a dictionary.
+    Convert an XML string to a dictionary.
 
     Args:
-        root (Any): The root XML element.
+        input_: The XML string to convert.
 
     Returns:
-        dict[str, Any]: The dictionary representation of the XML structure.
+        The dictionary representation of the XML structure.
+
+    Raises:
+        ImportError: If xmltodict is not installed.
     """
 
-    from lion_core.util.sys_util import SysUtil
+    from lion_core.sys_util import SysUtil
 
     SysUtil.check_import("xmltodict")
 

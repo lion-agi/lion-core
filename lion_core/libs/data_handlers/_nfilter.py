@@ -9,22 +9,22 @@ Functions:
 - _filter_list: Filter elements in a list based on a condition.
 """
 
-from typing import Any, Callable, Union
+from typing import Any, Callable
 
 
 def nfilter(
-    nested_structure: Union[dict, list], condition: Callable[[Any], bool]
-) -> Union[dict, list]:
+    nested_structure: dict[Any, Any] | list[Any], condition: Callable[[Any], bool]
+) -> dict[Any, Any] | list[Any]:
     """
     Filter elements in a nested structure (dict or list) based on a condition.
 
     Args:
-        nested_structure (dict | list): The nested structure to filter.
-        condition (Callable[[Any], bool]): A function that returns True for
-            elements to keep and False for elements to discard.
+        nested_structure: The nested structure to filter.
+        condition: A function that returns True for elements to keep and
+            False for elements to discard.
 
     Returns:
-        dict | list: The filtered nested structure.
+        The filtered nested structure.
 
     Raises:
         TypeError: If nested_structure is not a dict or list.
@@ -44,13 +44,12 @@ def _filter_dict(
     Filter elements in a dictionary based on a condition.
 
     Args:
-        dictionary (dict[Any, Any]): The dictionary to filter.
-        condition (Callable[[tuple[Any, Any]], bool]): A function that
-            returns True for key-value pairs to keep and False for key-value
-            pairs to discard.
+        dictionary: The dictionary to filter.
+        condition: A function that returns True for key-value pairs to keep
+            and False for key-value pairs to discard.
 
     Returns:
-        dict[Any, Any]: The filtered dictionary.
+        The filtered dictionary.
     """
     return {
         k: nfilter(v, condition) if isinstance(v, (dict, list)) else v
@@ -64,12 +63,12 @@ def _filter_list(lst: list[Any], condition: Callable[[Any], bool]) -> list[Any]:
     Filter elements in a list based on a condition.
 
     Args:
-        lst (list[Any]): The list to filter.
-        condition (Callable[[Any], bool]): A function that returns True for
-            elements to keep and False for elements to discard.
+        lst: The list to filter.
+        condition: A function that returns True for elements to keep and
+            False for elements to discard.
 
     Returns:
-        list[Any]: The filtered list.
+        The filtered list.
     """
     return [
         nfilter(item, condition) if isinstance(item, (dict, list)) else item

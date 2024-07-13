@@ -6,7 +6,7 @@ from ._lcall import lcall
 from ._bcall import bcall
 from ._pcall import pcall
 from ._mcall import mcall
-from .decorator import CallDecorator
+from ._call_decorator import CallDecorator
 
 __all__ = [
     "ucall",

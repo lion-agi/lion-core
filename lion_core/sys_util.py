@@ -18,7 +18,23 @@ from hashlib import sha256
 from datetime import datetime, timezone
 import logging
 
-from ..exceptions import LionIDError
+from .setting import TIME_CONFIG
+from .abc import AbstractElement
+from .exceptions import LionIDError
+
+
+class LionUndefined:
+
+    def __init__(self):
+        self.undefined = True
+
+    def __bool__(self):
+        return False
+
+    __slots__ = ["undefined"]
+
+
+LN_UNDEFINED = LionUndefined()
 
 
 class SysUtil:
@@ -26,7 +42,7 @@ class SysUtil:
 
     @staticmethod
     def time(
-        tz: timezone = timezone.utc,
+        tz: timezone = TIME_CONFIG["tz"],
         type_: str = "timestamp",
         iso: bool = False,
         sep: str | None = "T",
@@ -122,6 +138,7 @@ class SysUtil:
         return importlib.util.find_spec(package_name) is not None
 
     @staticmethod
+    @lru_cache
     def check_import(
         package_name: str,
         module_name: str | None = None,
@@ -241,16 +258,17 @@ class SysUtil:
         return prefix + modifiable_part + postfix
 
     @staticmethod
+    @lru_cache
     def get_lion_id(item: Any) -> str:
         """Get the Lion ID of an item."""
         if isinstance(item, Sequence) and len(item) == 1:
             item = item[0]
         if isinstance(item, str) and (
-            (item.startswith("ln") and len(item) == 34) or
-            (len(item) == 32)  # for backward compatibility
+            (item.startswith("ln") and len(item) == 34)
+            or (len(item) == 32)  # for backward compatibility
         ):
             return item
-        if getattr(item, "ln_id", None) is not None:
+        if isinstance(item, AbstractElement):
             return item.ln_id
         raise LionIDError("Item must contain a lion id.")
 
@@ -292,5 +310,21 @@ class SysUtil:
                 return getattr(module, class_name)
         raise ValueError(f"Class '{class_name}' not found in any loaded module")
 
+    def is_str_id(item: str) -> bool:
+        """
+        Validate if a string is a valid Lion ID.
 
-# File: lion_core/util/sysutil.py
+        Args:
+            item: String to validate as a Lion ID.
+
+        Returns:
+            True if the string is a valid Lion ID, False otherwise.
+
+        Note:
+            Supports 34-char (current) and 32-char (deprecated) formats.
+            32-char format will be removed in v1.0+.
+        """
+        return (len(item) == 34 and item.startswith("ln")) or len(item) == 32
+
+
+# File: lion_core/sysutil.py

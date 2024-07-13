@@ -1,7 +1,10 @@
+"""Provide utilities for parsing and fixing JSON strings."""
+
 from json import loads
+from typing import Any
 
 
-def fuzzy_parse_json(str_to_parse: str) -> dict:
+def fuzzy_parse_json(str_to_parse: str) -> dict[str, Any]:
     """
     Attempt to parse a JSON string, applying fixes for common issues.
 
@@ -78,3 +81,6 @@ def fix_json_string(str_to_parse: str) -> str:
             open_brackets.pop()
 
     return str_to_parse + "".join(reversed(open_brackets))
+
+
+# File: lion_core/libs/parsers/fuzzy_parse_json.py

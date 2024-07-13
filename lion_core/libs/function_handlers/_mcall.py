@@ -1,87 +1,72 @@
 """
-This module provides a mapping call mechanism to apply functions over inputs
-asynchronously with options such as retries, initial delay, backoff factor,
-timeout, error handling, and throttling.
+Apply functions over inputs asynchronously with customizable options.
 
-Functions:
-- mcall: Apply functions over inputs asynchronously with customizable options.
+This module provides the mcall function for parallel execution of multiple
+functions over multiple inputs with retry, delay, and error handling options.
 """
 
 import asyncio
-from typing import Any, List, Union, Dict, Callable
+from typing import Any, Callable, Sequence, TypeVar
+
 from lion_core.libs.data_handlers import to_list
 from lion_core.libs.function_handlers._lcall import lcall
 from lion_core.libs.function_handlers._rcall import rcall
+from lion_core.sys_util import LN_UNDEFINED
+
+T = TypeVar("T")
+ErrorHandler = Callable[[Exception], Any]
 
 
 async def mcall(
     input_: Any,
     /,
-    func: Any,
+    func: Callable[..., T] | Sequence[Callable[..., T]],
     *,
     explode: bool = False,
     retries: int = 0,
     initial_delay: float = 0,
     delay: float = 0,
     backoff_factor: float = 1,
-    default: Any = ...,
-    timeout: Union[float, None] = None,
+    default: Any = LN_UNDEFINED,
+    timeout: float | None = None,
     timing: bool = False,
     verbose: bool = True,
-    error_msg: Union[str, None] = None,
-    error_map: Union[Dict[type, Callable], None] = None,
-    max_concurrent: Union[int, None] = None,
-    throttle_period: Union[float, None] = None,
+    error_msg: str | None = None,
+    error_map: dict[type, ErrorHandler] | None = None,
+    max_concurrent: int | None = None,
+    throttle_period: float | None = None,
     dropna: bool = False,
     **kwargs: Any,
-) -> List[Any]:
+) -> list[T] | list[tuple[T, float]]:
     """
     Apply functions over inputs asynchronously with customizable options.
 
-    This function allows executing multiple functions over multiple inputs in
-    parallel with support for retries, initial delay, backoff factor, timeout,
-    error handling, concurrency control, and throttling.
-
     Args:
-        input_ (Any): The input data to be processed.
-        func (Any): The function or list of functions to be applied.
-        explode (bool, optional): Whether to explode the function calls,
-            applying each function to all inputs. Defaults to False.
-        retries (int, optional): Number of retry attempts for each function.
-            Defaults to 0.
-        initial_delay (float, optional): Initial delay before starting the
-            execution. Defaults to 0.
-        delay (float, optional): Delay between retry attempts. Defaults to 0.
-        backoff_factor (float, optional): Factor by which the delay increases
-            after each attempt. Defaults to 1.
-        default (Any, optional): Default value to return if all attempts fail.
-            Defaults to ... (ellipsis).
-        timeout (Union[float, None], optional): Timeout for each function
-            execution. Defaults to None.
-        timing (bool, optional): Whether to return the execution duration.
-            Defaults to False.
-        verbose (bool, optional): Whether to print retry messages. Defaults to
-            True.
-        error_msg (Union[str, None], optional): Custom error message. Defaults
-            to None.
-        error_map (Union[Dict[type, Callable], None], optional): A dictionary
-            mapping exception types to error handling functions. Defaults to
-            None.
-        max_concurrent (Union[int, None], optional): Maximum number of
-            concurrent executions. Defaults to None.
-        throttle_period (Union[float, None], optional): Minimum time period
-            between successive function executions. Defaults to None.
-        dropna (bool, optional): Whether to drop None values from the output
-            list. Defaults to False.
-        **kwargs (Any): Additional keyword arguments to pass to each function.
+        input_: The input data to be processed.
+        func: The function or sequence of functions to be applied.
+        explode: Whether to apply each function to all inputs.
+        retries: Number of retry attempts for each function call.
+        initial_delay: Initial delay before starting execution.
+        delay: Delay between retry attempts.
+        backoff_factor: Factor by which delay increases after each attempt.
+        default: Default value to return if all attempts fail.
+        timeout: Timeout for each function execution.
+        timing: Whether to return the execution duration.
+        verbose: Whether to print retry messages.
+        error_msg: Custom error message.
+        error_map: Dictionary mapping exception types to error handlers.
+        max_concurrent: Maximum number of concurrent executions.
+        throttle_period: Minimum time period between function executions.
+        dropna: Whether to drop None values from the output list.
+        **kwargs: Additional keyword arguments for the functions.
 
     Returns:
-        List[Any]: The results of the function calls, optionally including the
-            duration of execution if `timing` is True.
+        List of results, optionally including execution durations if timing
+        is True.
 
     Raises:
-        ValueError: If the length of inputs and functions do not match when not
-            exploding the function calls.
+        ValueError: If the length of inputs and functions don't match when
+            not exploding the function calls.
     """
     input_ = to_list(input_, flatten=False, dropna=False)
     func = to_list(func, flatten=False, dropna=False)
@@ -154,3 +139,6 @@ async def mcall(
         raise ValueError(
             "Inputs and functions must be the same length for map calling."
         )
+
+
+# Path: lion_core/libs/function_handlers/_mcall.py

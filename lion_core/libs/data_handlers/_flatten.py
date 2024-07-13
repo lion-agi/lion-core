@@ -1,20 +1,22 @@
 """
-This module provides functions to flatten nested dictionaries or lists into
-single-level dictionaries and to retrieve flattened keys from nested structures.
+Flatten nested dictionaries or lists into single-level dictionaries.
+
+This module provides functions to flatten nested structures and retrieve
+flattened keys. It supports various options for customizing the flattening
+process.
 
 Functions:
-- flatten: Flatten a nested dictionary or list into a single-level dictionary.
-- get_flattened_keys: Get all keys from a flattened representation of a nested
-  structure.
+    flatten: Flatten a nested dictionary or list.
+    get_flattened_keys: Get keys from a flattened representation.
 
 Helper Functions:
-- _dynamic_flatten_in_place: Recursively flatten a nested structure in place.
-- _dynamic_flatten_generator: Generator to recursively flatten a nested
-  structure.
+    _dynamic_flatten_in_place: Recursively flatten a structure in place.
+    _dynamic_flatten_generator: Generate flattened key-value pairs.
 """
 
-from typing import Any, Generator, Dict, List, Optional, Tuple
-from lion_core.util.sys_util import SysUtil
+from typing import Any, Generator
+
+from lion_core.sys_util import SysUtil
 from lion_core.libs.data_handlers._to_list import to_list
 from lion_core.libs.data_handlers._to_dict import to_dict
 
@@ -25,31 +27,26 @@ def flatten(
     *,
     parent_key: str = "",
     sep: str = "|",
-    max_depth: Optional[int] = None,
+    max_depth: int | None = None,
     inplace: bool = False,
     dict_only: bool = False,
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     """
     Flatten a nested dictionary or list into a single-level dictionary.
 
     Args:
-        nested_structure (Any): The nested structure to flatten.
-        parent_key (str, optional): The base key to use for flattened keys.
-            Defaults to "".
-        sep (str, optional): The separator to use for joining keys. Defaults
-            to "|".
-        max_depth (Optional[int], optional): The maximum depth to flatten.
-            Defaults to None.
-        inplace (bool, optional): If True, modifies the original structure.
-            Defaults to False.
-        dict_only (bool, optional): If True, only flattens dictionaries.
-            Defaults to False.
+        nested_structure: The nested structure to flatten.
+        parent_key: The base key for flattened keys. Defaults to "".
+        sep: The separator for joining keys. Defaults to "|".
+        max_depth: The maximum depth to flatten. Defaults to None.
+        inplace: If True, modifies the original structure. Defaults to False.
+        dict_only: If True, only flattens dictionaries. Defaults to False.
 
     Returns:
-        Optional[Dict[str, Any]]: The flattened dictionary if inplace is False,
-            otherwise None.
+        The flattened dictionary if inplace is False, otherwise None.
 
     Raises:
+        TypeError: If parent_key is not a string.
         ValueError: If inplace is True and nested_structure is not a
             dictionary.
     """
@@ -85,26 +82,22 @@ def get_flattened_keys(
     /,
     *,
     sep: str = "|",
-    max_depth: Optional[int] = None,
+    max_depth: int | None = None,
     dict_only: bool = False,
     inplace: bool = False,
-) -> List[str]:
+) -> list[str]:
     """
     Get all keys from a flattened representation of a nested structure.
 
     Args:
-        nested_structure (Any): The nested structure to process.
-        sep (str, optional): The separator to use for joining keys. Defaults
-            to "|".
-        max_depth (Optional[int], optional): The maximum depth to flatten.
-            Defaults to None.
-        dict_only (bool, optional): If True, only flattens dictionaries.
-            Defaults to False.
-        inplace (bool, optional): If True, modifies the original structure.
-            Defaults to False.
+        nested_structure: The nested structure to process.
+        sep: The separator for joining keys. Defaults to "|".
+        max_depth: The maximum depth to flatten. Defaults to None.
+        dict_only: If True, only flattens dictionaries. Defaults to False.
+        inplace: If True, modifies the original structure. Defaults to False.
 
     Returns:
-        List[str]: A list of flattened keys.
+        A list of flattened keys.
     """
     if not inplace:
         return to_list(
@@ -123,7 +116,7 @@ def _dynamic_flatten_in_place(
     *,
     parent_key: str = "",
     sep: str = "|",
-    max_depth: Optional[int] = None,
+    max_depth: int | None = None,
     current_depth: int = 0,
     dict_only: bool = False,
 ) -> None:
@@ -131,20 +124,15 @@ def _dynamic_flatten_in_place(
     Recursively flatten a nested structure in place.
 
     Args:
-        nested_structure (Any): The nested structure to flatten.
-        parent_key (str, optional): The base key to use for flattened keys.
-            Defaults to "".
-        sep (str, optional): The separator to use for joining keys. Defaults
-            to "|".
-        max_depth (Optional[int], optional): The maximum depth to flatten.
-            Defaults to None.
-        current_depth (int, optional): The current depth of recursion.
-            Defaults to 0.
-        dict_only (bool, optional): If True, only flattens dictionaries.
-            Defaults to False.
+        nested_structure: The nested structure to flatten.
+        parent_key: The base key for flattened keys. Defaults to "".
+        sep: The separator for joining keys. Defaults to "|".
+        max_depth: The maximum depth to flatten. Defaults to None.
+        current_depth: The current depth of recursion. Defaults to 0.
+        dict_only: If True, only flattens dictionaries. Defaults to False.
 
     Raises:
-        ValueError: If nested_structure is not a dictionary.
+        TypeError: If a key in the nested structure is not a string.
     """
     if isinstance(nested_structure, dict):
         keys_to_delete = []
@@ -181,29 +169,25 @@ def _dynamic_flatten_in_place(
 
 def _dynamic_flatten_generator(
     nested_structure: Any,
-    parent_key: Tuple[str, ...],
+    parent_key: tuple[str, ...],
     sep: str = "|",
-    max_depth: Optional[int] = None,
+    max_depth: int | None = None,
     current_depth: int = 0,
     dict_only: bool = False,
-) -> Generator[Tuple[str, Any], None, None]:
+) -> Generator[tuple[str, Any], None, None]:
     """
     Generator to recursively flatten a nested structure.
 
     Args:
-        nested_structure (Any): The nested structure to flatten.
-        parent_key (Tuple[str, ...]): The base key to use for flattened keys.
-        sep (str, optional): The separator to use for joining keys. Defaults
-            to "|".
-        max_depth (Optional[int], optional): The maximum depth to flatten.
-            Defaults to None.
-        current_depth (int, optional): The current depth of recursion.
-            Defaults to 0.
-        dict_only (bool, optional): If True, only flattens dictionaries.
-            Defaults to False.
+        nested_structure: The nested structure to flatten.
+        parent_key: The base key to use for flattened keys.
+        sep: The separator for joining keys. Defaults to "|".
+        max_depth: The maximum depth to flatten. Defaults to None.
+        current_depth: The current depth of recursion. Defaults to 0.
+        dict_only: If True, only flattens dictionaries. Defaults to False.
 
     Yields:
-        Tuple[str, Any]: The flattened key and value pairs.
+        The flattened key and value pairs.
     """
     if max_depth is not None and current_depth >= max_depth:
         yield sep.join(parent_key), nested_structure

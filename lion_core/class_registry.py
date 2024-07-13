@@ -22,7 +22,7 @@ Usage:
 """
 
 from typing import Dict, Type, TypeVar
-from lion_core.util.sys_util import SysUtil
+from .sys_util import SysUtil
 
 T = TypeVar("T")
 LION_CLASS_REGISTRY: Dict[str, Type[T]] = {}

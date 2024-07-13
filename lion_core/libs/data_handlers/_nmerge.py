@@ -4,60 +4,46 @@ Module for merging nested structures.
 Provides functionality to merge multiple dictionaries, lists, or sequences
 into a unified structure with options for handling duplicate keys, sorting,
 and custom sorting logic.
-
-Functions:
-    nmerge: Merge multiple dictionaries, lists, or sequences into a unified 
-            structure.
-
-    _deep_merge_dicts: Recursively merges two dictionaries, combining values
-                       where keys overlap.
-
-    _merge_dicts: Merges a list of dictionaries into a single dictionary,
-                  with options for handling duplicate keys and sequences.
-
-    _merge_sequences: Merges a list of lists into a single list, with options
-                      for sorting and custom sorting logic.
 """
 
 from collections import defaultdict
 from itertools import chain
-from typing import Any, Callable, Union, List
+from typing import Any, Callable, Sequence
 from lion_core.libs.data_handlers._util import is_homogeneous
 
 
 def nmerge(
-    nested_structure: List[Union[dict, list]],
+    nested_structure: Sequence[dict[str, Any] | list[Any]],
     /,
     *,
     overwrite: bool = False,
     dict_sequence: bool = False,
     sort_list: bool = False,
     custom_sort: Callable[[Any], Any] | None = None,
-) -> Union[dict, list]:
+) -> dict[str, Any] | list[Any]:
     """
     Merge multiple dictionaries, lists, or sequences into a unified structure.
 
     Args:
-        nested_structure (list[dict | list]): A list containing dictionaries,
-            lists, or other iterable objects to merge.
-        overwrite (bool, optional): If True, overwrite existing keys in
-            dictionaries with those from subsequent dictionaries. Defaults to
+        nested_structure: A sequence containing dictionaries, lists, or other
+            iterable objects to merge.
+        overwrite: If True, overwrite existing keys in dictionaries with
+            those from subsequent dictionaries.
+        dict_sequence: Enables unique key generation for duplicate keys by
+            appending a sequence number. Applicable only if `overwrite` is
             False.
-        dict_sequence (bool, optional): Enables unique key generation for
-            duplicate keys by appending a sequence number. Applicable only if
-            `overwrite` is False.
-        sort_list (bool, optional): When True, sort the resulting list after
-            merging. It does not affect dictionaries. Defaults to False.
-        custom_sort (Callable[[Any], Any] | None, optional): An optional callable
-            that defines custom sorting logic for the merged list. Defaults to None.
+        sort_list: When True, sort the resulting list after merging. It does
+            not affect dictionaries.
+        custom_sort: An optional callable that defines custom sorting logic
+            for the merged list.
 
     Returns:
-        dict | list: A merged dictionary or list, depending on the types present
-            in `nested_structure`.
+        A merged dictionary or list, depending on the types present in
+        `nested_structure`.
 
     Raises:
-        TypeError: If `nested_structure` contains objects of incompatible types
-            that cannot be merged.
+        TypeError: If `nested_structure` contains objects of incompatible
+            types that cannot be merged.
     """
     if not isinstance(nested_structure, list):
         raise TypeError("Please input a list")
@@ -72,16 +58,16 @@ def nmerge(
         )
 
 
-def _deep_merge_dicts(dict1: dict, dict2: dict) -> dict:
+def _deep_merge_dicts(dict1: dict[str, Any], dict2: dict[str, Any]) -> dict[str, Any]:
     """
     Recursively merges two dictionaries, combining values where keys overlap.
 
     Args:
-        dict1 (dict): The first dictionary.
-        dict2 (dict): The second dictionary.
+        dict1: The first dictionary.
+        dict2: The second dictionary.
 
     Returns:
-        dict: The merged dictionary.
+        The merged dictionary.
     """
     for key in dict2:
         if key in dict1:
@@ -97,23 +83,23 @@ def _deep_merge_dicts(dict1: dict, dict2: dict) -> dict:
 
 
 def _merge_dicts(
-    iterables: List[dict[Any, Any]],
+    iterables: list[dict[str, Any]],
     dict_update: bool,
     dict_sequence: bool,
-) -> dict[Any, Any]:
+) -> dict[str, Any]:
     """
     Merges a list of dictionaries into a single dictionary, with options for
     handling duplicate keys and sequences.
 
     Args:
-        iterables (list[dict[Any, Any]]): A list of dictionaries to merge.
-        dict_update (bool): If True, overwrite existing keys in dictionaries
+        iterables: A list of dictionaries to merge.
+        dict_update: If True, overwrite existing keys in dictionaries
             with those from subsequent dictionaries.
-        dict_sequence (bool): Enables unique key generation for duplicate keys
+        dict_sequence: Enables unique key generation for duplicate keys
             by appending a sequence number
 
     Returns:
-        dict[Any, Any]: The merged dictionary.
+        The merged dictionary.
     """
     merged_dict = {}  # {'a': [1, 2]}
     sequence_counters = defaultdict(int)
@@ -147,7 +133,7 @@ def _merge_dicts(
 
 
 def _merge_sequences(
-    iterables: list,
+    iterables: list[list[Any]],
     sort_list: bool,
     custom_sort: Callable[[Any], Any] | None = None,
 ) -> list[Any]:
@@ -156,14 +142,13 @@ def _merge_sequences(
     custom sorting logic.
 
     Args:
-        iterables (list[list[Any]]): A list of lists to merge.
-        sort_list (bool): When True, sort the resulting list after merging.
-            It does not affect dictionaries.
-        custom_sort (Callable[[Any], Any] | None, optional): An optional callable
-            that defines custom sorting logic for the merged list.
+        iterables: A list of lists to merge.
+        sort_list: When True, sort the resulting list after merging.
+        custom_sort: An optional callable that defines custom sorting logic
+            for the merged list.
 
     Returns:
-        list[Any]: The merged list.
+        The merged list.
     """
     merged_list = list(chain(*iterables))
     if sort_list:

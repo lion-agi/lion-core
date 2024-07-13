@@ -1,71 +1,60 @@
 """
-This module provides a retry mechanism for function calls with options such as
-initial delay, backoff factor, timeout, and error handling.
+Provide retry mechanism for function calls with customizable options.
 
-Functions:
-- rcall: Retry a function asynchronously with customizable options.
-- _rcall: Helper function for rcall to handle the core logic.
+This module offers rcall for retrying functions asynchronously with options
+like initial delay, backoff factor, timeout, and error handling.
 """
 
 import asyncio
-from typing import Any, Callable, Optional, Dict
-from lion_core.util.sys_util import SysUtil
+from typing import Any, Callable, TypeVar
+
+from lion_core.sys_util import SysUtil
 from lion_core.libs.function_handlers._ucall import ucall
+from lion_core.sys_util import LN_UNDEFINED
+
+T = TypeVar("T")
+ErrorHandler = Callable[[Exception], Any]
 
 
 async def rcall(
-    func: Callable[..., Any],
+    func: Callable[..., T],
     *args: Any,
     retries: int = 0,
     initial_delay: float = 0,
     delay: float = 0,
     backoff_factor: float = 1,
-    default: Any = ...,
-    timeout: Optional[float] = None,
+    default: Any = LN_UNDEFINED,
+    timeout: float | None = None,
     timing: bool = False,
     verbose: bool = True,
-    error_msg: Optional[str] = None,
-    error_map: Optional[Dict[type, Callable[[Exception], None]]] = None,
+    error_msg: str | None = None,
+    error_map: dict[type, ErrorHandler] | None = None,
     **kwargs: Any,
-) -> Any:
+) -> T | tuple[T, float]:
     """
     Retry a function asynchronously with customizable options.
 
-    This function attempts to execute the given function multiple times based
-    on the retry configuration. It supports options like initial delay, backoff
-    factor, timeout, error handling, and execution timing.
-
     Args:
-        func (Callable[..., Any]): The function to be executed.
-        *args (Any): Positional arguments to pass to the function.
-        retries (int, optional): Number of retry attempts. Defaults to 0.
-        initial_delay (float, optional): Initial delay before the first attempt.
-            Defaults to 0.
-        delay (float, optional): Delay between attempts. Defaults to 0.
-        backoff_factor (float, optional): Factor by which the delay increases
-            after each attempt. Defaults to 1.
-        default (Any, optional): Default value to return if all attempts fail.
-            Defaults to ... (ellipsis).
-        timeout (Optional[float], optional): Timeout for each function
-            execution. Defaults to None.
-        timing (bool, optional): Whether to return the execution duration.
-            Defaults to False.
-        verbose (bool, optional): Whether to print retry messages. Defaults to
-            True.
-        error_msg (Optional[str], optional): Custom error message. Defaults to
-            None.
-        error_map (Optional[Dict[type, Callable[[Exception], None]]], optional):
-            A dictionary mapping exception types to error handling functions.
-            Defaults to None.
-        **kwargs (Any): Additional keyword arguments to pass to the function.
+        func: The function to be executed.
+        *args: Positional arguments to pass to the function.
+        retries: Number of retry attempts.
+        initial_delay: Initial delay before the first attempt.
+        delay: Delay between attempts.
+        backoff_factor: Factor by which the delay increases after each attempt.
+        default: Default value to return if all attempts fail.
+        timeout: Timeout for each function execution.
+        timing: Whether to return the execution duration.
+        verbose: Whether to print retry messages.
+        error_msg: Custom error message.
+        error_map: Dictionary mapping exception types to error handlers.
+        **kwargs: Additional keyword arguments to pass to the function.
 
     Returns:
-        Any: The result of the function call, optionally including the duration
-            of execution if `timing` is True.
+        The result of the function call, optionally including the duration
+        of execution if `timing` is True.
 
     Raises:
-        RuntimeError: If the function fails after the specified number of
-            retries.
+        RuntimeError: If the function fails after the specified retries.
     """
     last_exception = None
     result = None
@@ -106,7 +95,7 @@ async def rcall(
             else:
                 break
 
-    if default is not ...:
+    if default is not LN_UNDEFINED:
         return default
 
     if last_exception is not None:
@@ -126,39 +115,33 @@ async def rcall(
 
 
 async def _rcall(
-    func: Callable[..., Any],
+    func: Callable[..., T],
     *args: Any,
     delay: float = 0,
-    err_msg: Optional[str] = None,
+    err_msg: str | None = None,
     ignore_err: bool = False,
     timing: bool = False,
     default: Any = None,
-    timeout: Optional[float] = None,
+    timeout: float | None = None,
     **kwargs: Any,
-) -> Any:
+) -> T | tuple[T, float]:
     """
     Helper function for rcall to handle the core logic.
 
     Args:
-        func (Callable[..., Any]): The function to be executed.
-        *args (Any): Positional arguments to pass to the function.
-        delay (float, optional): Delay before executing the function. Defaults
-            to 0.
-        err_msg (Optional[str], optional): Custom error message. Defaults to
-            None.
-        ignore_err (bool, optional): Whether to ignore errors and return a
-            default value. Defaults to False.
-        timing (bool, optional): Whether to return the execution duration.
-            Defaults to False.
-        default (Any, optional): Default value to return if an error occurs.
-            Defaults to None.
-        timeout (Optional[float], optional): Timeout for the function
-            execution. Defaults to None.
-        **kwargs (Any): Additional keyword arguments to pass to the function.
+        func: The function to be executed.
+        *args: Positional arguments to pass to the function.
+        delay: Delay before executing the function.
+        err_msg: Custom error message.
+        ignore_err: Whether to ignore errors and return a default value.
+        timing: Whether to return the execution duration.
+        default: Default value to return if an error occurs.
+        timeout: Timeout for the function execution.
+        **kwargs: Additional keyword arguments to pass to the function.
 
     Returns:
-        Any: The result of the function call, optionally including the duration
-            of execution if `timing` is True.
+        The result of the function call, optionally including the duration
+        of execution if `timing` is True.
 
     Raises:
         asyncio.TimeoutError: If the function execution exceeds the timeout.
@@ -187,3 +170,6 @@ async def _rcall(
             return (default, duration) if timing else default
         else:
             raise
+
+
+# Path: lion_core/libs/function_handlers/_rcall.py

@@ -4,36 +4,36 @@ Module for setting values in nested structures.
 Provides functionality to set values deep within nested dictionaries or lists
 using a specified path of indices. Ensures intermediate structures are created
 as needed.
-
-Functions:
-    nset: Sets a value within a nested structure at a specified path.
-    ensure_list_index: Extends a list to ensure it has a minimum length,
-                       appending a default value as needed.
 """
 
-from typing import Any, Union
+from typing import Any, Sequence
+
 from lion_core.libs.data_handlers._to_list import to_list
+from lion_core.sys_util import LN_UNDEFINED
 
 
 def nset(
-    nested_structure: Union[dict, list], indices: list[Union[int, str]], value: Any
+    nested_structure: dict[str, Any] | list[Any],
+    indices: str | int | Sequence[str | int],
+    value: Any,
 ) -> None:
     """
-    Sets a value within a nested structure at the specified path defined by indices.
+    Set a value within a nested structure at the specified path defined by indices.
 
     This method allows setting a value deep within a nested dictionary or list by
-    specifying a path to the target location using a list of indices. Each index in
-    the list represents a level in the nested structure, with integers used for
-    list indices and strings for dictionary keys.
+    specifying a path to the target location using a sequence of indices. Each index
+    in the sequence represents a level in the nested structure, with integers used
+    for list indices and strings for dictionary keys.
 
     Args:
-        nested_structure (dict | list): The nested structure where the value will be set.
-        indices (list[int | str]): The path of indices leading to where the value should be set.
-        value (Any): The value to set at the specified location in the nested structure.
+        nested_structure: The nested structure where the value will be set.
+        indices: The path of indices leading to where the value should be set.
+        value: The value to set at the specified location in the nested structure.
 
     Raises:
-        ValueError: Raised if the indices list is empty.
-        TypeError: Raised if the target container is not a list or dictionary, or if the index type is incorrect.
+        ValueError: If the indices sequence is empty.
+        TypeError: If the target container is not a list or dictionary, or if
+                   the index type is incorrect.
 
     Examples:
         >>> data = {'a': {'b': [10, 20]}}
@@ -87,24 +87,25 @@ def nset(
         raise TypeError("Cannot set value on non-list/dict element")
 
 
-def ensure_list_index(lst_: list, index: int, default: Any = None) -> None:
+def ensure_list_index(lst: list[Any], index: int, default: Any = LN_UNDEFINED) -> None:
     """
     Extend a list to ensure it has a minimum length, appending a default value as needed.
 
-    This utility method ensures that a list is extended to at least a specified index plus one.
-    If the list's length is less than this target, it is appended with a specified default value
-    until it reaches the required length.
+    This utility method ensures that a list is extended to at least a specified
+    index plus one. If the list's length is less than this target, it is appended
+    with a specified default value until it reaches the required length.
 
     Args:
-        lst_ (list): The list to extend.
-        index (int): The target index that the list should reach or exceed.
-        default (Any, optional): The value to append to the list for extension. Defaults to None.
+        lst: The list to extend.
+        index: The target index that the list should reach or exceed.
+        default: The value to append to the list for extension. Defaults to None.
 
     Note:
-        Modifies the list in place, ensuring it can safely be indexed at `index` without raising an IndexError.
+        Modifies the list in place, ensuring it can safely be indexed at `index`
+        without raising an IndexError.
     """
-    while len(lst_) <= index:
-        lst_.append(default)
+    while len(lst) <= index:
+        lst.append(default if default is not LN_UNDEFINED else None)
 
 
 # Path: lion_core/libs/data_handlers/_nset.py

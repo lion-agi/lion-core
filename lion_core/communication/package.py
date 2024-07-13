@@ -2,9 +2,6 @@
 
 from enum import Enum
 from typing import Any
-from pydantic import field_validator, Field
-from ..generic.component import Component
-from ..exceptions import LionValueError
 
 
 class PackageCategory(str, Enum):
@@ -22,40 +19,44 @@ class PackageCategory(str, Enum):
     SIGNAL = "signal"
 
 
-class Package(Component):
-    """Represents a package in the Lion framework's communication system.
+class Package:
+    """
+    Represents a package in the Lion framework's communication system.
 
-    This class extends the Component class and provides functionality for
-    categorizing and packaging data for communication between components.
+    This class provides functionality for categorizing and packaging data
+    for communication between components.
 
     Attributes:
-        request_source (str | None): The source of the request.
-        category (PackageCategory): The category of the package.
-        package (Any): The content of the package to be delivered.
+        request_source: The source of the request.
+        category: The category of the package.
+        package: The content of the package to be delivered.
     """
 
-    request_source: str | None = Field(
-        None,
-        title="Request Source",
-        description="The source of the request.",
-    )
+    def __init__(
+        self,
+        category: PackageCategory | str,
+        package: Any,
+        request_source: str | None = None,
+    ):
+        """
+        Initialize a Package instance.
 
-    category: PackageCategory = Field(
-        None,
-        title="Category",
-        description="The category of the package.",
-    )
+        Args:
+            category: The category of the package.
+            package: The content of the package to be delivered.
+            request_source: The source of the request.
 
-    package: Any = Field(
-        None,
-        title="Package",
-        description="The package to be delivered.",
-    )
+        Raises:
+            ValueError: If the category is invalid or None.
+        """
+        self.request_source = request_source
+        self.category = self._validate_category(category)
+        self.package = package
 
-    @field_validator("category", mode="before")
-    @classmethod
-    def validate_category(cls, value: Any) -> PackageCategory:
-        """Validate the category field.
+    @staticmethod
+    def _validate_category(value: Any) -> PackageCategory:
+        """
+        Validate the category field.
 
         This method ensures that the category field contains a valid
         PackageCategory value.
@@ -67,17 +68,16 @@ class Package(Component):
             The validated PackageCategory value.
 
         Raises:
-            LionValueError: If the value is None or not a valid
-                PackageCategory.
+            ValueError: If the value is None or not a valid PackageCategory.
         """
         if value is None:
-            raise LionValueError("Package category cannot be None.")
+            raise ValueError("Package category cannot be None.")
         if isinstance(value, PackageCategory):
             return value
         try:
             return PackageCategory(value)
         except ValueError as e:
-            raise LionValueError("Invalid value for category.") from e
+            raise ValueError("Invalid value for category.") from e
 
 
 # File: lion_core/communication/package.py

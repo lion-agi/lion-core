@@ -5,30 +5,54 @@ from abc import ABC, abstractmethod
 
 class Node(ABC):
     """
-    aka Tao, the foundation abstraction in the Lion framework. 
-    Represents existence. 
+    The foundational abstraction in the Lion framework, representing existence.
+
+    This abstract base class serves as the root for all other classes in the
+    framework, embodying the concept of Tao or fundamental existence.
     """
-    
+
+
 class AbstractSpace(Node):
-    """An abstract expanse or region."""
+    """
+    An abstract representation of a space or region.
+
+    This class defines the concept of a space that can contain elements.
+    Subclasses should implement the __contains__ method to define
+    membership criteria for the space.
+    """
 
     @abstractmethod
-    def __contains__(self, item) -> bool: ...
+    def __contains__(self, item) -> bool:
+        """
+        Check if an item is contained within this space.
+
+        Args:
+            item: The item to check for containment.
+
+        Returns:
+            bool: True if the item is in the space, False otherwise.
+        """
+        ...
 
 
 class AbstractElement(Node):
-    """An abstract observable entity in a space."""
+    """
+    An abstract representation of an observable entity within a space.
 
-    # @abstractmethod
-    # def convert_to(self, new_type: type | str = "dict", **kwargs) -> Any: ...
-    #
-    # @classmethod
-    # @abstractmethod
-    # def convert_from(cls, data, new_type: type | str = "dict", **kwargs) -> Any: ...
+    This class defines the concept of an element that can exist within
+    an AbstractSpace. Subclasses should implement specific properties
+    and behaviors of elements.
+    """
 
 
 class AbstractObserver(Node):
-    """An abstract entity capable of making observations."""
+    """
+    An abstract representation of an entity capable of making observations.
+
+    This class defines the concept of an observer that can perceive or
+    interact with AbstractElements within an AbstractSpace. Subclasses
+    should implement specific observation mechanisms.
+    """
 
 
 # File: lion_core/abc/concept.py
