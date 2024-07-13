@@ -11,7 +11,7 @@ from lion_core.libs import nget, ninsert, nset, npop
 from lion_core.util.undefined import LN_UNDEFINED
 from lion_core.util.sys_util import SysUtil
 
-from .._abc.container import Container
+from lion_core._abc import Container
 
 
 class Record(Container):

@@ -20,9 +20,9 @@ from typing import Any, Iterator
 
 from pydantic import Field, ConfigDict
 
+from lion_core._abc import Ordering
 from lion_core.libs import to_list
 from lion_core.util.sys_util import SysUtil
-from lion_core._abc.container import Ordering
 from lion_core.element import Element
 from lion_core.exceptions import ItemNotFoundError
 from .util import validate_order, is_str_id, to_list_type

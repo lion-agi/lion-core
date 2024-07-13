@@ -15,6 +15,7 @@ from typing import Any, TypeVar, Type, Iterable
 
 from pydantic import Field
 
+from lion_core._abc import Collective, Container
 from lion_core.libs import to_list
 from lion_core.util.sys_util import SysUtil
 from lion_core.element import Element
@@ -25,7 +26,6 @@ from lion_core.exceptions import (
     LionIDError,
     LionItemError,
 )
-from .._abc.container import Collective, Container
 from .progression import Progression
 from .util import to_list_type
 from lion_core.util.undefined import LN_UNDEFINED

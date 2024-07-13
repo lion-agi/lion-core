@@ -25,10 +25,10 @@ from typing import (
     runtime_checkable,
 )
 
-from lion_core.element import Element
 from lion_core._abc.container import Collective, Ordering
 from lion_core.exceptions import LionIDError, LionValueError, LionTypeError
 from lion_core.util.sys_util import SysUtil
+from lion_core.element import Element
 
 T = TypeVar("T")
 

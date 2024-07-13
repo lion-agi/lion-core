@@ -1,13 +1,13 @@
 from collections.abc import Mapping
-from collections import deque
 from typing import Tuple, Any
 
 import contextlib
 from pydantic import Field
 
-from lion_core.abc.element import Element
+from lion_core._abc import Collective
+from lion_core.element import Element
 from lion_core.exceptions import LionTypeError, ItemNotFoundError
-from .base import Collective
+
 from .progression import Progression, progression
 from .pile import Pile, pile
 
