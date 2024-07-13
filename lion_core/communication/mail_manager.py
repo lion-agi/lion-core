@@ -1,59 +1,50 @@
 from collections import deque
 import asyncio
+from typing import Any
 
-from ..abc import Executable, Element, Field
-from ..flow.exchange import Exchange
-from ..pile.pile import Pile, pile
-from ..util import to_list_type, get_lion_id
-from ...operable.sendable.mail import Mail, Package
+from lion_core.abc import BaseManager
+from lion_core.sys_util import SysUtil
+from lion_core.container.util import to_list_type
+from lion_core.container.pile import Pile, pile
+from lion_core.container.exchange import Exchange
+from lion_core.communication.mail import Mail, Package
 
 
-class MailManager(Element, Executable):
+class MailManager(BaseManager):
     """
-    Manages the sending, receiving, and storage of mail items between various sources.
+    Manages the sending, receiving, and storage of mail items.
 
-    This class acts as a central hub for managing mail transactions within a system. It allows for the addition
-    and deletion of sources, and it handles the collection and dispatch of mails to and from these sources.
+    This class acts as a central hub for managing mail transactions within
+    a system. It allows for the addition and deletion of sources, and it
+    handles the collection and dispatch of mails to and from these sources.
 
     Attributes:
-            sources (Dict[str, Any]): A dictionary mapping source identifiers to their attributes.
-            mails (Dict[str, Dict[str, deque]]): A nested dictionary storing queued mail items, organized by recipient
-                    and sender.
-            execute_stop (bool): A flag indicating whether to stop execution.
+        sources: A pile of managed sources.
+        mails: A nested dictionary storing queued mail items.
+        execute_stop: A flag indicating whether to stop execution.
     """
 
-    sources: Pile[Element] = Field(
-        default_factory=lambda: pile(),
-        description="The pile of managed sources",
-    )
-
-    mails: dict[str, dict[str, deque]] = Field(
-        default_factory=dict,
-        description="The mails waiting to be sent",
-        examples=["{'recipient_id': {'sender_id': deque()}}"],
-    )
-
-    execute_stop: bool = Field(
-        False, description="A flag indicating whether to stop execution."
-    )
-
-    def __init__(self, sources=None):
+    def __init__(self, sources: list[Any] | None = None):
         """
         Initializes the MailManager with optional sources.
 
         Args:
-            sources (Optional[list]): A list of sources to be managed by the MailManager.
+            sources: A list of sources to be managed by the MailManager.
         """
         super().__init__()
+        self.sources: Pile[Any] = pile()
+        self.mails: dict[str, dict[str, deque]] = {}
+        self.execute_stop: bool = False
+
         if sources:
             self.add_sources(sources)
 
-    def add_sources(self, sources):
+    def add_sources(self, sources: list[Any]) -> None:
         """
         Adds new sources to the MailManager.
 
         Args:
-            sources (list): A list of sources to be added.
+            sources: A list of sources to be added.
 
         Raises:
             ValueError: If failed to add sources.
@@ -67,18 +58,18 @@ class MailManager(Element, Executable):
             raise ValueError(f"Failed to add source. Error {e}")
 
     @staticmethod
-    def create_mail(sender, recipient, category, package):
+    def create_mail(sender: str, recipient: str, category: str, package: Any) -> Mail:
         """
         Creates a mail item.
 
         Args:
-            sender (str): The sender of the mail.
-            recipient (str): The recipient of the mail.
-            category (str): The category of the mail.
-            package (Any): The content of the package.
+            sender: The sender of the mail.
+            recipient: The recipient of the mail.
+            category: The category of the mail.
+            package: The content of the package.
 
         Returns:
-            Mail: The created mail object.
+            The created mail object.
         """
         pack = Package(category=category, package=package)
         mail = Mail(
@@ -88,12 +79,12 @@ class MailManager(Element, Executable):
         )
         return mail
 
-    def delete_source(self, source_id):
+    def delete_source(self, source_id: str) -> None:
         """
         Deletes a source from the MailManager.
 
         Args:
-            source_id (str): The ID of the source to be deleted.
+            source_id: The ID of the source to be deleted.
 
         Raises:
             ValueError: If the source does not exist.
@@ -103,38 +94,38 @@ class MailManager(Element, Executable):
         self.sources.pop(source_id)
         self.mails.pop(source_id)
 
-    def collect(self, sender):
+    def collect(self, sender: str) -> None:
         """
         Collects mails from a sender's outbox and queues them for the recipient.
 
         Args:
-            sender (str): The ID of the sender.
+            sender: The ID of the sender.
 
         Raises:
             ValueError: If the sender or recipient source does not exist.
         """
         if sender not in self.sources:
             raise ValueError(f"Sender source {sender} does not exist.")
-        mailbox = (
+        mailbox: Exchange = (
             self.sources[sender]
             if isinstance(self.sources[sender], Exchange)
             else self.sources[sender].mailbox
         )
         while mailbox.pending_outs.size() > 0:
             mail_id = mailbox.pending_outs.popleft()
-            mail = mailbox.pile.pop(mail_id)
+            mail: Mail = mailbox.pile.pop(mail_id)
             if mail.recipient not in self.sources:
                 raise ValueError(f"Recipient source {mail.recipient} does not exist")
             if mail.sender not in self.mails[mail.recipient]:
                 self.mails[mail.recipient].update({mail.sender: deque()})
             self.mails[mail.recipient][mail.sender].append(mail)
 
-    def send(self, recipient):
+    def send(self, recipient: str) -> None:
         """
         Sends mails to a recipient's inbox.
 
         Args:
-            recipient (str): The ID of the recipient.
+            recipient: The ID of the recipient.
 
         Raises:
             ValueError: If the recipient source does not exist.
@@ -154,28 +145,28 @@ class MailManager(Element, Executable):
                 mail = pending_mails.popleft()
                 mailbox.include(mail, "in")
 
-    def collect_all(self):
-        """
-        Collects mails from all sources.
-        """
+    def collect_all(self) -> None:
+        """Collects mails from all sources."""
         for source in self.sources:
-            self.collect(get_lion_id(source))
+            self.collect(SysUtil.get_lion_id(source))
 
-    def send_all(self):
-        """
-        Sends mails to all sources.
-        """
+    def send_all(self) -> None:
+        """Sends mails to all sources."""
         for source in self.sources:
-            self.send(get_lion_id(source))
+            self.send(SysUtil.get_lion_id(source))
 
-    async def execute(self, refresh_time=1):
+    async def execute(self, refresh_time: int = 1) -> None:
         """
         Continuously collects and sends mails until execution is stopped.
 
         Args:
-            refresh_time (int): The time in seconds to wait between each cycle. Defaults to 1.
+            refresh_time: The time in seconds to wait between each cycle.
+                Defaults to 1.
         """
         while not self.execute_stop:
             self.collect_all()
             self.send_all()
             await asyncio.sleep(refresh_time)
+
+
+# File: lion_core/communication/mail_manager.py

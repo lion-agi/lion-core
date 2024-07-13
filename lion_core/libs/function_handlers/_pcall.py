@@ -10,7 +10,7 @@ from typing import Any, Callable, Sequence, TypeVar
 
 from lion_core.libs.function_handlers._ucall import ucall
 from lion_core.libs.function_handlers._util import is_coroutine_func
-from lion_core.util import LN_UNDEFINED
+from lion_core.sys_util import LN_UNDEFINED
 
 T = TypeVar("T")
 ErrorHandler = Callable[[Exception], Any]

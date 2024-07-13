@@ -8,10 +8,10 @@ dictionary and list data with an intuitive API for data manipulation.
 from typing import Any
 
 from lion_core.libs import nget, ninsert, nset, npop
-from lion_core.util.undefined import LN_UNDEFINED
-from lion_core.util.sys_util import SysUtil
+from lion_core.undefined import LN_UNDEFINED
+from lion_core.sys_util import SysUtil
 
-from lion_core._abc import Container
+from lion_core.abc import Container
 
 
 class Record(Container):

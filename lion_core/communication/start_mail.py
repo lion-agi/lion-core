@@ -1,29 +1,34 @@
-from ..abc import Field
-from ..node.node import Node
-from ..mail.mail import Mail, Package
-from ..flow.exchange import Exchange
+"""StartMail module for the Lion framework's communication system."""
+
+from typing import Any
+from pydantic import Field
+
+from lion_core.abc import Signal
+from lion_core.container.exchange import Exchange
+from lion_core.communication.mail import Mail
+from lion_core.communication.package import Package
 
 
-class StartMail(Node):
+class StartMail(Signal):
     """
     Represents a start mail node that triggers the initiation of a process.
 
     Attributes:
-        mailbox (Exchange): The exchange object that holds pending start mails.
+        mailbox: The exchange object that holds pending start mails.
     """
 
     mailbox: Exchange = Field(
         default_factory=Exchange[Mail], description="The pending start mail"
     )
 
-    def trigger(self, context, structure_id, executable_id):
+    def trigger(self, context: Any, structure_id: str, executable_id: str) -> None:
         """
         Triggers the start mail by including it in the mailbox.
 
         Args:
-            context (Any): The context to be included in the start mail.
-            structure_id (str): The ID of the structure to be initiated.
-            executable_id (str): The ID of the executable to receive the start mail.
+            context: The context to be included in the start mail.
+            structure_id: The ID of the structure to be initiated.
+            executable_id: The ID of the executable to receive the start mail.
         """
         start_mail_content = {"context": context, "structure_id": structure_id}
         pack = Package(category="start", package=start_mail_content)
@@ -33,3 +38,6 @@ class StartMail(Node):
             package=pack,
         )
         self.mailbox.include(start_mail, "out")
+
+
+# File: lion_core/communication/start_mail.py

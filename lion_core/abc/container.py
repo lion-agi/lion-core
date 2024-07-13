@@ -34,6 +34,7 @@ class Ordering(Container):
     providing a foundation for sequences, priority queues, and other
     structures where the relative positions of elements are significant.
     """
+
     @abstractmethod
     def __len__(self) -> int:
         """
@@ -279,7 +280,7 @@ class Collective(Container, Generic[T]):
     It incorporates ideas from category theory and type theory to allow
     for flexible, type-safe implementations of record-like structures.
     """
-    
+
     @abstractmethod
     def __len__(self) -> int:
         """

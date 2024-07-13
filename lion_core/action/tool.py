@@ -5,25 +5,26 @@ from typing import Any, Callable
 
 from pydantic import Field, field_serializer
 
-from lion_core.generic.component import Component
-from lion_core.abc.element import Element
+from lion_core.generic.base import BaseComponent
 from lion_core.libs import function_to_schema, to_list
 
 
-class Tool(Element):
-    """Represents a callable tool with pre/post-processing capabilities.
+class Tool(BaseComponent):
+    """
+    Represents a callable tool with pre/post-processing capabilities.
 
-    Encapsulates a function with its metadata, schema, and processing
-    functions.
+    This class encapsulates a function with its metadata, schema, and processing
+    functions. It provides a structured way to manage and execute functions
+    within the system.
 
     Attributes:
-        function: The callable function of the tool.
-        schema_: Schema of the function in OpenAI format.
-        pre_processor: Function to preprocess input arguments.
-        pre_processor_kwargs: Keyword arguments for the pre-processor.
-        post_processor: Function to post-process the result.
-        post_processor_kwargs: Keyword arguments for the post-processor.
-        parser: Function to parse the result to JSON serializable format.
+        function (Callable[..., Any]): The callable function of the tool.
+        schema_ (dict[str, Any] | None): Schema of the function in OpenAI format.
+        pre_processor (Callable[..., dict[str, Any]] | None): Function to preprocess input arguments.
+        pre_processor_kwargs (dict[str, Any] | None): Keyword arguments for the pre-processor.
+        post_processor (Callable[..., Any] | None): Function to post-process the result.
+        post_processor_kwargs (dict[str, Any] | None): Keyword arguments for the post-processor.
+        parser (Callable[[Any], Any] | None): Function to parse the result to JSON serializable format.
     """
 
     function: Callable[..., Any] = Field(
@@ -55,8 +56,15 @@ class Tool(Element):
         description="Function to parse result to JSON serializable format.",
     )
 
-    def __init__(self, **data):
-        """Initialize a Tool instance."""
+    def __init__(self, **data: Any) -> None:
+        """
+        Initialize a Tool instance.
+
+        If no schema is provided, it generates one from the function.
+
+        Args:
+            **data: Keyword arguments to initialize the Tool instance.
+        """
         super().__init__(**data)
         if self.schema_ is None:
             self.schema_ = function_to_schema(self.function)
@@ -70,7 +78,8 @@ class Tool(Element):
         "post_processor_kwargs",
     )
     def serialize_field(self, v: Any) -> str | None:
-        """Serialize various fields of the Tool class.
+        """
+        Serialize various fields of the Tool class.
 
         Args:
             v: The value to serialize.
@@ -86,18 +95,20 @@ class Tool(Element):
 
     @property
     def function_name(self) -> str:
-        """Get the name of the function from the schema.
+        """
+        Get the name of the function from the schema.
 
         Returns:
-            str: The name of the function.
+            The name of the function.
         """
         return self.schema_["function"]["name"]
 
     def __str__(self) -> str:
-        """Return a string representation of the Element.
+        """
+        Return a string representation of the Tool.
 
         Returns:
-            str: A string representation of the Element.
+            A string representation of the Tool.
         """
         timestamp_str = self.timestamp.isoformat(timespec="minutes")
         return (
@@ -113,7 +124,11 @@ def func_to_tool(
     docstring_style: str = "google",
     **kwargs,
 ) -> list[Tool]:
-    """Convert functions to Tool objects.
+    """
+    Convert functions to Tool objects.
+
+    This function takes one or more callable functions and converts them into
+    Tool objects, optionally associating parsers with each function.
 
     Args:
         func_: The function(s) to convert into tool(s).

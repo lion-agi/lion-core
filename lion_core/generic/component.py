@@ -15,7 +15,6 @@ from typing import Any, TypeVar
 from pydantic import Field
 from pydantic.fields import FieldInfo
 
-from lion_core.libs import nset
 from lion_core.util import SysUtil, LN_UNDEFINED
 from lion_core.exceptions import LionValueError
 

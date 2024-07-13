@@ -1,19 +1,4 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
+import json
 from typing import Any
 from pydantic import Field
 from .message import RoledMessage, MessageRole
@@ -25,13 +10,14 @@ class ActionResponse(RoledMessage):
     """
     Represents a response to a specific action request.
 
-    Inherits from `RoledMessage` and provides attributes specific to action responses.
+    Inherits from `RoledMessage` and provides attributes specific to action
+    responses.
 
     Attributes:
-        action_request (str): The ID of the action request that this response corresponds to.
-        function (str): The name of the function called.
-        arguments (dict): The keyword arguments provided.
-        func_outputs (Any): The output of the function call.
+        action_request: The ID of the action request this response corresponds to.
+        function: The name of the function called.
+        arguments: The keyword arguments provided.
+        func_outputs: The output of the function call.
     """
 
     action_request: str | None = Field(
@@ -48,17 +34,18 @@ class ActionResponse(RoledMessage):
     def __init__(
         self,
         action_request: ActionRequest,
-        sender: str | None = None,  # the sender of action request
-        func_outputs=None,
-        **kwargs,
+        sender: str | None = None,
+        func_outputs: Any = None,
+        **kwargs: Any,
     ):
         """
         Initializes the ActionResponse.
 
         Args:
-            action_request (ActionRequest): The action request that this response corresponds to.
-            sender (str, optional): The sender of the action request.
-            func_outputs (Any, optional): The output of the function call.
+            action_request: The action request this response corresponds to.
+            sender: The sender of the action request.
+            func_outputs: The output of the function call.
+            **kwargs: Additional keyword arguments.
 
         Raises:
             ValueError: If the action request has already been responded to.
@@ -82,24 +69,24 @@ class ActionResponse(RoledMessage):
         self.update_request(action_request)
         self.func_outputs = func_outputs
 
-    def update_request(self, action_request: ActionRequest):
+    def update_request(self, action_request: ActionRequest) -> None:
         """
         Updates the action request details in the action response.
 
         Args:
-            action_request (ActionRequest): The action request to update from.
+            action_request: The action request to update from.
         """
         self.function = action_request.function
         self.arguments = action_request.arguments
         self.action_request = action_request.ln_id
         action_request.action_response = self.ln_id
 
-    def _to_dict(self):
+    def _to_dict(self) -> dict:
         """
         Converts the action response to a dictionary.
 
         Returns:
-            dict: A dictionary representation of the action response.
+            A dictionary representation of the action response.
         """
         return {
             "function": self.function,
@@ -107,22 +94,22 @@ class ActionResponse(RoledMessage):
             "output": self.func_outputs,
         }
 
-    def clone(self, **kwargs):
+    def clone(self, **kwargs: Any) -> "ActionResponse":
         """
         Creates a copy of the current object with optional additional arguments.
 
-        This method clones the current object, preserving its function and arguments.
-        It also retains the original `action_request`, `func_outputs`, and metadata,
-        while allowing for the addition of new attributes through keyword arguments.
+        This method clones the current object, preserving its function and
+        arguments. It also retains the original `action_request`, `func_outputs`,
+        and metadata, while allowing for the addition of new attributes through
+        keyword arguments.
 
         Args:
             **kwargs: Optional keyword arguments to be included in the cloned object.
 
         Returns:
-            ActionResponse: A new instance of the object with the same function, arguments,
+            A new instance of the object with the same function, arguments,
             and additional keyword arguments.
         """
-        import json
 
         arguments = json.dumps(self.arguments)
         action_request = ActionRequest(
@@ -133,3 +120,6 @@ class ActionResponse(RoledMessage):
         action_response_copy.func_outputs = self.func_outputs
         action_response_copy.metadata["origin_ln_id"] = self.ln_id
         return action_response_copy
+
+
+# File: lion_core/communication/action_response.py

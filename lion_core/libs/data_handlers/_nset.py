@@ -9,7 +9,7 @@ as needed.
 from typing import Any, Sequence
 
 from lion_core.libs.data_handlers._to_list import to_list
-from lion_core.util import LN_UNDEFINED
+from lion_core.sys_util import LN_UNDEFINED
 
 
 def nset(

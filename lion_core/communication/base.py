@@ -2,22 +2,21 @@
 
 from typing import Any
 from pydantic import Field, field_validator
-from ..util.sys_util import SysUtil
-from ..abc.element import Element
-from ..exceptions import LionTypeError, LionIDError
+from lion_core.exceptions import LionTypeError, LionIDError
+from lion_core.sys_util import SysUtil
+from lion_core.element import Element
 
 
 class BaseMail(Element):
-    """Base class for mail-like communication in the Lion framework.
+    """
+    Base class for mail-like communication in the Lion framework.
 
     This class extends the Element class and provides basic functionality
     for sender and recipient handling in a communication system.
 
     Attributes:
-        sender (str): The ID of the sender node, or 'system', 'user',
-            or 'assistant'.
-        recipient (str): The ID of the recipient node, or 'system', 'user',
-            or 'assistant'.
+        sender: The ID of the sender node, or 'system', 'user', or 'assistant'.
+        recipient: The ID of the recipient node, or 'system', 'user', or 'assistant'.
     """
 
     sender: str = Field(
@@ -29,8 +28,7 @@ class BaseMail(Element):
     recipient: str = Field(
         "N/A",
         title="Recipient",
-        description="The ID of the recipient node, or 'system', 'user', "
-        "or 'assistant'.",
+        description="The ID of the recipient node, or 'system', 'user', or 'assistant'.",
     )
 
     @field_validator("sender", "recipient", mode="before")

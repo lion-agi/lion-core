@@ -25,29 +25,12 @@ from typing import (
     runtime_checkable,
 )
 
-from lion_core._abc.container import Collective, Ordering
+from lion_core.abc import Collective, Ordering
 from lion_core.exceptions import LionIDError, LionValueError, LionTypeError
-from lion_core.util.sys_util import SysUtil
+from lion_core.sys_util import SysUtil
 from lion_core.element import Element
 
 T = TypeVar("T")
-
-
-def is_str_id(item: str) -> bool:
-    """
-    Validate if a string is a valid Lion ID.
-
-    Args:
-        item: String to validate as a Lion ID.
-
-    Returns:
-        True if the string is a valid Lion ID, False otherwise.
-
-    Note:
-        Supports 34-char (current) and 32-char (deprecated) formats.
-        32-char format will be removed in v1.0+.
-    """
-    return (len(item) == 34 and item.startswith("ln")) or len(item) == 32  # v1.0-
 
 
 def to_list_type(value: Any) -> list[Any]:

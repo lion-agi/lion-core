@@ -11,7 +11,7 @@ from typing import Any, Callable, Sequence, TypeVar
 from lion_core.libs.data_handlers import to_list
 from lion_core.libs.function_handlers._lcall import lcall
 from lion_core.libs.function_handlers._rcall import rcall
-from lion_core.util.undefined import LN_UNDEFINED
+from lion_core.sys_util import LN_UNDEFINED
 
 T = TypeVar("T")
 ErrorHandler = Callable[[Exception], Any]

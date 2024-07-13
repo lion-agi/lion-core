@@ -12,9 +12,10 @@ from datetime import datetime
 from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, AliasChoices
 
-from lion_core._abc import AbstractElement, Observable, Temporal
-from lion_core.settings import LION_ID_CONFIG, TIME_CONFIG
-from lion_core.util import SysUtil, LION_CLASS_REGISTRY
+from lion_core.abc import AbstractElement, Observable, Temporal
+from lion_core.setting import LION_ID_CONFIG, TIME_CONFIG
+from .sys_util import SysUtil
+from .class_registry import LION_CLASS_REGISTRY
 
 
 class Element(BaseModel, AbstractElement, Observable, Temporal):

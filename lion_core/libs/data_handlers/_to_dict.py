@@ -138,7 +138,7 @@ def xml_to_dict(input_: str) -> dict[str, Any]:
         ImportError: If xmltodict is not installed.
     """
 
-    from lion_core.util import SysUtil
+    from lion_core.sys_util import SysUtil
 
     SysUtil.check_import("xmltodict")
 

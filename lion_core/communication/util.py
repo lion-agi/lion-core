@@ -1,23 +1,8 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 import re
 import json
+from typing import Any
 
-from lionagi.os.lib import to_dict, strip_lower, nget
+from lion_core.libs import to_dict, strip_lower, nget
 
 from .message import RoledMessage
 from .system import System
@@ -29,46 +14,46 @@ from .action_response import ActionResponse
 
 def create_message(
     *,
-    system=None,  # system node - JSON serializable
-    instruction=None,  # Instruction node - JSON serializable
-    context=None,  # JSON serializable
-    assistant_response=None,  # JSON
-    function=None,
-    arguments=None,
-    func_outputs=None,
-    action_request=None,  # ActionRequest node
-    action_response=None,  # ActionResponse node
-    images=None,  # base64 encoded image
-    sender=None,  # str
-    recipient=None,  # str
-    requested_fields=None,  # dict[str, str]
-    system_datetime: bool = None,  # bool
-    system_datetime_strftime: str = None,  # str
-    **kwargs,  # additional context fields
-):
-    # order of handling
-    # action response - action request - other regular messages
-    # if the message is output from function calling we will ignore other message types
+    system: dict | None = None,
+    instruction: dict | None = None,
+    context: dict | None = None,
+    assistant_response: dict | None = None,
+    function: str | None = None,
+    arguments: dict | None = None,
+    func_outputs: Any | None = None,
+    action_request: ActionRequest | None = None,
+    action_response: ActionResponse | None = None,
+    images: str | list[str] | None = None,
+    sender: str | None = None,
+    recipient: str | None = None,
+    requested_fields: dict[str, str] | None = None,
+    system_datetime: bool | None = None,
+    system_datetime_strftime: str | None = None,
+    **kwargs: Any,
+) -> RoledMessage:
     """
     Creates a message based on the provided parameters.
 
     Args:
-        system (dict, optional): The system node (JSON serializable).
-        instruction (dict, optional): The instruction node (JSON serializable).
-        context (dict, optional): Additional context (JSON serializable).
-        assistant_response (dict, optional): The assistant response node (JSON serializable).
-        function (str, optional): The function name for action requests.
-        arguments (dict, optional): The arguments for the function.
-        func_outputs (Any, optional): The outputs from the function.
-        action_request (ActionRequest, optional): The action request node.
-        action_response (ActionResponse, optional): The action response node.
-        sender (str, optional): The sender of the message.
-        recipient (str, optional): The recipient of the message.
-        requested_fields (dict[str, str], optional): The requested fields for the instruction.
+        system: The system node (JSON serializable).
+        instruction: The instruction node (JSON serializable).
+        context: Additional context (JSON serializable).
+        assistant_response: The assistant response node (JSON serializable).
+        function: The function name for action requests.
+        arguments: The arguments for the function.
+        func_outputs: The outputs from the function.
+        action_request: The action request node.
+        action_response: The action response node.
+        images: Base64 encoded image(s).
+        sender: The sender of the message.
+        recipient: The recipient of the message.
+        requested_fields: The requested fields for the instruction.
+        system_datetime: Whether to include system datetime.
+        system_datetime_strftime: The system datetime strftime format.
         **kwargs: Additional context fields.
 
     Returns:
-        RoledMessage: The constructed message based on the provided parameters.
+        The constructed message based on the provided parameters.
 
     Raises:
         ValueError: If the parameters are invalid or missing required values.
@@ -159,15 +144,15 @@ def create_message(
         )
 
 
-def _parse_action_request(response):
+def _parse_action_request(response: dict) -> list[ActionRequest] | None:
     """
     Parses an action request from the response.
 
     Args:
-        response (dict): The response containing the action request.
+        response: The response containing the action request.
 
     Returns:
-        list[ActionRequest] or None: A list of action requests or None if invalid.
+        A list of action requests or None if invalid.
 
     Raises:
         ActionError: If the action request is invalid.
@@ -252,15 +237,15 @@ def _parse_action_request(response):
     return None
 
 
-def _handle_action_request(response):
+def _handle_action_request(response: dict) -> list[dict]:
     """
     Handles the action request parsing from the response.
 
     Args:
-        response (dict): The response containing the action request details.
+        response: The response containing the action request details.
 
     Returns:
-        list[dict]: A list of function call details.
+        A list of function call details.
 
     Raises:
         ValueError: If the response message is invalid.
@@ -286,3 +271,6 @@ def _handle_action_request(response):
         raise ValueError(
             "Response message must be one of regular response or function calling"
         )
+
+
+# File: lion_core/communication/util.py

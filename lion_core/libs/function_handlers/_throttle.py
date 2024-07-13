@@ -10,7 +10,7 @@ import asyncio
 import functools
 from typing import Any, Callable, TypeVar
 
-from lion_core.util.sys_util import SysUtil
+from lion_core.sys_util import SysUtil
 
 T = TypeVar("T")
 
