@@ -1,78 +1,62 @@
 """
-This module provides a list call mechanism to apply a function over a list of
-inputs asynchronously with options such as retries, initial delay, backoff
-factor, timeout, error handling, and throttling.
+Apply a function over a list of inputs asynchronously with options.
 
-Functions:
-- lcall: Apply a function over a list of inputs asynchronously with
-  customizable options.
+This module provides the lcall function for parallel execution of a function
+over a list of inputs with customizable retry, delay, and error handling.
 """
 
 import asyncio
-from typing import Any, Callable, List, Dict, Optional
+from typing import Any, Callable, List, Dict, TypeVar
+
 from lion_core.libs.function_handlers._ucall import ucall
+from lion_core.util import LN_UNDEFINED
+
+T = TypeVar("T")
+ErrorHandler = Callable[[Exception], Any]
 
 
 async def lcall(
-    func: Callable[..., Any],
+    func: Callable[..., T],
     input_: List[Any],
     retries: int = 0,
     initial_delay: float = 0,
     delay: float = 0,
     backoff_factor: float = 1,
-    default: Any = ...,
-    timeout: Optional[float] = None,
+    default: Any = LN_UNDEFINED,
+    timeout: float | None = None,
     timing: bool = False,
     verbose: bool = True,
-    error_msg: Optional[str] = None,
-    error_map: Optional[Dict[type, Callable[[Exception], Any]]] = None,
-    max_concurrent: Optional[int] = None,
-    throttle_period: Optional[float] = None,
+    error_msg: str | None = None,
+    error_map: Dict[type, ErrorHandler] | None = None,
+    max_concurrent: int | None = None,
+    throttle_period: float | None = None,
     dropna: bool = False,
     **kwargs: Any,
-) -> List[Any]:
+) -> List[T] | List[tuple[T, float]]:
     """
-    Apply a function over a list of inputs asynchronously with customizable
-    options.
-
-    This function allows executing a function over a list of inputs in parallel
-    with support for retries, initial delay, backoff factor, timeout, error
-    handling, concurrency control, and throttling.
+    Apply a function over a list of inputs asynchronously with options.
 
     Args:
-        func (Callable[..., Any]): The function to be applied to each input.
-        input_ (List[Any]): List of inputs to be processed.
-        retries (int, optional): Number of retry attempts for each function.
-            Defaults to 0.
-        initial_delay (float, optional): Initial delay before starting the
-            execution. Defaults to 0.
-        delay (float, optional): Delay between retry attempts. Defaults to 0.
-        backoff_factor (float, optional): Factor by which the delay increases
-            after each attempt. Defaults to 1.
-        default (Any, optional): Default value to return if all attempts fail.
-            Defaults to ... (ellipsis).
-        timeout (Optional[float], optional): Timeout for each function
-            execution. Defaults to None.
-        timing (bool, optional): Whether to return the execution duration.
-            Defaults to False.
-        verbose (bool, optional): Whether to print retry messages. Defaults to
-            True.
-        error_msg (Optional[str], optional): Custom error message. Defaults to
-            None.
-        error_map (Optional[Dict[type, Callable[[Exception], Any]]], optional):
-            A dictionary mapping exception types to error handling functions.
-            Defaults to None.
-        max_concurrent (Optional[int], optional): Maximum number of concurrent
-            executions. Defaults to None.
-        throttle_period (Optional[float], optional): Minimum time period
-            between successive function executions. Defaults to None.
-        dropna (bool, optional): Whether to drop None values from the output
-            list. Defaults to False.
-        **kwargs (Any): Additional keyword arguments to pass to the function.
+        func: The function to be applied to each input.
+        input_: List of inputs to be processed.
+        retries: Number of retry attempts for each function call.
+        initial_delay: Initial delay before starting execution.
+        delay: Delay between retry attempts.
+        backoff_factor: Factor by which delay increases after each attempt.
+        default: Default value to return if all attempts fail.
+        timeout: Timeout for each function execution.
+        timing: Whether to return the execution duration.
+        verbose: Whether to print retry messages.
+        error_msg: Custom error message.
+        error_map: Dictionary mapping exception types to error handlers.
+        max_concurrent: Maximum number of concurrent executions.
+        throttle_period: Minimum time period between function executions.
+        dropna: Whether to drop None values from the output list.
+        **kwargs: Additional keyword arguments for the function.
 
     Returns:
-        List[Any]: The results of the function calls, optionally including the
-            duration of execution if `timing` is True.
+        List of results, optionally including execution durations if timing
+        is True.
     """
     if initial_delay:
         await asyncio.sleep(initial_delay)
@@ -120,7 +104,7 @@ async def lcall(
                     await asyncio.sleep(current_delay)
                     current_delay *= backoff_factor
                 else:
-                    if default is not ...:
+                    if default is not LN_UNDEFINED:
                         return index, default
                     raise e
 
@@ -144,3 +128,6 @@ async def lcall(
         if dropna:
             return [result[1] for result in results if result[1] is not None]
         return [result[1] for result in results]
+
+
+# Path: lion_core/libs/function_handlers/_lcall.py

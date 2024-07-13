@@ -1,22 +1,36 @@
-from typing import Union
+"""
+Module for unflattening dictionaries.
+
+Provides functionality to convert a flat dictionary with nested keys
+into a nested dictionary or list structure.
+"""
+
+from typing import Any
 
 
 def unflatten(
-    flat_dict: dict, sep: str = "|", inplace: bool = False
-) -> Union[dict, list]:
+    flat_dict: dict[str, Any], sep: str = "|", inplace: bool = False
+) -> dict[str, Any] | list[Any]:
     """
     Unflatten a single-level dictionary into a nested dictionary or list.
 
     Args:
-        flat_dict (dict): The flattened dictionary to unflatten.
-        sep (str): The separator used for joining keys. Default: '/'.
-        inplace (bool): Whether to modify the input dictionary in place. Default: False.
+        flat_dict: The flattened dictionary to unflatten.
+        sep: The separator used for joining keys.
+        inplace: Whether to modify the input dictionary in place.
 
     Returns:
-        Union[dict, list]: The unflattened nested dictionary or list.
+        The unflattened nested dictionary or list.
+
+    Examples:
+        >>> unflatten({"a|b|c": 1, "a|b|d": 2})
+        {'a': {'b': {'c': 1, 'd': 2}}}
+
+        >>> unflatten({"0": "a", "1": "b", "2": "c"})
+        ['a', 'b', 'c']
     """
 
-    def _unflatten(data: dict) -> Union[dict, list]:
+    def _unflatten(data: dict) -> dict | list:
         result = {}
         for key, value in data.items():
             parts = key.split(sep)

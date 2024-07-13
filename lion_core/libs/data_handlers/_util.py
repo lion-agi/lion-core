@@ -1,17 +1,23 @@
-from typing import Any, Type
+"""
+Module containing utility functions for data handling and structure manipulation.
+
+Provides functions for checking homogeneity, updating nested structures,
+and navigating complex data structures.
+"""
+
+from typing import Any
 
 
 def is_homogeneous(iterables: list[Any] | dict[Any, Any], type_check: type) -> bool:
     """
-    Check if all elements in a list or all values in a dictionary are of the
-    same type.
+    Check if all elements in a list or all values in a dict are of same type.
 
     Args:
-        iterables (list[Any] | dict[Any, Any]): The list or dictionary to check.
-        type_check (type): The type to check against.
+        iterables: The list or dictionary to check.
+        type_check: The type to check against.
 
     Returns:
-        bool: True if all elements/values are of the same type, False otherwise.
+        True if all elements/values are of the same type, False otherwise.
     """
     if isinstance(iterables, list):
         return all(isinstance(it, type_check) for it in iterables)
@@ -24,22 +30,23 @@ def is_homogeneous(iterables: list[Any] | dict[Any, Any], type_check: type) -> b
 
 
 def is_same_dtype(
-    input_: list | dict, dtype: Type | None = None, return_dtype=False
-) -> bool:
+    input_: list[Any] | dict[Any, Any],
+    dtype: type | None = None,
+    return_dtype: bool = False,
+) -> bool | tuple[bool, type | None]:
     """
-    Check if all elements in a list or dictionary values are of the same data type.
+    Check if all elements in a list or dict values are of the same data type.
 
     Args:
-        input_ (list | dict): The input list or dictionary to check.
-        dtype (Type | None): The data type to check against. If None, uses the
-            type of the first element.
-        return_dtype (bool, optional): If True, return the data type along with
-            the check result. Defaults to False.
+        input_: The input list or dictionary to check.
+        dtype: The data type to check against. If None, uses the type of the
+            first element.
+        return_dtype: If True, return the data type with the check result.
 
     Returns:
-        bool: True if all elements are of the same type (or if the input is
-            empty), False otherwise.
-        If return_dtype is True, returns a tuple (bool, Type).
+        If return_dtype is False, returns True if all elements are of the
+        same type (or if the input is empty), False otherwise.
+        If return_dtype is True, returns a tuple (bool, type | None).
     """
     if not input_:
         return True
@@ -57,22 +64,21 @@ def is_structure_homogeneous(
     structure: Any, return_structure_type: bool = False
 ) -> bool | tuple[bool, type | None]:
     """
-    Check if a nested structure is homogeneous, meaning it doesn't contain a mix
-    of lists and dictionaries.
+    Check if a nested structure is homogeneous (no mix of lists and dicts).
 
     Args:
-        structure (Any): The nested structure to check.
-        return_structure_type (bool, optional): If True, return the type of the
-            homogeneous structure. Defaults to False.
+        structure: The nested structure to check.
+        return_structure_type: If True, return the type of the homogeneous
+            structure.
 
     Returns:
-        bool: True if the structure is homogeneous, False otherwise.
-        If return_structure_type is True, returns a tuple (bool, Type | None).
+        If return_structure_type is False, returns True if the structure is
+        homogeneous, False otherwise.
+        If True, returns a tuple (bool, type | None).
 
     Examples:
         >>> is_structure_homogeneous({'a': {'b': 1}, 'c': {'d': 2}})
         True
-
         >>> is_structure_homogeneous({'a': {'b': 1}, 'c': [1, 2]})
         False
     """
@@ -105,22 +111,16 @@ def is_structure_homogeneous(
     return (is_homogeneous, structure_type) if return_structure_type else is_homogeneous
 
 
-def deep_update(original: dict, update: dict) -> dict:
+def deep_update(original: dict[Any, Any], update: dict[Any, Any]) -> dict[Any, Any]:
     """
-    Recursively merge two dictionaries, updating nested dictionaries instead of
-    overwriting them.
-
-    For each key in the `update` dictionary, if the corresponding value is a
-    dictionary and the same key exists in `original` with a dictionary value,
-    this method recursively updates the dictionary. Otherwise, it updates or adds
-    the key-value pair to `original`.
+    Recursively merge two dicts, updating nested dicts instead of overwriting.
 
     Args:
-        original (dict): The dictionary to update.
-        update (dict): The dictionary containing updates to apply to `original`.
+        original: The dictionary to update.
+        update: The dictionary containing updates to apply to `original`.
 
     Returns:
-        dict: The `original` dictionary after applying updates from `update`.
+        The `original` dictionary after applying updates from `update`.
 
     Note:
         This method modifies the `original` dictionary in place.
@@ -133,18 +133,18 @@ def deep_update(original: dict, update: dict) -> dict:
     return original
 
 
-def get_target_container(nested: list | dict, indices: list[int | str]) -> list | dict:
+def get_target_container(
+    nested: list[Any] | dict[Any, Any], indices: list[int | str]
+) -> list[Any] | dict[Any, Any]:
     """
-    Retrieve the target container (sub-list or sub-dictionary) in a nested
-    structure using a list of indices.
+    Retrieve the target container in a nested structure using indices.
 
     Args:
-        nested (list | dict): The nested structure to navigate.
-        indices (list[int | str]): A list of indices to navigate through the
-            nested structure.
+        nested: The nested structure to navigate.
+        indices: A list of indices to navigate through the nested structure.
 
     Returns:
-        list | dict: The target container at the specified path.
+        The target container at the specified path.
 
     Raises:
         IndexError: If a list index is out of range.

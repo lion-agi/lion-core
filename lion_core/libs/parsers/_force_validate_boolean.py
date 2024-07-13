@@ -1,15 +1,23 @@
+"""Provide utility for forcefully validating and converting inputs to boolean."""
+
+from typing import Any
+
 from lion_core.libs.data_handlers import strip_lower
 
 
-def force_validate_boolean(x):
+def force_validate_boolean(x: Any) -> bool:
     """
-    Forcefully validates and converts the input into a boolean value.
+    Forcefully validate and convert the input into a boolean value.
+
+    This function attempts to convert various input types to a boolean value.
+    It recognizes common string representations of true and false, as well
+    as numeric values.
 
     Args:
-        x (Any): The input to be converted to boolean.
+        x: The input to be converted to boolean.
 
     Returns:
-        bool: The boolean representation of the input.
+        The boolean representation of the input.
 
     Raises:
         ValueError: If the input cannot be converted to a boolean value.
@@ -40,3 +48,6 @@ def force_validate_boolean(x):
         return False
 
     raise ValueError(f"Failed to convert {x} into a boolean value")
+
+
+# File: lion_core/libs/parsers/_force_validate_boolean.py

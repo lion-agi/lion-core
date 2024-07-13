@@ -1,53 +1,58 @@
-from typing import Any, Union, Callable
+"""Provide utility for validating and correcting dictionary keys."""
+
+from typing import Any, Callable, Sequence, TypedDict, Literal
+
 from lion_core.libs.algorithms.jaro_distance import jaro_winkler_similarity
+
+ScoreFunc = Callable[[str, str], float]
+HandleUnmatched = Literal["ignore", "raise", "remove", "fill", "force"]
+
+
+class KeysDict(TypedDict, total=False):
+    """TypedDict for keys dictionary."""
+
+    key: Any  # Represents any key-type pair
 
 
 def force_validate_keys(
-    dict_: dict,
-    keys: Union[dict, list[str]],
-    score_func: Callable[[str, str], float] = None,
+    dict_: dict[str, Any],
+    keys: Sequence[str] | KeysDict,
+    score_func: ScoreFunc | None = None,
     fuzzy_match: bool = True,
-    handle_unmatched: str = "ignore",
+    handle_unmatched: HandleUnmatched = "ignore",
     fill_value: Any = None,
-    fill_mapping: dict = None,
+    fill_mapping: dict[str, Any] | None = None,
     strict: bool = False,
-) -> dict:
+) -> dict[str, Any]:
     """
-    Force-validate keys in a dictionary based on a set of expected keys.
+    Force-validate keys in a dictionary based on expected keys.
 
-    This function matches the keys in the provided dictionary with the
-    expected keys, correcting mismatched keys using a similarity score
-    function. It supports various modes for handling unmatched keys.
+    Matches keys in the provided dictionary with expected keys, correcting
+    mismatches using a similarity score function. Supports various modes
+    for handling unmatched keys.
 
     Args:
-        keys: A list of expected keys or a dictionary mapping expected
-            keys to their types.
         dict_: The dictionary to validate and correct keys for.
-        score_func: A function that takes two strings and returns a
-            similarity score between 0 and 1. Defaults to Jaro-Winkler
-            similarity.
-        handle_unmatched: Specifies how to handle unmatched keys. Can be
-            one of the following:
-            - "ignore": Keep unmatched keys in the output dictionary.
-            - "raise": Raise a ValueError if there are unmatched keys.
-            - "remove": Remove unmatched keys from the output dictionary.
-            - "fill": Fill unmatched keys with a default value or mapping.
+        keys: List of expected keys or dictionary mapping keys to types.
+        score_func: Function returning similarity score (0-1) for two
+            strings. Defaults to Jaro-Winkler similarity.
+        fuzzy_match: If True, use fuzzy matching for key correction.
+        handle_unmatched: Specifies how to handle unmatched keys:
+            - "ignore": Keep unmatched keys in output.
+            - "raise": Raise ValueError if unmatched keys exist.
+            - "remove": Remove unmatched keys from output.
+            - "fill": Fill unmatched keys with default value/mapping.
             - "force": Combine "fill" and "remove" behaviors.
-        fill_value: A single default value to use for filling unmatched
-            keys when handle_unmatched is set to "fill" or "force".
-        fill_mapping: A dictionary mapping unmatched keys to their
-            default values when handle_unmatched is set to "fill" or
-            "force".
-        strict: If True, raises a ValueError if any expected key is not
-            found in the input dictionary.
+        fill_value: Default value for filling unmatched keys.
+        fill_mapping: Dictionary mapping unmatched keys to default values.
+        strict: If True, raise ValueError if any expected key is missing.
 
     Returns:
         A new dictionary with validated and corrected keys.
 
     Raises:
-        ValueError: If handle_unmatched is set to "raise" and there are
-            unmatched keys, or if strict is True and any expected key is
-            not found in the input dictionary.
+        ValueError: If handle_unmatched is "raise" and unmatched keys
+            exist, or if strict is True and expected keys are missing.
     """
     fields_set = set(keys) if isinstance(keys, list) else set(keys.keys())
 
@@ -83,7 +88,7 @@ def force_validate_keys(
 
                 # Find the index of the highest score
                 max_score_index = scores.index(max(scores))
-                
+
                 # Select the best match based on the highest score
                 best_match = list(fields_set)[max_score_index]
 
@@ -121,3 +126,6 @@ def force_validate_keys(
         return corrected_out
 
     raise ValueError(f"Failed to force_validate_keys for input: {dict_}")
+
+
+# File: lion_core/libs/parsers/_force_validate_keys.py

@@ -1,18 +1,26 @@
+"""Provide utilities for extracting details from function docstrings."""
+
 import inspect
+from typing import Callable, Literal
+
 from lion_core.libs.data_handlers import strip_lower
 
+DocstringStyle = Literal["google", "rest"]
 
-def extract_docstring_details(func, style="google"):
+
+def extract_docstring_details(
+    func: Callable, style: DocstringStyle = "google"
+) -> tuple[str | None, dict[str, str]]:
     """
-    Extract the function description and parameter descriptions from the docstring.
+    Extract function description and parameter descriptions from docstring.
 
     Args:
-        func (Callable): The function from which to extract docstring details.
-        style (str): The style of docstring to parse ('google' or 'reST').
+        func: The function from which to extract docstring details.
+        style: The style of docstring to parse ('google' or 'rest').
 
     Returns:
-        Tuple[str, Dict[str, str]]: A tuple containing the function description
-        and a dictionary with parameter names as keys and their descriptions as values.
+        A tuple containing the function description and a dictionary with
+        parameter names as keys and their descriptions as values.
 
     Raises:
         ValueError: If an unsupported style is provided.
@@ -26,10 +34,11 @@ def extract_docstring_details(func, style="google"):
         ...         param2 (str): The second parameter.
         ...     '''
         ...     pass
-        >>> description, params = extract_docstring_details(example_function, style='google')
+        >>> description, params = extract_docstring_details(example_function)
         >>> description
         'Example function.'
-        >>> params == {'param1': 'The first parameter.', 'param2': 'The second parameter.'}
+        >>> params == {'param1': 'The first parameter.',
+        ...            'param2': 'The second parameter.'}
         True
     """
     if strip_lower(style) == "google":
@@ -43,16 +52,18 @@ def extract_docstring_details(func, style="google"):
     return func_description, params_description
 
 
-def _extract_docstring_details_google(func):
+def _extract_docstring_details_google(
+    func: Callable,
+) -> tuple[str | None, dict[str, str]]:
     """
-    Extract the function description and parameter descriptions from the Google-style docstring.
+    Extract details from Google-style docstring.
 
     Args:
-        func (Callable): The function from which to extract docstring details.
+        func: The function from which to extract docstring details.
 
     Returns:
-        Tuple[str, Dict[str, str]]: A tuple containing the function description
-        and a dictionary with parameter names as keys and their descriptions as values.
+        A tuple containing the function description and a dictionary with
+        parameter names as keys and their descriptions as values.
 
     Examples:
         >>> def example_function(param1: int, param2: str):
@@ -63,10 +74,12 @@ def _extract_docstring_details_google(func):
         ...         param2 (str): The second parameter.
         ...     '''
         ...     pass
-        >>> description, params = _extract_docstring_details_google(example_function)
+        >>> description, params = _extract_docstring_details_google(
+        ...     example_function)
         >>> description
         'Example function.'
-        >>> params == {'param1': 'The first parameter.', 'param2': 'The second parameter.'}
+        >>> params == {'param1': 'The first parameter.',
+        ...            'param2': 'The second parameter.'}
         True
     """
     docstring = inspect.getdoc(func)
@@ -108,16 +121,18 @@ def _extract_docstring_details_google(func):
     return func_description, params_description
 
 
-def _extract_docstring_details_rest(func):
+def _extract_docstring_details_rest(
+    func: Callable,
+) -> tuple[str | None, dict[str, str]]:
     """
-    Extract the function description and parameter descriptions from the reStructuredText-style docstring.
+    Extract details from reStructuredText-style docstring.
 
     Args:
-        func (Callable): The function from which to extract docstring details.
+        func: The function from which to extract docstring details.
 
     Returns:
-        Tuple[str, Dict[str, str]]: A tuple containing the function description
-        and a dictionary with parameter names as keys and their descriptions as values.
+        A tuple containing the function description and a dictionary with
+        parameter names as keys and their descriptions as values.
 
     Examples:
         >>> def example_function(param1: int, param2: str):
@@ -129,10 +144,12 @@ def _extract_docstring_details_rest(func):
         ...     :type param2: str
         ...     '''
         ...     pass
-        >>> description, params = _extract_docstring_details_rest(example_function)
+        >>> description, params = _extract_docstring_details_rest(
+        ...     example_function)
         >>> description
         'Example function.'
-        >>> params == {'param1': 'The first parameter.', 'param2': 'The second parameter.'}
+        >>> params == {'param1': 'The first parameter.',
+        ...            'param2': 'The second parameter.'}
         True
     """
     docstring = inspect.getdoc(func)
@@ -155,3 +172,6 @@ def _extract_docstring_details_rest(func):
             params_description[current_param] += f" {line}"
 
     return func_description, params_description
+
+
+# File: lion_core/libs/parsers/_extract_docstring_details.py

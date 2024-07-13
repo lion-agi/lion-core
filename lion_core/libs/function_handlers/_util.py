@@ -1,34 +1,32 @@
 """
-This module provides utilities for converting synchronous functions to
-asynchronous ones, checking if a function is a coroutine, handling errors
-customly, limiting concurrency, and throttling function execution.
+Provide utilities for function conversion, error handling, and execution control.
 
-The following functionalities are provided:
-- force_async: Convert a synchronous function to an asynchronous function.
-- is_coroutine_func: Check if a function is a coroutine function.
-- custom_error_handler: Handle errors based on a custom error map.
-- max_concurrent: Limit the concurrency of function execution.
-- throttle: Throttle function execution to limit the rate of calls.
+This module offers utilities for converting synchronous functions to
+asynchronous, checking coroutines, custom error handling, concurrency
+limiting, and function throttling.
 """
 
 import logging
 import asyncio
-from typing import Any, Callable, Dict
+from typing import Any, Callable, TypeVar
 from functools import lru_cache, wraps
 from concurrent.futures import ThreadPoolExecutor
+
 from lion_core.libs.function_handlers._throttle import Throttle
 
+T = TypeVar("T")
+ErrorHandler = Callable[[Exception], Any]
 
-def force_async(fn: Callable[..., Any]) -> Callable[..., Any]:
+
+def force_async(fn: Callable[..., T]) -> Callable[..., Callable[..., T]]:
     """
-    Convert a synchronous function to an asynchronous function using a thread
-    pool.
+    Convert a synchronous function to an asynchronous function using a thread pool.
 
     Args:
-        fn (Callable[..., Any]): The synchronous function to convert.
+        fn: The synchronous function to convert.
 
     Returns:
-        Callable[..., Any]: The asynchronous version of the function.
+        The asynchronous version of the function.
     """
     pool = ThreadPoolExecutor()
 
@@ -41,27 +39,26 @@ def force_async(fn: Callable[..., Any]) -> Callable[..., Any]:
 
 
 @lru_cache(maxsize=None)
-def is_coroutine_func(func: Callable) -> bool:
+def is_coroutine_func(func: Callable[..., Any]) -> bool:
     """
     Check if a function is a coroutine function.
 
     Args:
-        func (Callable): The function to check.
+        func: The function to check.
 
     Returns:
-        bool: True if the function is a coroutine function, False otherwise.
+        True if the function is a coroutine function, False otherwise.
     """
     return asyncio.iscoroutinefunction(func)
 
 
-def custom_error_handler(error: Exception, error_map: Dict[type, Callable]) -> None:
+def custom_error_handler(error: Exception, error_map: dict[type, ErrorHandler]) -> None:
     """
     Handle errors based on a custom error map.
 
     Args:
-        error (Exception): The error that occurred.
-        error_map (Dict[type, Callable]): A map of error types to handler
-            functions.
+        error: The error that occurred.
+        error_map: A map of error types to handler functions.
     """
     for error_type, handler in error_map.items():
         if isinstance(error, error_type):
@@ -70,16 +67,18 @@ def custom_error_handler(error: Exception, error_map: Dict[type, Callable]) -> N
     logging.error(f"Unhandled error: {error}")
 
 
-def max_concurrent(func: Callable, limit: int) -> Callable:
+def max_concurrent(
+    func: Callable[..., T], limit: int
+) -> Callable[..., Callable[..., T]]:
     """
     Limit the concurrency of function execution using a semaphore.
 
     Args:
-        func (Callable): The function to limit concurrency for.
-        limit (int): The maximum number of concurrent executions.
+        func: The function to limit concurrency for.
+        limit: The maximum number of concurrent executions.
 
     Returns:
-        Callable: The function wrapped with concurrency control.
+        The function wrapped with concurrency control.
     """
     if not is_coroutine_func(func):
         func = force_async(func)
@@ -93,16 +92,16 @@ def max_concurrent(func: Callable, limit: int) -> Callable:
     return wrapper
 
 
-def throttle(func: Callable, period: float) -> Callable:
+def throttle(func: Callable[..., T], period: float) -> Callable[..., Callable[..., T]]:
     """
     Throttle function execution to limit the rate of calls.
 
     Args:
-        func (Callable): The function to throttle.
-        period (float): The minimum time interval between consecutive calls.
+        func: The function to throttle.
+        period: The minimum time interval between consecutive calls.
 
     Returns:
-        Callable: The throttled function.
+        The throttled function.
     """
     if not is_coroutine_func(func):
         func = force_async(func)
@@ -114,3 +113,6 @@ def throttle(func: Callable, period: float) -> Callable:
         return await func(*args, **kwargs)
 
     return wrapper
+
+
+# Path: lion_core/libs/function_handlers/_util.py

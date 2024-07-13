@@ -1,7 +1,7 @@
 import inspect
-
-from lion_core.libs.parsers.extract_docstring import extract_docstring_details
-from lion_core.libs.parsers.util import py_json_msp
+from typing import Any
+from lion_core.libs.parsers._extract_docstring import extract_docstring_details
+from lion_core.libs.parsers._util import py_json_msp
 
 
 def function_to_schema(
@@ -54,7 +54,7 @@ def function_to_schema(
 
     # Extract parameter details using typing hints
     sig = inspect.signature(func)
-    parameters = {
+    parameters: dict[str, Any] = {
         "type": "object",
         "properties": {},
         "required": [],
@@ -84,3 +84,6 @@ def function_to_schema(
             "parameters": parameters,
         },
     }
+
+
+# File: lion_core/libs/parsers/_function_to_schema.py

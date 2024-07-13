@@ -3,33 +3,27 @@ Module for converting various input types into lists.
 
 Provides functions to convert a variety of data structures into lists,
 with options for flattening nested lists and removing None values.
-
-Functions:
-    to_list: Convert various types of input into a list.
-    flatten_list: Flatten a nested list.
-    _flatten_list_generator: A generator to recursively flatten a nested list.
 """
 
 from collections.abc import Mapping, Iterable
-from typing import Any, Generator, List
+from typing import Any, Generator
+
 from pydantic import BaseModel
 
 
 def to_list(
     input_: Any, /, *, flatten: bool = False, dropna: bool = False
-) -> List[Any]:
+) -> list[Any]:
     """
     Convert various types of input into a list.
 
     Args:
-        input_ (Any): The input to convert to a list.
-        flatten (bool, optional): If True, flattens nested lists. Defaults
-            to True.
-        dropna (bool, optional): If True, removes None values. Defaults to
-            True.
+        input_: The input to convert to a list.
+        flatten: If True, flattens nested lists.
+        dropna: If True, removes None values.
 
     Returns:
-        List[Any]: The converted list.
+        The converted list.
 
     Examples:
         >>> to_list(1)
@@ -52,17 +46,16 @@ def to_list(
     return flatten_list(iterable_list, dropna) if flatten else iterable_list
 
 
-def flatten_list(lst_: List[Any], dropna: bool = True) -> List[Any]:
+def flatten_list(lst_: list[Any], dropna: bool = True) -> list[Any]:
     """
     Flatten a nested list.
 
     Args:
-        lst_ (List[Any]): The list to flatten.
-        dropna (bool, optional): If True, removes None values. Defaults to
-            True.
+        lst: The list to flatten.
+        dropna: If True, removes None values.
 
     Returns:
-        List[Any]: The flattened list.
+        The flattened list.
 
     Examples:
         >>> flatten_list([1, [2, 3], [4, [5, 6]]])
@@ -81,12 +74,11 @@ def _flatten_list_generator(
     A generator to recursively flatten a nested list.
 
     Args:
-        lst_ (Iterable[Any]): The list to flatten.
-        dropna (bool, optional): If True, removes None values. Defaults to
-            True.
+        lst: The list to flatten.
+        dropna: If True, removes None values.
 
     Yields:
-        Any: The next flattened element from the list.
+        The next flattened element from the list.
 
     Examples:
         >>> list(_flatten_list_generator([1, [2, 3], [4, [5, 6]]]))

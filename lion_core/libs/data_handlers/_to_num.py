@@ -4,16 +4,10 @@ Module for converting various input types into numeric values.
 Provides functions to convert input data to numeric types (int, float,
 or complex), with options for bounding values, specifying numeric type,
 and controlling precision.
-
-Functions:
-    to_num: Convert an input to a numeric type (int, float, or complex).
-    str_to_num: Convert a string to a numeric type (int, float, or complex).
-    _extract_numbers: Extract all numeric values from a string.
-    _convert_to_num: Convert a numeric string to a specified numeric type.
 """
 
 import re
-from typing import Type, Any, List, Union
+from typing import Any
 
 # Comprehensive regex to capture decimal numbers, fractions, scientific notation,
 # and complex numbers
@@ -40,33 +34,27 @@ def to_num(
     input_: Any,
     /,
     *,
-    upper_bound: Union[int, float, None] = None,
-    lower_bound: Union[int, float, None] = None,
-    num_type: Union[Type[Union[int, float, complex]], str] = "float",
-    precision: Union[int, None] = None,
+    upper_bound: int | float | None = None,
+    lower_bound: int | float | None = None,
+    num_type: type[int | float | complex] | str = "float",
+    precision: int | None = None,
     num_count: int = 1,
-) -> Union[int, float, complex, List[Union[int, float, complex]]]:
+) -> int | float | complex | list[int | float | complex]:
     """
     Convert an input to a numeric type (int, float, or complex).
 
     Args:
-        input_ (Any): The input to convert to a number.
-        upper_bound (int | float | None, optional): The upper bound for the
-            number. Raises ValueError if the number exceeds this bound.
-            Defaults to None.
-        lower_bound (int | float | None, optional): The lower bound for the
-            number. Raises ValueError if the number is below this bound.
-            Defaults to None.
-        num_type (Type[int | float | complex], optional): The type of the number
-            (int, float, or complex). Defaults to float.
-        precision (int | None, optional): The number of decimal places to
-            round to if num_type is float. Defaults to None.
-        num_count (int, optional): The number of numeric values to return.
-            Defaults to 1.
+        input_: The input to convert to a number.
+        upper_bound: The upper bound for the number. Raises ValueError if
+            the number exceeds this bound.
+        lower_bound: The lower bound for the number. Raises ValueError if
+            the number is below this bound.
+        num_type: The type of the number (int, float, or complex).
+        precision: The number of decimal places to round to if num_type is float.
+        num_count: The number of numeric values to return.
 
     Returns:
-        int | float | complex | list[int | float | complex]: The converted
-            number or list of numbers.
+        The converted number or list of numbers.
 
     Raises:
         ValueError: If no numeric value is found in the input or if the
@@ -99,33 +87,27 @@ def to_num(
 
 def str_to_num(
     input_: str,
-    upper_bound: Union[float, None] = None,
-    lower_bound: Union[float, None] = None,
-    num_type: Type[Union[int, float, complex]] = float,
-    precision: Union[int, None] = None,
+    upper_bound: float | None = None,
+    lower_bound: float | None = None,
+    num_type: type[int | float | complex] = float,
+    precision: int | None = None,
     num_count: int = 1,
-) -> Union[int, float, complex, List[Union[int, float, complex]]]:
+) -> int | float | complex | list[int | float | complex]:
     """
     Convert a string to a numeric type (int, float, or complex).
 
     Args:
-        input_ (str): The input string to convert to a number.
-        upper_bound (float | None, optional): The upper bound for the number.
-            Raises ValueError if the number exceeds this bound. Defaults to
-            None.
-        lower_bound (float | None, optional): The lower bound for the number.
-            Raises ValueError if the number is below this bound. Defaults to
-            None.
-        num_type (Type[int | float | complex], optional): The type of the number
-            (int, float, or complex). Defaults to float.
-        precision (int | None, optional): The number of decimal places to
-            round to if num_type is float. Defaults to None.
-        num_count (int, optional): The number of numeric values to return.
-            Defaults to 1.
+        input_: The input string to convert to a number.
+        upper_bound: The upper bound for the number. Raises ValueError if
+            the number exceeds this bound.
+        lower_bound: The lower bound for the number. Raises ValueError if
+            the number is below this bound.
+        num_type: The type of the number (int, float, or complex).
+        precision: The number of decimal places to round to if num_type is float.
+        num_count: The number of numeric values to return.
 
     Returns:
-        int | float | complex | list[int | float | complex]: The converted
-            number or list of numbers.
+        The converted number or list of numbers.
 
     Raises:
         ValueError: If no numeric value is found in the input or if the
@@ -161,15 +143,15 @@ def str_to_num(
     return numbers[0] if num_count == 1 else numbers[:num_count]
 
 
-def _extract_numbers(input_: str) -> List[str]:
+def _extract_numbers(input_: str) -> list[str]:
     """
     Extract all numeric values from a string.
 
     Args:
-        input_ (str): The input string to search for numeric values.
+        input_: The input string to search for numeric values.
 
     Returns:
-        List[str]: The list of numeric values found in the string.
+        The list of numeric values found in the string.
 
     Examples:
         >>> _extract_numbers("42 and 3.14 and 2/3")
@@ -180,21 +162,19 @@ def _extract_numbers(input_: str) -> List[str]:
 
 def _convert_to_num(
     number_str: str,
-    num_type: Type[Union[int, float, complex]] = float,
-    precision: Union[int, None] = None,
-) -> Union[int, float, complex]:
+    num_type: type[int | float | complex] = float,
+    precision: int | None = None,
+) -> int | float | complex:
     """
     Convert a numeric string to a specified numeric type.
 
     Args:
-        number_str (str): The numeric string to convert.
-        num_type (Type[int | float | complex], optional): The type to convert
-            the string to (int, float, or complex). Defaults to float.
-        precision (int | None, optional): The number of decimal places to
-            round to if num_type is float. Defaults to None.
+        number_str: The numeric string to convert.
+        num_type: The type to convert the string to (int, float, or complex).
+        precision: The number of decimal places to round to if num_type is float.
 
     Returns:
-        int | float | complex: The converted number.
+        The converted number.
 
     Raises:
         ValueError: If the specified number type is invalid.

@@ -1,72 +1,59 @@
 """
-This module provides a parallel call mechanism for executing multiple functions
-asynchronously with options such as retries, initial delay, backoff factor,
-timeout, error handling, and throttling.
+Execute multiple functions asynchronously with customizable options.
 
-Functions:
-- pcall: Execute multiple functions asynchronously with customizable options.
+This module provides the pcall function for parallel execution of multiple
+functions with retry, delay, and error handling options.
 """
 
 import asyncio
-from typing import Callable, Any, List, Dict, Optional
+from typing import Any, Callable, Sequence, TypeVar
+
 from lion_core.libs.function_handlers._ucall import ucall
 from lion_core.libs.function_handlers._util import is_coroutine_func
+from lion_core.util import LN_UNDEFINED
+
+T = TypeVar("T")
+ErrorHandler = Callable[[Exception], Any]
 
 
 async def pcall(
-    funcs: List[Callable[..., Any]],
+    funcs: Sequence[Callable[..., T]],
     retries: int = 0,
     initial_delay: float = 0,
     delay: float = 0,
     backoff_factor: float = 1,
-    default: Any = ...,
-    timeout: Optional[float] = None,
+    default: Any = LN_UNDEFINED,
+    timeout: float | None = None,
     timing: bool = False,
     verbose: bool = True,
-    error_msg: Optional[str] = None,
-    error_map: Optional[Dict[type, Callable]] = None,
-    max_concurrent: Optional[int] = None,
-    throttle_period: Optional[float] = None,
+    error_msg: str | None = None,
+    error_map: dict[type, ErrorHandler] | None = None,
+    max_concurrent: int | None = None,
+    throttle_period: float | None = None,
     **kwargs: Any,
-) -> List[Any]:
+) -> list[T] | list[tuple[T, float]]:
     """
     Execute multiple functions asynchronously with customizable options.
 
-    This function allows executing multiple functions in parallel with support
-    for retries, initial delay, backoff factor, timeout, error handling,
-    concurrency control, and throttling.
-
     Args:
-        funcs (List[Callable[..., Any]]): List of functions to be executed.
-        retries (int, optional): Number of retry attempts for each function.
-            Defaults to 0.
-        initial_delay (float, optional): Initial delay before starting the
-            execution. Defaults to 0.
-        delay (float, optional): Delay between retry attempts. Defaults to 0.
-        backoff_factor (float, optional): Factor by which the delay increases
-            after each attempt. Defaults to 1.
-        default (Any, optional): Default value to return if all attempts fail.
-            Defaults to ... (ellipsis).
-        timeout (Optional[float], optional): Timeout for each function
-            execution. Defaults to None.
-        timing (bool, optional): Whether to return the execution duration.
-            Defaults to False.
-        verbose (bool, optional): Whether to print retry messages. Defaults to
-            True.
-        error_msg (Optional[str], optional): Custom error message. Defaults to
-            None.
-        error_map (Optional[Dict[type, Callable]], optional): A dictionary
-            mapping exception types to error handling functions. Defaults to
-            None.
-        max_concurrent (Optional[int], optional): Maximum number of concurrent
-            executions. Defaults to None.
-        throttle_period (Optional[float], optional): Minimum time period
-            between successive function executions. Defaults to None.
-        **kwargs (Any): Additional keyword arguments to pass to each function.
+        funcs: Sequence of functions to be executed.
+        retries: Number of retry attempts for each function.
+        initial_delay: Initial delay before starting the execution.
+        delay: Delay between retry attempts.
+        backoff_factor: Factor by which delay increases after each attempt.
+        default: Default value to return if all attempts fail.
+        timeout: Timeout for each function execution.
+        timing: Whether to return the execution duration.
+        verbose: Whether to print retry messages.
+        error_msg: Custom error message.
+        error_map: Dictionary mapping exception types to error handlers.
+        max_concurrent: Maximum number of concurrent executions.
+        throttle_period: Minimum time period between function executions.
+        **kwargs: Additional keyword arguments for each function.
 
     Returns:
-        List[Any]: The results of the function calls, optionally including the
-            duration of execution if `timing` is True.
+        List of results, optionally including execution durations if timing
+        is True.
     """
     if initial_delay:
         await asyncio.sleep(initial_delay)
@@ -114,7 +101,7 @@ async def pcall(
                     await asyncio.sleep(current_delay)
                     current_delay *= backoff_factor
                 else:
-                    if default is not ...:
+                    if default is not LN_UNDEFINED:
                         return index, default
                     raise e
 
@@ -131,3 +118,6 @@ async def pcall(
         return [(result[1], result[2]) for result in results]
     else:
         return [result[1] for result in results]
+
+
+# Path: lion_core/libs/function_handlers/_pcall.py

@@ -6,17 +6,16 @@ specified paths, with support for creating intermediate structures as needed.
 
 Functions:
     ninsert: Inserts a value into a nested structure at a specified path.
-    handle_list_insert: Ensures a specified index in a list is occupied by a
-                        given value, extending the list if necessary.
 """
 
+from typing import Any
+
 from lion_core.libs.data_handlers._to_list import to_list
-from typing import Any, Union
 
 
 def ninsert(
-    nested_structure: Union[dict, list],
-    indices: list[Union[str, int]],
+    nested_structure: dict[Any, Any] | list[Any],
+    indices: list[str | int],
     value: Any,
     *,
     current_depth: int = 0,
@@ -24,18 +23,20 @@ def ninsert(
     """
     Inserts a value into a nested structure at a specified path.
 
-    Navigates a nested dictionary or list based on a sequence of indices or keys
-    (`indices`) and inserts `value` at the final location. This method can create
+    Navigates a nested dictionary or list based on a sequence of indices or
+    keys and inserts `value` at the final location. This method can create
     intermediate dictionaries or lists as needed.
 
     Args:
-        nested_structure (dict | list): The nested structure to modify.
-        indices (list[str | int]): The sequence of keys (str for dicts) or
-            indices (int for lists) defining the path to the insertion point.
-        value (Any): The value to insert at the specified location within
-            `nested_structure`.
-        current_depth (int): Internal use only; tracks the current depth
-            during recursive calls.
+        nested_structure: The nested structure to modify.
+        indices: The sequence of keys or indices defining the insertion path.
+        value: The value to insert at the specified location.
+        current_depth: Internal use only; tracks the current depth during
+            recursive calls.
+
+    Raises:
+        ValueError: If the indices list is empty.
+        TypeError: If an invalid key or container type is encountered.
 
     Examples:
         >>> subject_ = {'a': {'b': [1, 2]}}

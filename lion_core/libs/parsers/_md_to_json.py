@@ -1,8 +1,8 @@
 import re
 from typing import Any, Callable
 
-from lion_core.libs.parsers.util import md_json_char_map
-from lion_core.libs.parsers.fuzzy_parse_json import fuzzy_parse_json
+from lion_core.libs.parsers._util import md_json_char_map
+from lion_core.libs.parsers._fuzzy_parse_json import fuzzy_parse_json
 
 
 def md_to_json(
@@ -121,3 +121,6 @@ def extract_json_block(
 
     parser = parser or fuzzy_parse_json
     return parser(code_str)
+
+
+# File path: lion_core/libs/parsers/_md_to_json.py

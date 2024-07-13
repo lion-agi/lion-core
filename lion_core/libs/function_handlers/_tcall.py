@@ -1,60 +1,53 @@
 """
-This module provides a utility to execute functions asynchronously with various
-options such as delay, error handling, timeout, and execution timing.
+Provide utility to execute functions asynchronously with various options.
 
-Functions:
-- tcall: Execute a function asynchronously with customizable options.
+This module offers tcall for executing functions with customizable options
+like delay, error handling, timeout, and execution timing.
 """
 
 import asyncio
-from typing import Any, Callable, Optional, Dict
+from typing import Any, Callable, TypeVar
+
+T = TypeVar("T")
+ErrorHandler = Callable[[Exception], None]
 
 
 async def tcall(
-    func: Callable[..., Any],
+    func: Callable[..., T],
     *args: Any,
     initial_delay: float = 0,
-    error_msg: Optional[str] = None,
+    error_msg: str | None = None,
     suppress_err: bool = False,
     timing: bool = False,
-    timeout: Optional[float] = None,
+    timeout: float | None = None,
     default: Any = None,
-    error_map: Optional[Dict[type, Callable[[Exception], None]]] = None,
+    error_map: dict[type, ErrorHandler] | None = None,
     **kwargs: Any,
-) -> Any:
+) -> T | tuple[T, float]:
     """
     Execute a function asynchronously with customizable options.
 
-    This function can handle both synchronous and asynchronous functions,
-    applying an initial delay, timing the execution, handling errors, and
-    enforcing a timeout.
+    Handles both synchronous and asynchronous functions, applying initial
+    delay, timing execution, handling errors, and enforcing timeout.
 
     Args:
-        func (Callable[..., Any]): The function to be executed.
-        *args (Any): Positional arguments to pass to the function.
-        initial_delay (float, optional): Delay before executing the function.
-            Defaults to 0.
-        error_msg (Optional[str], optional): Custom error message. Defaults to
-            None.
-        suppress_err (bool, optional): Whether to suppress errors and return a
-            default value. Defaults to False.
-        timing (bool, optional): Whether to return the execution duration.
-            Defaults to False.
-        timeout (Optional[float], optional): Timeout for the function
-            execution. Defaults to None.
-        default (Any, optional): Default value to return if an error occurs.
-            Defaults to None.
-        error_map (Optional[Dict[type, Callable[[Exception], None]]], optional):
-            A dictionary mapping exception types to error handling functions.
-            Defaults to None.
-        **kwargs (Any): Additional keyword arguments to pass to the function.
+        func: The function to be executed.
+        *args: Positional arguments to pass to the function.
+        initial_delay: Delay before executing the function.
+        error_msg: Custom error message.
+        suppress_err: Whether to suppress errors and return default value.
+        timing: Whether to return the execution duration.
+        timeout: Timeout for the function execution.
+        default: Default value to return if an error occurs.
+        error_map: Dictionary mapping exception types to error handlers.
+        **kwargs: Additional keyword arguments to pass to the function.
 
     Returns:
-        Any: The result of the function call, optionally including the duration
-            of execution if `timing` is True.
+        The result of the function call, optionally including the duration
+        of execution if `timing` is True.
 
     Raises:
-        asyncio.TimeoutError: If the function execution exceeds the timeout.
+        asyncio.TimeoutError: If function execution exceeds the timeout.
         RuntimeError: If an error occurs and `suppress_err` is False.
     """
     start = asyncio.get_event_loop().time()
@@ -105,3 +98,6 @@ async def tcall(
             return (default, duration) if timing else default
         else:
             raise RuntimeError(error_msg) from e
+
+
+# Path: lion_core/libs/function_handlers/_tcall.py
