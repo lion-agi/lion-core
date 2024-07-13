@@ -3,10 +3,9 @@
 from abc import abstractmethod
 from typing import Any, TypeVar, Generic, Optional
 
-from ..abc.concept import AbstractSpace
-from ..abc.element import Element
+from .concept import AbstractSpace
 
-T = TypeVar("T", bound=Element)
+T = TypeVar("T")
 
 
 class Container(AbstractSpace):
@@ -147,6 +146,11 @@ class Ordering(Container):
     @abstractmethod
     def count(self, *args, **kwargs) -> int:
         """Return number of occurrences of item."""
+
+
+class Index(Ordering):
+    ...
+
 
 
 class Collective(Container, Generic[T]):
