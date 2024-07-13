@@ -55,4 +55,4 @@ class AbstractObserver(Node):
     """
 
 
-# File: lion_core/_abc/concept.py
+# File: lion_core/abc/concept.py

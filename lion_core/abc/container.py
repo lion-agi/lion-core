@@ -25,6 +25,15 @@ class Container(AbstractSpace):
     structures and emergent behaviors.
     """
 
+
+class Ordering(Container):
+    """
+    A container with a defined order.
+
+    This class extends Container to include concepts from order theory,
+    providing a foundation for sequences, priority queues, and other
+    structures where the relative positions of elements are significant.
+    """
     @abstractmethod
     def __len__(self) -> int:
         """
@@ -187,16 +196,6 @@ class Container(AbstractSpace):
         simultaneous access to both in iterations and transformations.
         """
 
-
-class Ordering(Container):
-    """
-    A container with a defined order.
-
-    This class extends Container to include concepts from order theory,
-    providing a foundation for sequences, priority queues, and other
-    structures where the relative positions of elements are significant.
-    """
-
     @abstractmethod
     def __reverse__(self) -> "Ordering":
         """
@@ -280,6 +279,168 @@ class Collective(Container, Generic[T]):
     It incorporates ideas from category theory and type theory to allow
     for flexible, type-safe implementations of record-like structures.
     """
+    
+    @abstractmethod
+    def __len__(self) -> int:
+        """
+        Return the number of items in the container.
+
+        This method relates to the concept of cardinality in set theory,
+        providing a measure of the container's size.
+        """
+
+    @abstractmethod
+    def size(self) -> int:
+        """
+        Return the size of the container.
+
+        Similar to numpy.size(), this method may account for multi-dimensional
+        or nested structures, reflecting the complexity of the container.
+        """
+
+    @abstractmethod
+    def is_empty(self) -> bool:
+        """
+        Check if the container is empty.
+
+        This method is crucial for boundary conditions in algorithms and
+        relates to the concept of null sets in measure theory.
+        """
+
+    @abstractmethod
+    def clear(self) -> None:
+        """
+        Remove all items from the container.
+
+        This operation resets the container to its initial state, which
+        is important for reusability and state management in complex systems.
+        """
+
+    @abstractmethod
+    def copy(self) -> "Container":
+        """
+        Return a shallow copy of the container.
+
+        This method is crucial for creating independent instances, which
+        is important in parallel processing and state preservation.
+        """
+
+    @abstractmethod
+    def append(self, *args, **kwargs) -> None:
+        """
+        Add an item to the end of the container.
+
+        This method allows for dynamic growth of the container, reflecting
+        the adaptability of complex systems.
+        """
+
+    @abstractmethod
+    def pop(self, *args, **kwargs) -> Any:
+        """
+        Remove and return item at index (default last).
+
+        This method combines removal and retrieval, which is useful for
+        stack-like operations and priority queues.
+        """
+
+    @abstractmethod
+    def include(self, item: T) -> bool:
+        """
+        Include an item if not already present.
+
+        This method ensures uniqueness within the container, which can be
+        crucial for set-like operations and maintaining invariants.
+        """
+
+    @abstractmethod
+    def exclude(self, item: T) -> bool:
+        """
+        Exclude an item if present.
+
+        This method allows for selective removal, which is important for
+        filtering and maintaining specific conditions within the container.
+        """
+
+    @abstractmethod
+    def __getitem__(self, index: int) -> Any:
+        """
+        Get item at index.
+
+        This method provides direct access to elements, which is fundamental
+        for array-like operations and random access patterns.
+        """
+
+    @abstractmethod
+    def __setitem__(self, index: int, item: Any) -> None:
+        """
+        Set item at index.
+
+        This method allows for in-place modifications, which can be more
+        efficient than removal and reinsertion in certain scenarios.
+        """
+
+    @abstractmethod
+    def __delitem__(self, index: int) -> None:
+        """
+        Delete item at index.
+
+        This method provides fine-grained control over the container's
+        contents, allowing for selective removal of elements.
+        """
+
+    @abstractmethod
+    def __iter__(self) -> Any:
+        """
+        Return an iterator for the container.
+
+        This method enables the use of the container in for loops and
+        comprehensions, facilitating data processing and transformations.
+        """
+
+    @abstractmethod
+    def __next__(self) -> Any:
+        """
+        Return the next item in the container.
+
+        This method works with __iter__ to enable iteration, which is
+        crucial for sequential processing of container elements.
+        """
+
+    @abstractmethod
+    def __list__(self) -> list:
+        """
+        Return the container as a list.
+
+        This method provides a standard Python representation of the
+        container, which can be useful for interoperability and serialization.
+        """
+
+    @abstractmethod
+    def keys(self) -> Any:
+        """
+        Return the keys of the container.
+
+        This method is crucial for associative containers and can represent
+        indices in ordered containers, facilitating lookup operations.
+        """
+
+    @abstractmethod
+    def values(self) -> Any:
+        """
+        Return the values of the container.
+
+        This method provides access to the core data stored in the container,
+        which is essential for data processing and analysis tasks.
+        """
+
+    @abstractmethod
+    def items(self) -> Any:
+        """
+        Return the items of the container as (key, value) pairs.
+
+        This method combines keys and values, which is useful for
+        simultaneous access to both in iterations and transformations.
+        """
 
     @abstractmethod
     def update(self, other: Any) -> None:
@@ -302,4 +463,4 @@ class Collective(Container, Generic[T]):
         """
 
 
-# File: lion_core/_abc/container.py
+# File: lion_core/abc/container.py

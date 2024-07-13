@@ -80,4 +80,4 @@ class Stochastic(Probabilistic, Temporal):
     pass
 
 
-# File: lion_core/_abc/characteristic.py
+# File: lion_core/abc/characteristic.py

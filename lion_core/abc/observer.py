@@ -72,4 +72,4 @@ class BaseProcessor(AbstractObserver):
         pass
 
 
-# File: lion_core/_abc/observer.py
+# File: lion_core/abc/observer.py
