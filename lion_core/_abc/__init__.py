@@ -22,7 +22,7 @@ __all__ = [
     "Ordering",
     "Index",
     # "Quantum",
-    # "Probabilistic", 
+    # "Probabilistic",
     # "Stochastic"
 ]
 

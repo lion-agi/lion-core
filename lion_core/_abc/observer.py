@@ -9,7 +9,7 @@ the LION framework.
 """
 
 from abc import abstractmethod
-from lion_core._abc.concept import AbstractObserver
+from .concept import AbstractObserver
 
 
 class BaseManager(AbstractObserver):

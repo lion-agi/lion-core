@@ -19,9 +19,12 @@ from datetime import datetime, timezone
 import logging
 
 from ..settings._setting import TIME_CONFIG
-from ..abc.concept import AbstractElement
+from .._abc import AbstractElement
 from ..exceptions import LionIDError
+from .undefined import LionUndefined
 
+
+LN_UNDEFINED = LionUndefined()
 
 class SysUtil:
     """Utility class providing various system-related functionalities."""

@@ -8,7 +8,7 @@ state-changing entities within the LION framework.
 """
 
 from abc import abstractmethod
-from lion_core._abc.concept import AbstractElement
+from .concept import AbstractElement
 
 
 class Event(AbstractElement):

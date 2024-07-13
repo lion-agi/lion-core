@@ -9,7 +9,7 @@ and quantum-inspired computation to model multi-faceted, dynamic entities.
 from abc import abstractmethod
 from typing import Any, TypeVar, Generic, Optional
 
-from lion_core._abc.concept import AbstractSpace
+from .concept import AbstractSpace
 
 T = TypeVar("T")
 
@@ -51,15 +51,6 @@ class Container(AbstractSpace):
         This method is crucial for boundary conditions in algorithms and
         relates to the concept of null sets in measure theory.
         """
-
-    def __bool__(self) -> bool:
-        """
-        Check if the container is considered True.
-
-        This method allows containers to be used in boolean contexts,
-        typically based on whether they contain elements.
-        """
-        return not self.is_empty()
 
     @abstractmethod
     def clear(self) -> None:
