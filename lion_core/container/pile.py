@@ -28,7 +28,7 @@ from lion_core.exceptions import (
 )
 from .progression import Progression
 from .util import to_list_type
-from lion_core.undefined import LN_UNDEFINED
+from lion_core.sys_util import LN_UNDEFINED
 
 T = TypeVar("T", bound=Element)
 
