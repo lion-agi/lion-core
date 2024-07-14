@@ -119,7 +119,8 @@ class Form(BaseForm):
             and (k in self.input_fields + self.requested_fields)
         }
 
-    def to_instruction_dict(self) -> str:
+    @property
+    def instruction_dict(self) -> str:
         from .report_manager import ReportManager
 
         return ReportManager.form_instruction_dict(self)

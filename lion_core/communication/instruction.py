@@ -176,7 +176,7 @@ class Instruction(RoledMessage):
         content = json.dumps(self.content)
         instruction_copy = Instruction(**kwargs)
         instruction_copy.content = json.loads(content)
-        instruction_copy.metadata["origin_ln_id"] = self.ln_id
+        instruction_copy.metadata.set("origin_ln_id", self.ln_id)
         return instruction_copy
 
     @staticmethod
@@ -219,9 +219,7 @@ class Instruction(RoledMessage):
             The created Instruction instance.
         """
         return cls(
-            instruction=form._instruction_prompt,
-            context=form._instruction_context,
-            requested_fields=form._instruction_requested_fields,
+            **form.instruction_dict,
             image=image,
             sender=sender,
             recipient=recipient,

@@ -14,7 +14,7 @@ class DictConverter:
 
     @staticmethod
     def to_obj(self: BaseComponent) -> dict[str, Any]:
-        return self._serialize()
+        return self.serialize()
 
 
 class JsonConverter:
@@ -25,7 +25,7 @@ class JsonConverter:
 
     @staticmethod
     def to_obj(self: BaseComponent) -> str:
-        return to_str(self._serialize())
+        return to_str(self.serialize())
 
 
 # Register converters

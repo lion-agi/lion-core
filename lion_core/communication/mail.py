@@ -33,25 +33,11 @@ class Mail(BaseMail):
         """
         return self.package.category
 
-    def to_dict(self) -> dict[str, Any]:
-        """
-        Convert the Mail instance to a dictionary.
-
-        This method first calls the Element class's to_dict method and
-        then updates the resulting dictionary with package-specific
-        information.
-
-        Returns:
-            A dictionary representation of the Mail instance.
-        """
-        result = self.model_dump()
-        result.update(
-            {
-                "package_category": self.package.category,
-                "package_id": self.package.ln_id,
-            }
-        )
-        return result
+    def serialize(self, **kwargs: Any) -> dict[str, Any]:
+        dict_ = super().serialize(**kwargs)
+        dict_["package_id"] = self.package.ln_id
+        dict_["package_category"] = self.package.category
+        return dict_
 
 
 # File: lion_core/communication/mail.py

@@ -72,7 +72,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         return datetime.fromtimestamp(self.timestamp, tz=TIME_CONFIG["tz"])
 
     @model_serializer
-    def _serialize(self, **kwargs: Any) -> dict[str, Any]:
+    def serialize(self, **kwargs: Any) -> dict[str, Any]:
         """
         Serialize the Element to a dictionary.
 
@@ -93,7 +93,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         return dict_
 
     @classmethod
-    def _deserialize(cls, data: dict[str, Any]) -> Element:
+    def deserialize(cls, data: dict[str, Any]) -> Element:
         """
         Deserialize a dictionary into an Element instance.
 

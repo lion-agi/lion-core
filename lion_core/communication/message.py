@@ -3,6 +3,8 @@
 from enum import Enum
 from typing import Any, Dict, List
 from pydantic import Field
+from lion_core.sys_util import SysUtil
+from lion_core.generic.component import Component
 from .mail import BaseMail
 
 
@@ -25,7 +27,7 @@ class MessageRole(str, Enum):
     ASSISTANT = "assistant"
 
 
-class RoledMessage(BaseMail):
+class RoledMessage(Component, BaseMail):
     """A base class representing a message with validators and properties."""
 
     role: MessageRole | None = Field(
@@ -59,7 +61,7 @@ class RoledMessage(BaseMail):
         if role not in [i.value for i in MessageRole]:
             raise ValueError(f"Invalid message role: {role}")
 
-        content_dict = self.content.copy()
+        content_dict = SysUtil.copy(self.content)
 
         if not content_dict.get("images", None):
             if len(content_dict) == 1:

@@ -46,7 +46,7 @@ class BaseComponent(Element):
     )
 
     @model_serializer
-    def _serialize(self, **kwargs: Any) -> dict[str, Any]:
+    def serialize(self, **kwargs: Any) -> dict[str, Any]:
         """
         Serialize the BaseComponent to a dictionary.
 
@@ -60,10 +60,10 @@ class BaseComponent(Element):
             A dictionary representation of the BaseComponent.
         """
         kwargs["include"] = kwargs.get("include", DEFAULT_SERIALIZATION_INCLUDE)
-        return super()._serialize(**kwargs)
+        return super().serialize(**kwargs)
 
     @classmethod
-    def _deserialize(
+    def deserialize(
         cls, data: dict[str, Any], *, unflat: bool = False
     ) -> "BaseComponent":
         """
@@ -80,7 +80,7 @@ class BaseComponent(Element):
             An instance of the BaseComponent class or its subclass.
         """
         data["metadata"] = Record.deserialize(data["metadata"], unflat=unflat)
-        return super()._deserialize(data)
+        return super().deserialize(data)
 
     @classmethod
     def get_converter_registry(cls) -> ConverterRegistry:
@@ -121,7 +121,7 @@ class BaseComponent(Element):
             A new instance of the BaseComponent class or its subclass.
         """
         data = cls.get_converter_registry().convert_from(obj, key)
-        return cls._deserialize(data, unflat=unflat)
+        return cls.deserialize(data, unflat=unflat)
 
     @classmethod
     def register_converter(cls, key: str, converter: Type[Converter]) -> None:
