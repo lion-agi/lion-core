@@ -128,5 +128,8 @@ class BaseComponent(Element):
         """Register a new converter."""
         cls.get_converter_registry().register(key, converter)
 
+    def copy(self, deep=True):
+        return self.model_copy(deep=deep)
+
 
 # File: lion_core/generic/base.py

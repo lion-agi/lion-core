@@ -63,6 +63,10 @@ class Component(BaseComponent):
         kwargs["include"] = kwargs.get("include", DEFAULT_SERIALIZATION_INCLUDE)
         return super().serialize(**kwargs)
 
+    @property
+    def all_fields(self) -> dict[str, FieldInfo]:
+        return {**self.model_fields, **self.extra_fields}
+
     def add_field(
         self,
         name: str,
