@@ -1,6 +1,4 @@
-from typing import Any, Type, Dict, Protocol
-from abc import abstractmethod
-from ..element.element import Element
+from lion_core.libs import strip_lower
 
 
 def get_input_output_fields(str_: str) -> list[list[str]]:
