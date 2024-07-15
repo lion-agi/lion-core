@@ -86,7 +86,7 @@ If you use Lion-Core in your research or project, please cite it as follows:
   month = {07},
   year = {2024},
   title = {LionAGI: Towards Automated General Intelligence},
-  url = {https://github.com/lion-agi/lionagi},
+  url = {https://github.com/lion-agi/lion-core},
 }
 ```
 
