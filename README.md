@@ -81,7 +81,7 @@ Join our Discord community for discussions, support, and updates: [Lion-Core Dis
 If you use Lion-Core in your research or project, please cite it as follows:
 
 ```bibtex
-@software{Li_LionAGI_2023,
+@software{Li_LionCore_2024,
   author = {Haiyang Li},
   month = {07},
   year = {2024},
