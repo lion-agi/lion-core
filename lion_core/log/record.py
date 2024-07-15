@@ -6,23 +6,32 @@ dictionary and list data with an intuitive API for data manipulation.
 """
 
 from typing import Any, Iterator
-
-from pydantic import BaseModel, Field, model_serializer
-
-from lion_core.abc import Container
+from pydantic import Field, BaseModel
 from lion_core.libs import (
     nget,
     ninsert,
     nset,
     npop,
     get_flattened_keys,
-    flatten,
-    unflatten,
-)
+    flatten,)
+from lion_core.abc import MutableRecord
 from lion_core.sys_util import LN_UNDEFINED
 
 
-class Record(BaseModel, Container):
+
+class RecordContent(BaseModel):
+    """
+    A Pydantic model for the content of a Record.
+    """
+
+
+
+
+
+
+
+
+class Record(MutableRecord):
     """
     A container class for managing nested dictionary/list data structures.
 
@@ -32,17 +41,8 @@ class Record(BaseModel, Container):
     Attributes:
         content (dict[str, Any]): The internal dictionary storing the nested data.
     """
-
     content: dict[str, Any] = Field(default_factory=dict)
-
-    def __init__(self, **kwargs: Any) -> None:
-        """Initialize the Record with the given keyword arguments."""
-        super().__init__(content=kwargs)
-
-    @model_serializer
-    def serialize(self) -> dict[str, Any]:
-        """Serialize the Record, excluding None values."""
-        return {k: v for k, v in self.content.items() if v is not None}
+    
 
     def pop(self, indices: list[str], default: Any = LN_UNDEFINED) -> Any:
         """
@@ -136,36 +136,6 @@ class Record(BaseModel, Container):
         if flat:
             return ((k, v) for k, v in flatten(self.content).items())
         return iter(self.content.items())
-
-    @classmethod
-    def deserialize(cls, data: dict[str, Any], *, unflat: bool = False) -> "Record":
-        """
-        Deserialize data into a Record instance.
-
-        Args:
-            data: The data to deserialize.
-            unflat: If True, unflatten the data before deserialization.
-
-        Returns:
-            A new Record instance.
-        """
-        if unflat:
-            data = unflatten(data)
-        return cls(**data)
-
-    def update(self, other: dict[str, Any] | "Record") -> None:
-        """
-        Update the Record with the key/value pairs from other.
-
-        If other is a Record instance, its content will be used for updating.
-
-        Args:
-            other: A dictionary or Record instance to update from.
-        """
-        if isinstance(other, Record):
-            self.content.update(other.content)
-        else:
-            self.content.update(other)
 
 
 # File: lion_core/container/record.py

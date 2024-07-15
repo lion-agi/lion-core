@@ -61,11 +61,6 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         super().__pydantic_init_subclass__(**kwargs)
         LION_CLASS_REGISTRY[cls.__name__] = cls
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get the name of the class."""
-        return cls.__name__
-
     @property
     def _created_datetime(self) -> datetime:
         """Get the creation datetime of the Element."""
@@ -123,21 +118,6 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
     def __bool__(self) -> bool:
         """Element is always considered True."""
         return True
-
-    def __eq__(self, other: Any) -> bool:
-        """
-        Check ln_id equality with another object.
-
-        Args:
-            other: The object to compare with.
-
-        Returns:
-            True if the other object is an Element with the same ln_id,
-            False otherwise.
-        """
-        if not isinstance(other, Element):
-            return NotImplemented
-        return self.ln_id == other.ln_id
-
+    
 
 # File: lion_core/element.py

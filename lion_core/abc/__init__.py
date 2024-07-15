@@ -3,6 +3,7 @@ from .characteristic import Observable, Temporal  # Quantum, Probabilistic, Stoc
 from .observer import BaseManager, BaseExecutor, BaseProcessor
 from .event import Signal, Condition, Action
 from .container import Container, Collective, Ordering, Index
+from .record import MutableRecord, ImmutableRecord
 
 
 __all__ = [
@@ -21,6 +22,8 @@ __all__ = [
     "Collective",
     "Ordering",
     "Index",
+    "MutableRecord",
+    "ImmutableRecord",
     # "Quantum",
     # "Probabilistic",
     # "Stochastic"
