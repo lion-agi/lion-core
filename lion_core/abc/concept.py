@@ -1,6 +1,6 @@
 """Core abstract base classes for the Lion framework."""
 
-from abc import ABC, abstractmethod
+from abc import ABC
 
 
 class Node(ABC):
@@ -20,18 +20,6 @@ class AbstractSpace(Node):
     Subclasses should implement the __contains__ method to define
     membership criteria for the space.
     """
-
-    @abstractmethod
-    def __contains__(self, item) -> bool:
-        """
-        Check if an item is contained within this space.
-
-        Args:
-            item: The item to check for containment.
-
-        Returns:
-            bool: True if the item is in the space, False otherwise.
-        """
 
 
 class AbstractElement(Node):
@@ -56,6 +44,12 @@ class AbstractObserver(Node):
     This class defines the concept of an observer that can perceive or
     interact with AbstractElements within an AbstractSpace. Subclasses
     should implement specific observation mechanisms.
+    """
+
+
+class AbstractObservation(Node):
+    """
+    An abstract representation of the act of observing.
     """
 
 
