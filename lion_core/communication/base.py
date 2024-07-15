@@ -48,11 +48,11 @@ class BaseMail(Element):
         Raises:
             LionTypeError: If the value is invalid.
         """
-        if value is None:
-            return "N/A"
-
         if value in ["system", "user", "N/A", "assistant"]:
             return value
+
+        if value is None:
+            return "N/A"
 
         try:
             return SysUtil.get_lion_id(value)

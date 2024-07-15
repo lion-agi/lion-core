@@ -1,7 +1,8 @@
-import json
 from typing import Any
 from pydantic import Field
 from .message import RoledMessage, MessageRole
+from lion_core.libs import to_dict
+from lion_core.sys_util import SysUtil
 from .action_request import ActionRequest
 
 
@@ -20,7 +21,7 @@ class ActionResponse(RoledMessage):
         func_outputs: The output of the function call.
     """
 
-    action_request: str | None = Field(
+    actionb_request_id: str | None = Field(
         None,
         description="The id of the action request that this response corresponds to",
     )
@@ -50,7 +51,7 @@ class ActionResponse(RoledMessage):
         Raises:
             ValueError: If the action request has already been responded to.
         """
-        if action_request.is_responded():
+        if action_request.is_responded:
             raise ValueError("Action request has already been responded to")
 
         super().__init__(
@@ -59,8 +60,7 @@ class ActionResponse(RoledMessage):
             recipient=action_request.sender,  # recipient is the assistant who made the request
             content={
                 "action_response": {
-                    "function": action_request.function,
-                    "arguments": action_request.arguments,
+                    **action_request.action_request_dict,
                     "output": func_outputs,
                 }
             },
@@ -78,10 +78,11 @@ class ActionResponse(RoledMessage):
         """
         self.function = action_request.function
         self.arguments = action_request.arguments
-        self.action_request = action_request.ln_id
+        self.actionb_request_id = action_request.ln_id
         action_request.action_response = self.ln_id
 
-    def _to_dict(self) -> dict:
+    @property
+    def action_response_dict(self) -> dict[str, Any]:
         """
         Converts the action response to a dictionary.
 
@@ -111,14 +112,12 @@ class ActionResponse(RoledMessage):
             and additional keyword arguments.
         """
 
-        arguments = json.dumps(self.arguments)
-        action_request = ActionRequest(
-            function=self.function, arguments=json.loads(arguments)
-        )
+        arguments = to_dict(SysUtil.copy(self.arguments))
+        action_request = ActionRequest(function=self.function, arguments=arguments)
         action_response_copy = ActionResponse(action_request=action_request, **kwargs)
-        action_response_copy.action_request = self.action_request
+        action_response_copy.actionb_request_id = self.actionb_request_id
         action_response_copy.func_outputs = self.func_outputs
-        action_response_copy.metadata["origin_ln_id"] = self.ln_id
+        action_response_copy.metadata.set("origin_ln_id", self.ln_id)
         return action_response_copy
 
 

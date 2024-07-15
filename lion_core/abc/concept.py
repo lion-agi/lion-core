@@ -32,7 +32,6 @@ class AbstractSpace(Node):
         Returns:
             bool: True if the item is in the space, False otherwise.
         """
-        ...
 
 
 class AbstractElement(Node):
@@ -43,6 +42,11 @@ class AbstractElement(Node):
     an AbstractSpace. Subclasses should implement specific properties
     and behaviors of elements.
     """
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get the name of the class."""
+        return cls.__name__
 
 
 class AbstractObserver(Node):

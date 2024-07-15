@@ -23,3 +23,6 @@ BASE_LION_FIELDS = [
 TIME_CONFIG = {
     "tz": timezone.utc,
 }
+
+
+# File: lion_core/setting.py

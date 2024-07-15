@@ -26,7 +26,6 @@ class System(RoledMessage):
         sender: str | None = None,
         recipient: str | None = None,
         system_datetime: bool | str | None = None,
-        system_datetime_strftime: str | None = None,
         **kwargs: Any,
     ):
         """
@@ -46,16 +45,8 @@ class System(RoledMessage):
             if "metadata" in kwargs and "system" in kwargs["metadata"]:
                 system = kwargs["metadata"].pop("system")
 
-        if system_datetime is not None:
-            if isinstance(system_datetime, bool) and system_datetime:
-                system_datetime = SysUtil.time(datetime_=True)
-                system_datetime = (
-                    system_datetime.strftime("%Y-%m-%d %H:%M")
-                    if not system_datetime_strftime
-                    else system_datetime.strftime(system_datetime_strftime)
-                )
-            elif isinstance(system_datetime, str):
-                pass
+        if system_datetime == True:
+            system_datetime = SysUtil.time(datetime_=True, iso=True)
 
         super().__init__(
             role=MessageRole.SYSTEM,
@@ -78,7 +69,7 @@ class System(RoledMessage):
         Returns:
             The system information.
         """
-        return self.content["system_info"]
+        return self.content.get("system_info", None)
 
     def clone(self, **kwargs: Any) -> "System":
         """
@@ -96,7 +87,7 @@ class System(RoledMessage):
         """
         system = json.dumps(self.system_info)
         system_copy = System(system=json.loads(system), **kwargs)
-        system_copy.metadata["origin_ln_id"] = self.ln_id
+        system_copy.metadata.set("origin_ln_id", self.ln_id)
         return system_copy
 
 

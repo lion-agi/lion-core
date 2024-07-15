@@ -3,6 +3,8 @@
 from enum import Enum
 from typing import Any
 
+from lion_core.sys_util import SysUtil
+
 
 class PackageCategory(str, Enum):
     """Enumeration of package categories in the Lion framework."""
@@ -49,6 +51,7 @@ class Package:
         Raises:
             ValueError: If the category is invalid or None.
         """
+        self.ln_id = SysUtil.id()
         self.request_source = request_source
         self.category = self._validate_category(category)
         self.package = package

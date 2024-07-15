@@ -4,12 +4,13 @@ from typing import Any
 from pydantic import Field
 
 from lion_core.abc import Signal
+from lion_core.element import Element
 from lion_core.container.exchange import Exchange
 from lion_core.communication.mail import Mail
 from lion_core.communication.package import Package
 
 
-class StartMail(Signal):
+class StartMail(Element, Signal):
     """
     Represents a start mail node that triggers the initiation of a process.
 

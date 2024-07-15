@@ -5,16 +5,33 @@ This module implements a flexible container for handling complex, nested
 dictionary and list data with an intuitive API for data manipulation.
 """
 
-from typing import Any
+from typing import Any, Iterator
+from pydantic import Field, BaseModel
+from lion_core.libs import (
+    nget,
+    ninsert,
+    nset,
+    npop,
+    get_flattened_keys,
+    flatten,)
+from lion_core.abc import MutableRecord
+from lion_core.sys_util import LN_UNDEFINED
 
-from lion_core.libs import nget, ninsert, nset, npop
-from lion_core.undefined import LN_UNDEFINED
-from lion_core.sys_util import SysUtil
-
-from lion_core.abc import Container
 
 
-class Record(Container):
+class RecordContent(BaseModel):
+    """
+    A Pydantic model for the content of a Record.
+    """
+
+
+
+
+
+
+
+
+class Record(MutableRecord):
     """
     A container class for managing nested dictionary/list data structures.
 
@@ -22,31 +39,10 @@ class Record(Container):
     removing data from nested structures using a list of indices for navigation.
 
     Attributes:
-        _items (dict[str, Any]): The internal dictionary storing the nested data.
+        content (dict[str, Any]): The internal dictionary storing the nested data.
     """
-
-    def __init__(self, **kwargs: Any) -> None:
-        """
-        Initialize a new Record instance.
-
-        Args:
-            **kwargs: Initial key-value pairs to populate the record.
-        """
-        self._items: dict[str, Any] = kwargs
-
-    def serialize(self, dropna: bool = False) -> dict[str, Any]:
-        """
-        Serialize the record's data to a dictionary.
-
-        Args:
-            dropna: If True, exclude None values from the result.
-
-        Returns:
-            A serialized copy of the record's data.
-        """
-        if dropna:
-            return {k: v for k, v in self._items.items() if v is not None}
-        return SysUtil.copy(self._items)
+    content: dict[str, Any] = Field(default_factory=dict)
+    
 
     def pop(self, indices: list[str], default: Any = LN_UNDEFINED) -> Any:
         """
@@ -59,7 +55,7 @@ class Record(Container):
         Returns:
             The removed item or the default value.
         """
-        return npop(self._items, indices, default)
+        return npop(self.content, indices, default)
 
     def insert(self, indices: list[str], value: Any) -> None:
         """
@@ -69,7 +65,7 @@ class Record(Container):
             indices: The path where to insert the value.
             value: The value to insert.
         """
-        ninsert(self._items, indices, value)
+        ninsert(self.content, indices, value)
 
     def set(self, indices: list[str], value: Any) -> None:
         """
@@ -84,7 +80,7 @@ class Record(Container):
         if not self.get(indices):
             self.insert(indices, value)
         else:
-            nset(self._items, indices, value)
+            nset(self.content, indices, value)
 
     def get(self, indices: list[str], default: Any = LN_UNDEFINED) -> Any:
         """
@@ -97,16 +93,49 @@ class Record(Container):
         Returns:
             The value at the specified indices or the default value.
         """
-        return nget(self._items, indices, default)
+        return nget(self.content, indices, default)
 
-    def keys(self):
-        return self._items.keys()
+    def keys(self, flat: bool = False) -> Iterator[str]:
+        """
+        Get the keys of the Record.
 
-    def values(self):
-        return self._items.values()
+        Args:
+            flat: If True, return flattened keys.
 
-    def items(self):
-        return self._items.items()
+        Returns:
+            An iterator of keys.
+        """
+        if flat:
+            return get_flattened_keys(self.content)
+        return iter(self.content.keys())
+
+    def values(self, flat: bool = False) -> Iterator[Any]:
+        """
+        Get the values of the Record.
+
+        Args:
+            flat: If True, return flattened values.
+
+        Returns:
+            An iterator of values.
+        """
+        if flat:
+            return (v for v in flatten(self.content).values())
+        return iter(self.content.values())
+
+    def items(self, flat: bool = False) -> Iterator[tuple[str, Any]]:
+        """
+        Get the items of the Record.
+
+        Args:
+            flat: If True, return flattened items.
+
+        Returns:
+            An iterator of (key, value) pairs.
+        """
+        if flat:
+            return ((k, v) for k, v in flatten(self.content).items())
+        return iter(self.content.items())
 
 
 # File: lion_core/container/record.py

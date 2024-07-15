@@ -1,38 +1,70 @@
-"""Core Component class for the Lion framework.
+"""
+Core Component class for the Lion framework.
 
-This module defines the Component class, which extends the Element class
-and provides additional functionality for managing metadata, extra fields,
-and content. It includes methods for conversion, serialization, and field
-management.
+This module defines the Component class, which extends the BaseComponent
+class and provides additional functionality for managing metadata, extra
+fields, and content. It includes methods for conversion, serialization,
+and field management.
 
 Classes:
     Component: Extended base class for components in the Lion framework.
 """
 
 from __future__ import annotations
-from typing import Any, TypeVar
+from typing import Any, TypeVar, ClassVar, Type
 
-from pydantic import Field
+from pydantic import Field, model_serializer, field_serializer
+from pydantic import field_validator
 from pydantic.fields import FieldInfo
 
-from lion_core.util import SysUtil, LN_UNDEFINED
+from lion_core.sys_util import SysUtil, LN_UNDEFINED
 from lion_core.exceptions import LionValueError
-
+from lion_core.converter import ConverterRegistry
 from .base import BaseComponent
 
 T = TypeVar("T", bound="BaseComponent")
 
+DEFAULT_SERIALIZATION_INCLUDE: set[str] = {
+    "metadata",
+    "content",
+    "ln_id",
+    "timestamp",
+    "extra_fields",
+    "embedding",
+}
+
 
 class Component(BaseComponent):
+    """Extended base class for components in the Lion framework."""
 
-    extra_fields: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Instance-specific fields for the component.",
+    extra_fields: dict[str, FieldInfo] = Field(
+        default={},
+        description="Additional fields for the component",
     )
 
+    embedding: list[float] = Field(default=[])
+
+    _converter_registry: ClassVar[Type[ConverterRegistry]] = ConverterRegistry
+
+    @field_serializer("extra_fields")
+    def _serialize_extra_fields(self, value: dict[str, FieldInfo]) -> dict[str, Any]:
+        """Custom serializer for extra fields."""
+        return {k: v.model_dump() for k, v in value.items()}
+
+    @field_validator("extra_fields")
+    def _validate_extra_fields(cls, value: Any) -> dict[str, FieldInfo]:
+        """Custom validator for extra fields."""
+        if not isinstance(value, dict):
+            raise LionValueError("Extra fields must be a dictionary")
+        return {k: Field(**v) if isinstance(v, dict) else v for k, v in value.items()}
+
+    @model_serializer
+    def serialize(self, **kwargs) -> dict[str, Any]:
+        kwargs["include"] = kwargs.get("include", DEFAULT_SERIALIZATION_INCLUDE)
+        return super().serialize(**kwargs)
+
     @property
-    def all_fields(self) -> dict[str, Any]:
-        """Get all fields of the component, including extra fields."""
+    def all_fields(self) -> dict[str, FieldInfo]:
         return {**self.model_fields, **self.extra_fields}
 
     def add_field(
@@ -134,7 +166,7 @@ class Component(BaseComponent):
         Args:
             name: The name of the field being updated.
         """
-        current_time = SysUtil.time(type_="datetime", iso=True)
+        current_time = SysUtil.time()
         self.metadata.set(["last_updated", name], current_time)
 
     def __setattr__(self, name: str, value: Any) -> None:

@@ -1,7 +1,7 @@
-import json
 from typing import Any, Callable
 from pydantic import Field
-from lion_core.libs import fuzzy_parse_json, to_str
+from lion_core.libs import fuzzy_parse_json, to_str, to_dict
+from lion_core.sys_util import SysUtil
 from .message import RoledMessage, MessageRole
 
 
@@ -63,6 +63,7 @@ class ActionRequest(RoledMessage):
         self.function = function
         self.arguments = arguments
 
+    @property
     def is_responded(self) -> bool:
         """
         Checks if the action request has been responded to.
@@ -89,13 +90,23 @@ class ActionRequest(RoledMessage):
             A new instance of the object with the same function, arguments,
             and additional keyword arguments.
         """
-        arguments = json.dumps(self.arguments)
+        arguments = to_dict(SysUtil.copy(self.arguments))
         request_copy = ActionRequest(
-            function=self.function, arguments=json.loads(arguments), **kwargs
+            function=self.function, arguments=arguments, **kwargs
         )
         request_copy.action_response = self.action_response
-        request_copy.metadata["origin_ln_id"] = self.ln_id
+        request_copy.metadata.set("origin_ln_id", self.ln_id)
         return request_copy
+
+    @property
+    def action_request_dict(self) -> dict[str, Any]:
+        """
+        Converts the action request to a dictionary.
+
+        Returns:
+            A dictionary representation of the action request.
+        """
+        return {"function": self.function, "arguments": self.arguments}
 
 
 def _prepare_arguments(arguments: Any) -> dict:

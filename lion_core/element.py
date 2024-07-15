@@ -9,13 +9,19 @@ serialization.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
-from pydantic import BaseModel, ConfigDict, Field, AliasChoices
+from typing import Any, TypeVar
+
+from pydantic import BaseModel, ConfigDict, Field, AliasChoices, model_serializer
 
 from lion_core.abc import AbstractElement, Observable, Temporal
 from lion_core.setting import LION_ID_CONFIG, TIME_CONFIG
 from .sys_util import SysUtil
 from .class_registry import LION_CLASS_REGISTRY
+
+# Default fields to include in serialization
+DEFAULT_SERIALIZATION_INCLUDE: set[str] = {"ln_id", "timestamp"}
+
+T = TypeVar("T", bound="Element")
 
 
 class Element(BaseModel, AbstractElement, Observable, Temporal):
@@ -46,6 +52,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         extra="forbid",
         arbitrary_types_allowed=True,
         use_enum_values=True,
+        populate_by_name=True,
     )
 
     @classmethod
@@ -54,15 +61,47 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         super().__pydantic_init_subclass__(**kwargs)
         LION_CLASS_REGISTRY[cls.__name__] = cls
 
-    @classmethod
-    def class_name(cls) -> str:
-        """Get the name of the class."""
-        return cls.__name__
-
     @property
     def _created_datetime(self) -> datetime:
         """Get the creation datetime of the Element."""
         return datetime.fromtimestamp(self.timestamp, tz=TIME_CONFIG["tz"])
+
+    @model_serializer
+    def serialize(self, **kwargs: Any) -> dict[str, Any]:
+        """
+        Serialize the Element to a dictionary.
+
+        Args:
+            **kwargs: Additional keyword arguments for serialization.
+
+        Returns:
+            A dictionary representation of the Element.
+        """
+        # Set default serialization options
+        kwargs["exclude_none"] = kwargs.get("exclude_none", True)
+        kwargs["exclude_unset"] = kwargs.get("exclude_unset", True)
+        kwargs["include"] = kwargs.get("include", DEFAULT_SERIALIZATION_INCLUDE)
+
+        # Serialize the Element
+        dict_ = self.model_dump(**kwargs)
+        dict_["lion_class"] = self.class_name()
+        return dict_
+
+    @classmethod
+    def deserialize(cls, data: dict[str, Any]) -> Element:
+        """
+        Deserialize a dictionary into an Element instance.
+
+        Args:
+            data: A dictionary containing Element data.
+
+        Returns:
+            An instance of the Element class or its subclass.
+        """
+        # Check if a specific subclass is specified
+        if "lion_class" in data:
+            cls = LION_CLASS_REGISTRY[data.pop("lion_class")]
+        return cls.model_validate(data)
 
     def __str__(self) -> str:
         """Return a string representation of the Element."""
@@ -79,9 +118,6 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
     def __bool__(self) -> bool:
         """Element is always considered True."""
         return True
+    
 
-    def __eq__(self, other: Any) -> bool:
-        """Check ln_id equality with another object."""
-        if not isinstance(other, Element):
-            return NotImplemented
-        return self.ln_id == other.ln_id
+# File: lion_core/element.py

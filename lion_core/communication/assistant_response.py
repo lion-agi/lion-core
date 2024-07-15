@@ -1,5 +1,5 @@
-import json
 from typing import Any
+from lion_core.sys_util import SysUtil
 from .message import RoledMessage, MessageRole
 
 
@@ -13,7 +13,7 @@ class AssistantResponse(RoledMessage):
 
     def __init__(
         self,
-        assistant_response: Any = None,
+        assistant_response: dict = None,
         sender: str | None = None,
         recipient: str | None = None,
         **kwargs: Any,
@@ -30,7 +30,7 @@ class AssistantResponse(RoledMessage):
         super().__init__(
             role=MessageRole.ASSISTANT,
             sender=sender or "N/A",
-            content={"assistant_response": assistant_response["content"]},
+            content={"assistant_response": assistant_response.get("content", "")},
             recipient=recipient,
             **kwargs,
         )
@@ -49,10 +49,9 @@ class AssistantResponse(RoledMessage):
         Returns:
             A new instance with the same content and additional kwargs.
         """
-        content = json.dumps(self.content["assistant_response"])
-        content = {"content": json.loads(content)}
+        content = {"content": SysUtil.copy(self.content["assistant_response"])}
         response_copy = AssistantResponse(assistant_response=content, **kwargs)
-        response_copy.metadata["origin_ln_id"] = self.ln_id
+        response_copy.metadata.set("origin_ln_id", self.ln_id)
         return response_copy
 
     @property
@@ -71,7 +70,7 @@ class AssistantResponse(RoledMessage):
     @property
     def response(self) -> Any:
         """Return the assistant response content."""
-        return self.content["assistant_response"]
+        return self.content.get("assistant_response", None)
 
 
 # File: lion_core/communication/assistant_response.py
