@@ -16,8 +16,8 @@ from pydantic import BaseModel, ConfigDict, Field, AliasChoices, model_serialize
 from lion_core.abc.concept import AbstractElement
 from lion_core.abc.characteristic import Temporal, Observable
 from lion_core.setting import LION_ID_CONFIG, TIME_CONFIG
-from .sys_util import SysUtil
-from .class_registry import LION_CLASS_REGISTRY
+from ..sys_util import SysUtil
+from ..class_registry import LION_CLASS_REGISTRY
 
 # Default fields to include in serialization
 DEFAULT_SERIALIZATION_INCLUDE: set[str] = {"ln_id", "timestamp"}
@@ -119,6 +119,6 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
     def __bool__(self) -> bool:
         """Element is always considered True."""
         return True
-    
+
 
 # File: lion_core/element.py
