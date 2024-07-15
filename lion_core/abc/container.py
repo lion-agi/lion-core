@@ -10,7 +10,7 @@ class Container(AbstractSpace):
     membership criteria for the container.
     """
 
-    def __contains__(self, item: T) -> bool:
+    def __contains__(self, item) -> bool:
         """
         Check if an item is in the container.
 

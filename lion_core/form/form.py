@@ -121,7 +121,7 @@ class Form(BaseForm):
 
     @property
     def instruction_dict(self) -> str:
-        from .report_manager import ReportManager
+        from .form_manager import ReportManager
 
         return ReportManager.form_instruction_dict(self)
 

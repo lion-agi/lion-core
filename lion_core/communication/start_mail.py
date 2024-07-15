@@ -3,9 +3,9 @@
 from typing import Any
 from pydantic import Field
 
-from lion_core.abc import Signal
-from lion_core.element import Element
-from lion_core.container.exchange import Exchange
+from lion_core.abc.observation import Signal
+from lion_core.primitives.element import Element
+from lion_core.primitives.exchange import Exchange
 from lion_core.communication.mail import Mail
 from lion_core.communication.package import Package
 
