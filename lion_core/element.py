@@ -13,7 +13,8 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, AliasChoices, model_serializer
 
-from lion_core.abc import AbstractElement, Observable, Temporal
+from lion_core.abc.concept import AbstractElement
+from lion_core.abc.characteristic import Temporal, Observable
 from lion_core.setting import LION_ID_CONFIG, TIME_CONFIG
 from .sys_util import SysUtil
 from .class_registry import LION_CLASS_REGISTRY

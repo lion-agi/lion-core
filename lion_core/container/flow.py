@@ -4,7 +4,7 @@ from typing import Tuple, Any
 import contextlib
 from pydantic import Field
 
-from lion_core.abc import Collective
+from lion_core.abc.container import Collective
 from lion_core.element import Element
 from lion_core.exceptions import LionTypeError, ItemNotFoundError
 

@@ -15,7 +15,7 @@ from typing import Any, TypeVar, Type, Iterable
 
 from pydantic import Field
 
-from lion_core.abc import Collective, Container
+from lion_core.abc.container import Collective, Container
 from lion_core.libs import to_list
 from lion_core.sys_util import SysUtil
 from lion_core.element import Element
