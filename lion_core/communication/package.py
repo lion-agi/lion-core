@@ -21,6 +21,32 @@ class PackageCategory(str, Enum):
     SIGNAL = "signal"
 
 
+def validate_category(value: Any) -> PackageCategory:
+    """
+    Validate the category field.
+
+    This method ensures that the category field contains a valid
+    PackageCategory value.
+
+    Args:
+        value: The value to validate.
+
+    Returns:
+        The validated PackageCategory value.
+
+    Raises:
+        ValueError: If the value is None or not a valid PackageCategory.
+    """
+    if value is None:
+        raise ValueError("Package category cannot be None.")
+    if isinstance(value, PackageCategory):
+        return value
+    try:
+        return PackageCategory(value)
+    except ValueError as e:
+        raise ValueError("Invalid value for category.") from e
+
+
 class Package:
     """
     Represents a package in the Lion framework's communication system.
@@ -53,34 +79,8 @@ class Package:
         """
         self.ln_id = SysUtil.id()
         self.request_source = request_source
-        self.category = self._validate_category(category)
+        self.category = validate_category(category)
         self.package = package
-
-    @staticmethod
-    def _validate_category(value: Any) -> PackageCategory:
-        """
-        Validate the category field.
-
-        This method ensures that the category field contains a valid
-        PackageCategory value.
-
-        Args:
-            value: The value to validate.
-
-        Returns:
-            The validated PackageCategory value.
-
-        Raises:
-            ValueError: If the value is None or not a valid PackageCategory.
-        """
-        if value is None:
-            raise ValueError("Package category cannot be None.")
-        if isinstance(value, PackageCategory):
-            return value
-        try:
-            return PackageCategory(value)
-        except ValueError as e:
-            raise ValueError("Invalid value for category.") from e
 
 
 # File: lion_core/communication/package.py

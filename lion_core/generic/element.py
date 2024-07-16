@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, AliasChoices, model_serialize
 
 from lion_core.abc.concept import AbstractElement
 from lion_core.abc.characteristic import Temporal, Observable
-from lion_core.setting import TIME_CONFIG
+from lion_core.setting import TIME_CONFIG, SERILIATION_CONFIG
 from lion_core.sys_util import SysUtil
 from lion_core.class_registry import LION_CLASS_REGISTRY
 
@@ -78,11 +78,13 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         Returns:
             A dictionary representation of the Element.
         """
-        # Set default serialization options
-        kwargs["exclude_none"] = kwargs.get("exclude_none", True)
-        kwargs["exclude_unset"] = kwargs.get("exclude_unset", True)
+        
+        
+        
         kwargs["include"] = kwargs.get("include", DEFAULT_SERIALIZATION_INCLUDE)
-
+        for k, v in SERILIATION_CONFIG.items():
+            kwargs[k] = kwargs.get(k, v)
+            
         # Serialize the Element
         dict_ = self.model_dump(**kwargs)
         dict_["lion_class"] = self.class_name()

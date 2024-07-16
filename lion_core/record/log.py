@@ -5,8 +5,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_serializer, ConfigDict
 
-from lion_core.primitives.note import Note
-from lion_core.primitives.element import Element
+from lion_core.generic.note import Note
+from lion_core.generic.element import Element
 
 
 from .base import ImmutableRecord

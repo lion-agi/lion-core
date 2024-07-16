@@ -24,7 +24,7 @@ from lion_core.abc.concept import (
 )
 from lion_core.primitive import pile, Pile
 from ..generic.edge import Edge
-from ..generic.node import Node
+from ..relations.node import Node
 
 
 class Graph(Node):

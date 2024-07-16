@@ -4,9 +4,9 @@ from typing import Any
 
 from lion_core.abc.observer import BaseManager
 from lion_core.sys_util import SysUtil
-from lion_core.primitives.util import to_list_type
-from lion_core.primitives.pile import Pile, pile
-from lion_core.primitives.exchange import Exchange
+from lion_core.generic.util import to_list_type
+from lion_core.generic.pile import Pile, pile
+from lion_core.generic.exchange import Exchange
 from lion_core.communication.mail import Mail, Package
 
 

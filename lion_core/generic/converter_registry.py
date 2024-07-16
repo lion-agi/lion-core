@@ -1,8 +1,7 @@
 from __future__ import annotations
 from typing import Any
 from lion_core.converter import ConverterRegistry
-from lion_core.element import Element
-from lion_core.generic.base import BaseComponent
+from .element import Element
 from lion_core.libs import fuzzy_parse_json, to_str
 
 
@@ -13,7 +12,7 @@ class DictConverter:
         return obj
 
     @staticmethod
-    def to_obj(self: BaseComponent) -> dict[str, Any]:
+    def to_obj(self: Element) -> dict[str, Any]:
         return self.serialize()
 
 
@@ -24,7 +23,7 @@ class JsonConverter:
         return fuzzy_parse_json(obj)
 
     @staticmethod
-    def to_obj(self: BaseComponent) -> str:
+    def to_obj(self: Element) -> str:
         return to_str(self.serialize())
 
 
