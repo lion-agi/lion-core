@@ -32,6 +32,12 @@ from .observation import (
     Action
 )
 
+from .record import (
+    BaseRecord,
+    MutableRecord,
+    ImmutableRecord,
+)
+
 
 __all__ = [
     "AbstractSpace",
@@ -53,4 +59,7 @@ __all__ = [
     "Condition",
     "Signal",
     "Action",
+    "BaseRecord",
+    "MutableRecord",
+    "ImmutableRecord",
 ]

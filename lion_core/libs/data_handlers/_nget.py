@@ -11,7 +11,7 @@ Functions:
 
 from lion_core.libs.data_handlers._util import get_target_container
 from typing import Any
-from lion_core.sys_util import LN_UNDEFINED
+from lion_core.setting import LN_UNDEFINED
 
 
 def nget(

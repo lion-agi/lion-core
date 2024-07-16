@@ -13,7 +13,7 @@ from lion_core.libs.function_handlers._throttle import Throttle
 from lion_core.libs.function_handlers._util import is_coroutine_func, force_async
 from lion_core.libs.function_handlers._ucall import ucall
 from lion_core.libs.function_handlers._rcall import rcall
-from lion_core.sys_util import LN_UNDEFINED
+from lion_core.setting import LN_UNDEFINED
 
 T = TypeVar("T")
 F = TypeVar("F", bound=Callable[..., Any])
