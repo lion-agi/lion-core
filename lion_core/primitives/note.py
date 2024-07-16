@@ -120,29 +120,3 @@ class Note(BaseModel):
         if flat:
             return ((k, v) for k, v in flatten(self.content).items())
         return iter(self.content.items())
-
-    def serialize(self) -> dict[str, Any]:
-        """
-        Serialize the Note to a dictionary.
-
-        Returns:
-            A dictionary representation of the Note.
-        """
-        return self.model_dump()
-
-    @classmethod
-    def deserialize(cls, data: dict[str, Any] | str | bytes | bytearray) -> Note:
-        """
-        Deserialize a dictionary or JSON string into a Note instance.
-
-        Args:
-            data: The data to deserialize, either as a dictionary or JSON string.
-
-        Returns:
-            A new Note instance.
-        """
-        return (
-            cls.model_validate(data)
-            if isinstance(data, dict)
-            else cls.model_validate_json(data)
-        )
