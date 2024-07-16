@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 from typing import TypeVar, Generic, List
 from pydantic import Field
 
-from lion_core.abc import Container
-from lion_core.element import Element
-from lion_core.container.pile import Pile, pile
-from lion_core.container.progression import Progression, progression
+from lion_core.abc.container import Container
 from lion_core.communication.base import BaseMail
+
+from .element import Element
+from .pile import Pile, pile
+from .progression import Progression, progression
 
 
 T = TypeVar("T")

@@ -20,12 +20,12 @@ from typing import Any, Iterator
 
 from pydantic import Field, ConfigDict
 
-from lion_core.abc import Ordering
+from lion_core.abc.container import Ordering
 from lion_core.libs import to_list
 from lion_core.sys_util import SysUtil
-from lion_core.element import Element
+from lion_core.primitives.element import Element
 from lion_core.exceptions import ItemNotFoundError
-from .util import validate_order, is_str_id, to_list_type
+from .util import validate_order, to_list_type
 
 
 class Progression(Element, Ordering):
@@ -84,7 +84,7 @@ class Progression(Element, Ordering):
             return False
 
         if isinstance(item, str):
-            if is_str_id(item):
+            if SysUtil.is_str_id(item):
                 return item in self.order
 
         if isinstance(item, Ordering) and item.order <= self.order:

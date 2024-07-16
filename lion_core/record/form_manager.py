@@ -7,18 +7,18 @@ filling forms and reports, and generating instructions.
 
 from typing import Any, List
 from lion_core.sys_util import LN_UNDEFINED
-from lion_core.container.pile import Pile, pile
 from lion_core.exceptions import LionValueError
-from lion_core.container.util import to_list_type
-from .base import BaseForm
+from lion_core.primitives.pile import Pile, pile
+from lion_core.primitives.util import to_list_type
+from .form import Form
 
 
-class ReportManager:
+class FormManager:
     """Manages operations on Form and Report instances."""
 
     @staticmethod
     def get_all_work_fields(
-        obj: BaseForm, form: List[BaseForm] | None = None, **kwargs: Any
+        obj: Form, form: List[Form] | None = None, **kwargs: Any
     ) -> dict[str, Any]:
         """Gather all work fields from forms and additional sources.
 
@@ -30,7 +30,7 @@ class ReportManager:
         Returns:
             Dictionary of all gathered work fields with valid values.
         """
-        form_list: list[BaseForm] = to_list_type(form) if form else []
+        form_list: list[Form] = to_list_type(form) if form else []
         all_fields = obj.work_fields.copy()
         all_form_fields = (
             {}
@@ -46,7 +46,7 @@ class ReportManager:
         return all_fields
 
     @staticmethod
-    def is_form_workable(form: BaseForm) -> bool:
+    def is_form_workable(form: Form) -> bool:
         """Check if a form is ready for processing.
 
         Args:
@@ -68,7 +68,7 @@ class ReportManager:
         return True
 
     @staticmethod
-    def is_report_workable(report: BaseForm) -> bool:
+    def is_report_workable(report: Form) -> bool:
         """Check if a report is ready for processing.
 
         Args:
@@ -98,7 +98,7 @@ class ReportManager:
         return True
 
     @staticmethod
-    def next_forms(report: BaseForm) -> Pile:
+    def next_forms(report: Form) -> Pile:
         """Get workable forms from a report.
 
         Args:
@@ -112,7 +112,7 @@ class ReportManager:
 
     @staticmethod
     def fill_form(
-        obj: BaseForm, other_form: list[BaseForm] = None, strict: bool = True, **kwargs
+        obj: Form, other_form: list[Form] = None, strict: bool = True, **kwargs
     ) -> None:
         """Fill a form with data from other forms or kwargs.
 
@@ -129,7 +129,7 @@ class ReportManager:
             if strict:
                 raise ValueError("Form is filled, cannot be worked on again")
 
-        all_fields = ReportManager.get_all_work_fields(other_form, **kwargs)
+        all_fields = FormManager.get_all_work_fields(other_form, **kwargs)
 
         for k, v in all_fields.items():
             if k in obj.work_fields and v is not None and getattr(obj, k, None) is None:
@@ -137,7 +137,7 @@ class ReportManager:
 
     @staticmethod
     def fill_report(
-        report: BaseForm, form: BaseForm = None, strict: bool = True, **kwargs
+        report: Form, form: Form = None, strict: bool = True, **kwargs
     ) -> None:
         """
         Fill a report and its forms with provided data.
@@ -157,7 +157,7 @@ class ReportManager:
 
         # gather all unique valid fields from input form,
         # kwargs and self workfields data
-        all_work_fields = ReportManager.get_all_work_fields(report, form, **kwargs)
+        all_work_fields = FormManager.get_all_work_fields(report, form, **kwargs)
 
         # if there are information in the forms that are not in the report,
         # add them to the report
@@ -179,10 +179,10 @@ class ReportManager:
                 ):
                     _kwargs[k] = a
 
-                ReportManager.fill_form(_form, _kwargs, strict=strict)
+                FormManager.fill_form(_form, _kwargs, strict=strict)
 
     @staticmethod
-    def get_instruction_context(form: BaseForm) -> str:
+    def get_instruction_context(form: Form) -> str:
         """
         Generate a description of the form's input fields.
 
@@ -202,7 +202,7 @@ class ReportManager:
         )
 
     @staticmethod
-    def get_instruction_prompt(form: BaseForm) -> str:
+    def get_instruction_prompt(form: Form) -> str:
         """
         Generate a task instruction prompt for a form.
 
@@ -222,7 +222,7 @@ class ReportManager:
         """
 
     @staticmethod
-    def get_instruction_requested_fields(form: BaseForm) -> dict[str, str]:
+    def get_instruction_requested_fields(form: Form) -> dict[str, str]:
         """
         Get descriptions of a form's requested fields.
 
@@ -238,7 +238,7 @@ class ReportManager:
         }
 
     @staticmethod
-    def form_instruction_dict(form: BaseForm) -> dict[str, str]:
+    def form_instruction_dict(form: Form) -> dict[str, str]:
         """
         Generate a dictionary of form instructions.
 
@@ -249,13 +249,13 @@ class ReportManager:
             Dictionary of form instructions.
         """
         return {
-            "context": ReportManager.get_instruction_context(form),
-            "instruction": ReportManager.get_instruction_prompt(form),
-            "requested_fields": ReportManager.get_instruction_requested_fields(form),
+            "context": FormManager.get_instruction_context(form),
+            "instruction": FormManager.get_instruction_prompt(form),
+            "requested_fields": FormManager.get_instruction_requested_fields(form),
         }
 
     @staticmethod
-    def check_workable_report(report: BaseForm) -> bool:
+    def check_workable_report(report: Form) -> bool:
         """
         Check if a report is ready for processing.
 

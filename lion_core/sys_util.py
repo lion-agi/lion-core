@@ -18,7 +18,7 @@ from hashlib import sha256
 from datetime import datetime, timezone
 import logging
 
-from .setting import TIME_CONFIG
+from .setting import TIME_CONFIG, LION_ID_CONFIG
 from .abc import AbstractElement
 from .exceptions import LionIDError
 
@@ -64,13 +64,13 @@ class SysUtil:
 
     @staticmethod
     def id(
-        n: int = 32,
-        prefix: str | None = None,
+        n: int = LION_ID_CONFIG["n"],
+        prefix: str | None = LION_ID_CONFIG["prefix"],
         postfix: str | None = None,
-        random_hyphen: bool = False,
-        num_hyphens: int | None = None,
-        hyphen_start_index: int | None = None,
-        hyphen_end_index: int | None = None,
+        random_hyphen: bool = LION_ID_CONFIG["random_hyphen"],
+        num_hyphens: int | None = LION_ID_CONFIG["num_hyphens"],
+        hyphen_start_index: int | None = LION_ID_CONFIG["hyphen_start_index"],
+        hyphen_end_index: int | None = LION_ID_CONFIG["hyphen_end_index"],
     ) -> str:
         """Generate a unique identifier."""
         _t = SysUtil.time(type_="datetime", iso=True).encode()
@@ -324,7 +324,12 @@ class SysUtil:
             Supports 34-char (current) and 32-char (deprecated) formats.
             32-char format will be removed in v1.0+.
         """
-        return (len(item) == 34 and item.startswith("ln")) or len(item) == 32
+        n = int(LION_ID_CONFIG["n"])
+        prefix = LION_ID_CONFIG["prefix"]
+
+        return (len(item) == (len(prefix) + n) and item.startswith(prefix)) or len(
+            item
+        ) == n
 
 
 # File: lion_core/sysutil.py

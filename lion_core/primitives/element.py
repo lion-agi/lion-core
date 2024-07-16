@@ -13,10 +13,11 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, AliasChoices, model_serializer
 
-from lion_core.abc import AbstractElement, Observable, Temporal
-from lion_core.setting import LION_ID_CONFIG, TIME_CONFIG
-from .sys_util import SysUtil
-from .class_registry import LION_CLASS_REGISTRY
+from lion_core.abc.concept import AbstractElement
+from lion_core.abc.characteristic import Temporal, Observable
+from lion_core.setting import TIME_CONFIG
+from lion_core.sys_util import SysUtil
+from lion_core.class_registry import LION_CLASS_REGISTRY
 
 # Default fields to include in serialization
 DEFAULT_SERIALIZATION_INCLUDE: set[str] = {"ln_id", "timestamp"}
@@ -34,7 +35,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
     """
 
     ln_id: str = Field(
-        default_factory=lambda: SysUtil.id(**LION_ID_CONFIG),
+        default_factory=SysUtil.id,
         title="Lion ID",
         description="Unique identifier for the element",
         frozen=True,
@@ -118,6 +119,6 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
     def __bool__(self) -> bool:
         """Element is always considered True."""
         return True
-    
+
 
 # File: lion_core/element.py

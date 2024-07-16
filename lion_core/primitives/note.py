@@ -1,9 +1,4 @@
-"""
-Provides the Record class for managing nested data structures in lion-core.
-
-This module implements a flexible container for handling complex, nested
-dictionary and list data with an intuitive API for data manipulation.
-"""
+from __future__ import annotations
 
 from typing import Any, Iterator
 from pydantic import Field, BaseModel
@@ -13,36 +8,24 @@ from lion_core.libs import (
     nset,
     npop,
     get_flattened_keys,
-    flatten,)
-from lion_core.abc import MutableRecord
+    flatten,
+)
 from lion_core.sys_util import LN_UNDEFINED
 
 
-
-class RecordContent(BaseModel):
+class Note(BaseModel):
     """
-    A Pydantic model for the content of a Record.
-    """
+    A flexible container for managing nested dictionary data structures.
 
-
-
-
-
-
-
-
-class Record(MutableRecord):
-    """
-    A container class for managing nested dictionary/list data structures.
-
-    This class provides methods for inserting, retrieving, updating, and
-    removing data from nested structures using a list of indices for navigation.
+    Provides methods for inserting, retrieving, updating, and removing data
+    from nested structures using a list of indices for navigation. Supports
+    both flat and nested operations on keys, values, and items.
 
     Attributes:
         content (dict[str, Any]): The internal dictionary storing the nested data.
     """
+
     content: dict[str, Any] = Field(default_factory=dict)
-    
 
     def pop(self, indices: list[str], default: Any = LN_UNDEFINED) -> Any:
         """
@@ -77,6 +60,7 @@ class Record(MutableRecord):
             indices: The path where to set the value.
             value: The value to set.
         """
+
         if not self.get(indices):
             self.insert(indices, value)
         else:
@@ -97,7 +81,7 @@ class Record(MutableRecord):
 
     def keys(self, flat: bool = False) -> Iterator[str]:
         """
-        Get the keys of the Record.
+        Get the keys of the Note.
 
         Args:
             flat: If True, return flattened keys.
@@ -111,7 +95,7 @@ class Record(MutableRecord):
 
     def values(self, flat: bool = False) -> Iterator[Any]:
         """
-        Get the values of the Record.
+        Get the values of the Note.
 
         Args:
             flat: If True, return flattened values.
@@ -125,7 +109,7 @@ class Record(MutableRecord):
 
     def items(self, flat: bool = False) -> Iterator[tuple[str, Any]]:
         """
-        Get the items of the Record.
+        Get the items of the Note.
 
         Args:
             flat: If True, return flattened items.
@@ -136,6 +120,3 @@ class Record(MutableRecord):
         if flat:
             return ((k, v) for k, v in flatten(self.content).items())
         return iter(self.content.items())
-
-
-# File: lion_core/container/record.py

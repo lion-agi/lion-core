@@ -25,10 +25,10 @@ from typing import (
     runtime_checkable,
 )
 
-from lion_core.abc import Collective, Ordering
+from lion_core.abc.container import Collective, Ordering
 from lion_core.exceptions import LionIDError, LionValueError, LionTypeError
 from lion_core.sys_util import SysUtil
-from lion_core.element import Element
+from lion_core.primitives.element import Element
 
 T = TypeVar("T")
 
@@ -46,7 +46,7 @@ def to_list_type(value: Any) -> list[Any]:
     if value is None:
         return []
     if isinstance(value, str):
-        return [value] if is_str_id(value) else []
+        return [value] if SysUtil.is_str_id(value) else []
     if isinstance(value, (Collective, Mapping)):
         return list(value.values())
     if isinstance(value, Element):
@@ -71,7 +71,7 @@ def validate_order(value: Any) -> list[str]:
     """
     if value is None:
         return []
-    if isinstance(value, str) and is_str_id(value):
+    if isinstance(value, str) and SysUtil.is_str_id(value):
         return [value]
     if isinstance(value, Ordering):
         return value.order
@@ -81,7 +81,7 @@ def validate_order(value: Any) -> list[str]:
     try:
         result = []
         for item in to_list_type(value):
-            if isinstance(item, str) and is_str_id(item):
+            if isinstance(item, str) and SysUtil.is_str_id(item):
                 result.append(item)
             elif isinstance(item, Element):
                 result.append(item.ln_id)

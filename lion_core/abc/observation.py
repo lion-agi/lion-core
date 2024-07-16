@@ -8,10 +8,10 @@ state-changing entities within the LION framework.
 """
 
 from abc import abstractmethod
-from .concept import AbstractElement
+from .concept import AbstractObservation
 
 
-class Event(AbstractElement):
+class Event(AbstractObservation):
     """
     Base class for concrete events in the Lion framework.
 
