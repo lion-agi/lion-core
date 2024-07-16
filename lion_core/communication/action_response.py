@@ -1,8 +1,8 @@
 from typing import Any
 from pydantic import Field
-from .message import RoledMessage, MessageRole
 from lion_core.libs import to_dict
 from lion_core.sys_util import SysUtil
+from .message import RoledMessage, MessageRole
 from .action_request import ActionRequest
 
 

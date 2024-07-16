@@ -1,8 +1,8 @@
 import json
 from typing import Any
-from ..setting import BASE_LION_FIELDS
-from .message import RoledMessage, MessageRole
+from lion_core.setting import BASE_LION_FIELDS
 from lion_core.record.form import Form
+from .message import RoledMessage, MessageRole
 
 class Instruction(RoledMessage):
     """
