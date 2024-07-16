@@ -3,7 +3,7 @@
 from typing import Any, List, TypeVar
 
 from lion_core.abc.observer import BaseManager
-from lion_core.primitives.pile import Pile, pile
+from lion_core.generic.pile import Pile, pile
 from .log import BaseLog
 
 T = TypeVar("T", bound=BaseLog)

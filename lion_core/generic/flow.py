@@ -5,7 +5,7 @@ import contextlib
 from pydantic import Field
 
 from lion_core.abc.container import Collective
-from lion_core.primitives.element import Element
+from lion_core.generic.element import Element
 from lion_core.exceptions import LionTypeError, ItemNotFoundError
 
 from .progression import Progression, progression

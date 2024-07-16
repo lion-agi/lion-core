@@ -23,7 +23,7 @@ from pydantic import Field, ConfigDict
 from lion_core.abc.container import Ordering
 from lion_core.libs import to_list
 from lion_core.sys_util import SysUtil
-from lion_core.primitives.element import Element
+from lion_core.generic.element import Element
 from lion_core.exceptions import ItemNotFoundError
 from .util import validate_order, to_list_type
 

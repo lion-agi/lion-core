@@ -1,28 +1,24 @@
-"""
-Core Component class for the Lion framework.
-
-This module defines the Component class, which extends the BaseComponent
-class and provides additional functionality for managing metadata, extra
-fields, and content. It includes methods for conversion, serialization,
-and field management.
-
-Classes:
-    Component: Extended base class for components in the Lion framework.
-"""
-
 from __future__ import annotations
 from typing import Any, TypeVar, ClassVar, Type
 
-from pydantic import Field, model_serializer, field_serializer
-from pydantic import field_validator
+from pydantic import (
+    Field, 
+    model_serializer, 
+    field_serializer, 
+    ConfigDict, 
+    field_validator
+)
 from pydantic.fields import FieldInfo
 
-from lion_core.sys_util import SysUtil, LN_UNDEFINED
+from lion_core.sys_util import SysUtil
+from lion_core.setting import LN_UNDEFINED
 from lion_core.exceptions import LionValueError
-from lion_core.converter import ConverterRegistry
-from .base import BaseComponent
+from lion_core.converter import ConverterRegistry, Converter
+from .element import Element
+from .note import Note
 
-T = TypeVar("T", bound="BaseComponent")
+
+T = TypeVar("T", bound=Element)
 
 DEFAULT_SERIALIZATION_INCLUDE: set[str] = {
     "metadata",
@@ -34,17 +30,95 @@ DEFAULT_SERIALIZATION_INCLUDE: set[str] = {
 }
 
 
-class Component(BaseComponent):
+class Component(Element):
     """Extended base class for components in the Lion framework."""
-
-    extra_fields: dict[str, FieldInfo] = Field(
-        default={},
-        description="Additional fields for the component",
-    )
 
     embedding: list[float] = Field(default=[])
 
     _converter_registry: ClassVar[Type[ConverterRegistry]] = ConverterRegistry
+
+
+    metadata: Note = Field(
+        default_factory=Note,
+        description="Additional metadata for the component",
+    )
+
+    content: Any = Field(
+        default=None,
+        description="The main content of the Component",
+    )
+
+    model_config = ConfigDict(
+        extra="allow",  # Allow extra fields
+    )
+
+    _converter_registry: ClassVar[Type[ConverterRegistry]] | ClassVar[Converter] = (
+        ConverterRegistry
+    )
+
+    @model_serializer
+    def serialize(self, **kwargs: Any) -> dict[str, Any]:
+        """
+        Serialize the BaseComponent to a dictionary.
+
+        This method extends the serialization process of the Element class
+        to include additional fields specific to BaseComponent.
+
+        Args:
+            **kwargs: Additional keyword arguments for serialization.
+
+        Returns:
+            A dictionary representation of the BaseComponent.
+        """
+        kwargs["include"] = kwargs.get("include", DEFAULT_SERIALIZATION_INCLUDE)
+        return super().serialize(**kwargs)
+
+
+    @classmethod
+    def get_converter_registry(cls) -> ConverterRegistry:
+        """
+        Get the converter registry for the class.
+
+        Returns:
+            The ConverterRegistry instance for the class.
+        """
+        if isinstance(cls._converter_registry, type):
+            cls._converter_registry = cls._converter_registry()
+        return cls._converter_registry
+
+    def convert_to(self, key: str = "dict", /, **kwargs: Any) -> Any:
+        """
+        Convert the component to a specified type using the ConverterRegistry.
+
+        Args:
+            key: The key of the converter to use.
+            **kwargs: Additional keyword arguments for conversion.
+
+        Returns:
+            The converted component in the specified type.
+        """
+        return self.get_converter_registry().convert_to(self, key, **kwargs)
+
+    @classmethod
+    def convert_from(cls, obj: Any, key: str = "dict", /, *, unflat: bool = False) -> T:
+        """
+        Convert data to create a new component instance using the ConverterRegistry.
+
+        Args:
+            obj: The object to convert from.
+            key: The key of the converter to use.
+            unflat: If True, unflatten the data before deserialization.
+
+        Returns:
+            A new instance of the BaseComponent class or its subclass.
+        """
+        data = cls.get_converter_registry().convert_from(obj, key)
+        return cls.deserialize(data, unflat=unflat)
+
+    @classmethod
+    def register_converter(cls, key: str, converter: Type[Converter]) -> None:
+        """Register a new converter."""
+        cls.get_converter_registry().register(key, converter)
 
     @field_serializer("extra_fields")
     def _serialize_extra_fields(self, value: dict[str, FieldInfo]) -> dict[str, Any]:

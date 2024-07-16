@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Dict, List
 from pydantic import Field
 from lion_core.sys_util import SysUtil
-from lion_core.generic.component import Component
+from lion_core.generic import Component
 from .mail import BaseMail
 
 

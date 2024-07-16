@@ -22,21 +22,6 @@ from .setting import TIME_CONFIG, LION_ID_CONFIG
 from .abc import AbstractElement
 from .exceptions import LionIDError
 
-
-class LionUndefined:
-
-    def __init__(self):
-        self.undefined = True
-
-    def __bool__(self):
-        return False
-
-    __slots__ = ["undefined"]
-
-
-LN_UNDEFINED = LionUndefined()
-
-
 class SysUtil:
     """Utility class providing various system-related functionalities."""
 

@@ -28,7 +28,7 @@ from typing import (
 from lion_core.abc.container import Collective, Ordering
 from lion_core.exceptions import LionIDError, LionValueError, LionTypeError
 from lion_core.sys_util import SysUtil
-from lion_core.primitives.element import Element
+from lion_core.generic.element import Element
 
 T = TypeVar("T")
 

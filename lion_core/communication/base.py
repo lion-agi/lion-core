@@ -4,7 +4,7 @@ from typing import Any
 from pydantic import Field, field_validator
 from lion_core.exceptions import LionTypeError, LionIDError
 from lion_core.sys_util import SysUtil
-from lion_core.primitives.element import Element
+from lion_core.generic import Element
 
 
 class BaseMail(Element):

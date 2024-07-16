@@ -3,7 +3,7 @@
 from abc import ABC
 
 
-class Node(ABC):
+class Tao(ABC):
     """
     The foundational abstraction in the Lion framework, representing existence.
 
@@ -12,7 +12,7 @@ class Node(ABC):
     """
 
 
-class AbstractSpace(Node):
+class AbstractSpace(Tao):
     """
     An abstract representation of a space or region.
 
@@ -22,7 +22,7 @@ class AbstractSpace(Node):
     """
 
 
-class AbstractElement(Node):
+class AbstractElement(Tao):
     """
     An abstract representation of an observable entity within a space.
 
@@ -37,7 +37,7 @@ class AbstractElement(Node):
         return cls.__name__
 
 
-class AbstractObserver(Node):
+class AbstractObserver(Tao):
     """
     An abstract representation of an entity capable of making observations.
 
@@ -47,7 +47,7 @@ class AbstractObserver(Node):
     """
 
 
-class AbstractObservation(Node):
+class AbstractObservation(Tao):
     """
     An abstract representation of the act of observing.
     """

@@ -1,7 +1,7 @@
 """BaseGraph module for the Lion framework."""
 
 from collections.abc import Sequence
-from lion_core.generic.node import Node
+from lion_core.relations.node import Node
 from lion_core.generic.edge import Edge
 from lion_core.generic.hyper_edge import HyperEdge
 from lion_core.abc.concept import AbstractCondition, Actionable

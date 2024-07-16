@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Iterator
-from pydantic import Field, BaseModel
+from pydantic import Field, BaseModel, ConfigDict
 from lion_core.libs import (
     nget,
     ninsert,
@@ -26,6 +26,13 @@ class Note(BaseModel):
     """
 
     content: dict[str, Any] = Field(default_factory=dict)
+
+    model_config = ConfigDict(
+        extra="allow",
+        arbitrary_types_allowed=True,
+        use_enum_values=True,
+        populate_by_name=True,
+    )
 
     def pop(self, indices: list[str], default: Any = LN_UNDEFINED) -> Any:
         """
