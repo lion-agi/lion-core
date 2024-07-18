@@ -1,145 +1,167 @@
 """
 Module for converting various input types into string representations.
 
-Provides functions to convert a variety of data structures into strings,
-with options for custom model dumping, stripping, and converting to
-lowercase.
+This module provides a flexible `to_str` function that handles different
+input types and converts them to string representations, with options for
+custom processing like stripping and lowercasing.
 """
 
 import json
 from typing import Any
-from lion_core.libs.data_handlers._to_list import to_list
+from collections.abc import Mapping, Iterable
+from functools import singledispatch
+from pydantic import BaseModel
+
 from lion_core.libs.data_handlers._to_dict import to_dict
+from lion_core.setting import LionUndefined
 
-
+@singledispatch
 def to_str(
     input_: Any,
     /,
     *,
     use_model_dump: bool = True,
     strip_lower: bool = False,
-    **kwargs: Any,
+    chars: str | None = None,
+    **kwargs: Any
 ) -> str:
     """
     Convert the input to a string representation.
 
-    If the input is a list, recursively converts each element to a string
-    and joins them with a comma. If the input is a dictionary, converts it
-    to a JSON string. If the input is a string, optionally strips and
-    converts it to lowercase.
+    This function uses singledispatch to provide type-specific
+    implementations for different input types. The base implementation
+    handles Any type by converting it to a string using the str() function.
 
     Args:
         input_: The input to be converted to a string.
-        use_model_dump: Whether to use a custom model dump function.
-        strip_lower: Whether to strip and convert the string to lowercase.
-        **kwargs: Additional keyword arguments to pass to json.dumps.
+        use_model_dump: If True, use model_dump for Pydantic models.
+        strip_lower: If True, strip and convert to lowercase.
+        chars: Characters to strip from the result.
+        **kwargs: Additional arguments for json.dumps.
 
     Returns:
-        The string representation of the input.
+        String representation of the input.
 
     Raises:
-        ValueError: If the input cannot be converted to a string.
+        ValueError: If conversion fails.
 
     Examples:
-        >>> to_str({"key": "value"})
-        '{"key": "value"}'
-        >>> to_str(["a", "b", "c"])
-        'a, b, c'
-        >>> to_str("   Example String   ", strip_lower=True)
-        'example string'
+        >>> to_str(123)
+        '123'
+        >>> to_str("  HELLO  ", strip_lower=True)
+        'hello'
+        >>> to_str({"a": 1, "b": 2})
+        '{"a": 1, "b": 2}'
     """
-    if isinstance(input_, list):
-        input_ = to_list(input_)
-        return ", ".join(
-            [
-                to_str(
-                    item,
-                    use_model_dump=use_model_dump,
-                    strip_lower=strip_lower,
-                    **kwargs,
-                )
-                for item in input_
-            ]
-        )
+    try:
+        result = str(input_)
+        return _process_string(result, strip_lower, chars)
+    except Exception as e:
+        raise ValueError(f"Could not convert to string: {input_}") from e
 
-    return _to_str(
-        input_, use_model_dump=use_model_dump, strip_lower=strip_lower, **kwargs
+@to_str.register(str)
+def _(input_: str, /, **kwargs: Any) -> str:
+    """Handle string inputs."""
+    return _process_string(input_, kwargs.get('strip_lower', False), kwargs.get('chars'))
+
+@to_str.register(bytes)
+@to_str.register(bytearray)
+def _(input_: bytes | bytearray, /, **kwargs: Any) -> str:
+    """Handle bytes and bytearray inputs."""
+    return _process_string(
+        input_.decode('utf-8', errors='replace'),
+        kwargs.get('strip_lower', False),
+        kwargs.get('chars')
     )
 
+@to_str.register(type(None))
+@to_str.register(LionUndefined)
+def _(_: Any, /, **kwargs: Any) -> str:
+    """Handle None and LionUndefined inputs."""
+    return ""
 
-def _to_str(
+@to_str.register(Mapping)
+def _(input_: Mapping, /, **kwargs: Any) -> str:
+    """Handle Mapping inputs."""
+    try:
+        dict_input = to_dict(input_, use_model_dump=kwargs.get('use_model_dump', True))
+        json_kwargs = {k: v for k, v in kwargs.items() if k != 'use_model_dump'}
+        result = json.dumps(dict_input, **json_kwargs)
+        return _process_string(result, kwargs.get('strip_lower', False), kwargs.get('chars'))
+    except Exception as e:
+        raise ValueError(f"Failed to convert Mapping to string: {input_}") from e
+
+@to_str.register(Iterable)
+def _(input_: Iterable, /, **kwargs: Any) -> str:
+    """Handle Iterable inputs."""
+    try:
+        input_list = list(input_)
+        str_kwargs = {k: v for k, v in kwargs.items() if k not in ['strip_lower', 'chars']}
+        result = ", ".join(to_str(item, **str_kwargs) for item in input_list)
+        return _process_string(result, kwargs.get('strip_lower', False), kwargs.get('chars'))
+    except Exception as e:
+        raise ValueError(f"Failed to convert Iterable to string: {input_}") from e
+
+@to_str.register(BaseModel)
+def _(input_: BaseModel, /, **kwargs: Any) -> str:
+    """Handle Pydantic BaseModel inputs."""
+    use_model_dump = kwargs.get('use_model_dump', True)
+    if use_model_dump:
+        return to_str(input_.model_dump(), **kwargs)
+    return _process_string(str(input_), kwargs.get('strip_lower', False), kwargs.get('chars'))
+
+def _process_string(s: str, strip_lower: bool, chars: str | None) -> str:
+    """
+    Process the resulting string based on strip_lower and chars parameters.
+
+    Args:
+        s: The string to process.
+        strip_lower: If True, convert to lowercase and strip.
+        chars: Characters to strip from the result.
+
+    Returns:
+        The processed string.
+    """
+    if strip_lower:
+        s = s.lower()
+    return s.strip(chars) if chars is not None else s.strip()
+
+def strip_lower(
     input_: Any,
     /,
     *,
-    use_model_dump: bool | None = None,
-    strip_lower: bool | None = None,
-    **kwargs: Any,
+    use_model_dump: bool = True,
+    chars: str | None = None,
+    **kwargs: Any
 ) -> str:
     """
-    Helper function to convert the input to a string representation.
+    Convert input to stripped and lowercase string representation.
+
+    This function is a convenience wrapper around to_str that always
+    applies stripping and lowercasing.
 
     Args:
-        input_: The input to be converted to a string.
-        use_model_dump: Whether to use a custom model dump function.
-        strip_lower: Whether to strip and convert the string to lowercase.
-        **kwargs: Additional keyword arguments to pass to json.dumps.
+        input_: The input to convert to a string.
+        use_model_dump: If True, use model_dump for Pydantic models.
+        chars: Characters to strip from the result.
+        **kwargs: Additional arguments to pass to to_str.
 
     Returns:
-        The string representation of the input.
+        Stripped and lowercase string representation of the input.
 
     Raises:
-        ValueError: If the input cannot be converted to a string.
+        ValueError: If conversion fails.
 
-    Examples:
-        >>> _to_str({"key": "value"})
-        '{"key": "value"}'
-        >>> _to_str("   Example String   ", strip_lower=True)
-        'example string'
+    Example:
+        >>> strip_lower("  HELLO WORLD  ")
+        'hello world'
     """
-    if isinstance(input_, dict):
-        input_ = json.dumps(input_, **kwargs)
+    return to_str(
+        input_,
+        strip_lower=True,
+        chars=chars,
+        use_model_dump=use_model_dump,
+        **kwargs
+    )
 
-    if isinstance(input_, str):
-        return input_.strip().lower() if strip_lower else input_
-
-    try:
-        dict_ = to_dict(input_, as_list=False, use_model_dump=use_model_dump)
-        return (
-            json.dumps(dict_, **kwargs).strip().lower()
-            if strip_lower
-            else json.dumps(dict_, **kwargs)
-        )
-    except Exception:
-        try:
-            return str(input_).strip().lower() if strip_lower else str(input_)
-        except Exception as e:
-            raise ValueError(
-                f"Could not convert input_ to string: {input_}, Error: {e}"
-            )
-
-
-def strip_lower(input_: str, /, **kwargs: Any) -> str:
-    """
-    Convert the input to a stripped and lowercase string representation.
-
-    Args:
-        input_: The input string to be processed.
-        **kwargs: Additional keyword arguments to pass to to_str.
-
-    Returns:
-        The stripped and lowercase string representation of the input.
-
-    Raises:
-        ValueError: If the input cannot be converted to a string.
-
-    Examples:
-        >>> strip_lower("   Example String   ")
-        'example string'
-    """
-    try:
-        return to_str(input_, strip_lower=True, **kwargs)
-    except Exception as e:
-        raise ValueError(f"Could not convert input_ to string: {input_}, Error: {e}")
-
-
-# Path: lion_core/libs/data_handlers/_to_str.py
+# File: lion_core/libs/data_handlers/_to_str.py
