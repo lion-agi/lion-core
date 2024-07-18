@@ -10,10 +10,9 @@ from typing import Any
 
 from pydantic import Field
 
-from lion_core.setting import BASE_LION_FIELDS
-from lion_core.sys_util import LN_UNDEFINED
-from lion_core.generic.component import Component
-from .base import MutableRecord
+from lion_core.setting import BASE_LION_FIELDS, LN_UNDEFINED
+from lion_core.generic import Component
+from lion_core.abc import MutableRecord
 from .util import get_input_output_fields
 
 

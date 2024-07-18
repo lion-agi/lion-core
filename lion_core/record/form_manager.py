@@ -6,7 +6,7 @@ filling forms and reports, and generating instructions.
 """
 
 from typing import Any, List
-from lion_core.sys_util import LN_UNDEFINED
+from lion_core.setting import LN_UNDEFINED
 from lion_core.exceptions import LionValueError
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.util import to_list_type

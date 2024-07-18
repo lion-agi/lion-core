@@ -10,7 +10,7 @@ from lion_core.libs import (
     get_flattened_keys,
     flatten,
 )
-from lion_core.sys_util import LN_UNDEFINED
+from lion_core.setting import LN_UNDEFINED
 
 
 class Note(BaseModel):

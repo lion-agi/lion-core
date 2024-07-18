@@ -1,96 +1,109 @@
-"""
-Module for converting various input types into lists.
-
-Provides functions to convert a variety of data structures into lists,
-with options for flattening nested lists and removing None values.
-"""
-
-from collections.abc import Mapping, Iterable
-from typing import Any, Generator
-
+from collections.abc import Mapping, Iterable, Sequence
+from functools import singledispatch
+from typing import Any, TypeVar
+from lion_core.setting import LionUndefined
 from pydantic import BaseModel
 
+T = TypeVar("T")
 
+
+@singledispatch
 def to_list(
     input_: Any, /, *, flatten: bool = False, dropna: bool = False
 ) -> list[Any]:
     """
-    Convert various types of input into a list.
+    Convert various input types to a list.
+
+    This function handles different input types and converts them to a list,
+    with options for flattening nested structures and removing None values.
+
+    Accepted input types and their behaviors:
+    1. None or LionUndefined: Returns an empty list [].
+    2. str, bytes, bytearray: Returns a single-item list containing the input.
+    3. Mapping (dict, OrderedDict, etc.): Returns a single-item list containing the input.
+    4. BaseModel: Returns a single-item list containing the input.
+    5. Sequence (list, tuple, etc.):
+       - If flatten=False, returns the sequence as a list.
+       - If flatten=True, flattens nested sequences.
+    6. Other Iterables: Converts to a list, then applies flattening if specified.
+    7. Any other type: Returns a single-item list containing the input.
 
     Args:
-        input_: The input to convert to a list.
-        flatten: If True, flattens nested lists.
-        dropna: If True, removes None values.
+        input_: The input to be converted to a list.
+        flatten: If True, flattens nested list structures.
+        dropna: If True, removes None values from the result.
 
     Returns:
-        The converted list.
+        A list derived from the input, processed according to the specified options.
 
     Examples:
         >>> to_list(1)
         [1]
-        >>> to_list([1, 2, [3, 4]], flatten=True)
-        [1, 2, 3, 4]
+        >>> to_list([1, [2, 3]], flatten=True)
+        [1, 2, 3]
         >>> to_list([1, None, 2], dropna=True)
         [1, 2]
     """
-    if input_ is None:
-        return []
-
-    if not isinstance(input_, Iterable) or isinstance(
-        input_, (str, bytes, bytearray, Mapping, BaseModel)
-    ):
-        return [input_]
-
-    iterable_list = list(input_) if not isinstance(input_, list) else input_
-
-    return flatten_list(iterable_list, dropna) if flatten else iterable_list
+    return [input_]
 
 
-def flatten_list(lst_: list[Any], dropna: bool = True) -> list[Any]:
+@to_list.register(LionUndefined)
+@to_list.register(type(None))
+def _(input_: None | LionUndefined, /, **kwargs: Any) -> list[Any]:
+    """Handle None and LionUndefined inputs by returning an empty list."""
+    return []
+
+
+@to_list.register(str)
+@to_list.register(bytes)
+@to_list.register(bytearray)
+@to_list.register(Mapping)
+@to_list.register(BaseModel)
+def _(
+    input_: str | bytes | bytearray | Mapping | BaseModel, /, **kwargs: Any
+) -> list[Any]:
+    """Handle string-like, Mapping, and BaseModel inputs."""
+    return [input_]
+
+
+@to_list.register(Sequence)
+@to_list.register(Iterable)
+def _(
+    input_: Sequence[T] | Iterable[T], /, *, flatten: bool = False, dropna: bool = False
+) -> list[T]:
     """
-    Flatten a nested list.
+    Handle Sequence and Iterable inputs.
+
+    Converts the input to a list and optionally flattens and removes None values.
+    """
+    result = list(input_)
+    return _process_list(result, flatten, dropna) if flatten or dropna else result
+
+
+def _process_list(lst: list[Any], flatten: bool, dropna: bool) -> list[Any]:
+    """
+    Process a list by optionally flattening and removing None values.
 
     Args:
-        lst: The list to flatten.
+        lst: The list to process.
+        flatten: If True, flattens nested list structures.
         dropna: If True, removes None values.
 
     Returns:
-        The flattened list.
-
-    Examples:
-        >>> flatten_list([1, [2, 3], [4, [5, 6]]])
-        [1, 2, 3, 4, 5, 6]
-        >>> flatten_list([1, None, 2], dropna=True)
-        [1, 2]
+        The processed list.
     """
-    flattened_list = list(_flatten_list_generator(lst_, dropna))
-    return [i for i in flattened_list if i is not None] if dropna else flattened_list
-
-
-def _flatten_list_generator(
-    lst_: Iterable[Any], dropna: bool = True
-) -> Generator[Any, None, None]:
-    """
-    A generator to recursively flatten a nested list.
-
-    Args:
-        lst: The list to flatten.
-        dropna: If True, removes None values.
-
-    Yields:
-        The next flattened element from the list.
-
-    Examples:
-        >>> list(_flatten_list_generator([1, [2, 3], [4, [5, 6]]]))
-        [1, 2, 3, 4, 5, 6]
-    """
-    for i in lst_:
-        if isinstance(i, Iterable) and not isinstance(
-            i, (str, bytes, bytearray, Mapping)
+    result = []
+    for item in lst:
+        if isinstance(item, Iterable) and not isinstance(
+            item, (str, bytes, bytearray, Mapping)
         ):
-            yield from _flatten_list_generator(i, dropna)
-        else:
-            yield i
+            if flatten:
+                result.extend(_process_list(list(item), flatten, dropna))
+            else:
+                result.append(_process_list(list(item), flatten, dropna))
+        elif not dropna or item is not None:
+            result.append(item)
+    return result
 
 
-# Path: lion_core/libs/data_handlers/_to_list.py
+# File: lion_core/libs/data_handlers/_to_list.py

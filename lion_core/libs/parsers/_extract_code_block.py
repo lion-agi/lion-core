@@ -1,7 +1,7 @@
 """Provide utility for extracting code blocks from Markdown-formatted text."""
 
 
-def extract_code_blocks(code: str) -> str:
+def extract_code_block(str_to_parse: str) -> str:
     """
     Extract code blocks from a given string containing Markdown code blocks.
 
@@ -10,7 +10,7 @@ def extract_code_blocks(code: str) -> str:
     concatenates them with two newlines between each block.
 
     Args:
-        code: The input string containing Markdown code blocks.
+        str_to_parse: The input string containing Markdown code blocks.
 
     Returns:
         Extracted code blocks concatenated with two newlines. If no code
@@ -22,7 +22,7 @@ def extract_code_blocks(code: str) -> str:
         "print('Hello')"
     """
     code_blocks = []
-    lines = code.split("\n")
+    lines = str_to_parse.split("\n")
     inside_code_block = False
     current_block = []
 

@@ -5,11 +5,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_serializer, ConfigDict
 
-from lion_core.generic.note import Note
-from lion_core.generic.element import Element
+from lion_core.abc import ImmutableRecord
+from lion_core.generic import Note, Element
 
-
-from .base import ImmutableRecord
 
 
 DEFAULT_SERIALIZATION_INCLUDE: set[str] = {"ln_id", "timestamp", "content", "loginfo"}

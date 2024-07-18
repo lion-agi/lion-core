@@ -10,6 +10,13 @@ from ._to_list import to_list
 from ._to_dict import to_dict
 from ._to_str import to_str, strip_lower
 from ._to_num import to_num
+from ._util import (
+    is_homogeneous,
+    is_same_dtype,
+    is_structure_homogeneous,
+    deep_update,
+    get_target_container,
+)
 
 
 __all__ = [
@@ -27,4 +34,9 @@ __all__ = [
     "get_flattened_keys",
     "strip_lower",
     "npop",
+    "is_homogeneous",
+    "is_same_dtype",
+    "is_structure_homogeneous",
+    "deep_update",
+    "get_target_container",
 ]

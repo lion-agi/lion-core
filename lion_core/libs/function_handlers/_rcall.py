@@ -10,7 +10,7 @@ from typing import Any, Callable, TypeVar
 
 from lion_core.sys_util import SysUtil
 from lion_core.libs.function_handlers._ucall import ucall
-from lion_core.sys_util import LN_UNDEFINED
+from lion_core.setting import LN_UNDEFINED
 
 T = TypeVar("T")
 ErrorHandler = Callable[[Exception], Any]
@@ -152,7 +152,9 @@ async def _rcall(
     try:
         await asyncio.sleep(delay)
         if timeout is not None:
-            result = await asyncio.wait_for(ucall(func, *args, **kwargs), timeout)
+            result = await asyncio.wait_for(
+                ucall(func, *args, **kwargs), timeout=timeout
+            )
         else:
             result = await ucall(func, *args, **kwargs)
         duration = SysUtil.time() - start_time

@@ -1,150 +1,151 @@
-"""
-Module for converting various input types into dictionaries.
-
-Provides functions to convert a variety of data structures, including
-DataFrames, JSON strings, and XML elements, into dictionaries or lists
-of dictionaries. Handles special cases such as replacing NaN values
-with None.
-"""
-
-from collections.abc import Mapping
+from functools import singledispatch
+from collections.abc import Mapping, Sequence
 import json
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Literal, Callable
+from lion_core.setting import LionUndefined
 
 T = TypeVar("T", bound=dict[str, Any] | list[dict[str, Any]])
 
 
+@singledispatch
 def to_dict(
     input_: Any,
     /,
-    use_model_dump: bool = True,
-    str_type: str = "json",
+    *,
+    use_model_dump: bool = False,
+    str_type: Literal["json", "xml"] | None = None,
+    parser: Callable[[str], dict[str, Any]] | None = None,
     **kwargs: Any,
 ) -> T:
     """
-    Convert various types of input into a dictionary or list of dictionaries.
+    Convert various input types to a dictionary or list of dictionaries.
+
+    Accepted input types and their behaviors:
+    1. None or LionUndefined: Returns an empty dictionary {}.
+    2. Mapping (dict, OrderedDict, etc.): Returns a dict representation.
+    3. Sequence (list, tuple, etc.):
+       - Returns a list of converted items.
+       - If the sequence contains only one dict, returns that dict.
+    4. set: Converts to a list.
+    5. str:
+       - If empty, returns {}.
+       - If str_type is "json", attempts to parse as JSON.
+       - If str_type is "xml", attempts to parse as XML.
+       - For invalid JSON, returns the original string.
+    6. Objects with .model_dump() method (if use_model_dump is True):
+       Calls .model_dump() and returns the result.
+    7. Objects with .to_dict(), .dict(), or .json() methods:
+       Calls the respective method and returns the result.
+    8. Objects with .__dict__ attribute: Returns the .__dict__.
+    9. Any other object that can be converted to a dict.
 
     Args:
-        input_: The input data to convert.
-        use_model_dump: If True, use model_dump method if available.
-        str_type: The type of string to convert. Can be "json" or "xml".
-        **kwargs: Additional arguments to pass to conversion methods.
+        input_: The input to be converted.
+        use_model_dump: If True, use model_dump method when available.
+        str_type: The type of string to parse ("json" or "xml").
+        parser: A custom parser function for string inputs.
+        **kwargs: Additional keyword arguments for conversion methods.
 
     Returns:
-        The converted dictionary or list of dictionaries.
+        A dictionary, list of dictionaries, or list, depending on the input.
 
     Raises:
-        json.JSONDecodeError: If the input string cannot be parsed as JSON.
-        ValueError: If the input type is unsupported.
+        ValueError: If the input cannot be converted to a dictionary.
     """
-    out = None
-    if isinstance(input_, list):
-        out = [
-            to_dict(
-                i,
-                use_model_dump=use_model_dump,
-                str_type=str_type,
-                **kwargs,
-            )
-            for i in input_
-        ]
-    else:
-        out = _to_dict(
-            input_,
-            use_model_dump=use_model_dump,
-            str_type=str_type,
-            **kwargs,
-        )
-
-    if out in [[], {}]:
-        return {}
-
-    if isinstance(out, list) and len(out) == 1 and isinstance(out[0], dict):
-        return out[0]
-
-    return out
-
-
-def _to_dict(
-    input_: Any,
-    /,
-    use_model_dump: bool = True,
-    str_type: str = "json",
-    **kwargs: Any,
-) -> dict[str, Any]:
-    """
-    Helper function to convert the input into a dictionary.
-
-    Args:
-        input_: The input data to convert.
-        use_model_dump: If True, use model_dump method if available.
-        str_type: The type of string to convert. Can be "json" or "xml".
-        **kwargs: Additional arguments to pass to conversion methods.
-
-    Returns:
-        The converted dictionary.
-
-    Raises:
-        json.JSONDecodeError: If the input string cannot be parsed as JSON.
-        ValueError: If the input type is unsupported.
-    """
-    if isinstance(input_, dict):
-        return input_
-
-    if isinstance(input_, Mapping):
-        return dict(input_)
-
-    if isinstance(input_, str):
-        a = None
-        if str_type == "xml":
-            a = xml_to_dict(input_)
-
-        elif str_type == "json":
-            a = json.loads(input_, **kwargs)
-
-        if isinstance(a, dict):
-            return a
-        raise ValueError("Input string cannot be converted into a dictionary.")
-
     if use_model_dump and hasattr(input_, "model_dump"):
         return input_.model_dump(**kwargs)
 
-    if hasattr(input_, "to_dict"):
-        return input_.to_dict(**kwargs)
+    for method in ["to_dict", "dict", "json"]:
+        if hasattr(input_, method):
+            result = getattr(input_, method)(**kwargs)
+            return (
+                json.loads(result)
+                if method == "json" and isinstance(result, str)
+                else result
+            )
 
-    if hasattr(input_, "json"):
-        return json.loads(input_.json(**kwargs))
-
-    if hasattr(input_, "dict"):
-        return input_.dict(**kwargs)
+    if hasattr(input_, "__dict__"):
+        return input_.__dict__
 
     try:
         return dict(input_)
     except Exception as e:
-        raise e
+        raise ValueError(f"Unable to convert input to dictionary: {e}")
 
 
-def xml_to_dict(input_: str) -> dict[str, Any]:
-    """
-    Convert an XML string to a dictionary.
-
-    Args:
-        input_: The XML string to convert.
-
-    Returns:
-        The dictionary representation of the XML structure.
-
-    Raises:
-        ImportError: If xmltodict is not installed.
-    """
-
-    from lion_core.sys_util import SysUtil
-
-    SysUtil.check_import("xmltodict")
-
-    import xmltodict
-
-    return xmltodict.parse(input_)
+@to_dict.register(LionUndefined)
+@to_dict.register(type(None))
+def _(
+    input_: LionUndefined | None,
+    /,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Handle LionUndefined and None inputs."""
+    return {}
 
 
-# Path: lion_core/libs/data_handlers/_to_dict.py
+@to_dict.register(Mapping)
+def _(input_: Mapping, /, **kwargs: Any) -> dict[str, Any]:
+    """Handle Mapping inputs."""
+    return dict(input_)
+
+
+@to_dict.register(str)
+def _(
+    input_: str,
+    /,
+    *,
+    str_type: Literal["json", "xml"] = "json",
+    parser: Callable[[str], dict[str, Any]] | None = None,
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Handle string inputs."""
+    if not input_:
+        return {}
+
+    if str_type == "json":
+        try:
+            return json.loads(input_, **kwargs) if parser is None else parser(input_)
+        except json.JSONDecodeError:
+            return input_  # Return the original string if it's not valid JSON
+
+    if str_type == "xml":
+        try:
+            if parser is None:
+                from lion_core.libs.parsers._xml_parser import xml_to_dict
+
+                parser = xml_to_dict
+            return parser(input_)
+        except Exception as e:
+            raise ValueError(f"Failed to parse XML string: {e}")
+
+    raise ValueError(f"Unsupported string type: {str_type}")
+
+
+@to_dict.register(Sequence)
+def _(
+    input_: Sequence,
+    /,
+    **kwargs: Any,
+) -> list[dict[str, Any]] | dict[str, Any]:
+    """Handle Sequence inputs."""
+    if not input_:
+        return []
+    out = [
+        (
+            to_dict(item, **kwargs)
+            if isinstance(item, (Mapping, Sequence)) and not isinstance(item, str)
+            else item
+        )
+        for item in input_
+    ]
+    return out[0] if len(out) == 1 and isinstance(out[0], dict) else out
+
+
+@to_dict.register(set)
+def _(input_: set, /, **kwargs: Any) -> list[Any]:
+    """Handle set inputs."""
+    return list(input_)
+
+
+# File: lion_core/libs/data_handlers/_to_dict.py

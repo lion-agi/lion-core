@@ -1,11 +1,10 @@
 """Provide utility for converting various inputs to readable JSON strings."""
 
 from typing import Any
-import json
-from lion_core.libs.data_handlers import to_dict
+from lion_core.libs.data_handlers import to_dict, to_str
 
 
-def as_readable_json(input_: Any, /) -> str:
+def as_readable_json(input_: Any, /, **kwargs) -> str:
     """
     Convert the input to a readable JSON string.
 
@@ -15,6 +14,7 @@ def as_readable_json(input_: Any, /) -> str:
 
     Args:
         input_: The input to be converted to a readable JSON string.
+        kwargs for to_dict
 
     Returns:
         A formatted JSON string if the input can be converted to a
@@ -24,8 +24,9 @@ def as_readable_json(input_: Any, /) -> str:
         ValueError: If the input cannot be converted to a readable dict.
     """
     try:
-        dict_ = to_dict(input_)
-        return json.dumps(dict_, indent=4) if isinstance(dict_, dict) else str(dict_)
+        dict_ = to_dict(input_, **kwargs)
+        config = {"indent": 4} if isinstance(dict_, dict) else {}
+        return to_str(dict_, **config)
     except Exception as e:
         raise ValueError(f"Could not convert given input to readable dict: {e}") from e
 

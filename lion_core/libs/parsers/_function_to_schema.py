@@ -1,14 +1,19 @@
 import inspect
-from typing import Any
+from typing import Any, Literal
 from lion_core.libs.parsers._extract_docstring import extract_docstring_details
 from lion_core.libs.parsers._util import py_json_msp
 
 
 def function_to_schema(
-    func, style="google", func_description=None, params_description=None
-):
+    f_,
+    style: Literal["google", "rest"] = "google",
+    /,
+    *,
+    f_description=None,
+    p_description=None,
+) -> dict:
     """
-    Generate a schema description for a given function.
+    Generate a schema description for a given function. in openai format
 
     This function generates a schema description for the given function
     using typing hints and docstrings. The schema includes the function's
@@ -44,16 +49,16 @@ def function_to_schema(
         'example_func'
     """
     # Extract function name
-    func_name = func.__name__
+    func_name = f_.__name__
 
     # Extract function description and parameter descriptions
-    if not func_description or not params_description:
-        func_desc, params_desc = extract_docstring_details(func, style)
-        func_description = func_description or func_desc
-        params_description = params_description or params_desc
+    if not f_description or not p_description:
+        func_desc, params_desc = extract_docstring_details(f_, style)
+        f_description = f_description or func_desc
+        p_description = p_description or params_desc
 
     # Extract parameter details using typing hints
-    sig = inspect.signature(func)
+    sig = inspect.signature(f_)
     parameters: dict[str, Any] = {
         "type": "object",
         "properties": {},
@@ -67,7 +72,7 @@ def function_to_schema(
             param_type = py_json_msp[param.annotation.__name__]
 
         # Extract parameter description from docstring, if available
-        param_description = params_description.get(name)
+        param_description = p_description.get(name)
 
         # Assuming all parameters are required for simplicity
         parameters["required"].append(name)
@@ -80,7 +85,7 @@ def function_to_schema(
         "type": "function",
         "function": {
             "name": func_name,
-            "description": func_description,
+            "description": f_description,
             "parameters": parameters,
         },
     }
