@@ -4,18 +4,23 @@ from pydantic import BaseModel
 from lion_core.setting import LionUndefined
 from lion_core.libs.data_handlers._to_list import to_list
 
+
 class CustomIterable:
     def __iter__(self):
         return iter([1, 2, 3])
 
+
 class CustomMapping:
     def __getitem__(self, key):
-        return {1: 'a', 2: 'b', 3: 'c'}[key]
+        return {1: "a", 2: "b", 3: "c"}[key]
+
     def keys(self):
         return [1, 2, 3]
 
+
 class TestModel(BaseModel):
     field: str = "value"
+
 
 class TestToList(unittest.TestCase):
 
@@ -50,7 +55,7 @@ class TestToList(unittest.TestCase):
         self.assertEqual(to_list({"a": 1, "b": 2}), [{"a": 1, "b": 2}])
 
     def test_ordereddict_input(self):
-        od = OrderedDict([('a', 1), ('b', 2)])
+        od = OrderedDict([("a", 1), ("b", 2)])
         self.assertEqual(to_list(od), [od])
 
     def test_custom_mapping(self):
@@ -60,6 +65,7 @@ class TestToList(unittest.TestCase):
     def test_generator_input(self):
         def gen():
             yield from range(3)
+
         self.assertEqual(to_list(gen()), [0, 1, 2])
 
     def test_custom_iterable(self):
@@ -71,7 +77,7 @@ class TestToList(unittest.TestCase):
         self.assertEqual(to_list(d), [1, 2, 3])
 
     def test_namedtuple_input(self):
-        Point = namedtuple('Point', ['x', 'y'])
+        Point = namedtuple("Point", ["x", "y"])
         p = Point(1, 2)
         self.assertEqual(to_list(p), [1, 2])
 
@@ -105,7 +111,9 @@ class TestToList(unittest.TestCase):
 
     def test_flatten_with_strings(self):
         input_with_strings = [1, "nested", [2, ["deep", "list"]]]
-        self.assertEqual(to_list(input_with_strings, flatten=True), [1, "nested", 2, "deep", "list"])
+        self.assertEqual(
+            to_list(input_with_strings, flatten=True), [1, "nested", 2, "deep", "list"]
+        )
 
     def test_flatten_with_tuple(self):
         input_with_tuple = [1, (2, 3), [4, (5, 6)]]
@@ -124,13 +132,16 @@ class TestToList(unittest.TestCase):
 
     def test_flatten_with_dict(self):
         input_with_dict = [1, {"a": 2}, [3, {"b": 4}]]
-        self.assertEqual(to_list(input_with_dict, flatten=True), [1, {"a": 2}, 3, {"b": 4}])
+        self.assertEqual(
+            to_list(input_with_dict, flatten=True), [1, {"a": 2}, 3, {"b": 4}]
+        )
 
     def test_generator_with_none(self):
         def gen_with_none():
             yield 1
             yield None
             yield 2
+
         self.assertEqual(to_list(gen_with_none(), dropna=True), [1, 2])
 
     def test_deeply_nested_structure(self):
@@ -143,6 +154,7 @@ class TestToList(unittest.TestCase):
     def test_custom_objects(self):
         class CustomObj:
             pass
+
         obj = CustomObj()
         self.assertEqual(to_list(obj), [obj])
 
@@ -152,7 +164,9 @@ class TestToList(unittest.TestCase):
 
     def test_flatten_and_dropna_combination(self):
         complex_input = [1, None, [2, None, [3, None, 4]]]
-        self.assertEqual(to_list(complex_input, flatten=True, dropna=True), [1, 2, 3, 4])
+        self.assertEqual(
+            to_list(complex_input, flatten=True, dropna=True), [1, 2, 3, 4]
+        )
 
     def test_input_types_preservation(self):
         mixed_types = [1, "two", 3.0, True, b"four"]
@@ -164,5 +178,6 @@ class TestToList(unittest.TestCase):
         self.assertEqual(len(flattened), 2000)
         self.assertEqual(flattened[-1], 1999)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

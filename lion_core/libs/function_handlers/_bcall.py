@@ -63,7 +63,7 @@ async def bcall(
         ...                                  retries=3, delay=1):
         ...     print(batch_results)
     """
-    input_ = to_list(input_, flatten=False, dropna=False)
+    input_ = to_list(input_, flatten=True, dropna=True)
 
     for i in range(0, len(input_), batch_size):
         batch = input_[i : i + batch_size]

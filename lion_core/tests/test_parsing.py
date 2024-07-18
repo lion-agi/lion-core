@@ -1,7 +1,7 @@
 from lion_core.libs.parsers import *
 import unittest
-from lion_core.libs.parsers.md_to_json import escape_chars_in_json
-from lion_core.libs.parsers.extract_docstring import (
+from lion_core.libs.parsers._md_to_json import escape_chars_in_json
+from lion_core.libs.parsers._extract_docstring import (
     _extract_docstring_details_google,
     _extract_docstring_details_rest,
 )
@@ -46,27 +46,27 @@ class TestExtractCodeBlocks(unittest.TestCase):
             "Here is some Python code:\n```python\nprint('Hello, world!')\n```\n"
         )
         expected_output = "print('Hello, world!')"
-        self.assertEqual(extract_code_blocks(input_text), expected_output)
+        self.assertEqual(extract_code_block(input_text), expected_output)
 
     def test_extract_java_code(self):
         input_text = "Here is some Java code:\n```java\nSystem.out.println('Hello, world!');\n```\n"
         expected_output = "System.out.println('Hello, world!');"
-        self.assertEqual(extract_code_blocks(input_text), expected_output)
+        self.assertEqual(extract_code_block(input_text), expected_output)
 
     def test_extract_javascript_code(self):
         input_text = "Here is some JavaScript code:\n```javascript\nconsole.log('Hello, world!');\n```\n"
         expected_output = "console.log('Hello, world!');"
-        self.assertEqual(extract_code_blocks(input_text), expected_output)
+        self.assertEqual(extract_code_block(input_text), expected_output)
 
     def test_extract_cpp_code(self):
         input_text = "Here is some C++ code:\n```cpp\n#include <iostream>\nint main() { std::cout << 'Hello, world!'; return 0; }\n```\n"
         expected_output = "#include <iostream>\nint main() { std::cout << 'Hello, world!'; return 0; }"
-        self.assertEqual(extract_code_blocks(input_text), expected_output)
+        self.assertEqual(extract_code_block(input_text), expected_output)
 
     def test_extract_ruby_code(self):
         input_text = "Here is some Ruby code:\n```ruby\nputs 'Hello, world!'\n```\n"
         expected_output = "puts 'Hello, world!'"
-        self.assertEqual(extract_code_blocks(input_text), expected_output)
+        self.assertEqual(extract_code_block(input_text), expected_output)
 
 
 class TestExtractDocstringDetails(unittest.TestCase):
@@ -238,25 +238,25 @@ class TestForceValidateKeys2(unittest.TestCase):
         keys = ["name", "age", "location"]
         input_dict = {"name": "John", "age": 30, "location": "New York"}
         expected_output = {"name": "John", "age": 30, "location": "New York"}
-        self.assertEqual(force_validate_keys(input_dict, keys), expected_output)
+        self.assertEqual(validate_keys(input_dict, keys), expected_output)
 
     def test_partial_match(self):
         keys = ["name", "age", "location"]
         input_dict = {"nme": "John", "ag": 30, "loc": "New York"}
         expected_output = {"name": "John", "age": 30, "location": "New York"}
-        self.assertEqual(force_validate_keys(input_dict, keys), expected_output)
+        self.assertEqual(validate_keys(input_dict, keys), expected_output)
 
     def test_additional_keys(self):
         keys = ["name", "age"]
         input_dict = {"name": "John", "age": 30, "location": "New York"}
         expected_output = {"name": "John", "age": 30, "location": "New York"}
-        self.assertEqual(force_validate_keys(input_dict, keys), expected_output)
+        self.assertEqual(validate_keys(input_dict, keys), expected_output)
 
     def test_missing_keys(self):
         keys = ["name", "age", "location"]
         input_dict = {"name": "John"}
         expected_output = {"name": "John"}
-        self.assertEqual(force_validate_keys(input_dict, keys), expected_output)
+        self.assertEqual(validate_keys(input_dict, keys), expected_output)
 
     def test_custom_score_func(self):
         def dummy_similarity(a, b):
@@ -266,7 +266,7 @@ class TestForceValidateKeys2(unittest.TestCase):
         input_dict = {"name": "John", "age": 30, "loc": "New York"}
         expected_output = {"name": "John", "age": 30, "location": "New York"}
         self.assertEqual(
-            force_validate_keys(input_dict, keys, score_func=dummy_similarity),
+            validate_keys(input_dict, keys, score_func=dummy_similarity),
             expected_output,
         )
 
@@ -275,31 +275,31 @@ class TestForceValidateKeys(unittest.TestCase):
     def test_match_mode(self):
         keys = ["name", "age", "location"]
         dict_ = {"name": "John", "age": 30, "loc": "NYC"}
-        result = force_validate_keys(dict_, keys)
+        result = validate_keys(dict_, keys)
         self.assertEqual(result, {"name": "John", "age": 30, "location": "NYC"})
 
     def test_superset_mode(self):
         keys = ["name", "age"]
         dict_ = {"name": "John", "age": 30, "location": "NYC"}
-        result = force_validate_keys(dict_, keys)
+        result = validate_keys(dict_, keys)
         self.assertEqual(result, {"name": "John", "age": 30, "location": "NYC"})
 
     def test_subset_mode(self):
         keys = ["name", "age", "location"]
         dict_ = {"name": "John", "age": 30}
-        result = force_validate_keys(dict_, keys)
+        result = validate_keys(dict_, keys)
         self.assertEqual(result, {"name": "John", "age": 30})
 
     def test_handle_unmatched_ignore(self):
         keys = ["name", "age"]
         dict_ = {"name": "John", "age": 30, "location": "NYC"}
-        result = force_validate_keys(dict_, keys, handle_unmatched="ignore")
+        result = validate_keys(dict_, keys, handle_unmatched="ignore")
         self.assertEqual(result, {"name": "John", "age": 30, "location": "NYC"})
 
     def test_handle_unmatched_force(self):
         keys = ["name", "age", "location"]
         dict_ = {"name": "John", "age": 30}
-        result = force_validate_keys(
+        result = validate_keys(
             dict_, keys, handle_unmatched="force", fill_value="Unknown"
         )
         self.assertEqual(result, {"name": "John", "age": 30, "location": "Unknown"})
@@ -307,19 +307,19 @@ class TestForceValidateKeys(unittest.TestCase):
     def test_handle_unmatched_remove(self):
         keys = ["name", "age"]
         dict_ = {"name": "John", "age": 30, "location": "NYC"}
-        result = force_validate_keys(dict_, keys, handle_unmatched="remove")
+        result = validate_keys(dict_, keys, handle_unmatched="remove")
         self.assertEqual(result, {"name": "John", "age": 30})
 
     def test_handle_unmatched_raise(self):
         keys = ["name", "age", "location"]
         dict_ = {"name": "John", "age": 30}
         with self.assertRaises(ValueError):
-            force_validate_keys(dict_, keys, handle_unmatched="raise")
+            validate_keys(dict_, keys, handle_unmatched="raise")
 
     def test_handle_unmatched_fill(self):
         keys = ["name", "age", "location"]
         dict_ = {"name": "John", "age": 30}
-        result = force_validate_keys(
+        result = validate_keys(
             dict_, keys, handle_unmatched="fill", fill_value="Unknown"
         )
         self.assertEqual(result, {"name": "John", "age": 30, "location": "Unknown"})
@@ -327,7 +327,7 @@ class TestForceValidateKeys(unittest.TestCase):
     def test_empty_dict(self):
         keys = ["name", "age", "location"]
         dict_ = {}
-        result = force_validate_keys(
+        result = validate_keys(
             dict_, keys, handle_unmatched="fill", fill_value="Unknown"
         )
         self.assertEqual(
@@ -337,7 +337,7 @@ class TestForceValidateKeys(unittest.TestCase):
     def test_empty_keys(self):
         keys = []
         dict_ = {"name": "John", "age": 30, "location": "NYC"}
-        result = force_validate_keys(dict_, keys)
+        result = validate_keys(dict_, keys)
         self.assertEqual(result, {"name": "John", "age": 30, "location": "NYC"})
 
     def test_custom_score_func(self):
@@ -346,7 +346,7 @@ class TestForceValidateKeys(unittest.TestCase):
 
         keys = ["name", "age", "location"]
         dict_ = {"name": "John", "age": 30, "loc": "NYC"}
-        result = force_validate_keys(dict_, keys, score_func=custom_score_func)
+        result = validate_keys(dict_, keys, score_func=custom_score_func)
         self.assertEqual(result, {"name": "John", "age": 30, "location": "NYC"})
 
     def test_no_matching_keys(self):
@@ -354,7 +354,7 @@ class TestForceValidateKeys(unittest.TestCase):
         dict_ = {"name": "John", "age": 30, "location": "NYC"}
 
         try:
-            result = force_validate_keys(
+            result = validate_keys(
                 dict_, keys, handle_unmatched="force", fill_value="Unknown", strict=True
             )
             self.assertEqual(
@@ -366,14 +366,14 @@ class TestForceValidateKeys(unittest.TestCase):
     def test_keys_as_dict(self):
         keys = {"name": str, "age": int, "location": str}
         dict_ = {"name": "John", "age": 30, "loc": "NYC"}
-        result = force_validate_keys(dict_, keys)
+        result = validate_keys(dict_, keys)
         self.assertEqual(result, {"name": "John", "age": 30, "location": "NYC"})
 
     def test_fill_value_with_different_types(self):
         keys = ["name", "age", "is_student"]
         dict_ = {"name": "John"}
         fill_mapping = {"age": 0, "is_student": False}
-        result = force_validate_keys(
+        result = validate_keys(
             dict_, keys, handle_unmatched="fill", fill_mapping=fill_mapping
         )
         self.assertEqual(result, {"name": "John", "age": 0, "is_student": False})
@@ -381,13 +381,13 @@ class TestForceValidateKeys(unittest.TestCase):
     def test_case_insensitive_matching(self):
         keys = ["Name", "Age", "Location"]
         dict_ = {"name": "John", "age": 30, "location": "NYC"}
-        result = force_validate_keys(dict_, keys)
+        result = validate_keys(dict_, keys)
         self.assertEqual(result, {"Name": "John", "Age": 30, "Location": "NYC"})
 
     def test_special_characters(self):
         keys = ["name", "age", "email"]
         dict_ = {"name": "John", "age": 30, "email_address": "john@example.com"}
-        result = force_validate_keys(dict_, keys)
+        result = validate_keys(dict_, keys)
         self.assertEqual(
             result, {"name": "John", "age": 30, "email": "john@example.com"}
         )
@@ -399,7 +399,7 @@ class TestForceValidateKeys(unittest.TestCase):
             "age": 30,
             "location": {"city": "New York", "country": "USA"},
         }
-        result = force_validate_keys(dict_, keys)
+        result = validate_keys(dict_, keys)
         self.assertEqual(
             result,
             {
@@ -619,7 +619,7 @@ class TestForceValidateMapping(unittest.TestCase):
         keys = ["key1", "key2"]
         input_str = '{"key1": "value1", "key2": "value2"}'
 
-        result = force_validate_mapping(input_str, keys)
+        result = validate_mapping(input_str, keys)
         expected = {"key1": "value1", "key2": "value2"}
         self.assertEqual(result, expected)
 
@@ -627,7 +627,7 @@ class TestForceValidateMapping(unittest.TestCase):
         keys = ["key1", "key2"]
         input_str = "{'key1': 'value1', 'key2': 'value2'}"
 
-        result = force_validate_mapping(input_str, keys)
+        result = validate_mapping(input_str, keys)
         expected = {"key1": "value1", "key2": "value2"}
         self.assertEqual(result, expected)
 
@@ -635,7 +635,7 @@ class TestForceValidateMapping(unittest.TestCase):
         keys = ["key1", "key2"]
         input_dict = {"key1": "value1", "key2": "value2"}
 
-        result = force_validate_mapping(input_dict, keys)
+        result = validate_mapping(input_dict, keys)
         expected = {"key1": "value1", "key2": "value2"}
         self.assertEqual(result, expected)
 
@@ -646,20 +646,20 @@ class TestForceValidateMapping(unittest.TestCase):
         key2: value2,
         """
         with self.assertRaises(ValueError):
-            force_validate_mapping(input_str, keys)
+            validate_mapping(input_str, keys)
 
     def test_missing_keys(self):
         keys = ["key1", "key3"]
         input_str = '{"key1": "value1", "key2": "value2"}'
 
         with self.assertRaises(ValueError):
-            force_validate_mapping(input_str, keys, strict=True)
+            validate_mapping(input_str, keys, strict=True)
 
     def test_extra_keys_in_input(self):
         keys = ["key1", "key2"]
         input_str = '{"key1": "value1", "key2": "value2", "key3": "value3"}'
 
-        result = force_validate_mapping(input_str, keys, handle_unmatched="remove")
+        result = validate_mapping(input_str, keys, handle_unmatched="remove")
         expected = {"key1": "value1", "key2": "value2"}
         self.assertEqual(result, expected)
 
@@ -667,7 +667,7 @@ class TestForceValidateMapping(unittest.TestCase):
         keys = {"key1": "integer", "key2": "string"}
         input_dict = {"key1": 1, "key2": "value2"}
 
-        result = force_validate_mapping(input_dict, keys)
+        result = validate_mapping(input_dict, keys)
         expected = {"key1": 1, "key2": "value2"}
         self.assertEqual(result, expected)
 
@@ -676,7 +676,7 @@ class TestForceValidateMapping(unittest.TestCase):
         input_str = ""
 
         with self.assertRaises(ValueError):
-            force_validate_mapping(input_str, keys)
+            validate_mapping(input_str, keys)
 
 
 if __name__ == "__main__":

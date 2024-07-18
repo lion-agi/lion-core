@@ -4,7 +4,7 @@ from json import loads
 from typing import Any
 
 
-def fuzzy_parse_json(str_to_parse: str) -> dict[str, Any]:
+def fuzzy_parse_json(str_to_parse: str, *, surpress=False) -> dict[str, Any]:
     """
     Attempt to parse a JSON string, applying fixes for common issues.
 
@@ -40,9 +40,12 @@ def fuzzy_parse_json(str_to_parse: str) -> dict[str, Any]:
                 fixed_str = fixed_str.replace("'", '"')
                 return loads(fixed_str)
             except Exception as e:
-                raise ValueError(
-                    f"Failed to parse JSON after fixing attempts: {e}"
-                ) from e
+                if surpress:
+                    return None
+                else:
+                    raise ValueError(
+                        f"Failed to parse JSON after fixing attempts: {e}"
+                    ) from e
 
 
 def fix_json_string(str_to_parse: str) -> str:

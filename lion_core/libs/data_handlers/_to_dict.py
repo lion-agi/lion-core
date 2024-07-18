@@ -6,6 +6,7 @@ from lion_core.setting import LionUndefined
 
 T = TypeVar("T", bound=dict[str, Any] | list[dict[str, Any]])
 
+
 @singledispatch
 def to_dict(
     input_: Any,
@@ -22,11 +23,11 @@ def to_dict(
     Accepted input types and their behaviors:
     1. None or LionUndefined: Returns an empty dictionary {}.
     2. Mapping (dict, OrderedDict, etc.): Returns a dict representation.
-    3. Sequence (list, tuple, etc.): 
+    3. Sequence (list, tuple, etc.):
        - Returns a list of converted items.
        - If the sequence contains only one dict, returns that dict.
     4. set: Converts to a list.
-    5. str: 
+    5. str:
        - If empty, returns {}.
        - If str_type is "json", attempts to parse as JSON.
        - If str_type is "xml", attempts to parse as XML.
@@ -57,7 +58,11 @@ def to_dict(
     for method in ["to_dict", "dict", "json"]:
         if hasattr(input_, method):
             result = getattr(input_, method)(**kwargs)
-            return json.loads(result) if method == "json" and isinstance(result, str) else result
+            return (
+                json.loads(result)
+                if method == "json" and isinstance(result, str)
+                else result
+            )
 
     if hasattr(input_, "__dict__"):
         return input_.__dict__
@@ -66,6 +71,7 @@ def to_dict(
         return dict(input_)
     except Exception as e:
         raise ValueError(f"Unable to convert input to dictionary: {e}")
+
 
 @to_dict.register(LionUndefined)
 @to_dict.register(type(None))
@@ -77,10 +83,12 @@ def _(
     """Handle LionUndefined and None inputs."""
     return {}
 
+
 @to_dict.register(Mapping)
 def _(input_: Mapping, /, **kwargs: Any) -> dict[str, Any]:
     """Handle Mapping inputs."""
     return dict(input_)
+
 
 @to_dict.register(str)
 def _(
@@ -105,12 +113,14 @@ def _(
         try:
             if parser is None:
                 from lion_core.libs.parsers._xml_parser import xml_to_dict
+
                 parser = xml_to_dict
             return parser(input_)
         except Exception as e:
             raise ValueError(f"Failed to parse XML string: {e}")
 
     raise ValueError(f"Unsupported string type: {str_type}")
+
 
 @to_dict.register(Sequence)
 def _(
@@ -122,16 +132,20 @@ def _(
     if not input_:
         return []
     out = [
-        to_dict(item, **kwargs)
-        if isinstance(item, (Mapping, Sequence)) and not isinstance(item, str)
-        else item
+        (
+            to_dict(item, **kwargs)
+            if isinstance(item, (Mapping, Sequence)) and not isinstance(item, str)
+            else item
+        )
         for item in input_
     ]
     return out[0] if len(out) == 1 and isinstance(out[0], dict) else out
+
 
 @to_dict.register(set)
 def _(input_: set, /, **kwargs: Any) -> list[Any]:
     """Handle set inputs."""
     return list(input_)
+
 
 # File: lion_core/libs/data_handlers/_to_dict.py

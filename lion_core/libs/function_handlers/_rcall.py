@@ -152,7 +152,9 @@ async def _rcall(
     try:
         await asyncio.sleep(delay)
         if timeout is not None:
-            result = await asyncio.wait_for(ucall(func, *args, **kwargs), timeout)
+            result = await asyncio.wait_for(
+                ucall(func, *args, **kwargs), timeout=timeout
+            )
         else:
             result = await ucall(func, *args, **kwargs)
         duration = SysUtil.time() - start_time

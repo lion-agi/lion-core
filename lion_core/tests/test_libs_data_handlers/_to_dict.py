@@ -7,25 +7,29 @@ from pydantic import BaseModel
 from lion_core.libs.data_handlers._to_dict import to_dict, LionUndefined
 
 
-
 class MockToDict:
     def to_dict(self):
         return {"mock": "to_dict"}
+
 
 class MockModelDump:
     def model_dump(self):
         return {"mock": "model_dump"}
 
+
 class MockJson:
     def json(self):
         return '{"mock": "json"}'
+
 
 @dataclass
 class MockDataclass:
     field: str = "value"
 
+
 class MockPydanticModel(BaseModel):
     field: str = "value"
+
 
 class TestToDict(unittest.TestCase):
 
@@ -43,7 +47,9 @@ class TestToDict(unittest.TestCase):
 
     def test_xml_string(self):
         xml_string = "<root><a>1</a><b>2</b></root>"
-        self.assertEqual(to_dict(xml_string, str_type="xml"), {"root": {"a": "1", "b": "2"}})
+        self.assertEqual(
+            to_dict(xml_string, str_type="xml"), {"root": {"a": "1", "b": "2"}}
+        )
 
     def test_none_input(self):
         self.assertEqual(to_dict(None), {})
@@ -63,7 +69,9 @@ class TestToDict(unittest.TestCase):
 
     def test_custom_objects(self):
         self.assertEqual(to_dict(MockToDict()), {"mock": "to_dict"})
-        self.assertEqual(to_dict(MockModelDump(), use_model_dump=True), {"mock": "model_dump"})
+        self.assertEqual(
+            to_dict(MockModelDump(), use_model_dump=True), {"mock": "model_dump"}
+        )
         self.assertEqual(to_dict(MockJson()), {"mock": "json"})
 
     def test_dataclass_and_pydantic(self):
@@ -73,7 +81,7 @@ class TestToDict(unittest.TestCase):
     def test_nested_structures(self):
         nested_input = {
             "key1": {"nested_key": "value"},
-            "key2": [1, 2, {"nested_list_key": "value"}]
+            "key2": [1, 2, {"nested_list_key": "value"}],
         }
         self.assertEqual(to_dict(nested_input), nested_input)
 
@@ -84,6 +92,7 @@ class TestToDict(unittest.TestCase):
     def test_custom_parser(self):
         def custom_parser(s: str) -> dict[str, Any]:
             return {"custom": s}
+
         self.assertEqual(to_dict("test", parser=custom_parser), {"custom": "test"})
 
     def test_invalid_json_string(self):
@@ -123,7 +132,9 @@ class TestToDict(unittest.TestCase):
         def gen():
             yield {"key1": "value1"}
             yield {"key2": "value2"}
+
         self.assertEqual(to_dict(list(gen())), [{"key1": "value1"}, {"key2": "value2"}])
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

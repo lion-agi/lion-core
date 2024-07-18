@@ -1,11 +1,10 @@
 """Provide utility for validating and correcting dictionary-like inputs."""
 
-import contextlib
 from typing import Any, Callable, Sequence, TypedDict, Literal
-
+import re
 from lion_core.libs.parsers._md_to_json import md_to_json
 from lion_core.libs.parsers._fuzzy_parse_json import fuzzy_parse_json
-from lion_core.libs.parsers._force_validate_keys import force_validate_keys
+from lion_core.libs.parsers._validate_keys import validate_keys
 
 ScoreFunc = Callable[[str, str], float]
 HandleUnmatched = Literal["ignore", "raise", "remove", "fill", "force"]
@@ -17,9 +16,11 @@ class KeysDict(TypedDict, total=False):
     key: Any  # Represents any key-type pair
 
 
-def force_validate_mapping(
-    dict_: dict[str, Any] | str,
+def validate_mapping(
+    d_: dict[str, Any] | str,
     keys: Sequence[str] | KeysDict,
+    /,
+    *,
     score_func: ScoreFunc | None = None,
     fuzzy_match: bool = True,
     handle_unmatched: HandleUnmatched = "ignore",
@@ -65,23 +66,25 @@ def force_validate_mapping(
         >>> validated_dict
         {'name': 'John', 'age': 30, 'city': None}
     """
-    out_ = dict_
+    out_ = d_
 
     if isinstance(out_, str):
-        try:
-            out_ = fuzzy_parse_json(out_)
-        except Exception:
-            try:
-                out_ = md_to_json(out_)
-            except Exception:
-                with contextlib.suppress(Exception):
-                    out_ = fuzzy_parse_json(out_.replace("'", '"'))
+        out_ = fuzzy_parse_json(d_, surpress=True)
+        if not out_:
+            out_ = md_to_json(d_, surpress=True)
+        if not out_:
+            match = re.search(r"```json\n({.*?})\n```", d_, re.DOTALL)
+            if match:
+                out_ = match.group(1)
+                out_ = fuzzy_parse_json(d_, surpress=True)
+        if not out_:
+            out_ = fuzzy_parse_json(d_.replace("'", '"'), surpress=True)
 
     if isinstance(out_, dict):
         try:
-            return force_validate_keys(
-                dict_=out_,
-                keys=keys,
+            return validate_keys(
+                out_,
+                keys,
                 score_func=score_func,
                 handle_unmatched=handle_unmatched,
                 fill_value=fill_value,
@@ -90,9 +93,9 @@ def force_validate_mapping(
                 fuzzy_match=fuzzy_match,
             )
         except Exception as e:
-            raise ValueError(f"Failed to force_validate_dict for input: {dict_}") from e
+            raise ValueError(f"Failed to force_validate_dict for input: {d_}") from e
 
-    raise ValueError(f"Failed to force_validate_dict for input: {dict_}")
+    raise ValueError(f"Failed to force_validate_dict for input: {d_}")
 
 
 # File: lion_core/libs/parsers/_force_validate_mapping.py

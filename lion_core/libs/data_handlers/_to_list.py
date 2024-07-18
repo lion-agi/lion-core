@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 T = TypeVar("T")
 
+
 @singledispatch
 def to_list(
     input_: Any, /, *, flatten: bool = False, dropna: bool = False
@@ -21,7 +22,7 @@ def to_list(
     2. str, bytes, bytearray: Returns a single-item list containing the input.
     3. Mapping (dict, OrderedDict, etc.): Returns a single-item list containing the input.
     4. BaseModel: Returns a single-item list containing the input.
-    5. Sequence (list, tuple, etc.): 
+    5. Sequence (list, tuple, etc.):
        - If flatten=False, returns the sequence as a list.
        - If flatten=True, flattens nested sequences.
     6. Other Iterables: Converts to a list, then applies flattening if specified.
@@ -45,11 +46,13 @@ def to_list(
     """
     return [input_]
 
+
 @to_list.register(LionUndefined)
 @to_list.register(type(None))
 def _(input_: None | LionUndefined, /, **kwargs: Any) -> list[Any]:
     """Handle None and LionUndefined inputs by returning an empty list."""
     return []
+
 
 @to_list.register(str)
 @to_list.register(bytes)
@@ -57,21 +60,16 @@ def _(input_: None | LionUndefined, /, **kwargs: Any) -> list[Any]:
 @to_list.register(Mapping)
 @to_list.register(BaseModel)
 def _(
-    input_: str | bytes | bytearray | Mapping | BaseModel,
-    /,
-    **kwargs: Any
+    input_: str | bytes | bytearray | Mapping | BaseModel, /, **kwargs: Any
 ) -> list[Any]:
     """Handle string-like, Mapping, and BaseModel inputs."""
     return [input_]
 
+
 @to_list.register(Sequence)
 @to_list.register(Iterable)
 def _(
-    input_: Sequence[T] | Iterable[T],
-    /,
-    *,
-    flatten: bool = False,
-    dropna: bool = False
+    input_: Sequence[T] | Iterable[T], /, *, flatten: bool = False, dropna: bool = False
 ) -> list[T]:
     """
     Handle Sequence and Iterable inputs.
@@ -80,6 +78,7 @@ def _(
     """
     result = list(input_)
     return _process_list(result, flatten, dropna) if flatten or dropna else result
+
 
 def _process_list(lst: list[Any], flatten: bool, dropna: bool) -> list[Any]:
     """
@@ -95,7 +94,9 @@ def _process_list(lst: list[Any], flatten: bool, dropna: bool) -> list[Any]:
     """
     result = []
     for item in lst:
-        if isinstance(item, Iterable) and not isinstance(item, (str, bytes, bytearray, Mapping)):
+        if isinstance(item, Iterable) and not isinstance(
+            item, (str, bytes, bytearray, Mapping)
+        ):
             if flatten:
                 result.extend(_process_list(list(item), flatten, dropna))
             else:
@@ -103,5 +104,6 @@ def _process_list(lst: list[Any], flatten: bool, dropna: bool) -> list[Any]:
         elif not dropna or item is not None:
             result.append(item)
     return result
+
 
 # File: lion_core/libs/data_handlers/_to_list.py

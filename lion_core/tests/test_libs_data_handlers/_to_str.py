@@ -6,12 +6,15 @@ from lion_core.setting import LionUndefined
 # Import the to_str function and strip_lower
 from lion_core.libs.data_handlers._to_str import to_str, strip_lower
 
+
 class CustomModel(BaseModel):
     field: str = "value"
+
 
 class CustomObject:
     def __str__(self):
         return "CustomObject"
+
 
 class TestToStr(unittest.TestCase):
 
@@ -42,13 +45,15 @@ class TestToStr(unittest.TestCase):
 
     def test_set_input(self):
         result = to_str({1, 2, 3})
-        self.assertTrue(result in ["1, 2, 3", "1, 3, 2", "2, 1, 3", "2, 3, 1", "3, 1, 2", "3, 2, 1"])
+        self.assertTrue(
+            result in ["1, 2, 3", "1, 3, 2", "2, 1, 3", "2, 3, 1", "3, 1, 2", "3, 2, 1"]
+        )
 
     def test_dict_input(self):
         self.assertEqual(to_str({"a": 1, "b": 2}), '{"a": 1, "b": 2}')
 
     def test_ordereddict_input(self):
-        od = OrderedDict([('a', 1), ('b', 2)])
+        od = OrderedDict([("a", 1), ("b", 2)])
         self.assertEqual(to_str(od), '{"a": 1, "b": 2}')
 
     def test_nested_structures(self):
@@ -58,7 +63,7 @@ class TestToStr(unittest.TestCase):
     def test_pydantic_model(self):
         model = CustomModel(field="test")
         self.assertEqual(to_str(model), '{"field": "test"}')
-        self.assertEqual(to_str(model, use_model_dump=False), 'field=\'test\'')
+        self.assertEqual(to_str(model, use_model_dump=False), "field='test'")
 
     def test_custom_object(self):
         obj = CustomObject()
@@ -102,7 +107,7 @@ class TestToStr(unittest.TestCase):
         class ErrorObject:
             def __str__(self):
                 raise Exception("Str conversion error")
-        
+
         try:
             a = ErrorObject()
             to_str(a)
@@ -113,12 +118,14 @@ class TestToStr(unittest.TestCase):
     def test_generator(self):
         def gen():
             yield from range(3)
+
         self.assertEqual(to_str(gen()), "0, 1, 2")
 
     def test_namedtuple(self):
-        Point = namedtuple('Point', ['x', 'y'])
+        Point = namedtuple("Point", ["x", "y"])
         p = Point(1, 2)
         self.assertEqual(to_str(p), "1, 2")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

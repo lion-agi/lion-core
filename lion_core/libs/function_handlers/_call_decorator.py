@@ -222,5 +222,56 @@ class CallDecorator:
 
         return decorator
 
+    @staticmethod
+    def map(function: Callable[[Any], Any]) -> Callable:
+        """
+        Decorates an asynchronous function to apply a specified mapping function to
+        each element in the list returned by the decorated function. This is
+        particularly useful for post-processing the results of asynchronous operations,
+        such as transforming data fetched from an API or processing items in a
+        collection concurrently.
+
+        The mapping function is applied to each input_ in the output list of the
+        decorated function, enabling patterned modifications or transformations to be
+        succinctly applied to a collection of asynchronous results.
+
+        Args:
+                function (Callable[[Any], Any]):
+                        A mapping function to apply to each element of the list returned by the
+                        decorated function.
+
+        Returns:
+                Callable:
+                        A decorated asynchronous function whose results are transformed by the
+                        specified mapping function.
+
+        Examples:
+                >>> @CallDecorator.map(lambda x: x.upper())
+                ... async def get_names():
+                ...     # Asynchronously fetches a list of names
+                ...     return ["alice", "bob", "charlie"]
+                ... # `get_names` now returns ["ALICE", "BOB", "CHARLIE"]
+        """
+
+        def decorator(func: Callable[..., list[Any]]) -> Callable:
+            if is_coroutine_func(func):
+
+                @wraps(func)
+                async def async_wrapper(*args, **kwargs) -> list[Any]:
+                    values = await func(*args, **kwargs)
+                    return [function(value) for value in values]
+
+                return async_wrapper
+            else:
+
+                @wraps(func)
+                def sync_wrapper(*args, **kwargs) -> list[Any]:
+                    values = func(*args, **kwargs)
+                    return [function(value) for value in values]
+
+                return sync_wrapper
+
+        return decorator
+
 
 # Path: lion_core/libs/function_handlers/_call_decorator.py

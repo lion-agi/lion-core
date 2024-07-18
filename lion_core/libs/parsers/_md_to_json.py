@@ -10,7 +10,8 @@ def md_to_json(
     *,
     expected_keys: list[str] | None = None,
     parser: Callable[[str], Any] | None = None,
-) -> Any:
+    surpress: bool = False,
+) -> dict[str, Any]:
     """
     Parse a JSON block from a Markdown string and validate its keys.
 
@@ -33,11 +34,20 @@ def md_to_json(
         ValueError: If the expected keys are not present in the JSON
             object or if no JSON block is found.
     """
-    json_obj = extract_json_block(str_to_parse, parser=parser or fuzzy_parse_json)
+    json_obj = extract_json_block(
+        str_to_parse=str_to_parse, parser=parser or fuzzy_parse_json, surpress=surpress
+    )
+
+    if not json_obj:
+        if surpress:
+            return None
+        raise ValueError("No JSON block found in the Markdown content.")
 
     if expected_keys:
         missing_keys = [key for key in expected_keys if key not in json_obj]
         if missing_keys:
+            if surpress:
+                return None
             raise ValueError(
                 f"Missing expected keys in JSON object: {', '.join(missing_keys)}"
             )
@@ -76,10 +86,12 @@ def escape_chars_in_json(value: str, char_map: dict | None = None) -> str:
 
 def extract_json_block(
     str_to_parse: str,
-    regex_pattern: str | None = None,
+    language: str = "json",
+    regex_pattern: str | None = None,  # take priority over language
     *,
     parser: Callable[[str], Any] = None,
-) -> Any:
+    surpress: bool = False,
+) -> dict[str, Any]:
     """
     Extract and parse a JSON block from Markdown content.
 
@@ -107,7 +119,11 @@ def extract_json_block(
         >>> extract_json_block('```json\\n{"key": "value"}\\n```')
         {'key': 'value'}
     """
-    regex_pattern = regex_pattern or r"```json\n?(.*?)\n?```"
+    if not regex_pattern:
+        if language:
+            regex_pattern = rf"```{language}\n?(.*?)\n?```"
+        else:
+            regex_pattern = r"```\n?(.*?)\n?```"
 
     match = re.search(regex_pattern, str_to_parse, re.DOTALL)
     if match:
@@ -117,6 +133,8 @@ def extract_json_block(
         if str_to_parse.startswith("```json\n") and str_to_parse.endswith("\n```"):
             code_str = str_to_parse[8:-4].strip()
         else:
+            if surpress:
+                return None
             raise ValueError("No JSON code block found in the Markdown content.")
 
     parser = parser or fuzzy_parse_json
