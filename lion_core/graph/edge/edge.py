@@ -15,7 +15,7 @@ from .component import Component
 from lion_core.abc.event import Condition
 from ..util.sys_util import SysUtil
 from .base_hyper_edge import DirectedMixin
-from .hyper_edge import HyperEdge
+from ...generic.hyper_edge import HyperEdge
 
 
 class Edge(HyperEdge):
