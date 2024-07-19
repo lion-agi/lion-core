@@ -243,7 +243,7 @@ class SysUtil:
         return prefix + modifiable_part + postfix
 
     @staticmethod
-    @lru_cache
+    # @lru_cache
     def get_lion_id(item: Any) -> str:
         """Get the Lion ID of an item."""
         if isinstance(item, Sequence) and len(item) == 1:
@@ -309,7 +309,7 @@ class SysUtil:
             Supports 34-char (current) and 32-char (deprecated) formats.
             32-char format will be removed in v1.0+.
         """
-        n = int(LION_ID_CONFIG["n"])
+        n = int(LION_ID_CONFIG["n"]) + LION_ID_CONFIG["num_hyphens"]
         prefix = LION_ID_CONFIG["prefix"]
 
         return (len(item) == (len(prefix) + n) and item.startswith(prefix)) or len(

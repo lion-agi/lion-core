@@ -1,7 +1,7 @@
 """Converter Registry for managing data conversion in the Lion framework."""
 
 from typing import Any, Protocol, runtime_checkable, TypeVar
-
+from lion_core.generic.converter_registry import DefaultConverter
 
 T = TypeVar("T")
 
@@ -11,26 +11,24 @@ class Converter(Protocol):
     """Protocol for converter objects."""
 
     @staticmethod
-    def from_obj(obj: Any) -> dict[str, Any]:
-        """Convert an object to a dictionary."""
+    def from_obj(target_class: type, obj: Any):
+        """Convert an object to a lion instance."""
 
     @staticmethod
-    def to_obj(obj: Any) -> Any:
-        """Convert a dictionary to an object."""
+    def to_obj(**kwargs) -> Any:
+        """Convert a lion instance to an object."""
 
 
 class ConverterRegistry:
     """Registry for managing converters in the Lion framework."""
 
     _converters: dict[str, Converter] = {}
-    _type_mapping: dict[type[Any], str] = {}
 
     @classmethod
     def register(
         cls,
         key: str,
         converter: Converter | Any,
-        for_types: type[Any] | tuple[type[Any], ...] | None = None,
     ) -> None:
         """
         Register a converter for a specific key and optionally for types.
@@ -38,7 +36,6 @@ class ConverterRegistry:
         Args:
             key: The key to associate with this converter.
             converter: An object with from_obj and to_obj methods.
-            for_types: Type(s) this converter should be used for.
 
         Raises:
             ValueError: If the converter doesn't have required methods.
@@ -47,11 +44,6 @@ class ConverterRegistry:
             raise ValueError("Converter must have 'from_obj' and 'to_obj' methods")
 
         cls._converters[key] = converter
-        if for_types is not None:
-            if isinstance(for_types, type):
-                for_types = (for_types,)
-            for t in for_types:
-                cls._type_mapping[t] = key
 
     @classmethod
     def get(cls, key: str) -> Converter:
@@ -67,31 +59,15 @@ class ConverterRegistry:
         Raises:
             KeyError: If no converter is registered for the key.
         """
-        if key not in cls._converters:
-            raise KeyError(f"No converter registered for key: {key}")
-        return cls._converters[key]
+        if key in cls._converters:
+            return cls._converters[key]
+        elif converter := getattr(DefaultConverter(), key+"_converter", None):
+            cls.register(key, converter)
+            return cls._converters[key]
+        raise KeyError(f"No converter found for {key}")
 
     @classmethod
-    def get_converter_for_type(cls, obj: Any) -> Converter:
-        """
-        Get the appropriate converter for a given object based on its type.
-
-        Args:
-            obj: The object to find a converter for.
-
-        Returns:
-            The appropriate converter for the object's type.
-
-        Raises:
-            TypeError: If no converter is found for the object's type.
-        """
-        for t in type(obj).__mro__:
-            if t in cls._type_mapping:
-                return cls.get(cls._type_mapping[t])
-        raise TypeError(f"No converter found for type: {type(obj)}")
-
-    @classmethod
-    def convert_from(cls, obj: Any, key: str | None = None) -> dict[str, Any]:
+    def convert_from(cls, target_class, obj: Any, key: str | None = None) -> dict[str, Any]:
         """
         Convert an object to a dictionary using the specified converter.
 
@@ -107,13 +83,12 @@ class ConverterRegistry:
             TypeError: If no suitable converter is found for auto-detection.
         """
         if key is None:
-            converter = cls.get_converter_for_type(obj)
-        else:
-            converter = cls.get(key)
-        return converter.from_obj(obj)
+            key = obj.__class__.__name__
+        converter = cls.get(key)
+        return converter.from_obj(target_class, obj)
 
     @classmethod
-    def convert_to(cls, obj: Any, key: str) -> Any:
+    def convert_to(cls, obj: Any, key: str | type, **kwargs) -> Any:
         """
         Convert an object to another type using the specified converter.
 
@@ -127,8 +102,10 @@ class ConverterRegistry:
         Raises:
             KeyError: If the specified key is not found.
         """
+        if isinstance(key, type):
+            key = key.__name__
         converter = cls.get(key)
-        return converter.to_obj(obj)
+        return converter.to_obj(obj, **kwargs)
 
 
 # File: lionagi/core/converter.py
