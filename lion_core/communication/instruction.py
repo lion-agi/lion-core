@@ -4,6 +4,7 @@ from lion_core.setting import BASE_LION_FIELDS
 from lion_core.record.form import Form
 from .message import RoledMessage, MessageRole
 
+
 class Instruction(RoledMessage):
     """
     Represents an instruction message with context and requested fields.

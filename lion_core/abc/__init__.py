@@ -13,18 +13,14 @@ from .characteristic import (
     # Stochastic,
 )
 
-from .container import (
+from .space import (
     Container,
     Ordering,
     Collective,
     Structure,
 )
 
-from .observer import (
-    BaseManager,
-    BaseExecutor,
-    BaseProcessor,
-)
+from .observer import BaseManager, BaseExecutor, BaseProcessor, BaseiModel, BaseEngine
 
 from .observation import Event, Condition, Signal, Action
 
@@ -59,4 +55,6 @@ __all__ = [
     "MutableRecord",
     "ImmutableRecord",
     "Structure",
+    "BaseiModel",
+    "BaseEngine",
 ]

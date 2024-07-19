@@ -1,4 +1,5 @@
 from .concept import AbstractSpace, AbstractElement
+from .characteristic import Observable, Temporal
 
 
 class Container(AbstractSpace, AbstractElement):
@@ -25,9 +26,14 @@ class Container(AbstractSpace, AbstractElement):
 
 class Ordering(Container): ...
 
-    # subclass must have order attribute 
+
+# subclass must have order attribute
+
 
 class Collective(Container): ...
+
+
+# subclass must have items method
 
 
 class Structure(Container): ...

@@ -26,6 +26,8 @@ class Observable(Characteristic):
     computation and cognitive modeling.
     """
 
+    # must have ln_id
+
     pass
 
 
@@ -37,6 +39,8 @@ class Temporal(Characteristic):
     properties or behaviors that evolve over time. It's fundamental to
     modeling time-dependent processes and state changes in complex systems.
     """
+
+    # must have timestamp
 
     pass
 
