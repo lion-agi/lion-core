@@ -1,5 +1,6 @@
 from datetime import timezone
 
+
 class LionUndefined:
 
     def __init__(self):
@@ -41,7 +42,7 @@ TIME_CONFIG = {
 
 
 SERILIATION_CONFIG = {
-    "mode": 'python',
+    "mode": "python",
     "include": None,
     "exclude": None,
     "context": None,
@@ -49,11 +50,10 @@ SERILIATION_CONFIG = {
     "exclude_unset": False,
     "exclude_defaults": False,
     "exclude_none": False,
-    "round_trip"  : False,
-    "warnings" : True,      #  bool | Literal['none', 'warn', 'error']
-    "serialize_as_any": False
+    "round_trip": False,
+    "warnings": True,  #  bool | Literal['none', 'warn', 'error']
+    "serialize_as_any": False,
 }
-
 
 
 # File: lion_core/setting.py
