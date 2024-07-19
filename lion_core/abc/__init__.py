@@ -8,6 +8,8 @@ from .concept import (
 from .characteristic import (
     Observable,
     Temporal,
+    Relational,
+    Traversal,
     # Quantum,
     # Probabilistic,
     # Stochastic,
@@ -38,6 +40,8 @@ __all__ = [
     "AbstractObservation",
     "Observable",
     "Temporal",
+    "Relational",
+    "Traversal",
     # "Quantum",
     # "Probabilistic",
     # "Stochastic",

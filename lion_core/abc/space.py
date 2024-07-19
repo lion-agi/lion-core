@@ -1,5 +1,6 @@
+from abc import abstractmethod
 from .concept import AbstractSpace, AbstractElement
-from .characteristic import Observable, Temporal
+from .characteristic import Traversal
 
 
 class Container(AbstractSpace, AbstractElement):
@@ -11,6 +12,7 @@ class Container(AbstractSpace, AbstractElement):
     membership criteria for the container.
     """
 
+    @abstractmethod
     def __contains__(self, item) -> bool:
         """
         Check if an item is in the container.
@@ -21,19 +23,22 @@ class Container(AbstractSpace, AbstractElement):
         Returns:
             bool: True if the item is in the container, False otherwise.
         """
-        raise NotImplementedError
-
-
-class Ordering(Container): ...
 
 
 # subclass must have order attribute
+class Ordering(Container): ...
 
 
-class Collective(Container): ...
+class Collective(Container):
+
+    @abstractmethod
+    def items(self):
+        """
+        Get the items in the collective.
+
+        Returns:
+            Iterable: The items in the collective.
+        """
 
 
-# subclass must have items method
-
-
-class Structure(Container): ...
+class Structure(Container, Traversal): ...

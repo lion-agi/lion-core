@@ -84,4 +84,30 @@ class Stochastic(Probabilistic, Temporal):
     pass
 
 
+class Relational(Observable):
+    """
+    Characteristic of having relational properties.
+
+    Represents entities that are inherently connected or related to
+    other entities. This characteristic is fundamental to modeling
+    networked systems, social interactions, and complex relationships
+    in various domains.
+    """
+
+    pass
+
+
+class Traversal(Observable):
+    """
+    Characteristic of being traversable.
+
+    Inspired by graph theory and network science, this characteristic
+    represents entities that can be traversed or explored. It's
+    essential for modeling paths, connections, and information flow
+    in complex systems with a network structure.
+    """
+
+    pass
+
+
 # File: lion_core/abc/characteristic.py

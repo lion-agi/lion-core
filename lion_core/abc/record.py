@@ -1,7 +1,8 @@
-from lion_core.abc.concept import AbstractElement
+from .concept import AbstractElement
+from .characteristic import Observable, Temporal
 
 
-class BaseRecord(AbstractElement): ...
+class BaseRecord(AbstractElement, Observable, Temporal): ...
 
 
 class MutableRecord(BaseRecord): ...
