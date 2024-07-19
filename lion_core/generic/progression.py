@@ -90,9 +90,6 @@ class Progression(Element, Ordering):
             if isinstance(i, str):
                 check = i in self.order
 
-            elif isinstance(i, Ordering):
-                check = all(j in self.order for j in i.order)
-
             elif isinstance(i, Element):
                 check = i.ln_id in self.order
 
@@ -204,14 +201,14 @@ class Progression(Element, Ordering):
         """Clear the progression."""
         self.order.clear()
 
-    def copy(self) -> Progression:
-        """
-        Create a deep copy of the progression.
-
-        Returns:
-            Progression: A new Progression instance with the same items.
-        """
-        return self.model_copy(deep=True)
+    # def copy(self) -> Progression:
+    #     """
+    #     Create a deep copy of the progression.
+    #
+    #     Returns:
+    #         Progression: A new Progression instance with the same items.
+    #     """
+    #     return self.model_copy(deep=True)
 
     # def keys(self):
     #     """
@@ -371,7 +368,7 @@ class Progression(Element, Ordering):
         """
         if item in self:
             item = validate_order(item)
-            l_: list = SysUtil.copy(self.order)
+            l_ = list(self.order)
 
             with contextlib.suppress(ValueError):
                 for i in item:
@@ -439,9 +436,10 @@ class Progression(Element, Ordering):
         Returns:
             Progression: A new Progression with the added item(s).
         """
-        _copy = self.copy()
-        _copy.extend(other)
-        return _copy
+        other = validate_order(other)
+        new_order = list(self)
+        new_order.extend(other)
+        return Progression(order=new_order)
 
     def __radd__(self, other: Any) -> Progression:
         """
@@ -454,7 +452,7 @@ class Progression(Element, Ordering):
             Progression: A new Progression with the combined items.
         """
 
-        return other + self
+        return self + other
 
     def __iadd__(self, other: Any) -> Progression:
         """
@@ -492,9 +490,11 @@ class Progression(Element, Ordering):
         Returns:
             Progression: A new Progression without the specified item(s).
         """
-        _copy = self.copy()
-        _copy.remove(other)
-        return _copy
+        other = validate_order(other)
+        new_order = list(self)
+        for i in other:
+            new_order.remove(i)
+        return Progression(order=new_order)
 
     def __repr__(self) -> str:
         """

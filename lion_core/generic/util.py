@@ -69,14 +69,6 @@ def validate_order(value: Any) -> list[str]:
     Raises:
         LionIDError: If input contains invalid types or Lion IDs.
     """
-    if value is None:
-        return []
-    if isinstance(value, str) and SysUtil.is_str_id(value):
-        return [value]
-    if isinstance(value, Ordering):
-        return value.order
-    if isinstance(value, Element):
-        return [value.ln_id]
 
     try:
         result = []
