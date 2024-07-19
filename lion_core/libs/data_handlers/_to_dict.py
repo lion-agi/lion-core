@@ -55,7 +55,7 @@ def to_dict(
     if use_model_dump and hasattr(input_, "model_dump"):
         return input_.model_dump(**kwargs)
 
-    for method in ["to_dict", "dict", "json"]:
+    for method in ["to_dict", "dict", "json", "to_json"]:
         if hasattr(input_, method):
             result = getattr(input_, method)(**kwargs)
             return (

@@ -1,9 +1,9 @@
 """Characteristic classes for the Lion framework."""
 
-from abc import ABC
+from .concept import Tao
 
 
-class Characteristic(ABC):
+class Characteristic(Tao):
     """
     Base class for characteristics in the Lion framework.
 

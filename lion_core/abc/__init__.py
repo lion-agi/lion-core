@@ -17,6 +17,7 @@ from .container import (
     Container,
     Ordering,
     Collective,
+    Structure,
 )
 
 from .observer import (
@@ -25,12 +26,7 @@ from .observer import (
     BaseProcessor,
 )
 
-from .observation import (
-    Event, 
-    Condition,
-    Signal,
-    Action
-)
+from .observation import Event, Condition, Signal, Action
 
 from .record import (
     BaseRecord,
@@ -62,4 +58,5 @@ __all__ = [
     "BaseRecord",
     "MutableRecord",
     "ImmutableRecord",
+    "Structure",
 ]
