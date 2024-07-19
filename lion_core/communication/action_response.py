@@ -21,7 +21,7 @@ class ActionResponse(RoledMessage):
         func_outputs: The output of the function call.
     """
 
-    actionb_request_id: str | None = Field(
+    action_request_id: str | None = Field(
         None,
         description="The id of the action request that this response corresponds to",
     )
