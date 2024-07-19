@@ -9,7 +9,6 @@ from collections.abc import Sequence
 from typing import Any, Literal, TypeVar
 import os
 import copy
-from functools import lru_cache
 from hashlib import sha256
 from datetime import datetime, timezone
 
@@ -144,7 +143,6 @@ class SysUtil:
         return _id
 
     @staticmethod
-    @lru_cache
     def get_id(item: Any, /, *, config: dict = LION_ID_CONFIG) -> str:
         """
         Get the Lion ID of an item.
@@ -178,7 +176,6 @@ class SysUtil:
         raise LionIDError("Item must contain a Lion ID.")
 
     @staticmethod
-    @lru_cache
     def is_id(item: Any, /, *, config: dict = LION_ID_CONFIG) -> bool:
         """
         Check if an item is a valid Lion ID.

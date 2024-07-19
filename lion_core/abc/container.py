@@ -1,7 +1,7 @@
-from .concept import AbstractSpace
+from .concept import AbstractSpace, AbstractElement
 
 
-class Container(AbstractSpace):
+class Container(AbstractSpace, AbstractElement):
     """
     Abstract representation of a container or storage space.
 
@@ -25,6 +25,7 @@ class Container(AbstractSpace):
 
 class Ordering(Container): ...
 
+    # subclass must have order attribute 
 
 class Collective(Container): ...
 
