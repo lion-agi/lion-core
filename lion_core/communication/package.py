@@ -3,6 +3,7 @@
 from enum import Enum
 from typing import Any
 
+from lion_core.abc import Observable, Temporal
 from lion_core.sys_util import SysUtil
 
 
@@ -47,7 +48,7 @@ def validate_category(value: Any) -> PackageCategory:
         raise ValueError("Invalid value for category.") from e
 
 
-class Package:
+class Package(Observable, Temporal):
     """
     Represents a package in the Lion framework's communication system.
 
@@ -78,9 +79,12 @@ class Package:
             ValueError: If the category is invalid or None.
         """
         self.ln_id = SysUtil.id()
+        self.timestamp = SysUtil.time(type_="timestamp")
         self.request_source = request_source
         self.category = validate_category(category)
         self.package = package
+
+    __slots__ = ("ln_id", "timestamp", "request_source", "category", "package")
 
 
 # File: lion_core/communication/package.py
