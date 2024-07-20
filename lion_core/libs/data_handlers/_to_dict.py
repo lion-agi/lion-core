@@ -55,7 +55,7 @@ def to_dict(
     if use_model_dump and hasattr(input_, "model_dump"):
         return input_.model_dump(**kwargs)
 
-    for method in ["to_dict", "dict", "json"]:
+    for method in ["to_dict", "dict", "json", "to_json"]:
         if hasattr(input_, method):
             result = getattr(input_, method)(**kwargs)
             return (
@@ -106,8 +106,8 @@ def _(
     if str_type == "json":
         try:
             return json.loads(input_, **kwargs) if parser is None else parser(input_)
-        except json.JSONDecodeError:
-            return input_  # Return the original string if it's not valid JSON
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse JSON string") from e
 
     if str_type == "xml":
         try:
@@ -117,7 +117,7 @@ def _(
                 parser = xml_to_dict
             return parser(input_)
         except Exception as e:
-            raise ValueError(f"Failed to parse XML string: {e}")
+            raise ValueError(f"Failed to parse XML string") from e
 
     raise ValueError(f"Unsupported string type: {str_type}")
 

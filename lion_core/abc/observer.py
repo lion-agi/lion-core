@@ -35,6 +35,7 @@ class BaseExecutor(AbstractObserver):
     act of observation can directly influence the system's state.
     """
 
+    # move onto next step
     @abstractmethod
     async def forward(self, *args, **kwargs):
         """
@@ -58,6 +59,7 @@ class BaseProcessor(AbstractObserver):
     quantum information theory and cognitive processing models.
     """
 
+    # finish a one step task
     @abstractmethod
     async def process(self, *args, **kwargs):
         """
@@ -70,6 +72,18 @@ class BaseProcessor(AbstractObserver):
         in dynamic systems.
         """
         pass
+
+
+class BaseEngine(AbstractObserver):
+
+    @abstractmethod
+    async def run(self, *args, **kwargs): ...
+
+
+class BaseiModel(AbstractObserver): ...
+
+
+# subclass must have access to intelligent model
 
 
 # File: lion_core/abc/observer.py

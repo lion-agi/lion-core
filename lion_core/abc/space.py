@@ -1,7 +1,8 @@
-from .concept import AbstractSpace
+from .concept import AbstractSpace, AbstractElement
+from .characteristic import Observable, Temporal
 
 
-class Container(AbstractSpace):
+class Container(AbstractSpace, AbstractElement):
     """
     Abstract representation of a container or storage space.
 
@@ -26,4 +27,13 @@ class Container(AbstractSpace):
 class Ordering(Container): ...
 
 
+# subclass must have order attribute
+
+
 class Collective(Container): ...
+
+
+# subclass must have items method
+
+
+class Structure(Container): ...

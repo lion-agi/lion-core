@@ -55,7 +55,7 @@ class BaseMail(Element):
             return "N/A"
 
         try:
-            return SysUtil.get_lion_id(value)
+            return SysUtil.get_id(value)
         except LionIDError:
             raise LionTypeError(f"Invalid sender or recipient type: {type(value)}")
 
