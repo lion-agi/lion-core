@@ -7,10 +7,12 @@ and unique identifier generation used throughout the Lion framework.
 from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, Literal, TypeVar
+import sys
 import os
 import copy
 from hashlib import sha256
 from datetime import datetime, timezone
+from functools import lru_cache
 
 from .setting import TIME_CONFIG, LION_ID_CONFIG
 from .exceptions import LionIDError
@@ -193,5 +195,27 @@ class SysUtil:
         except LionIDError:
             return False
 
+    @staticmethod
+    @lru_cache
+    def mor(class_name: str) -> type:
+        """
+        Module Object Registry function for dynamic class loading.
+
+        This function attempts to find and return a class based on its name.
+        It searches through all loaded modules in sys.modules.
+
+        Args:
+            class_name: The name of the class to find.
+
+        Returns:
+            The requested class.
+
+        Raises:
+            ValueError: If the class is not found in any loaded module.
+        """
+        for module_name, module in sys.modules.items():
+            if hasattr(module, class_name):
+                return getattr(module, class_name)
+        raise ValueError(f"Class '{class_name}' not found in any loaded module")
 
 # File: lion_core/sys_util.py

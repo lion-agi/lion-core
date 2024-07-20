@@ -72,25 +72,6 @@ class ConverterRegistry:
         return cls._converters[key]
 
     @classmethod
-    def get_converter_for_type(cls, obj: Any) -> Converter:
-        """
-        Get the appropriate converter for a given object based on its type.
-
-        Args:
-            obj: The object to find a converter for.
-
-        Returns:
-            The appropriate converter for the object's type.
-
-        Raises:
-            TypeError: If no converter is found for the object's type.
-        """
-        for t in type(obj).__mro__:
-            if t in cls._type_mapping:
-                return cls.get(cls._type_mapping[t])
-        raise TypeError(f"No converter found for type: {type(obj)}")
-
-    @classmethod
     def convert_from(cls, obj: Any, key: str | None = None) -> dict[str, Any]:
         """
         Convert an object to a dictionary using the specified converter.
