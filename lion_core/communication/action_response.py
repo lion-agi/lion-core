@@ -35,8 +35,8 @@ class ActionResponse(RoledMessage):
     def __init__(
         self,
         action_request: ActionRequest,
-        sender: str | None = None,
-        func_outputs: Any = None,
+        sender: str,
+        func_outputs: Any,
         **kwargs: Any,
     ):
         """

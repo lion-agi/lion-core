@@ -20,7 +20,7 @@ from typing import Any, Iterator
 
 from pydantic import Field, ConfigDict
 
-from lion_core.abc.container import Ordering
+from lion_core.abc import Ordering
 from lion_core.libs import to_list
 from lion_core.sys_util import SysUtil
 from lion_core.generic.element import Element

@@ -320,11 +320,11 @@ class Component(Element):
             content_repr = content_repr[:97] + "..."
 
         return (
-            f"{self.__class__.__name__}("
+            f"{self.class_name()}("
             f"ln_id={repr(self.ln_id)}, "
             f"timestamp={self._created_datetime}, "
             f"content={content_repr}, "
-            f"metadata={truncate_dict(self.metadata.serialize())}, "
+            f"metadata={truncate_dict(self.metadata.model_dump())}, "
             f"extra_fields={truncate_dict(self.extra_fields)})"
         )
 

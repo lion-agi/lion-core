@@ -22,7 +22,7 @@ Usage:
 """
 
 from typing import Dict, Type, TypeVar
-from .sys_util import SysUtil
+from .libs._helper import mor
 
 T = TypeVar("T")
 LION_CLASS_REGISTRY: Dict[str, Type[T]] = {}
@@ -33,7 +33,7 @@ def get_class(class_name: str, base_class: type[T]) -> type[T]:
     Retrieve a class by name from the registry or dynamically import it.
 
     This function first checks the LION_CLASS_REGISTRY for the requested class.
-    If not found, it uses SysUtil.mor to dynamically import the class. The
+    If not found, it uses mor to dynamically import the class. The
     function ensures that the retrieved class is a subclass of the specified
     base_class.
 
@@ -59,7 +59,7 @@ def get_class(class_name: str, base_class: type[T]) -> type[T]:
         return LION_CLASS_REGISTRY[class_name]
 
     try:
-        found_class = SysUtil.mor(class_name)
+        found_class = mor(class_name)
         if issubclass(found_class, base_class):
             LION_CLASS_REGISTRY[class_name] = found_class
             return found_class

@@ -5,6 +5,7 @@ from pydantic import Field, field_validator
 from typing import Any, Dict, List
 from pydantic import Field
 from lion_core.sys_util import SysUtil
+from lion_core.exceptions import LionIDError, LionTypeError
 from lion_core.graph.node import Node
 from .mail import BaseCommunication
 

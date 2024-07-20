@@ -34,10 +34,10 @@ class ActionRequest(RoledMessage):
 
     def __init__(
         self,
-        function: str | Callable | None = None,
-        arguments: dict | None = None,
-        sender: str | None = None,
-        recipient: str | None = None,
+        function: str | Callable,
+        arguments: dict,
+        sender: str,
+        recipient: str,
         **kwargs: Any,
     ):
         """

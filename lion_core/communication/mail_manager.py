@@ -12,7 +12,7 @@ from .mail import Mail, Package
 
 class MailManager(BaseManager):
 
-    def __init__(self, sources: list[Any] | None = None):
+    def __init__(self, sources: list[Any]):
 
         super().__init__()
         self.sources: Pile[Any] = pile()

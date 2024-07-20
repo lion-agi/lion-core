@@ -22,14 +22,14 @@ class Instruction(RoledMessage):
 
     def __init__(
         self,
-        instruction: Any = None,
-        context: Any = None,
-        images: list | None = None,
-        sender: Any = None,
-        recipient: Any = None,
-        requested_fields: dict | None = None,
-        additional_context: dict | None = None,
-        image_detail: str | None = None,
+        instruction: Any,
+        context: Any,
+        images: list,
+        sender: Any,
+        recipient: Any,
+        requested_fields: dict,
+        additional_context: dict,
+        image_detail: str,
         **kwargs: Any,
     ):
         """
