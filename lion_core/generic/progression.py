@@ -354,7 +354,7 @@ class Progression(Element, Ordering):
         Raises:
             ValueError: If the item is not found.
         """
-        return self.order.index(SysUtil.get_lion_id(item), start, end) if end else self.order.index(SysUtil.get_lion_id(item), start)
+        return self.order.index(SysUtil.get_id(item), start, end) if end else self.order.index(SysUtil.get_id(item), start)
 
     def remove(self, item: Any) -> None:
         """
@@ -415,7 +415,7 @@ class Progression(Element, Ordering):
         """
         if not self.order or item not in self:
             return 0
-        return self.order.count(SysUtil.get_lion_id(item))
+        return self.order.count(SysUtil.get_id(item))
 
     def __bool__(self) -> bool:
         """
@@ -531,7 +531,7 @@ class Progression(Element, Ordering):
         """
         item_ = validate_order(item)
         for i in reversed(item_):
-            self.order.insert(index, SysUtil.get_lion_id(i))
+            self.order.insert(index, SysUtil.get_id(i))
 
 
 def progression(order: Any = None, name: str | None = None) -> Progression:
@@ -548,4 +548,4 @@ def progression(order: Any = None, name: str | None = None) -> Progression:
     return Progression(order=order, name=name)
 
 
-# File: lion_core/container/progression.py
+# File: lion_core/generic/progression.py
