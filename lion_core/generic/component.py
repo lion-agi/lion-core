@@ -167,7 +167,7 @@ class Component(Element):
         return dict_
 
     @classmethod
-    def from_dict(cls, data: dict, **kwargs) -> T:
+    def from_dict(cls, data: dict, include=DEFAULT_SERIALIZATION_INCLUDE, **kwargs) -> T:
         """kwargs for Pydantic model validate."""
         if "lion_class" in data:
             cls = LION_CLASS_REGISTRY.get(data.pop("lion_class"), cls)
@@ -176,7 +176,7 @@ class Component(Element):
         d_ = {}
 
         for k, v in data.items():
-            if not k in DEFAULT_SERIALIZATION_INCLUDE:
+            if not k in include:
                 extra_fields[k] = v
             else:
                 d_[k] = v

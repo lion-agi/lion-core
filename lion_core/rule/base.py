@@ -18,14 +18,14 @@ from abc import abstractmethod
 from typing import Any, List, Dict
 
 # from pandas import Series
-from lionagi.os.lib.sys_util import get_timestamp
+from lion_core.sys_util import SysUtil
 
-from ..abc import FieldError, Condition, Actionable, Component
+from ..abc import Condition, Observable, Temporal
 
 _rule_classes = {}
 
 
-class Rule(Component, Condition, Actionable):
+class Rule(Condition, Observable, Temporal):
     """
     Combines a condition and an action that can be applied based on it.
 
@@ -67,7 +67,7 @@ class Rule(Component, Condition, Actionable):
             "type": "rule",
             "class": self.class_name,
             "ln_id": self.ln_id,
-            "timestamp": get_timestamp(sep=None)[:-6],
+            "timestamp": SysUtil.time(),
             "field": field,
             "form": form.ln_id,
             "config": kwargs,
