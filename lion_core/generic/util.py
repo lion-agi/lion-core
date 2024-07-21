@@ -25,7 +25,7 @@ from typing import (
     runtime_checkable,
 )
 
-from lion_core.abc import Collective, Ordering
+from lion_core.abc.space import Collective, Ordering
 from lion_core.exceptions import LionIDError, LionValueError, LionTypeError
 from lion_core.sys_util import SysUtil
 from lion_core.generic.element import Element
@@ -46,7 +46,7 @@ def to_list_type(value: Any) -> list[Any]:
     if value is None:
         return []
     if isinstance(value, str):
-        return [value] if SysUtil.is_str_id(value) else []
+        return [value] if SysUtil.is_id(value) else []
     if isinstance(value, (Collective, Mapping)):
         return list(value.values())
     if isinstance(value, Element):
@@ -69,24 +69,16 @@ def validate_order(value: Any) -> list[str]:
     Raises:
         LionIDError: If input contains invalid types or Lion IDs.
     """
-    if value is None:
-        return []
-    if isinstance(value, str) and SysUtil.is_str_id(value):
-        return [value]
-    if isinstance(value, Ordering):
-        return value.order
-    if isinstance(value, Element):
-        return [value.ln_id]
 
     try:
         result = []
         for item in to_list_type(value):
-            if isinstance(item, str) and SysUtil.is_str_id(item):
+            if isinstance(item, str) and SysUtil.is_id(item):
                 result.append(item)
             elif isinstance(item, Element):
                 result.append(item.ln_id)
             else:
-                id_ = SysUtil.get_lion_id(item)
+                id_ = SysUtil.get_id(item)
                 if id_:
                     result.append(id_)
         return result

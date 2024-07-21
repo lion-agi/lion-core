@@ -28,7 +28,7 @@ class Note(BaseModel):
     content: dict[str, Any] = Field(default_factory=dict)
 
     model_config = ConfigDict(
-        extra="allow",
+        # extra="allow",
         arbitrary_types_allowed=True,
         use_enum_values=True,
         populate_by_name=True,
@@ -68,7 +68,7 @@ class Note(BaseModel):
             value: The value to set.
         """
 
-        if not self.get(indices):
+        if not self.get(indices, None):
             self.insert(indices, value)
         else:
             nset(self.content, indices, value)
@@ -86,7 +86,7 @@ class Note(BaseModel):
         """
         return nget(self.content, indices, default)
 
-    def keys(self, flat: bool = False) -> Iterator[str]:
+    def keys(self, flat: bool = False):
         """
         Get the keys of the Note.
 
@@ -97,10 +97,10 @@ class Note(BaseModel):
             An iterator of keys.
         """
         if flat:
-            return get_flattened_keys(self.content)
-        return iter(self.content.keys())
+            return flatten(self.content).keys()
+        return self.content.keys()
 
-    def values(self, flat: bool = False) -> Iterator[Any]:
+    def values(self, flat: bool = False):
         """
         Get the values of the Note.
 
@@ -111,10 +111,10 @@ class Note(BaseModel):
             An iterator of values.
         """
         if flat:
-            return (v for v in flatten(self.content).values())
-        return iter(self.content.values())
+            return flatten(self.content).values()
+        return self.content.values()
 
-    def items(self, flat: bool = False) -> Iterator[tuple[str, Any]]:
+    def items(self, flat: bool = False):
         """
         Get the items of the Note.
 
@@ -125,5 +125,5 @@ class Note(BaseModel):
             An iterator of (key, value) pairs.
         """
         if flat:
-            return ((k, v) for k, v in flatten(self.content).items())
-        return iter(self.content.items())
+            return flatten(self.content).items()
+        return self.content.items()

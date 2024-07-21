@@ -18,9 +18,9 @@ from __future__ import annotations
 import contextlib
 from typing import Any, Iterator
 
-from pydantic import Field, ConfigDict
+from pydantic import Field, field_validator
 
-from lion_core.abc import Ordering
+from lion_core.abc.space import Ordering
 from lion_core.libs import to_list
 from lion_core.sys_util import SysUtil
 from lion_core.generic.element import Element
@@ -58,17 +58,16 @@ class Progression(Element, Ordering):
         title="Name",
         description="The name of the progression.",
     )
+
     order: list[str] = Field(
         default_factory=list,
         title="Order",
         description="The order of the progression.",
     )
-    model_config = ConfigDict(
-        extra="forbid",
-    )
 
-    def __init__(self, order=None, name=None):
-        super().__init__(order=validate_order(order), name=name)
+    @field_validator("order", mode="before")
+    def _validate_order(cls, value):
+        return validate_order(value)
 
     def __contains__(self, item: Any) -> bool:
         """
@@ -83,18 +82,21 @@ class Progression(Element, Ordering):
         if item is None or not self.order:
             return False
 
-        if isinstance(item, str):
-            if SysUtil.is_str_id(item):
-                return item in self.order
-
-        if isinstance(item, Ordering) and item.order <= self.order:
-            return True
-
-        if isinstance(item, Element):
-            return item.ln_id in self.order
-
         item = to_list_type(item) if not isinstance(item, list) else item
-        return all(i in self for i in item)
+
+        check = False
+        for i in item:
+            check = False
+            if isinstance(i, str):
+                check = i in self.order
+
+            elif isinstance(i, Element):
+                check = i.ln_id in self.order
+
+            if not check:
+                return False
+
+        return check
 
     def __list__(self) -> list[str]:
         """
@@ -127,23 +129,19 @@ class Progression(Element, Ordering):
         Raises:
             ItemNotFoundError: If the requested index or slice is out of range.
         """
-        try:
-            if isinstance(key, slice):
-                a = self.order[key]
-                if len(a) < abs(key.stop - key.start):
-                    raise ItemNotFoundError(
-                        f"Requested more items than available: {key}"
-                    )
-                return Progression(order=a)
+        if not isinstance(key, int | slice):
+            raise TypeError(f"indices must be integers or slices, not {key.__class__.__name__}")
 
+        try:
             a = self.order[key]
-            if isinstance(a, list) and len(a) > 1:
+            if not a:
+                raise ItemNotFoundError(f"index {key} item not found")
+            if isinstance(key, slice):
                 return Progression(order=a)
-            elif isinstance(a, list) and len(a) == 1:
-                return a[0]
-            return a
+            else:
+                return a
         except IndexError:
-            raise ItemNotFoundError(f"index {key}")
+            raise ItemNotFoundError(f"index {key} item not found")
 
     def __setitem__(self, key: int | slice, value: Any) -> None:
         """
@@ -203,41 +201,41 @@ class Progression(Element, Ordering):
         """Clear the progression."""
         self.order.clear()
 
-    def copy(self) -> Progression:
-        """
-        Create a deep copy of the progression.
+    # def copy(self) -> Progression:
+    #     """
+    #     Create a deep copy of the progression.
+    #
+    #     Returns:
+    #         Progression: A new Progression instance with the same items.
+    #     """
+    #     return self.model_copy(deep=True)
 
-        Returns:
-            Progression: A new Progression instance with the same items.
-        """
-        return self.model_copy(deep=True)
+    # def keys(self):
+    #     """
+    #     Get the indices of the progression.
+    #
+    #     Returns:
+    #         Iterator[int]: An iterator over the indices of the progression.
+    #     """
+    #     return range(len(self))
 
-    def keys(self) -> Iterator[int]:
-        """
-        Get the indices of the progression.
+    # def values(self) -> Iterator[str]:
+    #     """
+    #     Get the values of the progression.
+    #
+    #     Returns:
+    #         Iterator[str]: An iterator over the Lion IDs in the progression.
+    #     """
+    #     yield from self.order
 
-        Returns:
-            Iterator[int]: An iterator over the indices of the progression.
-        """
-        yield from range(len(self))
-
-    def values(self) -> Iterator[str]:
-        """
-        Get the values of the progression.
-
-        Returns:
-            Iterator[str]: An iterator over the Lion IDs in the progression.
-        """
-        yield from self.order
-
-    def items(self) -> Iterator[tuple[int, str]]:
-        """
-        Get the items of the progression as (index, value) pairs.
-
-        Returns:
-            Iterator[tuple[int, str]]: An iterator over (index, Lion ID) pairs.
-        """
-        yield from enumerate(self.order)
+    # def items(self) -> Iterator[tuple[int, str]]:
+    #     """
+    #     Get the items of the progression as (index, value) pairs.
+    #
+    #     Returns:
+    #         Iterator[tuple[int, str]]: An iterator over (index, Lion ID) pairs.
+    #     """
+    #     yield from enumerate(self.order)
 
     def append(self, item: Any) -> None:
         """
@@ -246,8 +244,8 @@ class Progression(Element, Ordering):
         Args:
             item: The item to append.
         """
-        id_ = SysUtil.get_lion_id(item)
-        self.order.extend(id_)
+        item_ = validate_order(item)
+        self.order.extend(item_)
 
     def pop(self, index: int | None = None) -> str:
         """
@@ -267,7 +265,7 @@ class Progression(Element, Ordering):
                 return self.order.pop()
             return self.order.pop(index)
         except IndexError as e:
-            raise ItemNotFoundError("None") from e
+            raise ItemNotFoundError("pop index out of range") from e
 
     def include(self, item: Any) -> bool:
         """
@@ -281,9 +279,10 @@ class Progression(Element, Ordering):
         Returns:
             bool: True if the item(s) were included, False if already present.
         """
-        if item not in self:
-            self.extend(item)
-        return item in self
+        item_ = validate_order(item)
+        for i in item_:
+            if i not in self:
+                self.extend(item)
 
     def exclude(self, item: int | Any) -> bool:
         """
@@ -304,14 +303,9 @@ class Progression(Element, Ordering):
             for _ in range(item):
                 self.popleft()
             return True
-        if isinstance(item, Progression):
-            for i in item:
-                while i in self:
-                    self.remove(i)
-        for i in (a := validate_order(item)):
+        for i in validate_order(item):
             while i in self:
                 self.remove(i)
-        return a not in self
 
     def is_empty(self) -> bool:
         """
@@ -360,7 +354,7 @@ class Progression(Element, Ordering):
         Raises:
             ValueError: If the item is not found.
         """
-        return self.order.index(SysUtil.get_lion_id(item), start, end)
+        return self.order.index(SysUtil.get_id(item), start, end) if end else self.order.index(SysUtil.get_id(item), start)
 
     def remove(self, item: Any) -> None:
         """
@@ -374,7 +368,7 @@ class Progression(Element, Ordering):
         """
         if item in self:
             item = validate_order(item)
-            l_: list = SysUtil.copy(self.order)
+            l_ = list(self.order)
 
             with contextlib.suppress(ValueError):
                 for i in item:
@@ -406,9 +400,6 @@ class Progression(Element, Ordering):
         Args:
             item: The item(s) to add to the progression.
         """
-        if isinstance(item, Progression):
-            self.order.extend(item.order)
-            return
         order = validate_order(item)
         self.order.extend(order)
 
@@ -424,7 +415,7 @@ class Progression(Element, Ordering):
         """
         if not self.order or item not in self:
             return 0
-        return self.order.count(SysUtil.get_lion_id(item))
+        return self.order.count(SysUtil.get_id(item))
 
     def __bool__(self) -> bool:
         """
@@ -445,9 +436,10 @@ class Progression(Element, Ordering):
         Returns:
             Progression: A new Progression with the added item(s).
         """
-        _copy = self.copy()
-        _copy.include(other)
-        return _copy
+        other = validate_order(other)
+        new_order = list(self)
+        new_order.extend(other)
+        return Progression(order=new_order)
 
     def __radd__(self, other: Any) -> Progression:
         """
@@ -459,14 +451,8 @@ class Progression(Element, Ordering):
         Returns:
             Progression: A new Progression with the combined items.
         """
-        if not isinstance(other, Progression):
-            _copy = self.copy()
-            l_: list = SysUtil.copy(_copy.order, deep=True)
-            l_.insert(0, SysUtil.get_lion_id(other))
-            _copy.order = l_
-            return _copy
 
-        return other + self
+        return self + other
 
     def __iadd__(self, other: Any) -> Progression:
         """
@@ -478,7 +464,7 @@ class Progression(Element, Ordering):
         Returns:
             Progression: The modified progression.
         """
-        self.order.append(SysUtil.get_lion_id(other))
+        self.extend(other)
         return self
 
     def __isub__(self, other: Any) -> Progression:
@@ -504,9 +490,11 @@ class Progression(Element, Ordering):
         Returns:
             Progression: A new Progression without the specified item(s).
         """
-        _copy = self.copy()
-        _copy.remove(other)
-        return _copy
+        other = validate_order(other)
+        new_order = list(self)
+        for i in other:
+            new_order.remove(i)
+        return Progression(order=new_order)
 
     def __repr__(self) -> str:
         """
@@ -541,10 +529,12 @@ class Progression(Element, Ordering):
             index: The index at which to insert the item.
             item: The item to insert.
         """
-        self.order.insert(index, SysUtil.get_lion_id(item))
+        item_ = validate_order(item)
+        for i in reversed(item_):
+            self.order.insert(index, SysUtil.get_id(i))
 
 
-def progression(order: list[str] | None = None, name: str | None = None) -> Progression:
+def progression(order: Any = None, name: str | None = None) -> Progression:
     """
     Create a new Progression instance.
 
@@ -558,4 +548,4 @@ def progression(order: list[str] | None = None, name: str | None = None) -> Prog
     return Progression(order=order, name=name)
 
 
-# File: lion_core/container/progression.py
+# File: lion_core/generic/progression.py

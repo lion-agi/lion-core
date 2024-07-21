@@ -11,16 +11,14 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, AliasChoices, model_serializer
+from pydantic import BaseModel, ConfigDict, Field, AliasChoices, field_validator, field_serializer
 
 from lion_core.abc.concept import AbstractElement
 from lion_core.abc.characteristic import Temporal, Observable
-from lion_core.setting import TIME_CONFIG, SERILIATION_CONFIG
+from lion_core.setting import TIME_CONFIG
 from lion_core.sys_util import SysUtil
 from lion_core.class_registry import LION_CLASS_REGISTRY
-
-# Default fields to include in serialization
-DEFAULT_SERIALIZATION_INCLUDE: set[str] = {"ln_id", "timestamp"}
+from lion_core.exceptions import LionIDError
 
 T = TypeVar("T", bound="Element")
 
@@ -67,44 +65,31 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         """Get the creation datetime of the Element."""
         return datetime.fromtimestamp(self.timestamp, tz=TIME_CONFIG["tz"])
 
-    @model_serializer
-    def serialize(self, **kwargs: Any) -> dict[str, Any]:
-        """
-        Serialize the Element to a dictionary.
+    @field_validator("ln_id", mode="before")
+    def _validate_id(cls, value):
+        try:
+            return SysUtil.get_lion_id(value)
+        except:
+            raise LionIDError(f"Invalid lion id: {value}")
 
-        Args:
-            **kwargs: Additional keyword arguments for serialization.
+    @field_validator("timestamp", mode="before")
+    def _validate_timestamp(cls, value):
+        if isinstance(value, str):
+            try:
+                value = datetime.fromisoformat(value)
+            except ValueError:
+                raise ValueError(f"Invalid datetime string format: {value}")
+        if isinstance(value, datetime):
+            return value.timestamp()
+        elif isinstance(value, (float | int)):
+            return value
+        else:
+            raise ValueError(f"Unsupported type for time_attr: {type(value)}")
 
-        Returns:
-            A dictionary representation of the Element.
-        """
-        
-        
-        
-        kwargs["include"] = kwargs.get("include", DEFAULT_SERIALIZATION_INCLUDE)
-        for k, v in SERILIATION_CONFIG.items():
-            kwargs[k] = kwargs.get(k, v)
-            
-        # Serialize the Element
+    def to_dict(self, **kwargs):
         dict_ = self.model_dump(**kwargs)
         dict_["lion_class"] = self.class_name()
         return dict_
-
-    @classmethod
-    def deserialize(cls, data: dict[str, Any]) -> Element:
-        """
-        Deserialize a dictionary into an Element instance.
-
-        Args:
-            data: A dictionary containing Element data.
-
-        Returns:
-            An instance of the Element class or its subclass.
-        """
-        # Check if a specific subclass is specified
-        if "lion_class" in data:
-            cls = LION_CLASS_REGISTRY[data.pop("lion_class")]
-        return cls.model_validate(data)
 
     def __str__(self) -> str:
         """Return a string representation of the Element."""
