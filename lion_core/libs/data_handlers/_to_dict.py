@@ -114,8 +114,8 @@ def _(
             if parser is None:
                 from lion_core.libs.parsers._xml_parser import xml_to_dict
 
-                parser = xml_to_dict
-            return parser(input_)
+                return xml_to_dict(input_)
+            return parser(input_, **kwargs)
         except Exception as e:
             raise ValueError(f"Failed to parse XML string") from e
 

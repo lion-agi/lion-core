@@ -23,5 +23,6 @@ class ImmutableRecord(BaseRecord):
     Immutable record class. Inherits from BaseRecord but prevents
     modifications.
     """
-    
+
+
 # File: lion_core/abc/record.py

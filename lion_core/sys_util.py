@@ -12,7 +12,6 @@ import copy
 import random
 from hashlib import sha256
 from datetime import datetime, timezone
-from functools import lru_cache
 
 from .setting import TIME_CONFIG, LION_ID_CONFIG
 from .exceptions import LionIDError
@@ -130,7 +129,7 @@ class SysUtil:
         _id = sha256(_t + _r).hexdigest()[:n]
 
         if random_hyphen:
-            _id = SysUtil._insert_random_hyphens(
+            _id = _insert_random_hyphens(
                 s=_id,
                 num_hyphens=num_hyphens,
                 start_index=hyphen_start_index,
@@ -155,7 +154,7 @@ class SysUtil:
 
         Returns:
             The Lion ID of the item.
-            
+
         Raises:
             LionIDError: If the item does not contain a valid Lion ID.
         """
@@ -195,27 +194,27 @@ class SysUtil:
         except LionIDError:
             return False
 
-    @staticmethod
-    def _insert_random_hyphens(
-        s: str,
-        num_hyphens: int = 1,
-        start_index: int | None = None,
-        end_index: int | None = None,
-    ) -> str:
-        """Insert random hyphens into a string."""
-        if len(s) < 2:
-            return s
 
-        prefix = s[:start_index] if start_index else ""
-        postfix = s[end_index:] if end_index else ""
-        modifiable_part = s[start_index:end_index] if start_index else s
+def _insert_random_hyphens(
+    s: str,
+    num_hyphens: int = 1,
+    start_index: int | None = None,
+    end_index: int | None = None,
+) -> str:
+    """Insert random hyphens into a string."""
+    if len(s) < 2:
+        return s
 
-        positions = random.sample(range(len(modifiable_part)), num_hyphens)
-        positions.sort()
+    prefix = s[:start_index] if start_index else ""
+    postfix = s[end_index:] if end_index else ""
+    modifiable_part = s[start_index:end_index] if start_index else s
 
-        for pos in reversed(positions):
-            modifiable_part = modifiable_part[:pos] + "-" + modifiable_part[pos:]
+    positions = random.sample(range(len(modifiable_part)), num_hyphens)
+    positions.sort()
 
-        return prefix + modifiable_part + postfix
+    for pos in reversed(positions):
+        modifiable_part = modifiable_part[:pos] + "-" + modifiable_part[pos:]
+
+    return prefix + modifiable_part + postfix
 
 # File: lion_core/sys_util.py
