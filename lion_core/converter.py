@@ -1,7 +1,7 @@
 """Converter Registry for managing data conversion in the Lion framework."""
 
 from typing import Any, Protocol, runtime_checkable, TypeVar
-from lion_core.generic.converter_registry import DefaultConverter
+from lion_core.libs import to_dict, to_str, fuzzy_parse_json
 
 T = TypeVar("T")
 
@@ -11,12 +11,37 @@ class Converter(Protocol):
     """Protocol for converter objects."""
 
     @staticmethod
-    def from_obj(target_class: type, obj: Any):
+    def from_obj(target_class: type, obj: Any) -> dict:
         """Convert an object to a lion instance."""
 
     @staticmethod
     def to_obj(**kwargs) -> Any:
         """Convert a lion instance to an object."""
+
+
+class DictConverter(Converter):
+
+    @staticmethod
+    def from_obj(cls, obj: dict, **kwargs) -> dict:
+        return obj
+
+    @staticmethod
+    def to_obj(self, **kwargs):
+        return self.to_dict(**kwargs)
+
+
+class JsonConverter(Converter):
+
+    @staticmethod
+    def from_obj(cls, obj: str, **kwargs):
+        try:
+            return to_dict(obj, str_type="json", parser=fuzzy_parse_json)
+        except Exception as e:
+            raise ValueError("Failed to convert from JSON.") from e
+
+    @staticmethod
+    def to_obj(self, **kwargs):
+        return to_str(self.to_dict(**kwargs))
 
 
 class ConverterRegistry:
@@ -59,15 +84,15 @@ class ConverterRegistry:
         Raises:
             KeyError: If no converter is registered for the key.
         """
-        if key in cls._converters:
+        try:
             return cls._converters[key]
-        elif converter := getattr(DefaultConverter(), key+"_converter", None):
-            cls.register(key, converter)
-            return cls._converters[key]
-        raise KeyError(f"No converter found for {key}")
+        except KeyError:
+            raise KeyError(f"No converter found for {key}. Check if it is registered.")
 
     @classmethod
-    def convert_from(cls, target_class, obj: Any, key: str | None = None) -> dict[str, Any]:
+    def convert_from(
+        cls, target_class, obj: Any, key: str | None = None
+    ) -> dict[str, Any]:
         """
         Convert an object to a dictionary using the specified converter.
 
@@ -102,10 +127,13 @@ class ConverterRegistry:
         Raises:
             KeyError: If the specified key is not found.
         """
-        if isinstance(key, type):
+        if not isinstance(key, str):
             key = key.__name__
         converter = cls.get(key)
         return converter.to_obj(obj, **kwargs)
 
+
+ConverterRegistry.register("dict", DictConverter())
+ConverterRegistry.register("json", JsonConverter())
 
 # File: lionagi/core/converter.py
