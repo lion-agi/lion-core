@@ -1,11 +1,7 @@
 """
-Abstract observer classes for the Lion framework.
-
-This module defines observer-based structures that extend the concept of
-AbstractObserver, incorporating principles from complex systems theory,
-quantum observation, and distributed computing to model entities capable
-of monitoring, processing, and acting upon the state of a system within
-the LION framework.
+Abstract observer classes for the Lion framework. Extends AbstractObserver
+with principles from complex systems theory, quantum observation, and
+distributed computing.
 """
 
 from abc import abstractmethod
@@ -14,76 +10,58 @@ from .concept import AbstractObserver
 
 class BaseManager(AbstractObserver):
     """
-    Abstract base class for managers in the Lion framework.
-
-    Managers in LION represent high-level observers that coordinate and
-    oversee the activities of other observers and system components. They
-    embody the concept of emergent control in complex systems, where global
+    High-level observers coordinating other observers and system
+    components. Embodies emergent control in complex systems, where global
     behaviors arise from local interactions and observations.
     """
-
     pass
 
 
 class BaseExecutor(AbstractObserver):
     """
-    Abstract base class for executors in the Lion framework.
-
-    Executors in LION represent active observers that can perform tasks
-    based on their observations. They draw inspiration from the concept
-    of measurement-induced state changes in quantum mechanics, where the
-    act of observation can directly influence the system's state.
+    Active observers performing tasks based on observations. Inspired by
+    measurement-induced state changes in quantum mechanics, where observation
+    directly influences system state.
     """
 
-    # move onto next step
     @abstractmethod
     async def forward(self, *args, **kwargs):
         """
-        Execute the observer's task asynchronously.
-
-        This method represents the primary action of the executor, potentially
-        altering the system's state based on observations. The asynchronous
-        nature allows for modeling of concurrent operations and parallel
-        processing in complex, distributed systems.
+        Asynchronously executes the observer's task, potentially altering
+        system state. Models concurrent operations and parallel processing
+        in complex, distributed systems.
         """
         pass
 
 
 class BaseProcessor(AbstractObserver):
     """
-    Abstract base class for processors in the Lion framework.
-
-    Processors in LION represent specialized observers focused on
-    information transformation and analysis. They embody the concept of
-    information processing in complex systems, drawing parallels to
-    quantum information theory and cognitive processing models.
+    Specialized observers for information transformation and analysis.
+    Embodies information processing in complex systems, paralleling quantum
+    information theory and cognitive processing models.
     """
 
-    # finish a one step task
     @abstractmethod
     async def process(self, *args, **kwargs):
         """
-        Process information asynchronously based on observations.
-
-        This method encapsulates the core functionality of information
-        processing, potentially involving complex transformations,
-        filtering, or aggregation of observed data. The asynchronous
-        design supports modeling of continuous, real-time processing
-        in dynamic systems.
+        Asynchronously processes information based on observations.
+        Encapsulates core information processing functionality, supporting
+        continuous, real-time processing in dynamic systems.
         """
         pass
 
 
 class BaseEngine(AbstractObserver):
-
     @abstractmethod
-    async def run(self, *args, **kwargs): ...
+    async def run(self, *args, **kwargs):
+        """Asynchronously runs the engine's core functionality."""
+        pass
 
 
-class BaseiModel(AbstractObserver): ...
-
-
-# subclass must have access to intelligent model
+# Subclass must have access to intelligent model
+class BaseiModel(AbstractObserver):
+    """Base class for intelligent models in the framework."""
+    pass
 
 
 # File: lion_core/abc/observer.py

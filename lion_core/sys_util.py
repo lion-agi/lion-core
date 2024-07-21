@@ -12,6 +12,7 @@ import copy
 import random
 from hashlib import sha256
 from datetime import datetime, timezone
+from functools import lru_cache
 
 from .setting import TIME_CONFIG, LION_ID_CONFIG
 from .exceptions import LionIDError

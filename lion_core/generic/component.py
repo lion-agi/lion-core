@@ -253,7 +253,7 @@ class Component(Element):
         extra_fields = dict_.pop("extra_fields", {})
 
         return (
-            f"{self.__class__.__name__}("
+            f"{self.class_name()}("
             f"ln_id={repr(self.ln_id)}, "
             f"timestamp={self._created_datetime}, "
             f"content={content_repr}, "

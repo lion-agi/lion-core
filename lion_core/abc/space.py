@@ -1,16 +1,17 @@
+"""Abstract container classes for the Lion framework."""
+
+from abc import abstractmethod
 from .concept import AbstractSpace, AbstractElement
-from .characteristic import Observable, Temporal
+from .characteristic import Traversal
 
 
 class Container(AbstractSpace, AbstractElement):
     """
-    Abstract representation of a container or storage space.
-
-    This class defines the concept of a container that can hold items.
-    Subclasses should implement the __contains__ method to define
-    membership criteria for the container.
+    Abstract container or storage space. Subclasses should implement
+    __contains__ to define membership criteria.
     """
 
+    @abstractmethod
     def __contains__(self, item) -> bool:
         """
         Check if an item is in the container.
@@ -21,19 +22,27 @@ class Container(AbstractSpace, AbstractElement):
         Returns:
             bool: True if the item is in the container, False otherwise.
         """
-        raise NotImplementedError
 
 
-class Ordering(Container): ...
+class Ordering(Container):
+    """Container with a defined order. Subclass must have order attribute."""
 
 
-# subclass must have order attribute
+class Collective(Container):
+    """Container representing a collection of items."""
+
+    @abstractmethod
+    def items(self):
+        """
+        Get the items in the collective.
+
+        Returns:
+            Iterable: The items in the collective.
+        """
 
 
-class Collective(Container): ...
-
-
-# subclass must have items method
-
-
-class Structure(Container): ...
+class Structure(Container, Traversal):
+    """
+    Container with traversable structure, combining Container and Traversal
+    characteristics.
+    """

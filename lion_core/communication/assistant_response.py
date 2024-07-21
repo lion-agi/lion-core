@@ -13,9 +13,9 @@ class AssistantResponse(RoledMessage):
 
     def __init__(
         self,
-        assistant_response: dict = None,
-        sender: str | None = None,
-        recipient: str | None = None,
+        assistant_response: dict,
+        sender: str,
+        recipient: str,
         **kwargs: Any,
     ):
         """
