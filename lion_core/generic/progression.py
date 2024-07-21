@@ -20,7 +20,7 @@ from typing import Any, Iterator
 
 from pydantic import Field, field_validator
 
-from lion_core.abc.container import Ordering
+from lion_core.abc.space import Ordering
 from lion_core.libs import to_list
 from lion_core.sys_util import SysUtil
 from lion_core.generic.element import Element
@@ -135,13 +135,13 @@ class Progression(Element, Ordering):
         try:
             a = self.order[key]
             if not a:
-                raise ItemNotFoundError(f"index {key}")
+                raise ItemNotFoundError(f"index {key} item not found")
             if isinstance(key, slice):
                 return Progression(order=a)
             else:
                 return a
         except IndexError:
-            raise ItemNotFoundError(f"index {key}")
+            raise ItemNotFoundError(f"index {key} item not found")
 
     def __setitem__(self, key: int | slice, value: Any) -> None:
         """
