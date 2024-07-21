@@ -9,11 +9,14 @@ class LionUndefined:
     def __bool__(self):
         return False
 
+    def __repr__(self):
+        return "LN_UNDEFINED"
+
     __slots__ = ["undefined"]
 
 
 LN_UNDEFINED = LionUndefined()
-UNDEFINED = [None, LN_UNDEFINED]
+# UNDEFINED = [None, LN_UNDEFINED]
 
 
 LION_ID_CONFIG = {

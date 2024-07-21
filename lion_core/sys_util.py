@@ -9,6 +9,7 @@ from collections.abc import Sequence
 from typing import Any, Literal, TypeVar
 import os
 import copy
+import random
 from hashlib import sha256
 from datetime import datetime, timezone
 
@@ -53,14 +54,14 @@ class SysUtil:
         """
         now = datetime.now(tz=tz)
 
+        if type_ == "iso" or iso:
+            return now.isoformat(sep=sep, timespec=timespec)
+
         if type_ == "timestamp":
             return now.timestamp()
 
         if type_ == "datetime":
             return now
-
-        if type_ == "iso" or iso:
-            return now.isoformat(sep=sep, timespec=timespec)
 
         if type_ == "custom":
             if not custom_format:
@@ -123,7 +124,7 @@ class SysUtil:
         Returns:
             A unique identifier string.
         """
-        _t = SysUtil.time(type_="datetime", iso=True).encode()
+        _t = SysUtil.time(iso=True).encode()
         _r = os.urandom(16)
         _id = sha256(_t + _r).hexdigest()[:n]
 
@@ -153,7 +154,7 @@ class SysUtil:
 
         Returns:
             The Lion ID of the item.
-
+            
         Raises:
             LionIDError: If the item does not contain a valid Lion ID.
         """
@@ -193,5 +194,27 @@ class SysUtil:
         except LionIDError:
             return False
 
+    @staticmethod
+    def _insert_random_hyphens(
+        s: str,
+        num_hyphens: int = 1,
+        start_index: int | None = None,
+        end_index: int | None = None,
+    ) -> str:
+        """Insert random hyphens into a string."""
+        if len(s) < 2:
+            return s
+
+        prefix = s[:start_index] if start_index else ""
+        postfix = s[end_index:] if end_index else ""
+        modifiable_part = s[start_index:end_index] if start_index else s
+
+        positions = random.sample(range(len(modifiable_part)), num_hyphens)
+        positions.sort()
+
+        for pos in reversed(positions):
+            modifiable_part = modifiable_part[:pos] + "-" + modifiable_part[pos:]
+
+        return prefix + modifiable_part + postfix
 
 # File: lion_core/sys_util.py

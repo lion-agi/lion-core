@@ -2,18 +2,17 @@ from __future__ import annotations
 from typing import Any, TypeVar, ClassVar, Type
 
 from pydantic import (
-    Field, 
-    model_serializer, 
+    Field,
     field_serializer, 
     ConfigDict, 
     field_validator
 )
 from pydantic.fields import FieldInfo
+from pydantic_core import PydanticUndefined
 
 from lion_core.sys_util import SysUtil
 from lion_core.setting import LN_UNDEFINED
 from lion_core.exceptions import LionValueError
-from lion_core.converter import ConverterRegistry, Converter
 from .element import Element
 from .note import Note
 
@@ -33,11 +32,6 @@ DEFAULT_SERIALIZATION_INCLUDE: set[str] = {
 class Component(Element):
     """Extended base class for components in the Lion framework."""
 
-    embedding: list[float] = Field(default=[])
-
-    _converter_registry: ClassVar[Type[ConverterRegistry]] = ConverterRegistry
-
-
     metadata: Note = Field(
         default_factory=Note,
         description="Additional metadata for the component",
@@ -48,82 +42,26 @@ class Component(Element):
         description="The main content of the Component",
     )
 
-    model_config = ConfigDict(
-        extra="allow",  # Allow extra fields
-    )
+    embedding: list[float] = Field(default_factory=list)
 
-    _converter_registry: ClassVar[Type[ConverterRegistry]] | ClassVar[Converter] = (
-        ConverterRegistry
-    )
+    extra_fields: dict[str, Any] = Field(default_factory=dict)
 
-    @model_serializer
-    def serialize(self, **kwargs: Any) -> dict[str, Any]:
-        """
-        Serialize the BaseComponent to a dictionary.
+    # model_config = ConfigDict(
+    #     extra="allow",  # Allow extra fields
+    # )
 
-        This method extends the serialization process of the Element class
-        to include additional fields specific to BaseComponent.
-
-        Args:
-            **kwargs: Additional keyword arguments for serialization.
-
-        Returns:
-            A dictionary representation of the BaseComponent.
-        """
-        kwargs["include"] = kwargs.get("include", DEFAULT_SERIALIZATION_INCLUDE)
-        return super().serialize(**kwargs)
-
-
-    @classmethod
-    def get_converter_registry(cls) -> ConverterRegistry:
-        """
-        Get the converter registry for the class.
-
-        Returns:
-            The ConverterRegistry instance for the class.
-        """
-        if isinstance(cls._converter_registry, type):
-            cls._converter_registry = cls._converter_registry()
-        return cls._converter_registry
-
-    def convert_to(self, key: str = "dict", /, **kwargs: Any) -> Any:
-        """
-        Convert the component to a specified type using the ConverterRegistry.
-
-        Args:
-            key: The key of the converter to use.
-            **kwargs: Additional keyword arguments for conversion.
-
-        Returns:
-            The converted component in the specified type.
-        """
-        return self.get_converter_registry().convert_to(self, key, **kwargs)
-
-    @classmethod
-    def convert_from(cls, obj: Any, key: str = "dict", /, *, unflat: bool = False) -> T:
-        """
-        Convert data to create a new component instance using the ConverterRegistry.
-
-        Args:
-            obj: The object to convert from.
-            key: The key of the converter to use.
-            unflat: If True, unflatten the data before deserialization.
-
-        Returns:
-            A new instance of the BaseComponent class or its subclass.
-        """
-        data = cls.get_converter_registry().convert_from(obj, key)
-        return cls.deserialize(data, unflat=unflat)
-
-    @classmethod
-    def register_converter(cls, key: str, converter: Type[Converter]) -> None:
-        """Register a new converter."""
-        cls.get_converter_registry().register(key, converter)
+    # _converter_registry: ClassVar[Type[ConverterRegistry]] | ClassVar[Converter] = (
+    #     ConverterRegistry
+    # )
 
     @field_serializer("extra_fields")
     def _serialize_extra_fields(self, value: dict[str, FieldInfo]) -> dict[str, Any]:
         """Custom serializer for extra fields."""
-        return {k: v.model_dump() for k, v in value.items()}
+        output_dict = {}
+        for k in value.keys():
+            k_value = self.__dict__.get(k)
+            output_dict[k] = k_value
+        return output_dict
 
     @field_validator("extra_fields")
     def _validate_extra_fields(cls, value: Any) -> dict[str, FieldInfo]:
@@ -131,11 +69,6 @@ class Component(Element):
         if not isinstance(value, dict):
             raise LionValueError("Extra fields must be a dictionary")
         return {k: Field(**v) if isinstance(v, dict) else v for k, v in value.items()}
-
-    @model_serializer
-    def serialize(self, **kwargs) -> dict[str, Any]:
-        kwargs["include"] = kwargs.get("include", DEFAULT_SERIALIZATION_INCLUDE)
-        return super().serialize(**kwargs)
 
     @property
     def all_fields(self) -> dict[str, FieldInfo]:
@@ -145,8 +78,8 @@ class Component(Element):
         self,
         name: str,
         value: Any = LN_UNDEFINED,
-        annotation: Any = None,
-        field_obj: FieldInfo | None = None,
+        annotation: Any = LN_UNDEFINED,
+        field_obj: FieldInfo = LN_UNDEFINED,
         **kwargs,
     ) -> None:
         """Add a new field to the component's extra fields.
@@ -184,52 +117,43 @@ class Component(Element):
         if "default" in kwargs and "default_factory" in kwargs:
             raise ValueError("Cannot provide both 'default' and 'default_factory'")
 
-        # if we are not provided with a field object,
+        # if passing kwargs
         if field_obj is LN_UNDEFINED:
-
-            # we first check we check whether the field already exist
+            # check if field exists
             field_obj = self.all_fields.get(name, LN_UNDEFINED)
 
-        # if not, we create a new field object
-        if field_obj is LN_UNDEFINED:
-            field_obj = Field(**kwargs)
+            if field_obj: # existing field
+                for k, v in kwargs.items():
+                    setattr(field_obj, k, v)
+            else:
+                field_obj = Field(**kwargs)
 
-            # and add it to the extra fields
-            self.extra_fields[name] = field_obj
+        else: # passing field_obj directly
+            if not isinstance(field_obj, FieldInfo):
+                raise ValueError("Invalid field_obj. It should be a pydantic FieldInfo object.")
 
-        # if already exist, we update the field object with the provided kwargs
-        else:
-            for k, v in kwargs.items():
-                setattr(field_obj, k, v)
-
-        # if annotation is provided, we update the field object annotation directly
-        if not annotation is LN_UNDEFINED:
+        if annotation is not LN_UNDEFINED:
             field_obj.annotation = annotation
-        else:
+        if not field_obj.annotation:
+            field_obj.annotation = Any
 
-            # else we assign Any if no existing annotation
-            if not field_obj.annotation:
-                field_obj.annotation = Any
+        self.extra_fields[name] = field_obj
 
-        # now we can check value
-        if not value is LN_UNDEFINED:
+        if value is not LN_UNDEFINED:
             value = SysUtil.copy(value)
 
         else:
-            # if there is already existing value, we return
             if getattr(self, name, LN_UNDEFINED) is not LN_UNDEFINED:
-                return
+                value = getattr(self, name)
 
-            # if not, we check whether there is a default value or default factory
-            if hasattr(field_obj, "default"):
+            elif getattr(field_obj, "default") is not PydanticUndefined:
                 value = SysUtil.copy(field_obj.default)
 
-            elif hasattr(field_obj, "default_factory"):
+            elif getattr(field_obj, "default_factory"):
                 value = field_obj.default_factory()
 
-            # if not, we set it to None
             else:
-                value = None
+                value = LN_UNDEFINED
 
         setattr(self, name, value)
         self._add_last_update(name)
@@ -242,6 +166,12 @@ class Component(Element):
         """
         current_time = SysUtil.time()
         self.metadata.set(["last_updated", name], current_time)
+
+    def to_dict(self, **kwargs):
+        dict_ = self.model_dump(**kwargs)
+        extra_fields = dict_.pop("extra_fields", {})
+        dict_ = {**dict_, **extra_fields, "lion_class": self.class_name()}
+        return dict_
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Set an attribute and update the last update timestamp.
@@ -276,7 +206,7 @@ class Component(Element):
             AttributeError: If the attribute does not exist.
         """
         if name in self.extra_fields:
-            return self.extra_fields[name].default
+            return self.extra_fields[name].default if self.extra_fields[name].default is not PydanticUndefined else LN_UNDEFINED
         raise AttributeError(
             f"'{self.__class__.__name__}' object has no attribute '{name}'"
         )
@@ -319,14 +249,63 @@ class Component(Element):
         if len(content_repr) > 100:
             content_repr = content_repr[:97] + "..."
 
+        dict_ = self.model_dump()
+        extra_fields = dict_.pop("extra_fields", {})
+
         return (
             f"{self.__class__.__name__}("
             f"ln_id={repr(self.ln_id)}, "
             f"timestamp={self._created_datetime}, "
             f"content={content_repr}, "
-            f"metadata={truncate_dict(self.metadata.serialize())}, "
-            f"extra_fields={truncate_dict(self.extra_fields)})"
+            f"metadata={truncate_dict(self.metadata.content)}, "
+            f"extra_fields={truncate_dict(extra_fields)})"
         )
+
+    # @classmethod
+    # def get_converter_registry(cls) -> ConverterRegistry:
+    #     """
+    #     Get the converter registry for the class.
+    #
+    #     Returns:
+    #         The ConverterRegistry instance for the class.
+    #     """
+    #     if isinstance(cls._converter_registry, type):
+    #         cls._converter_registry = cls._converter_registry()
+    #     return cls._converter_registry
+
+    # def convert_to(self, key: str = "dict", /, **kwargs: Any) -> Any:
+    #     """
+    #     Convert the component to a specified type using the ConverterRegistry.
+    #
+    #     Args:
+    #         key: The key of the converter to use.
+    #         **kwargs: Additional keyword arguments for conversion.
+    #
+    #     Returns:
+    #         The converted component in the specified type.
+    #     """
+    #     return self.get_converter_registry().convert_to(self, key, **kwargs)
+
+    # @classmethod
+    # def convert_from(cls, obj: Any, key: str = "dict", /, *, unflat: bool = False) -> T:
+    #     """
+    #     Convert data to create a new component instance using the ConverterRegistry.
+    #
+    #     Args:
+    #         obj: The object to convert from.
+    #         key: The key of the converter to use.
+    #         unflat: If True, unflatten the data before deserialization.
+    #
+    #     Returns:
+    #         A new instance of the BaseComponent class or its subclass.
+    #     """
+    #     data = cls.get_converter_registry().convert_from(obj, key)
+    #     return cls.deserialize(data, unflat=unflat)
+
+    # @classmethod
+    # def register_converter(cls, key: str, converter: Type[Converter]) -> None:
+    #     """Register a new converter."""
+    #     cls.get_converter_registry().register(key, converter)
 
 
 # File: lion_core/generic/component.py

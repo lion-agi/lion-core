@@ -26,7 +26,7 @@ from lion_core.exceptions import (
     LionIDError,
     LionItemError,
 )
-from .progression import Progression
+from .progression import Progression, progression
 from .util import to_list_type
 from lion_core.setting import LN_UNDEFINED
 
@@ -57,8 +57,8 @@ class Pile(Element, Collective[T]):
         default=None,
         description="Set of allowed types for items in the pile.",
     )
-    order: list[str] = Field(
-        default_factory=list,
+    order: Progression = Field(
+        default_factory=progression,
         description="Progression specifying the order of items in the pile.",
     )
 
