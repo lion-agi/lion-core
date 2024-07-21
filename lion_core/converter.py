@@ -1,7 +1,7 @@
 """Converter Registry for managing data conversion in the Lion framework."""
 
 from typing import Any, Protocol, runtime_checkable, TypeVar
-from lion_core.libs import to_dict, to_str, fuzzy_parse_json
+import json
 
 T = TypeVar("T")
 
@@ -35,13 +35,13 @@ class JsonConverter(Converter):
     @staticmethod
     def from_obj(cls, obj: str, **kwargs):
         try:
-            return to_dict(obj, str_type="json", parser=fuzzy_parse_json)
+            return json.loads(obj, **kwargs)
         except Exception as e:
             raise ValueError("Failed to convert from JSON.") from e
 
     @staticmethod
     def to_obj(self, **kwargs):
-        return to_str(self.to_dict(**kwargs))
+        return json.dumps(self.to_dict(**kwargs))
 
 
 class ConverterRegistry:
