@@ -261,8 +261,16 @@ class Pile(Element, Collective):
                     raise ItemNotFoundError(f"Item not found. Error: {e}")
                 return default
         else:
+            check = None
+            if isinstance(key, list):
+                check = True
+                for i in key:
+                    if type(i) is not int:
+                        check = False
+                        break
             try:
-                key = validate_order(key)
+                if not check:
+                    key = validate_order(key)
                 result = []
                 for k in key:
                     result.append(self[k])
@@ -293,11 +301,12 @@ class Pile(Element, Collective):
         """
         if isinstance(key, int | slice):
             try:
-                pop_items = self[key]
+                pop_items = self.order[key]
+                pop_items = [pop_items] if isinstance(pop_items, str) else pop_items
                 result = []
                 for i in pop_items:
-                    self.order.remove(i.ln_id)
-                    result.append(self.pile_.pop(i.ln_id))
+                    self.order.remove(i)
+                    result.append(self.pile_.pop(i))
                 result = Pile(items=result, item_type=self.item_type) if len(result) > 1 else result[0]
                 return result
             except Exception as e:
@@ -354,7 +363,7 @@ class Pile(Element, Collective):
             if i not in self.order:
                 item_order.append(i)
 
-        self.order.extend(item_order)
+        self.order.append(item_order)
         self.pile_.update(item_dict)
 
     def exclude(self, item: Any):
@@ -549,7 +558,7 @@ class Pile(Element, Collective):
             ItemNotFoundError: If item(s) not found in pile.
         """
         result = Pile(items=self.values(), item_type=self.item_type, order=self.order)
-        result.exclude(other)
+        result.pop(other)
         return result
 
     def __iadd__(self, other: T) -> Pile:
@@ -575,7 +584,9 @@ class Pile(Element, Collective):
         Returns:
             Pile: The modified pile.
         """
-        self.exclude(other)
+        result = Pile(items=self.values(), item_type=self.item_type, order=self.order)
+        result.pop(other)
+        self.remove(other)
         return self
 
     def __radd__(self, other: T) -> "Pile":

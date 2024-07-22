@@ -24,7 +24,7 @@ from lion_core.abc.space import Ordering
 from lion_core.libs import to_list
 from lion_core.sys_util import SysUtil
 from lion_core.generic.element import Element
-from lion_core.exceptions import ItemNotFoundError
+from lion_core.exceptions import ItemNotFoundError, LionTypeError
 from .util import validate_order, to_list_type
 
 
@@ -261,18 +261,9 @@ class Progression(Element, Ordering):
         Raises:
             IndexError: If trying to remove more items than available.
         """
-        if isinstance(item, int):
-            if item > 0:
-                if item > len(self):
-                    raise IndexError("Cannot remove more items than available.")
-                for _ in range(item):
-                    self.popleft()
-            else:
-                raise IndexError(f"Invalid number of items: {item}")
-        else:
-            for i in validate_order(item):
-                while i in self:
-                    self.remove(i)
+        for i in validate_order(item):
+            while i in self:
+                self.remove(i)
 
     def is_empty(self) -> bool:
         """
@@ -367,8 +358,9 @@ class Progression(Element, Ordering):
         Args:
             item: The item(s) to add to the progression.
         """
-        order = validate_order(item)
-        self.order.extend(order)
+        if not isinstance(item, Progression):
+            raise LionTypeError(expected_type=Progression, actual_type=type(item))
+        self.order.extend(item.order)
 
     def count(self, item: Any) -> int:
         """
@@ -431,7 +423,7 @@ class Progression(Element, Ordering):
         Returns:
             Progression: The modified progression.
         """
-        self.extend(other)
+        self.append(other)
         return self
 
     def __isub__(self, other: Any) -> Progression:
