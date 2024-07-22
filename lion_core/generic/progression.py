@@ -201,42 +201,6 @@ class Progression(Element, Ordering):
         """Clear the progression."""
         self.order.clear()
 
-    # def copy(self) -> Progression:
-    #     """
-    #     Create a deep copy of the progression.
-    #
-    #     Returns:
-    #         Progression: A new Progression instance with the same items.
-    #     """
-    #     return self.model_copy(deep=True)
-
-    # def keys(self):
-    #     """
-    #     Get the indices of the progression.
-    #
-    #     Returns:
-    #         Iterator[int]: An iterator over the indices of the progression.
-    #     """
-    #     return range(len(self))
-
-    # def values(self) -> Iterator[str]:
-    #     """
-    #     Get the values of the progression.
-    #
-    #     Returns:
-    #         Iterator[str]: An iterator over the Lion IDs in the progression.
-    #     """
-    #     yield from self.order
-
-    # def items(self) -> Iterator[tuple[int, str]]:
-    #     """
-    #     Get the items of the progression as (index, value) pairs.
-    #
-    #     Returns:
-    #         Iterator[tuple[int, str]]: An iterator over (index, Lion ID) pairs.
-    #     """
-    #     yield from enumerate(self.order)
-
     def append(self, item: Any) -> None:
         """
         Append an item to the end of the progression.
@@ -284,7 +248,7 @@ class Progression(Element, Ordering):
             if i not in self:
                 self.extend(item)
 
-    def exclude(self, item: int | Any) -> bool:
+    def exclude(self, item: int | Any):
         """
         Exclude an item or items from the progression.
 
@@ -297,15 +261,18 @@ class Progression(Element, Ordering):
         Raises:
             IndexError: If trying to remove more items than available.
         """
-        if isinstance(item, int) and item > 0:
-            if item > len(self):
-                raise IndexError("Cannot remove more items than available.")
-            for _ in range(item):
-                self.popleft()
-            return True
-        for i in validate_order(item):
-            while i in self:
-                self.remove(i)
+        if isinstance(item, int):
+            if item > 0:
+                if item > len(self):
+                    raise IndexError("Cannot remove more items than available.")
+                for _ in range(item):
+                    self.popleft()
+            else:
+                raise IndexError(f"Invalid number of items: {item}")
+        else:
+            for i in validate_order(item):
+                while i in self:
+                    self.remove(i)
 
     def is_empty(self) -> bool:
         """
