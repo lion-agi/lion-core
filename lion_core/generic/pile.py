@@ -407,48 +407,6 @@ class Pile(Element, Collective):
         """
         return len(self.order)
 
-    def flatten(self, max_depth: int | None = None) -> Pile[T]:
-        """
-            Recursively flatten a nested Pile into a flat Pile.
-
-            Args:
-                max_depth: Maximum depth to flatten. None means no limit.
-
-            Returns:
-                A new Pile instance with nested structures flattened.
-        """
-
-        def _flatten(inner_pile):
-            result_pile = Pile()
-            for i in inner_pile:
-                if isinstance(i, Pile):
-                    result_pile.include(list(i))
-                else:
-                    result_pile.include(i)
-            return result_pile
-
-        if max_depth:
-            if not isinstance(max_depth, int):
-                raise ValueError("Invalid max_depth value. Please provide a positive integer.")
-            else:
-                if max_depth < 0:
-                    raise ValueError("Invalid max_depth value. Please provide a positive integer.")
-
-        result = Pile(items=list(self), item_type=self.item_type)
-        if max_depth is None:
-            while True:
-                prev_len = len(result)
-                result = _flatten(result)
-                if len(result) == prev_len:
-                    break
-        else:
-            for num in range(max_depth):
-                prev_len = len(result)
-                result = _flatten(result)
-                if len(result) == prev_len:
-                    break
-        return result
-
     def _validate_item_type(self, value):
         """
         Validate the item type for the pile.
