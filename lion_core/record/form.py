@@ -12,13 +12,12 @@ from typing import Any
 
 from pydantic import Field
 
-
 from lion_core.setting import BASE_LION_FIELDS, LN_UNDEFINED
-from lion_core.libs import to_dict
-from lion_core.generic.component import Component
-from lion_core.generic.pile import Pile
+from lion_core.libs import to_dict, lcall, strip_lower
 from lion_core.abc import MutableRecord
 from lion_core.exceptions import LionTypeError, LionValueError
+from lion_core.generic.component import Component
+from lion_core.generic.pile import Pile
 from .util import get_input_output_fields
 
 
@@ -288,6 +287,32 @@ class Form(Component, MutableRecord):
             getattr(self, field, LN_UNDEFINED) not in [None, LN_UNDEFINED]
             for field in self.work_fields
         )
+
+    @singledispatchmethod
+    def _get_field_annotation(self, field: Any) -> dict[str, Any]:
+        return {}
+
+    @_get_field_annotation.register(str)
+    def _(self, field: str) -> dict[str, Any]:
+        dict_ = {field: self.all_fields[field].annotation}
+        for k, v in dict_.items():
+            if "|" in str(v):
+                v = str(v)
+                v = v.split("|")
+                dict_[k] = lcall(v, strip_lower)
+            else:
+                dict_[k] = [v.__name__] if v else None
+        return dict_
+
+    @_get_field_annotation.register(deque)
+    @_get_field_annotation.register(set)
+    @_get_field_annotation.register(list)
+    @_get_field_annotation.register(tuple)
+    def _(self, field: list | tuple) -> dict[str, Any]:
+        dict_ = {}
+        for f in field:
+            dict_.update(self._get_field_annotation(f))
+        return dict_
 
 
 # File: lion_core/form/form.py
