@@ -1,8 +1,9 @@
 import re
 import json
-from typing import Any
+from typing import Any, Callable
 
 from lion_core.libs import to_dict, strip_lower, nget
+from lion_core.sys_util import SysUtil
 
 from .message import RoledMessage
 from .system import System
@@ -14,52 +15,31 @@ from .action_response import ActionResponse
 
 def create_message(
     *,
-    system: dict | str,
-    instruction: dict | str,
-    context: dict | str,
-    assistant_response: dict | str,
-    function: str,
-    arguments: dict,
-    func_outputs: Any,
+    system: dict | str | System | None,
+    instruction: dict | str | Instruction | None,
+    context: dict | str | None,
+    assistant_response: dict | str | AssistantResponse | None,
+    function: str | Callable | None,
+    argument: dict | None,
+    func_output: Any,
     action_request: ActionRequest,
-    action_response: ActionResponse,
-    images: str | list[str],
-    sender: str,
-    recipient: str,
-    requested_fields: dict[str, str],
-    system_datetime: bool,
-    system_datetime_strftime: str,
+    action_response: Any,
+    image: str | list[str],
+    sender: Any,
+    recipient: Any,
+    requested_fields: dict[str, str] | None,
+    system_datetime: bool | str | None,
+    system_datetime_strftime: str | None,
     **kwargs: Any,
 ) -> RoledMessage:
-    """
-    Creates a message based on the provided parameters.
+    """Creates a message based on the provided parameters."""
 
-    Args:
-        system: The system node (JSON serializable).
-        instruction: The instruction node (JSON serializable).
-        context: Additional context (JSON serializable).
-        assistant_response: The assistant response node (JSON serializable).
-        function: The function name for action requests.
-        arguments: The arguments for the function.
-        func_outputs: The outputs from the function.
-        action_request: The action request node.
-        action_response: The action response node.
-        images: Base64 encoded image(s).
-        sender: The sender of the message.
-        recipient: The recipient of the message.
-        requested_fields: The requested fields for the instruction.
-        system_datetime: Whether to include system datetime.
-        system_datetime_strftime: The system datetime strftime format.
-        **kwargs: Additional context fields.
+    if sender:
+        sender = SysUtil.get_id(sender)
+    if recipient:
+        recipient = SysUtil.get_id(recipient)
 
-    Returns:
-        The constructed message based on the provided parameters.
-
-    Raises:
-        ValueError: If the parameters are invalid or missing required values.
-    """
-
-    if func_outputs or action_response:
+    if func_output or action_response:
         if not action_request:
             raise ValueError(
                 "Error: please provide an corresponding action request for an action response."
@@ -72,7 +52,7 @@ def create_message(
         return ActionResponse(
             action_request=action_request,
             sender=sender,
-            func_outputs=func_outputs,
+            func_outputs=func_output,
         )
 
     if action_request:
@@ -83,11 +63,13 @@ def create_message(
         return action_request
 
     if function:
-        if not arguments:
+        if callable(function):
+            function = function.__name__
+        if not argument:
             raise ValueError("Error: please provide arguments for the function.")
         return ActionRequest(
             function=function,
-            arguments=arguments,
+            arguments=argument,
             sender=sender,
             recipient=recipient,
         )
@@ -103,7 +85,7 @@ def create_message(
     if not len(a) == 1:
         raise ValueError("Error: Message can only have one role")
 
-    if not func_outputs:
+    if not func_output:
         for k, v in a.items():
             if isinstance(v, RoledMessage):
                 if isinstance(v, Instruction):
@@ -130,8 +112,8 @@ def create_message(
         )
 
     else:
-        if images:
-            images = images if isinstance(images, list) else [images]
+        if image:
+            image = image if isinstance(image, list) else [image]
 
         return Instruction(
             instruction=instruction,
@@ -139,24 +121,13 @@ def create_message(
             sender=sender,
             recipient=recipient,
             requested_fields=requested_fields,
-            images=images,
+            images=image,
             **kwargs,
         )
 
 
-def _parse_action_request(response: dict) -> list[ActionRequest] | None:
-    """
-    Parses an action request from the response.
-
-    Args:
-        response: The response containing the action request.
-
-    Returns:
-        A list of action requests or None if invalid.
-
-    Raises:
-        ActionError: If the action request is invalid.
-    """
+def parse_action_request(response: dict) -> list[ActionRequest] | None:
+    """Parses an action request from the response."""
     message = to_dict(response) if not isinstance(response, dict) else response
     content_ = None
 
@@ -238,18 +209,7 @@ def _parse_action_request(response: dict) -> list[ActionRequest] | None:
 
 
 def _handle_action_request(response: dict) -> list[dict]:
-    """
-    Handles the action request parsing from the response.
-
-    Args:
-        response: The response containing the action request details.
-
-    Returns:
-        A list of function call details.
-
-    Raises:
-        ValueError: If the response message is invalid.
-    """
+    """Handles the action request parsing from the response."""
     try:
         tool_count = 0
         func_list = []

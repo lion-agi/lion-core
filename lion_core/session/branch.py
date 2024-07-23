@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, Callable
 
 from lion_core.abc import BaseiModel
-from lion_core.generic import Pile, pile, progression
+from lion_core.generic.pile import Pile, pile
+from lion_core.generic.progression import progression
 
 from lion_core.generic.exchange import Exchange
 from lion_core.action.tool import Tool
@@ -18,7 +19,6 @@ from lion_core.communication import (
     Mail,
 )
 from lion_core.record.log_manager import LogManager
-from lion_core.imodel.model_manager import ModelManager
 from .base import BaseSession
 from .utils import validate_messages, validate_system
 
@@ -30,7 +30,6 @@ class Branch(BaseSession):
         system: System,
         messages: Pile[RoledMessage],
         tool_manager: ToolManager,
-        model_manager: ModelManager,
         log_manager: LogManager,
         mail_manager: MailManager,
         mailbox: Exchange,
@@ -40,7 +39,6 @@ class Branch(BaseSession):
         self.system = system
         self.messages = messages
         self.tool_manager = tool_manager
-        self.model_manager = model_manager
         self.log_manager = log_manager
         self.mail_manager = mail_manager
         self.mailbox = mailbox
@@ -72,20 +70,23 @@ class Branch(BaseSession):
     def include_message(
         self,
         *,
-        system,  # system node - JSON serializable
-        instruction,  # Instruction node - JSON serializable
-        context,  # JSON serializable
-        assistant_response,  # JSON
-        function,
-        arguments,
-        func_outputs,
-        action_request,  # ActionRequest node
-        action_response,  # ActionResponse node
-        images,
-        sender,  # str
-        recipient,  # str
-        requested_fields,  # dict[str, str]
-        metadata,  # extra metadata
+        system: dict | str | System | None = None,
+        instruction: dict | str | Instruction | None = None,
+        context: dict | str | None = None,
+        assistant_response: dict | str | AssistantResponse | None = None,
+        function: str | Callable | None = None,
+        argument: dict | None = None,
+        func_output: Any = None,
+        action_request: ActionRequest = None,
+        action_response: Any = None,
+        image: str | list[str] = None,
+        sender: Any = None,
+        recipient: Any = None,
+        requested_fields: dict[str, str] | None = None,
+        system_datetime: bool | str | None = None,
+        system_datetime_strftime: str | None = None,
+        metadata: Any = None,  # extra metadata
+        delete_previous_system: bool = False,
         **kwargs,  # additional context fields
     ) -> bool:
         if assistant_response:
@@ -97,21 +98,22 @@ class Branch(BaseSession):
             context=context,
             assistant_response=assistant_response,
             function=function,
-            arguments=arguments,
-            func_outputs=func_outputs,
+            argument=argument,
+            func_output=func_output,
             action_request=action_request,
             action_response=action_response,
             sender=sender,
-            images=images,
+            image=image,
             recipient=recipient,
             requested_fields=requested_fields,
+            system_datetime=system_datetime,
+            system_datetime_strftime=system_datetime_strftime,
             **kwargs,
         )
 
         if isinstance(_msg, System):
             _msg.recipient = self.ln_id  # the branch itself, system is to the branch
-            self._remove_system()
-            self.system = _msg
+            self.change_system(_msg, delete_previous_system=delete_previous_system)
 
         if isinstance(_msg, Instruction):
             _msg.sender = sender or self.user
@@ -138,12 +140,12 @@ class Branch(BaseSession):
         self.messages.clear()
         self.messages.include(self.system)
 
-    def change_system(self, system: System, delete_previous):
+    def change_system(self, system: System, delete_previous_system: bool = False):
         old_system = self.system
         self.system = system
         self.messages[0] = self.system  # system must be in first message position
 
-        if delete_previous:
+        if delete_previous_system:
             del old_system
 
     def send(
@@ -161,9 +163,9 @@ class Branch(BaseSession):
     def receive(
         self,
         sender: str,
-        message: bool,
-        tool: bool,
-        imodel: bool,
+        message: bool = False,
+        tool: bool = False,
+        imodel: bool = False,
     ) -> None:
         """
         Receives mail from a sender.
