@@ -14,6 +14,7 @@ class Event(AbstractObservation):
     changes in complex systems. Inspired by event-driven architectures and
     quantum state transitions, models deterministic and probabilistic processes.
     """
+
     pass
 
 

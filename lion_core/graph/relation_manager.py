@@ -1,8 +1,9 @@
+from lion_core.abc import Relational, BaseManager
 from typing import Dict, Set, List, Tuple
 from collections import defaultdict
 
 
-class RelationManager:
+class RelationManager(BaseManager, Relational):
     def __init__(self):
         self.node_to_edges: Dict[str, Set[str]] = defaultdict(set)
         self.edge_to_nodes: Dict[str, Dict[str, Set[str]]] = defaultdict(

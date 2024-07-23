@@ -9,6 +9,7 @@ class Characteristic(Tao):
     properties of Nodes, inspired by property dualism. Forms building blocks
     for modeling complex systems and emergent behaviors.
     """
+
     pass
 
 
@@ -18,6 +19,7 @@ class Observable(Characteristic):
     cognitive modeling. Rooted in quantum measurement theory, represents
     elements perceivable by AbstractObserver.
     """
+
     # must have ln_id
     pass
 
@@ -28,6 +30,7 @@ class Temporal(Characteristic):
     dynamical systems theory, essential for modeling time-dependent
     processes and state changes in complex systems.
     """
+
     # must have timestamp
     pass
 
@@ -38,6 +41,7 @@ class Quantum(Characteristic):
     Enables modeling of non-classical behaviors in cognitive and
     computational processes, key to quantum-inspired approaches.
     """
+
     pass
 
 
@@ -47,6 +51,7 @@ class Probabilistic(Characteristic):
     probability theory and stochastic processes, crucial for modeling
     decision-making and multi-outcome systems.
     """
+
     pass
 
 
@@ -56,6 +61,7 @@ class Stochastic(Probabilistic, Temporal):
     stochastic processes and time series analysis for modeling systems
     with evolving randomness, like financial markets or biological processes.
     """
+
     pass
 
 
@@ -65,6 +71,7 @@ class Relational(Observable):
     for modeling networked systems, social interactions, and complex
     relationships across various domains.
     """
+
     pass
 
 
@@ -74,6 +81,7 @@ class Traversal(Observable):
     theory and network science, essential for modeling paths, connections,
     and information flow in complex networked systems.
     """
+
     pass
 
 

@@ -14,6 +14,7 @@ class BaseManager(AbstractObserver):
     components. Embodies emergent control in complex systems, where global
     behaviors arise from local interactions and observations.
     """
+
     pass
 
 
@@ -61,6 +62,7 @@ class BaseEngine(AbstractObserver):
 # Subclass must have access to intelligent model
 class BaseiModel(AbstractObserver):
     """Base class for intelligent models in the framework."""
+
     pass
 
 
