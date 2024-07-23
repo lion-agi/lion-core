@@ -1,11 +1,3 @@
-"""
-Core Element class for the Lion framework.
-
-Provides functionality for identification, timestamping, and dynamic
-class management. Integrates with Pydantic for data validation and
-serialization.
-"""
-
 from __future__ import annotations
 
 from datetime import datetime
@@ -30,13 +22,7 @@ T = TypeVar("T", bound="Element")
 
 
 class Element(BaseModel, AbstractElement, Observable, Temporal):
-    """
-    Base class for all elements in the Lion framework.
-
-    Provides core functionality for identification, timestamping, and
-    class registration. Integrates with Pydantic for data validation
-    and uses mixins for additional characteristics.
-    """
+    """Base class in the Lion framework."""
 
     ln_id: str = Field(
         default_factory=SysUtil.id,
@@ -72,7 +58,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         return datetime.fromtimestamp(self.timestamp, tz=TIME_CONFIG["tz"])
 
     @field_validator("ln_id", mode="before")
-    def _validate_id(cls, value):
+    def _validate_id(cls, value) -> str:
         try:
             return SysUtil.get_id(value)
         except:
@@ -93,21 +79,22 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
             raise ValueError(f"Unsupported type for time_attr: {type(value)}")
 
     @classmethod
-    def from_dict(cls, data, **kwargs):
+    def from_dict(cls, data, **kwargs) -> T:
+        """create an instance of the Element or its subclass from a dictionary."""
         if "lion_class" in data:
             cls = LION_CLASS_REGISTRY.get(data.pop("lion_class"), cls)
         if hasattr(cls, "from_dict"):
-            return cls.from_dict(data, **kwargs)
+            if cls.from_dict != Element.from_dict:
+                return cls.from_dict(data, **kwargs)
         return cls.model_validate(data, **kwargs)
 
-    def to_dict(self, **kwargs):
-        """kwargs for Pydantic model dump"""
+    def to_dict(self, **kwargs) -> dict:
+        """Convert the Element to a dictionary representation."""
         dict_ = self.model_dump(**kwargs)
         dict_["lion_class"] = self.class_name()
         return dict_
 
     def __str__(self) -> str:
-        """Return a string representation of the Element."""
         timestamp_str = self._created_datetime.isoformat(timespec="minutes")
         return (
             f"{self.class_name()}(ln_id={self.ln_id[:6]}.., "
@@ -115,12 +102,11 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         )
 
     def __hash__(self) -> int:
-        """Return a hash value for the Element."""
         return hash(self.ln_id)
 
     def __bool__(self) -> bool:
-        """Element is always considered True."""
+        """Always True"""
         return True
 
 
-# File: lion_core/element.py
+# File: lion_core/generic/element.py

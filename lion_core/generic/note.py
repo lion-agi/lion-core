@@ -1,29 +1,19 @@
 from __future__ import annotations
 
-from typing import Any, Iterator
+from typing import Any
 from pydantic import Field, BaseModel, ConfigDict
 from lion_core.libs import (
     nget,
     ninsert,
     nset,
     npop,
-    get_flattened_keys,
     flatten,
 )
 from lion_core.setting import LN_UNDEFINED
 
 
 class Note(BaseModel):
-    """
-    A flexible container for managing nested dictionary data structures.
-
-    Provides methods for inserting, retrieving, updating, and removing data
-    from nested structures using a list of indices for navigation. Supports
-    both flat and nested operations on keys, values, and items.
-
-    Attributes:
-        content (dict[str, Any]): The internal dictionary storing the nested data.
-    """
+    """A container for managing nested dictionary data structures."""
 
     content: dict[str, Any] = Field(default_factory=dict)
 
@@ -60,7 +50,6 @@ class Note(BaseModel):
     def set(self, indices: list[str], value: Any) -> None:
         """
         Set a value in the nested structure at the specified indices.
-
         If the path doesn't exist, it will be created.
 
         Args:
@@ -127,3 +116,25 @@ class Note(BaseModel):
         if flat:
             return flatten(self.content).items()
         return self.content.items()
+
+    def to_dict(self, **kwargs) -> dict[str, Any]:
+        """
+        Convert the Note to a dictionary.
+
+        Returns:
+            A dictionary representation of the Note.
+        """
+        return self.model_dump(**kwargs)
+
+    @classmethod
+    def from_dict(cls, dict_: dict[str, Any]) -> Note:
+        """
+        Create a Note from a dictionary.
+
+        Args:
+            dict_: The dictionary to create the Note from.
+
+        Returns:
+            A Note object.
+        """
+        return cls(content=dict_)
