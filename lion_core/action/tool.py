@@ -1,11 +1,12 @@
 """Defines the Tool class for callable tools with processing capabilities."""
 
 import json
-from typing import Any, Callable
+from typing import Any, Callable, Literal
+from datetime import datetime
 
 from pydantic import Field, field_serializer
 
-from lion_core.generic import Element
+from lion_core.generic.element import Element
 from lion_core.libs import function_to_schema, to_list
 
 
@@ -110,7 +111,7 @@ class Tool(Element):
         Returns:
             A string representation of the Tool.
         """
-        timestamp_str = self.timestamp.isoformat(timespec="minutes")
+        timestamp_str = datetime.fromtimestamp(self.timestamp).isoformat(timespec="minutes")
         return (
             f"{self.class_name()}(ln_id={self.ln_id[:6]}.., "
             f"timestamp={timestamp_str}), "
@@ -121,7 +122,7 @@ class Tool(Element):
 def func_to_tool(
     func_: Callable[..., Any] | list[Callable[..., Any]],
     parser: Callable[[Any], Any] | list[Callable[[Any], Any]] | None = None,
-    docstring_style: str = "google",
+    docstring_style: Literal["google", "rest"] = "google",
     **kwargs,
 ) -> list[Tool]:
     """
