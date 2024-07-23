@@ -3,51 +3,55 @@
 from __future__ import annotations
 from typing import Any
 
-from pydantic import BaseModel, Field, model_serializer, ConfigDict
-
+from pydantic import Field
 from lion_core.abc import ImmutableRecord
-from lion_core.generic import Note, Element
-
-
-
-DEFAULT_SERIALIZATION_INCLUDE: set[str] = {"ln_id", "timestamp", "content", "loginfo"}
-
-
-class LogInfo(BaseModel):
-
-    model_config = ConfigDict(
-        extra="allow",
-        arbitrary_types_allowed=True,
-        use_enum_values=True,
-        populate_by_name=True,
-    )
+from lion_core.generic.note import Note
+from lion_core.generic.element import Element
 
 
 class BaseLog(Element, ImmutableRecord):
 
     content: Note = Field(
-        ...,
+        None,
         title="Log Content",
         description="The content of the log entry.",
         frozen=True,
     )
 
-    loginfo: LogInfo = Field(
-        ...,
+    loginfo: Note = Field(
+        None,
         title="Log Info",
         description="Metadata about the log entry.",
         frozen=True,
     )
 
-    def __init__(self, *, loginfo: LogInfo | dict = None, **data: Any) -> None:
-        content = Note(**data)
-        loginfo = LogInfo(**loginfo) if isinstance(loginfo, dict) else loginfo
-        super().__init__(content=content, loginfo=loginfo)
+    def __init__(
+        self, *, content: dict | Note = None, loginfo: Note | dict = None, **data: Any
+    ) -> None:
+        if content:
+            if isinstance(content, dict):
+                data = {**content, **data}
+            elif isinstance(content, Note):
+                data = {**content.to_dict(), **data}
 
-    @model_serializer
-    def serialize(self, **kwargs: Any) -> dict:
-        kwargs["include"] = kwargs.get("include", DEFAULT_SERIALIZATION_INCLUDE)
-        return super().serialize(**kwargs)
+        content_ = Note(content=data)
+        loginfo_ = Note(**loginfo) if isinstance(loginfo, dict) else loginfo
+        super().__init__(content=content_, loginfo=loginfo_)
+
+    def to_dict(self):
+        d = super().to_dict()
+        d["content"] = self.content.to_dict()
+        d["loginfo"] = self.loginfo.to_dict()
+        return d
+
+    @classmethod
+    def from_dict(cls, dict_):
+        if "lion_class" in dict_ and dict_["lion_class"] == "BaseLog":
+            dict_.pop("lion_class")
+
+        content = Note.from_dict(dict_["content"])
+        loginfo = Note.from_dict(dict_["loginfo"])
+        return cls(content=content, loginfo=loginfo)
 
 
 # File: lion_core/log/base.py
