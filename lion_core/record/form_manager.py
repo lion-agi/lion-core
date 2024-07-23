@@ -6,6 +6,7 @@ filling forms and reports, and generating instructions.
 """
 
 from typing import Any, List
+from lion_core.abc import BaseManager
 from lion_core.setting import LN_UNDEFINED
 from lion_core.exceptions import LionValueError
 from lion_core.generic.pile import Pile, pile
@@ -13,7 +14,7 @@ from lion_core.generic.util import to_list_type
 from .form import Form
 
 
-class FormManager:
+class FormManager(BaseManager):
     """Manages operations on Form and Report instances."""
 
     @staticmethod

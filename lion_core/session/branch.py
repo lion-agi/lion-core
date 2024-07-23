@@ -48,13 +48,19 @@ class Branch(BaseSession):
 
     @staticmethod
     def validate_system(
-        system: Any, sender, recipient, system_datetime, **kwargs
+        system: Any,
+        sender,
+        recipient,
+        system_datetime,
+        system_datetime_strftime,
+        **kwargs,
     ) -> None:
         return validate_system(
             system,
             sender=sender,
             recipient=recipient,
             system_datetime=system_datetime,
+            system_datetime_strftime=system_datetime_strftime,
             **kwargs,
         )
 

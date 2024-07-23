@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TypeVar, Generic, List
 from pydantic import Field
 
-from lion_core.abc.container import Container
-from lion_core.communication.base import BaseMail
+from lion_core.abc.space import Container
+from lion_core.communication.base import BaseCommunication
 
 from .element import Element
 from .pile import Pile, pile
@@ -118,7 +118,7 @@ class Exchange(Element, Container, Generic[T]):
             return all(self._include(i, direction=direction) for i in item)
         return False
 
-    def _include(self, item: BaseMail, direction: str | None) -> bool:
+    def _include(self, item: BaseCommunication, direction: str | None) -> bool:
         """
         Helper method to include an item in the exchange in a specified direction.
 

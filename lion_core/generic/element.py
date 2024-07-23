@@ -11,7 +11,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, AliasChoices, field_validator, field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    AliasChoices,
+    field_validator,
+)
 
 from lion_core.abc.concept import AbstractElement
 from lion_core.abc.characteristic import Temporal, Observable
@@ -68,7 +74,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
     @field_validator("ln_id", mode="before")
     def _validate_id(cls, value):
         try:
-            return SysUtil.get_lion_id(value)
+            return SysUtil.get_id(value)
         except:
             raise LionIDError(f"Invalid lion id: {value}")
 
@@ -86,7 +92,16 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         else:
             raise ValueError(f"Unsupported type for time_attr: {type(value)}")
 
+    @classmethod
+    def from_dict(cls, data, **kwargs):
+        if "lion_class" in data:
+            cls = LION_CLASS_REGISTRY.get(data.pop("lion_class"), cls)
+        if hasattr(cls, "from_dict"):
+            return cls.from_dict(data, **kwargs)
+        return cls.model_validate(data, **kwargs)
+
     def to_dict(self, **kwargs):
+        """kwargs for Pydantic model dump"""
         dict_ = self.model_dump(**kwargs)
         dict_["lion_class"] = self.class_name()
         return dict_

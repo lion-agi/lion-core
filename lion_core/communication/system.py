@@ -22,10 +22,10 @@ class System(RoledMessage):
 
     def __init__(
         self,
-        system: Any = None,
-        sender: str | None = None,
-        recipient: str | None = None,
-        system_datetime: bool | str | None = None,
+        system: Any,
+        sender: str | None,
+        recipient: str | None,
+        system_datetime: bool | str | None,
         **kwargs: Any,
     ):
         """

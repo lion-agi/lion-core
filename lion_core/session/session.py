@@ -1,6 +1,6 @@
 from typing import Any
 from lion_core.sys_util import SysUtil
-from lion_core.generic import Pile, pile
+from lion_core.generic import Pile, pile, Exchange
 from lion_core.communication import MailManager
 from lion_core.generic.util import to_list_type
 from lion_core.generic.exchange import Exchange

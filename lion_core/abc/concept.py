@@ -1,55 +1,51 @@
-"""Core abstract base classes for the Lion framework."""
+"""
+Core abstract base classes for Lion framework, integrating Taoism, Category
+Theory, and Complex Systems Theory.
+"""
 
 from abc import ABC
 
 
 class Tao(ABC):
     """
-    The foundational abstraction in the Lion framework, representing existence.
-
-    This abstract base class serves as the root for all other classes in the
-    framework, embodying the concept of Tao or fundamental existence.
+    Foundational abstraction embodying interconnectedness and existence.
+    Root for all classes, reflecting Taoist unity and Category Theory relations.
     """
 
 
 class AbstractSpace(Tao):
     """
-    An abstract representation of a space or region.
-
-    This class defines the concept of a space that can contain elements.
-    Subclasses should implement the __contains__ method to define
-    membership criteria for the space.
+    Abstract space or context, aligning with Category Theory's categories.
+    Defines domain for elements and interactions, supporting system emergence.
+    Subclasses implement __contains__ for membership criteria.
     """
 
 
 class AbstractElement(Tao):
     """
-    An abstract representation of an observable entity within a space.
-
-    This class defines the concept of an element that can exist within
-    an AbstractSpace. Subclasses should implement specific properties
-    and behaviors of elements.
+    Observable entity within a space, reflecting Taoist individuality in unity.
+    Embodies Category Theory objects and Complex Systems components.
+    Capable of emergent behaviors through interactions.
     """
 
     @classmethod
     def class_name(cls) -> str:
-        """Get the name of the class."""
+        """Get class name, supporting reflection and metaprogramming."""
         return cls.__name__
 
 
 class AbstractObserver(Tao):
     """
-    An abstract representation of an entity capable of making observations.
-
-    This class defines the concept of an observer that can perceive or
-    interact with AbstractElements within an AbstractSpace. Subclasses
-    should implement specific observation mechanisms.
+    Entity capable of observations, inspired by quantum mechanics and cognition.
+    Prepresents intentionality and observer effect in complex systems.
+    Subclasses implement specific observation mechanisms.
     """
 
 
 class AbstractObservation(Tao):
     """
-    An abstract representation of the act of observing.
+    Act of observing, integrating phenomenology and information theory.
+    Captures information exchange and meaning construction in complex systems.
     """
 
 

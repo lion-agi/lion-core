@@ -5,12 +5,9 @@ from .concept import Tao
 
 class Characteristic(Tao):
     """
-    Base class for characteristics in the Lion framework.
-
-    Represents fundamental properties that can be associated with Nodes,
-    drawing inspiration from property dualism. These characteristics
-    form the building blocks for modeling complex systems and their
-    emergent behaviors.
+    Base class for Lion framework characteristics. Represents fundamental
+    properties of Nodes, inspired by property dualism. Forms building blocks
+    for modeling complex systems and emergent behaviors.
     """
 
     pass
@@ -18,41 +15,31 @@ class Characteristic(Tao):
 
 class Observable(Characteristic):
     """
-    Characteristic of being observable.
-
-    Rooted in quantum measurement theory, this characteristic defines
-    entities that can be perceived or measured by an AbstractObserver.
-    It plays a crucial role in LION's implementation of quantum-inspired
-    computation and cognitive modeling.
+    Defines observable entities in quantum-inspired computation and
+    cognitive modeling. Rooted in quantum measurement theory, represents
+    elements perceivable by AbstractObserver.
     """
 
     # must have ln_id
-
     pass
 
 
 class Temporal(Characteristic):
     """
-    Characteristic of having a temporal aspect.
-
-    Inspired by dynamical systems theory, this characteristic represents
-    properties or behaviors that evolve over time. It's fundamental to
-    modeling time-dependent processes and state changes in complex systems.
+    Represents time-evolving properties or behaviors. Inspired by
+    dynamical systems theory, essential for modeling time-dependent
+    processes and state changes in complex systems.
     """
 
     # must have timestamp
-
     pass
 
 
 class Quantum(Characteristic):
     """
-    Characteristic of having quantum properties.
-
-    Embodies quantum mechanical concepts such as superposition and
-    entanglement. This characteristic is key to LION's quantum-inspired
-    approach, enabling the modeling of non-classical behaviors in
-    cognitive and computational processes.
+    Embodies quantum concepts like superposition and entanglement.
+    Enables modeling of non-classical behaviors in cognitive and
+    computational processes, key to quantum-inspired approaches.
     """
 
     pass
@@ -60,12 +47,9 @@ class Quantum(Characteristic):
 
 class Probabilistic(Characteristic):
     """
-    Characteristic of being probabilistic.
-
-    Grounded in probability theory and stochastic processes, this
-    characteristic represents entities with inherent uncertainty.
-    It's essential for modeling decision-making processes and
-    systems with multiple possible outcomes.
+    Represents entities with inherent uncertainty. Grounded in
+    probability theory and stochastic processes, crucial for modeling
+    decision-making and multi-outcome systems.
     """
 
     pass
@@ -73,12 +57,29 @@ class Probabilistic(Characteristic):
 
 class Stochastic(Probabilistic, Temporal):
     """
-    Characteristic of being both probabilistic and time-dependent.
+    Combines probabilistic and time-dependent aspects. Integrates
+    stochastic processes and time series analysis for modeling systems
+    with evolving randomness, like financial markets or biological processes.
+    """
 
-    Combines concepts from stochastic processes and time series analysis.
-    This characteristic is crucial for modeling complex systems with
-    randomness that evolves over time, such as financial markets or
-    biological processes.
+    pass
+
+
+class Relational(Observable):
+    """
+    Represents inherently connected or related entities. Fundamental
+    for modeling networked systems, social interactions, and complex
+    relationships across various domains.
+    """
+
+    pass
+
+
+class Traversal(Observable):
+    """
+    Represents traversable or explorable entities. Inspired by graph
+    theory and network science, essential for modeling paths, connections,
+    and information flow in complex networked systems.
     """
 
     pass

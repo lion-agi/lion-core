@@ -1,4 +1,4 @@
-from .base import BaseMail
+from .base import BaseCommunication
 from .mail import Mail
 from .package import Package
 from .mail_manager import MailManager
@@ -12,7 +12,7 @@ from .util import create_message
 
 
 __all__ = [
-    "BaseMail",
+    "BaseCommunication",
     "Mail",
     "Package",
     "MailManager",
