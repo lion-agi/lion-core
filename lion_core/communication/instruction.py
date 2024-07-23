@@ -6,19 +6,6 @@ from .message import RoledMessage, MessageRole
 
 
 class Instruction(RoledMessage):
-    """
-    Represents an instruction message with context and requested fields.
-
-    Inherits from `RoledMessage` and provides methods to manage context
-    and requested fields specific to instructions.
-
-    Attributes:
-        instruction: The instruction content.
-        context: Additional context for the instruction.
-        sender: The sender of the instruction.
-        recipient: The recipient of the instruction.
-        requested_fields: Fields requested in the instruction.
-    """
 
     def __init__(
         self,
@@ -96,13 +83,6 @@ class Instruction(RoledMessage):
         return text_msg
 
     def _add_context(self, context: Any = None, **kwargs: Any) -> None:
-        """
-        Adds context to the instruction message.
-
-        Args:
-            context: Additional context to be added.
-            **kwargs: Additional context fields to be added.
-        """
         if "context" not in self.content:
             self.content["context"] = {}
         if isinstance(context, dict):
@@ -111,12 +91,6 @@ class Instruction(RoledMessage):
             self.content["context"]["additional_context"] = context
 
     def _update_requested_fields(self, requested_fields: dict) -> None:
-        """
-        Updates the requested fields in the instruction message.
-
-        Args:
-            requested_fields: The fields requested in the instruction.
-        """
         if "context" not in self.content:
             self.content["context"] = {}
             self.content["context"]["requested_fields"] = {}
@@ -130,16 +104,6 @@ class Instruction(RoledMessage):
         image_detail: str,
         **kwargs: Any,
     ) -> None:
-        """
-        Processes context and requested fields to update message content.
-
-        Args:
-            context: Additional context for the instruction.
-            requested_fields: Fields requested in the instruction.
-            images: List of image contents.
-            image_detail: Detail level for image processing.
-            **kwargs: Additional context fields to be added.
-        """
         if context:
             context = {"context": context} if not isinstance(context, dict) else context
             if (
@@ -181,15 +145,6 @@ class Instruction(RoledMessage):
 
     @staticmethod
     def _format_requested_fields(requested_fields: dict) -> dict:
-        """
-        Formats the requested fields into a JSON-parseable response format.
-
-        Args:
-            requested_fields: The fields requested in the instruction.
-
-        Returns:
-            The formatted requested fields.
-        """
         format_ = f"""
         MUST RETURN JSON-PARSEABLE RESPONSE ENCLOSED BY JSON CODE BLOCKS. ----
         ```json

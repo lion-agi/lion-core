@@ -6,13 +6,18 @@ based on specified assignments. It supports initialization and management
 of input and requested fields.
 """
 
+from functools import singledispatchmethod
+from collections import deque
 from typing import Any
 
 from pydantic import Field
 
 from lion_core.setting import BASE_LION_FIELDS, LN_UNDEFINED
-from lion_core.generic import Component
+from lion_core.libs import to_dict, lcall, strip_lower
 from lion_core.abc import MutableRecord
+from lion_core.exceptions import LionTypeError, LionValueError
+from lion_core.generic.component import Component
+from lion_core.generic.pile import Pile
 from .util import get_input_output_fields
 
 
@@ -47,45 +52,6 @@ class Form(Component, MutableRecord):
         examples=[{"field": {"config1": "a", "config2": "b"}}],
     )
 
-    @property
-    def work_fields(self) -> dict[str, Any]:
-        """
-        Get the fields relevant to the current task, including input and
-        requested fields.
-
-        Returns:
-            dict[str, Any]: The fields relevant to the current task.
-        """
-        dict_ = self.serialize()
-        return {
-            k: v
-            for k, v in dict_.items()
-            if k not in BASE_LION_FIELDS
-            and k in self.input_fields + self.requested_fields
-        }
-
-    @property
-    def filled(self) -> bool:
-        """
-        Check if the form is filled with all required fields.
-
-        Returns:
-            bool: True if the form is filled, otherwise False.
-        """
-        return self._is_filled()
-
-    def _is_filled(self) -> bool:
-        """
-        Check if all work fields are filled.
-
-        Returns:
-            bool: True if all work fields are filled, False otherwise.
-        """
-        return all(
-            getattr(self, field, None) not in [None, LN_UNDEFINED]
-            for field in self.work_fields
-        )
-
     def __init__(self, **kwargs: Any) -> None:
         """
         Initialize a new instance of the Form.
@@ -106,6 +72,23 @@ class Form(Component, MutableRecord):
         for i in self.input_fields + self.requested_fields:
             if i not in self.all_fields:
                 self.add_field(i, value=LN_UNDEFINED)
+
+    @property
+    def work_fields(self) -> dict[str, Any]:
+        """
+        Get the fields relevant to the current task, including input and
+        requested fields.
+
+        Returns:
+            dict[str, Any]: The fields relevant to the current task.
+        """
+        dict_ = self.to_dict()
+        return {
+            k: v
+            for k, v in dict_.items()
+            if k not in BASE_LION_FIELDS
+            and k in self.input_fields + self.requested_fields
+        }
 
     def append_to_request(self, field: str, value: Any = LN_UNDEFINED) -> None:
         """Append a field to the requested fields.
@@ -159,30 +142,177 @@ class Form(Component, MutableRecord):
                     self.all_fields[i], "validation_kwargs", {}
                 )
 
+    @singledispatchmethod
+    def fill(self, input_: Any, *, strict=False, update=False, **kwargs):
+        raise LionTypeError(f"Cannot fill form with type {type(input_)}")
+
+    @fill.register(dict)
+    def _(self, input_: dict, *, strict=False, update=False, **kwargs):
+        if strict and (
+            self.is_filled or any(i not in self.work_fields for i in input_.keys())
+        ):
+            raise LionValueError("Form is filled, cannot be worked on again")
+
+        fields = {**input_, **kwargs}
+        if update:
+            for k, v in fields:
+                if k in self.work_fields and v is not None:
+                    setattr(self, k, v)
+        else:
+            for k, v in fields:
+                if (
+                    k in self.work_fields
+                    and v is not None
+                    and getattr(self, k, None) is None
+                ):
+                    setattr(self, k, v)
+
+    @fill.register(MutableRecord)
+    def _(self, input_: MutableRecord, *, strict=False, update=False, **kwargs):
+        fields: dict = {**input_.work_fields, **kwargs}
+        return self.fill(fields, strict=strict, update=update)
+
+    @fill.register(str)
+    def _(
+        self,
+        input_: str,
+        *,
+        strict=False,
+        update=False,
+        str_type="json",
+        parser=None,
+        **kwargs,
+    ):
+        try:
+            fields = {**to_dict(input_, str_type=str_type, parser=parser), **kwargs}
+            return self.fill(fields, strict=strict, update=update)
+        except ValueError as e:
+            if len(str(e)) > 50:
+                e = str(e)[:50] + "..."
+            raise LionValueError(f"Unable to fill form with string input: {e}")
+
+    @fill.register(deque)
+    @fill.register(set)
+    @fill.register(tuple)
+    @fill.register(Pile)
+    @fill.register(list)
+    def _(self, input_, *, strict=False, update=True, **kwargs):
+        input_ = list(input_) if not isinstance(input_, list) else input_
+        for i in input_:
+            self.fill(i, strict=strict, update=update, **kwargs)
+
     @property
-    def work_fields(self) -> dict[str, Any]:
-        """Retrieve fields relevant to the current task.
-
-        Returns a dictionary of fields that are relevant to the current
-        task, excluding BASE_LION_FIELD and including only input and
-        requested fields.
-
-        Returns:
-            A dictionary of fields relevant to the current task.
-        """
-        dict_ = self.model_dump()
+    def instruction_dict(self) -> dict:
         return {
-            k: v
-            for k, v in dict_.items()
-            if (k not in BASE_LION_FIELDS)
-            and (k in self.input_fields + self.requested_fields)
+            "context": self.instruction_context,
+            "instruction": self.instruction_prompt,
+            "requested_fields": self.instruction_requested_fields,
         }
 
     @property
-    def instruction_dict(self) -> str:
-        from .form_manager import FormManager
+    def instruction_context(self) -> str:
+        """
+        Generate a description of the form's input fields.
 
-        return FormManager.form_instruction_dict(self)
+        Args:
+            form: Form to generate context for.
+
+        Returns:
+            String with descriptions of input fields.
+        """
+        return "".join(
+            f"""
+        ## input: {i}:
+        - description: {getattr(self.all_fields[i], "description", "N/A")}
+        - value: {str(self.__getattribute__(self.input_fields[idx]))}
+        """
+            for idx, i in enumerate(self.input_fields)
+        )
+
+    @property
+    def instruction_prompt(self) -> str:
+        """
+        Generate a task instruction prompt for a form.
+
+        Args:
+            form: Form to generate prompt for.
+
+        Returns:
+            Formatted instruction prompt string.
+        """
+        return f"""
+        ## Task Instructions
+        Please follow prompts to complete the task:
+        1. Your task is: {self.task}
+        2. The provided input fields are: {', '.join(self.input_fields)}
+        3. The requested output fields are: {', '.join(self.requested_fields)}
+        4. Provide your response in the specified JSON format.
+        """
+
+    @property
+    def instruction_requested_fields(self) -> dict[str, str]:
+        """
+        Get descriptions of a form's requested fields.
+
+        Args:
+            form: Form to get requested fields from.
+
+        Returns:
+            Dictionary mapping field names to descriptions.
+        """
+        return {
+            field: self.all_fields[field].description or "N/A"
+            for field in self.requested_fields
+        }
+
+    @property
+    def is_workable(self):
+        try:
+            self.check_is_workable()
+            return True
+        except LionValueError:
+            return False
+
+    def check_is_workable(self, strict=True):
+        if strict and self.is_filled:
+            raise LionValueError("Form is already filled, cannot be worked on again")
+        for field in self.input_fields:
+            if getattr(self, field, LN_UNDEFINED) is LN_UNDEFINED:
+                raise LionValueError(f"Required field {field} is not provided")
+        return True
+
+    @property
+    def is_filled(self):
+        return all(
+            getattr(self, field, LN_UNDEFINED) not in [None, LN_UNDEFINED]
+            for field in self.work_fields
+        )
+
+    @singledispatchmethod
+    def _get_field_annotation(self, field: Any) -> dict[str, Any]:
+        return {}
+
+    @_get_field_annotation.register(str)
+    def _(self, field: str) -> dict[str, Any]:
+        dict_ = {field: self.all_fields[field].annotation}
+        for k, v in dict_.items():
+            if "|" in str(v):
+                v = str(v)
+                v = v.split("|")
+                dict_[k] = lcall(v, strip_lower)
+            else:
+                dict_[k] = [v.__name__] if v else None
+        return dict_
+
+    @_get_field_annotation.register(deque)
+    @_get_field_annotation.register(set)
+    @_get_field_annotation.register(list)
+    @_get_field_annotation.register(tuple)
+    def _(self, field: list | tuple) -> dict[str, Any]:
+        dict_ = {}
+        for f in field:
+            dict_.update(self._get_field_annotation(f))
+        return dict_
 
 
 # File: lion_core/form/form.py

@@ -1,6 +1,6 @@
 """Base module for mail-like communication in the Lion framework."""
 
-from lion_core.generic import Element
+from lion_core.generic.element import Element
 
 
 class BaseCommunication(Element): ...

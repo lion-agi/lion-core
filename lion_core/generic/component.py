@@ -63,6 +63,12 @@ class Component(Element):
 
     @property
     def all_fields(self) -> dict[str, FieldInfo]:
+        """
+        Get all fields including model fields and extra fields.
+
+        Returns:
+            dict[str, FieldInfo]: A dictionary containing all fields.
+        """
         return {**self.model_fields, **self.extra_fields}
 
     def add_field(
@@ -73,17 +79,18 @@ class Component(Element):
         field_obj: FieldInfo = LN_UNDEFINED,
         **kwargs,
     ) -> None:
-        """Add a new field to the component's extra fields.
+        """
+        Add a new field to the component's extra fields.
 
         Args:
             name: The name of the field to add.
-            value: The value of the field.
-            annotation: Type annotation for the field.
-            field_obj: A pre-configured FieldInfo object.
-            **kwargs: Additional keyword arguments for Field.
+            value: The value of the field. Defaults to `LN_UNDEFINED`.
+            annotation: Type annotation for the field. Defaults to `LN_UNDEFINED`.
+            field_obj: A pre-configured FieldInfo object. Defaults to `LN_UNDEFINED`.
+            **kwargs: Additional keyword arguments for Field configuration.
 
         Raises:
-            ValueError: If the field already exists.
+            LionValueError: If the field already exists.
         """
         if name in self.all_fields:
             raise LionValueError(f"Field '{name}' already exists")
@@ -100,8 +107,18 @@ class Component(Element):
         field_obj: FieldInfo | Any = LN_UNDEFINED,
         **kwargs,
     ) -> None:
-        """similar to dictionary update but for single field,
-        if not existed, it will create a new field, otherwise update info of the field.
+        """
+        Update an existing field or create a new one if it doesn't exist.
+
+        Args:
+            name: The name of the field to update or create.
+            value: The new value for the field. Defaults to LN_UNDEFINED.
+            annotation: Type annotation for the field. Defaults to LN_UNDEFINED.
+            field_obj: A pre-configured FieldInfo object. Defaults to LN_UNDEFINED.
+            **kwargs: Additional keyword arguments for Field configuration.
+
+        Raises:
+            ValueError: If both 'default' and 'default_factory' are provided in kwargs.
         """
 
         # pydanitc Field object cannot have both default and default_factory
@@ -152,7 +169,8 @@ class Component(Element):
         self._add_last_update(name)
 
     def _add_last_update(self, name: str) -> None:
-        """Add or update the last update timestamp for a field.
+        """
+        Add or update the last update timestamp for a field.
 
         Args:
             name: The name of the field being updated.
@@ -160,15 +178,36 @@ class Component(Element):
         current_time = SysUtil.time()
         self.metadata.set(["last_updated", name], current_time)
 
-    def to_dict(self, **kwargs):
+    def to_dict(self, **kwargs) -> dict:
+        """
+        Convert the component to a dictionary representation.
+
+        Args:
+            **kwargs: Additional arguments to pass to model_dump.
+
+        Returns:
+            dict[str, Any]: A dictionary representation of the component.
+        """
         dict_ = self.model_dump(**kwargs)
         extra_fields = dict_.pop("extra_fields", {})
         dict_ = {**dict_, **extra_fields, "lion_class": self.class_name()}
         return dict_
 
     @classmethod
-    def from_dict(cls, data: dict, include=DEFAULT_SERIALIZATION_INCLUDE, **kwargs) -> T:
-        """kwargs for Pydantic model validate."""
+    def from_dict(
+        cls, data: dict, include=DEFAULT_SERIALIZATION_INCLUDE, **kwargs
+    ) -> T:
+        """
+        Create a component instance from a dictionary.
+
+        Args:
+            data: The dictionary containing component data.
+            include: Fields to include in the reconstruction. Defaults to DEFAULT_SERIALIZATION_INCLUDE.
+            **kwargs: Additional arguments for Pydantic model validation.
+
+        Returns:
+            T: An instance of the Component class or its subclass.
+        """
         if "lion_class" in data:
             cls = LION_CLASS_REGISTRY.get(data.pop("lion_class"), cls)
 
@@ -185,7 +224,8 @@ class Component(Element):
         return cls.model_validate(d_, **kwargs)
 
     def __setattr__(self, name: str, value: Any) -> None:
-        """Set an attribute and update the last update timestamp.
+        """
+        Custom attribute setter to handle extra fields and update timestamps.
 
         Args:
             name: The name of the attribute to set.
@@ -201,11 +241,11 @@ class Component(Element):
         else:
             super().__setattr__(name, value)
 
-        # super().__setattr__(name, value)
         self._add_last_update(name)
 
     def __getattr__(self, name: str) -> Any:
-        """Get an attribute, handling extra fields.
+        """
+        Custom attribute getter to handle extra fields.
 
         Args:
             name: The name of the attribute to get.
@@ -282,7 +322,7 @@ class Component(Element):
         Get the converter registry for the class.
 
         Returns:
-            The ConverterRegistry instance for the class.
+            ConverterRegistry: The ConverterRegistry instance for the class.
         """
         if isinstance(cls._converter_registry, type):
             cls._converter_registry = cls._converter_registry()
@@ -293,33 +333,33 @@ class Component(Element):
         Convert the component to a specified type using the ConverterRegistry.
 
         Args:
-            key: The key of the converter to use.
+            key: The key of the converter to use. Defaults to "dict".
             **kwargs: Additional keyword arguments for conversion.
 
         Returns:
-            The converted component in the specified type.
+            Any: The converted component in the specified type.
         """
         return self.get_converter_registry().convert_to(self, key, **kwargs)
 
     @classmethod
-    def convert_from(cls, obj: Any, key, /, **kwargs) -> T:
+    def convert_from(cls, obj: Any, key: str = "dict", /, **kwargs) -> T:
         """
         Convert data to create a new component instance using the ConverterRegistry.
 
         Args:
             obj: The object to convert from.
             key: The key of the converter to use.
-            unflat: If True, unflatten the data before deserialization.
+            **kwargs: Additional keyword arguments for conversion.
 
         Returns:
-            A new instance of the BaseComponent class or its subclass.
+            T: A new instance of the Component class or its subclass.
         """
         data = cls.get_converter_registry().convert_from(cls, obj, key)
         return cls.from_dict(data, **kwargs)
 
     @classmethod
     def register_converter(cls, key: str, converter: Type[Converter]) -> None:
-        """Register a new converter."""
+        """Register a new converter. Can be used for both a class and/or an instance."""
         cls.get_converter_registry().register(key, converter)
 
 

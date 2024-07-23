@@ -21,7 +21,8 @@ class MutableRecord(BaseRecord):
 class ImmutableRecord(BaseRecord):
     """
     Immutable record class. Inherits from BaseRecord but prevents
-    modifications.
+    modifications. Once a field is filled with data, that field
+    cannot change value.
     """
 
 
