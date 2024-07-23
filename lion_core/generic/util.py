@@ -47,10 +47,10 @@ def to_list_type(value: Any) -> list[Any]:
         return []
     if isinstance(value, str):
         return [value] if SysUtil.is_id(value) else []
-    if isinstance(value, (Collective, Mapping)):
-        return list(value.values())
     if isinstance(value, Element):
         return [value]
+    if isinstance(value, (Collective, Mapping)):
+        return list(value.values())
     if isinstance(value, (list, tuple, set, deque, Generator)):
         return list(value)
     return [value]
