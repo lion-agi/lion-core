@@ -15,17 +15,14 @@ from typing import Any, TypeVar, Type, Iterable
 
 from pydantic import Field
 
-from lion_core.abc.space import Collective, Container
-from lion_core.libs import to_list
+from lion_core.abc.space import Collective
 from lion_core.sys_util import SysUtil
 from lion_core.generic.element import Element
 from lion_core.exceptions import (
     ItemNotFoundError,
     LionTypeError,
     LionValueError,
-    LionIDError,
-    LionItemError,
-    ItemExistsError
+    ItemExistsError,
 )
 from .progression import Progression, progression
 from .util import to_list_type, validate_order
@@ -164,7 +161,11 @@ class Pile(Element, Collective):
             item_order.append(i)
         if isinstance(key, int | slice):
             try:
-                delete_order = list(self.order[key]) if isinstance(self.order[key], Progression) else [self.order[key]]
+                delete_order = (
+                    list(self.order[key])
+                    if isinstance(self.order[key], Progression)
+                    else [self.order[key]]
+                )
                 self.order[key] = item_order
                 for i in delete_order:
                     self.pile_.pop(i)
@@ -177,7 +178,9 @@ class Pile(Element, Collective):
                 raise KeyError(f"Invalid key {key}. Key and item does not match.")
             for k in key:
                 if SysUtil.get_id(k) not in item_order:
-                    raise KeyError(f"Invalid key {SysUtil.get_id(k)}. Key and item does not match.")
+                    raise KeyError(
+                        f"Invalid key {SysUtil.get_id(k)}. Key and item does not match."
+                    )
             self.order += key
             self.pile_.update(item_dict)
 
@@ -307,7 +310,11 @@ class Pile(Element, Collective):
                 for i in pop_items:
                     self.order.remove(i)
                     result.append(self.pile_.pop(i))
-                result = Pile(items=result, item_type=self.item_type) if len(result) > 1 else result[0]
+                result = (
+                    Pile(items=result, item_type=self.item_type)
+                    if len(result) > 1
+                    else result[0]
+                )
                 return result
             except Exception as e:
                 if default is LN_UNDEFINED:
@@ -461,7 +468,9 @@ class Pile(Element, Collective):
         for i in value:
             if self.item_type:
                 if type(i) not in self.item_type:
-                    raise LionTypeError(f"Invalid item type in pile. Expected {self.item_type}")
+                    raise LionTypeError(
+                        f"Invalid item type in pile. Expected {self.item_type}"
+                    )
             else:
                 if not isinstance(i, Element):
                     raise LionValueError(f"Invalid pile item {i}")
@@ -483,11 +492,15 @@ class Pile(Element, Collective):
         if len(value_set) != len(value):
             raise LionValueError("There are duplicate elements in the order")
         if len(value_set) != len(self.pile_.keys()):
-            raise LionValueError("The length of the order does not match the length of the pile")
+            raise LionValueError(
+                "The length of the order does not match the length of the pile"
+            )
 
         for i in value_set:
             if SysUtil.get_id(i) not in self.pile_.keys():
-                raise LionValueError(f"The order does not match the pile. {i} not found in the pile.")
+                raise LionValueError(
+                    f"The order does not match the pile. {i} not found in the pile."
+                )
 
         return Progression(order=value)
 
