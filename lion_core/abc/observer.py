@@ -63,7 +63,10 @@ class BaseEngine(AbstractObserver):
 class BaseiModel(AbstractObserver):
     """Base class for intelligent models in the framework."""
 
-    pass
+    @abstractmethod
+    async def call(self, *args, **kwargs):
+        """Asynchronously calls the model's core functionality."""
+        pass
 
 
 # File: lion_core/abc/observer.py

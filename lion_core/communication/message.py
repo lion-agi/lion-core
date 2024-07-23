@@ -47,20 +47,7 @@ class RoledMessage(Node, BaseCommunication):
     @field_validator("sender", "recipient", mode="before")
     @classmethod
     def _validate_sender_recipient(cls, value: Any) -> str:
-        """Validate the sender and recipient fields.
-
-        This method ensures that the sender and recipient fields contain
-        valid values, either predefined strings or valid Lion IDs.
-
-        Args:
-            value: The value to validate.
-
-        Returns:
-            The validated value.
-
-        Raises:
-            LionTypeError: If the value is invalid.
-        """
+        """Validate the sender and recipient fields."""
         if value in ["system", "user", "N/A", "assistant"]:
             return value
 

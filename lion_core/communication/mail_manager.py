@@ -5,7 +5,8 @@ from typing import Any
 from lion_core.abc import BaseManager
 from lion_core.sys_util import SysUtil
 from lion_core.generic.util import to_list_type
-from lion_core.generic import Pile, pile, Exchange
+from lion_core.generic.pile import pile, Pile
+from lion_core.generic.exchange import Exchange
 
 from .mail import Mail, Package
 
@@ -13,7 +14,12 @@ from .mail import Mail, Package
 class MailManager(BaseManager):
 
     def __init__(self, sources: list[Any]):
+        """
+        Initialize the MailManager.
 
+        Args:
+            sources: A list of sources to manage mail for.
+        """
         super().__init__()
         self.sources: Pile[Any] = pile()
         self.mails: dict[str, dict[str, deque]] = {}
@@ -23,6 +29,15 @@ class MailManager(BaseManager):
             self.add_sources(sources)
 
     def add_sources(self, sources: list[Any]) -> None:
+        """
+        Add new sources to the MailManager.
+
+        Args:
+            sources: A list of sources to add.
+
+        Raises:
+            ValueError: If adding a source fails.
+        """
         try:
             sources = to_list_type(sources)
             self.sources.include(sources)
@@ -33,6 +48,18 @@ class MailManager(BaseManager):
 
     @staticmethod
     def create_mail(sender: str, recipient: str, category: str, package: Any) -> Mail:
+        """
+        Create a new Mail object.
+
+        Args:
+            sender: The ID of the sender.
+            recipient: The ID of the recipient.
+            category: The category of the mail.
+            package: The content of the mail.
+
+        Returns:
+            A new Mail object.
+        """
         pack = Package(category=category, package=package)
         mail = Mail(
             sender=sender,
@@ -42,12 +69,30 @@ class MailManager(BaseManager):
         return mail
 
     def delete_source(self, source_id: str) -> None:
+        """
+        Delete a source from the MailManager.
+
+        Args:
+            source_id: The ID of the source to delete.
+
+        Raises:
+            ValueError: If the source does not exist.
+        """
         if source_id not in self.sources:
             raise ValueError(f"Source {source_id} does not exist.")
         self.sources.pop(source_id)
         self.mails.pop(source_id)
 
     def collect(self, sender: str) -> None:
+        """
+        Collect mail from a specific sender.
+
+        Args:
+            sender: The ID of the sender to collect mail from.
+
+        Raises:
+            ValueError: If the sender or recipient does not exist.
+        """
         if sender not in self.sources:
             raise ValueError(f"Sender source {sender} does not exist.")
         mailbox: Exchange = (
@@ -65,6 +110,15 @@ class MailManager(BaseManager):
             self.mails[mail.recipient][mail.sender].append(mail)
 
     def send(self, recipient: str) -> None:
+        """
+        Send mail to a specific recipient.
+
+        Args:
+            recipient: The ID of the recipient to send mail to.
+
+        Raises:
+            ValueError: If the recipient does not exist.
+        """
         if recipient not in self.sources:
             raise ValueError(f"Recipient source {recipient} does not exist.")
         if not self.mails[recipient]:
@@ -81,14 +135,22 @@ class MailManager(BaseManager):
                 mailbox.include(mail, "in")
 
     def collect_all(self) -> None:
+        """Collect mail from all sources."""
         for source in self.sources:
             self.collect(SysUtil.get_id(source))
 
     def send_all(self) -> None:
+        """Send mail to all recipients."""
         for source in self.sources:
             self.send(SysUtil.get_id(source))
 
     async def execute(self, refresh_time: int = 1) -> None:
+        """
+        Execute the mail collection and sending process asynchronously.
+
+        Args:
+            refresh_time: The time interval between each execution cycle.
+        """
         while not self.execute_stop:
             self.collect_all()
             self.send_all()

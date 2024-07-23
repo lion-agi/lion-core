@@ -1,22 +1,3 @@
-"""
-Exceptions for the Lion framework.
-
-This module defines custom exceptions used throughout the Lion framework.
-
-Exceptions:
-    LionException: Base exception for all Lion-specific errors.
-    LionValueError: Errors related to invalid input or attribute values.
-    LionTypeError: Errors related to unexpected types or type mismatches.
-    LionOperationError: Errors occurring during Lion operations.
-    LionItemError: Base class for errors related to framework items.
-    ItemNotFoundError: Error when an item is not found.
-    ItemExistsError: Error when an item already exists.
-    LionRelationError: Error in item relationships.
-    LionItemOperationError: Error during item-specific operations.
-    LionAccessError: Error when accessing without proper permissions.
-    LionQuantumError: Errors in quantum-related operations.
-"""
-
 from typing import Any
 
 
@@ -134,3 +115,14 @@ class LionQuantumError(LionException):
         self.state = state
         state_info = f" State: {state}" if state is not None else ""
         super().__init__(f"{message}{state_info}")
+
+
+class LionResourceError(LionException):
+    """Exception raised for errors in resource-related operations."""
+
+    def __init__(
+        self, message: str = "Resource operation error.", resource_id: str | None = None
+    ):
+        self.resource_id = resource_id
+        resource_info = f" Resource ID: {resource_id}" if resource_id else ""
+        super().__init__(f"{message}{resource_info}")

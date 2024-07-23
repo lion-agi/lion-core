@@ -1,239 +1,187 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 from abc import abstractmethod
-from typing import Any, List, Dict
+from typing import Any, Callable
 
-# from pandas import Series
+from lion_core.abc import Condition, Observable, Temporal, Action
+from lion_core.exceptions import LionOperationError
 from lion_core.sys_util import SysUtil
-
-from ..abc import Condition, Observable, Temporal
-
-_rule_classes = {}
+from lion_core.libs import ucall
+from lion_core.record.form import Form
 
 
-class Rule(Condition, Observable, Temporal):
-    """
-    Combines a condition and an action that can be applied based on it.
+class Rule(Condition, Action, Observable, Temporal):
 
-    Attributes:
-        apply_type (str): The type of data to which the rule applies.
-        fix (bool): Indicates whether the rule includes a fix action.
-        fields (list[str]): List of fields to which the rule applies.
-        validation_kwargs (dict): Keyword arguments for validation.
-        applied_log (list): Log of applied rules.
-        invoked_log (list): Log of invoked rules.
-        _is_init (bool): Indicates whether the rule is initialized.
-    """
-
-    exclude_type: list[str] = []
-    apply_type: list[str] | str = None
-    fix: bool = True
-    fields: list[str] = []
+    fix: bool = False
     validation_kwargs: dict = {}
-    applied_log: list = []
-    invoked_log: list = []
-    _is_init: bool = False
+    apply_types: list[str] | None = None
+    exclude_types: list[str] | None = None
 
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        if cls.__name__ not in _rule_classes:
-            _rule_classes[cls.__name__] = cls
-
-    def add_log(self, field: str, form: Any, apply: bool = True, **kwargs) -> None:
+    def __init__(
+        self,
+        fix=None,
+        apply_types=None,
+        exlcude_types=None,
+        apply_fields=None,
+        exclude_fields=None,
+        **kwargs,
+    ) -> None:
         """
-        Adds an entry to the applied or invoked log.
+        Initialize a Rule instance.
 
         Args:
-            field (str): The field being validated.
-            form (Any): The form being validated.
-            apply (bool): Indicates whether the log is for an applied rule.
-            **kwargs: Additional configuration parameters.
+            fix: Whether to attempt fixing invalid values.
+            apply_types: Types of fields to apply the rule to.
+            exclude_types: Types of fields to exclude from the rule.
+            apply_fields: Specific fields to apply the rule to.
+            exclude_fields: Specific fields to exclude from the rule.
+            **kwargs: Additional keyword arguments for validation.
         """
-        a = {
-            "type": "rule",
-            "class": self.class_name,
-            "ln_id": self.ln_id,
-            "timestamp": SysUtil.time(),
-            "field": field,
-            "form": form.ln_id,
-            "config": kwargs,
-        }
-        if apply:
-            self.applied_log.append(a)
-        else:
-            self.invoked_log.append(a)
+        self.ln_id = SysUtil.id()
+        self.timestamp = SysUtil.time(type_="timestamp")
+        self._is_active = False
+        self.accepted_fields = apply_fields or []
+        self.exclude_fields = exclude_fields or []
+        if fix:
+            self.fix = fix
+        if apply_types:
+            self.apply_types = apply_types
+        if exlcude_types:
+            self.exclude_types = exlcude_types
+        if kwargs:
+            self.validation_kwargs = {**self.validation_kwargs, **kwargs}
 
-    async def applies(
+    async def apply(
         self,
         field: str,
         value: Any,
-        form: Any,
+        form: Form,
         *args,
-        annotation: List[str] = None,
-        use_annotation: bool = True,
-        **kwargs,
+        apply_fields: list[str] = None,
+        exclude_fields: list[str] = None,
+        annotation: list | str = None,
+        check_func: Callable = None,  # takes priority over annotation and self.rule_condition
+        **kwargs,  # additional kwargs for custom check func or self.rule_condition
     ) -> bool:
         """
-        Determines whether the rule applies to a given field and value.
+        Apply the rule to a specific field.
 
         Args:
-            field (str): The field being validated.
-            value (Any): The value of the field.
-            form (Any): The form being validated.
-            *args: Additional arguments.
-            annotation (list[str], optional): Annotations for the field.
-            use_annotation (bool): Indicates whether to use annotations.
-            **kwargs: Additional keyword arguments.
+            field: The field to apply the rule to.
+            value: The value of the field.
+            form: The form containing the field.
+            apply_fields: Fields to apply the rule to (overrides instance setting).
+            exclude_fields: Fields to exclude from the rule (overrides instance setting).
+            annotation: Field annotation for type-based rule application.
+            check_func: Custom function for condition checking.
+            **kwargs: Additional arguments for the check function.
 
         Returns:
-            bool: True if the rule applies, otherwise False.
+            bool: True if the rule should be applied, False otherwise.
+
+        Raises:
+            LionOperationError: If an invalid check function is provided.
         """
-        if self.fields:
-            if field in self.fields:
-                self.add_log(field, form, **kwargs)
-                return True
+        if field not in form.work_fields:
+            return False
 
-        if use_annotation:
-            annotation = annotation or form._get_field_annotation(field)
-            annotation = [annotation] if isinstance(annotation, str) else annotation
+        apply_fields = apply_fields or self.accepted_fields
+        exclude_fields = exclude_fields or self.exclude_fields
 
+        if exclude_fields and field in exclude_fields:
+            return False
+        if apply_fields and field in apply_fields:
+            return True
+
+        if self.rule_condition != Rule.rule_condition:
+            check_func = check_func or self.rule_condition
+            if not isinstance(check_func, Callable):
+                raise LionOperationError(f"Invalid check function provided")
+            try:
+                a = await ucall(check_func, field, value, form, *args, **kwargs)
+                if isinstance(a, bool):
+                    return a
+            except Exception:
+                return False
+
+        # if not in custom fields, nor using custom validation condition
+        # we will resort to use field annotation
+        annotation = annotation or form._get_field_annotation(field)
+        if isinstance(annotation, dict) and field in annotation:
+            annotation = annotation[field]
+        annotation = [annotation] if isinstance(annotation, str) else annotation
+
+        if annotation and len(annotation) > 0:
             for i in annotation:
-                if i in self.apply_type and i not in self.exclude_type:
-                    self.add_log(field, form, **kwargs)
+                if i in self.apply_types and i not in self.exclude_types:
                     return True
             return False
 
-        a = await self.rule_condition(field, value, *args, **kwargs)
-
-        if a:
-            self.add_log(field, form, **kwargs)
-            return True
         return False
 
     async def invoke(self, field: str, value: Any, form: Any) -> Any:
         """
-        Invokes the rule's validation logic on a field and value.
+        Invoke the rule on a field value.
+
+        This method attempts to validate the value and fix it if necessary.
 
         Args:
-            field (str): The field being validated.
-            value (Any): The value of the field.
-            form (Any): The form being validated.
+            field: The field being processed.
+            value: The value to validate or fix.
+            form: The form containing the field.
 
         Returns:
             Any: The validated or fixed value.
 
         Raises:
-            ValueError: If validation or fixing fails.
+            LionOperationError: If validation or fixing fails.
         """
         try:
-            a = await self.validate(value, **self.validation_kwargs)
-            self.add_log(field, form, apply=False, **self.validation_kwargs)
-            return a
+            return await self.validate(value, **self.validation_kwargs)
 
         except Exception as e1:
             if self.fix:
                 try:
                     a = await self.perform_fix(value, **self.validation_kwargs)
-                    self.add_log(field, form, apply=False, **self.validation_kwargs)
                     return a
                 except Exception as e2:
-                    raise FieldError(f"failed to fix field") from e2
-            raise FieldError(f"failed to validate field") from e1
+                    raise LionOperationError(f"failed to fix field") from e2
+            raise LionOperationError(f"failed to validate field") from e1
 
-    async def rule_condition(self, field, value, *args, **kwargs) -> bool:
+    async def rule_condition(self, field, value, form, *args, **kwargs) -> bool:
         """
-        Additional condition, if choosing not to use annotation as a qualifier.
+        Default rule condition method.
 
-        Args:
-            *args: Additional arguments.
-            **kwargs: Additional keyword arguments.
+        This method can be optionally overridden in subclasses to implement
+        specific condition checking logic.
 
         Returns:
-            bool: False by default, should be overridden by subclasses.
+            bool: Always returns False in the base implementation.
         """
         return False
 
     async def perform_fix(self, value: Any, *args, **kwargs) -> Any:
         """
-        Attempts to fix a value if validation fails.
+        Perform a fix on an invalid value.
+
+        This method should be overridden in subclasses to implement
+        specific fixing logic.
 
         Args:
-            value (Any): The value to fix.
-            *args: Additional arguments.
+            value: The value to fix.
+            *args: Additional positional arguments.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            Any: The fixed value.
-
-        Raises:
-            ValueError: If the fix fails.
+            Any: The fixed value (returns the original value by default).
         """
         return value
 
     @abstractmethod
-    async def validate(self, value: Any) -> Any:
+    async def validate(self, value: Any, *args, **kwargs) -> Any:
         """
-        Abstract method to validate a value.
-
-        Args:
-            value (Any): The value to validate.
-
-        Returns:
-            Any: The validated value.
-
-        Raises:
-            ValueError: If validation fails.
+        either return a correct value, or raise error,
+        if raise error will attempt to fix it if fix is True
         """
         pass
 
-    def _to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the rule's attributes to a dictionary.
 
-        Returns:
-            dict: A dictionary representation of the rule.
-        """
-        return {
-            "ln_id": self.ln_id[:8] + "...",
-            "rule": self.__class__.__name__,
-            "apply_type": self.apply_type,
-            "fix": self.fix,
-            "fields": self.fields,
-            "validation_kwargs": self.validation_kwargs,
-            "num_applied": len(self.applied_log),
-            "num_invoked": len(self.invoked_log),
-        }
-
-    # def __str__(self) -> str:
-    #     """
-    #     Returns a string representation of the rule using a pandas Series.
-
-    #     Returns:
-    #         str: A string representation of the rule.
-    #     """
-    #     series = Series(self._to_dict())
-    #     return series.__str__()
-
-    # def __repr__(self) -> str:
-    #     """
-    #     Returns a string representation of the rule using a pandas Series.
-
-    #     Returns:
-    #         str: A string representation of the rule.
-    #     """
-    #     series = Series(self._to_dict())
-    #     return series.__repr__()
+# File: lion_core/rule/base.py

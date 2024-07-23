@@ -23,21 +23,7 @@ class PackageCategory(str, Enum):
 
 
 def validate_category(value: Any) -> PackageCategory:
-    """
-    Validate the category field.
-
-    This method ensures that the category field contains a valid
-    PackageCategory value.
-
-    Args:
-        value: The value to validate.
-
-    Returns:
-        The validated PackageCategory value.
-
-    Raises:
-        ValueError: If the value is None or not a valid PackageCategory.
-    """
+    """Validate the category field."""
     if value is None:
         raise ValueError("Package category cannot be None.")
     if isinstance(value, PackageCategory):
@@ -49,17 +35,7 @@ def validate_category(value: Any) -> PackageCategory:
 
 
 class Package(Observable, Temporal):
-    """
-    Represents a package in the Lion framework's communication system.
-
-    This class provides functionality for categorizing and packaging data
-    for communication between components.
-
-    Attributes:
-        request_source: The source of the request.
-        category: The category of the package.
-        package: The content of the package to be delivered.
-    """
+    """a package in the Lion framework's communication system."""
 
     def __init__(
         self,

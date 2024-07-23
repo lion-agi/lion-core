@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any
 from pydantic import Field
 from lion_core.libs import to_dict
@@ -8,18 +9,6 @@ from .action_request import ActionRequest
 
 # action response must correlates to a specific action request
 class ActionResponse(RoledMessage):
-    """
-    Represents a response to a specific action request.
-
-    Inherits from `RoledMessage` and provides attributes specific to action
-    responses.
-
-    Attributes:
-        action_request: The ID of the action request this response corresponds to.
-        function: The name of the function called.
-        arguments: The keyword arguments provided.
-        func_outputs: The output of the function call.
-    """
 
     action_request_id: str | None = Field(
         None,
@@ -95,7 +84,7 @@ class ActionResponse(RoledMessage):
             "output": self.func_outputs,
         }
 
-    def clone(self, **kwargs: Any) -> "ActionResponse":
+    def clone(self, **kwargs: Any) -> ActionResponse:
         """
         Creates a copy of the current object with optional additional arguments.
 

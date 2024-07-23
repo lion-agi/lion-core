@@ -9,15 +9,7 @@ from .package import PackageCategory, Package
 
 
 class Mail(BaseCommunication):
-    """
-    Represents a mail component with sender, recipient, and package information.
-
-    This class extends the BaseMail class and adds functionality for
-    handling packages within the mail system.
-
-    Attributes:
-        package: The package to be delivered.
-    """
+    """a mail component with sender, recipient, and package."""
 
     package: Package = Field(
         ...,
@@ -40,20 +32,7 @@ class Mail(BaseCommunication):
     @field_validator("sender", "recipient", mode="before")
     @classmethod
     def _validate_sender_recipient(cls, value: Any) -> str:
-        """Validate the sender and recipient fields.
-
-        This method ensures that the sender and recipient fields contain
-        valid values, either predefined strings or valid Lion IDs.
-
-        Args:
-            value: The value to validate.
-
-        Returns:
-            The validated value.
-
-        Raises:
-            LionTypeError: If the value is invalid.
-        """
+        """Validate the sender and recipient fields."""
         if value in ["system", "user", "N/A", "assistant"]:
             return value
 
@@ -67,19 +46,15 @@ class Mail(BaseCommunication):
 
     @property
     def category(self) -> PackageCategory:
-        """
-        Return the category of the package.
-
-        Returns:
-            The category of the package.
-        """
+        """Return the category of the package."""
         return self.package.category
 
-    def serialize(self, **kwargs: Any) -> dict[str, Any]:
-        dict_ = super().serialize(**kwargs)
-        dict_["package_id"] = self.package.ln_id
-        dict_["package_category"] = self.package.category
-        return dict_
+    def to_dict(self, **kwargs: Any) -> dict[str, Any]:
+        """Serialize the Mail object to a dictionary."""
+        d = super().to_dict(**kwargs)
+        d["package_id"] = self.package.ln_id
+        d["package_category"] = self.package.category
+        return d
 
 
 # File: lion_core/communication/mail.py

@@ -8,15 +8,7 @@ from .message import RoledMessage, MessageRole
 
 
 class System(RoledMessage):
-    """
-    Represents a system message with system-related information.
-
-    Inherits from `RoledMessage` and provides methods to manage
-    system-specific content.
-
-    Attributes:
-        system: The system information.
-    """
+    """Represents a system message in an LLM conversation."""
 
     system: str | Any | None = Field(None)
 
@@ -63,28 +55,11 @@ class System(RoledMessage):
 
     @property
     def system_info(self) -> Any:
-        """
-        Retrieves the system information stored in the message content.
-
-        Returns:
-            The system information.
-        """
+        """system information stored in the message content."""
         return self.content.get("system_info", None)
 
     def clone(self, **kwargs: Any) -> "System":
-        """
-        Creates a copy of the current System object.
-
-        This method clones the current object, preserving its content.
-        It also retains the original metadata, while allowing
-        for the addition of new attributes through keyword arguments.
-
-        Args:
-            **kwargs: Optional keyword arguments for the cloned object.
-
-        Returns:
-            A new instance with the same content and additional kwargs.
-        """
+        """Creates a copy of the current System object."""
         system = json.dumps(self.system_info)
         system_copy = System(system=json.loads(system), **kwargs)
         system_copy.metadata.set("origin_ln_id", self.ln_id)
