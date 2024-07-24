@@ -3,7 +3,7 @@ from typing import Any, Callable
 
 from lion_core.abc import Condition, Observable, Temporal, Action
 from lion_core.exceptions import LionOperationError
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.libs import ucall
 from lion_core.record.form import Form
 
@@ -19,7 +19,7 @@ class Rule(Condition, Action, Observable, Temporal):
         self,
         fix=None,
         apply_types=None,
-        exlcude_types=None,
+        exclude_types=None,
         apply_fields=None,
         exclude_fields=None,
         **kwargs,
@@ -44,8 +44,8 @@ class Rule(Condition, Action, Observable, Temporal):
             self.fix = fix
         if apply_types:
             self.apply_types = apply_types
-        if exlcude_types:
-            self.exclude_types = exlcude_types
+        if exclude_types:
+            self.exclude_types = exclude_types
         if kwargs:
             self.validation_kwargs = {**self.validation_kwargs, **kwargs}
 
@@ -94,7 +94,7 @@ class Rule(Condition, Action, Observable, Temporal):
         if self.rule_condition != Rule.rule_condition:
             check_func = check_func or self.rule_condition
             if not isinstance(check_func, Callable):
-                raise LionOperationError(f"Invalid check function provided")
+                raise LionOperationError("Invalid check function provided")
             try:
                 a = await ucall(check_func, field, value, form, *args, **kwargs)
                 if isinstance(a, bool):
@@ -143,10 +143,12 @@ class Rule(Condition, Action, Observable, Temporal):
                     a = await self.perform_fix(value, **self.validation_kwargs)
                     return a
                 except Exception as e2:
-                    raise LionOperationError(f"failed to fix field") from e2
-            raise LionOperationError(f"failed to validate field") from e1
+                    raise LionOperationError("failed to fix field") from e2
+            raise LionOperationError("failed to validate field") from e1
 
-    async def rule_condition(self, field, value, form, *args, **kwargs) -> bool:
+    async def rule_condition(
+        self, field: str, value: Any, form: Form, *args, **kwargs
+    ) -> bool:
         """
         Default rule condition method.
 

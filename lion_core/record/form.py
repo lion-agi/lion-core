@@ -13,12 +13,12 @@ from typing import Any
 from pydantic import Field
 
 from lion_core.setting import BASE_LION_FIELDS, LN_UNDEFINED
-from lion_core.libs import to_dict, lcall, strip_lower
+from lion_core.libs import to_dict
 from lion_core.abc import MutableRecord
 from lion_core.exceptions import LionTypeError, LionValueError
 from lion_core.generic.component import Component
 from lion_core.generic.pile import Pile
-from .util import get_input_output_fields
+from .utils import get_input_output_fields
 
 
 class Form(Component, MutableRecord):
@@ -292,6 +292,7 @@ class Form(Component, MutableRecord):
     def _get_field_annotation(self, field: Any) -> dict[str, Any]:
         return {}
 
+    # use list comprehension
     @_get_field_annotation.register(str)
     def _(self, field: str) -> dict[str, Any]:
         dict_ = {field: self.all_fields[field].annotation}
@@ -299,7 +300,7 @@ class Form(Component, MutableRecord):
             if "|" in str(v):
                 v = str(v)
                 v = v.split("|")
-                dict_[k] = lcall(v, strip_lower)
+                dict_[k] = [str(i).lower().strip() for i in v]
             else:
                 dict_[k] = [v.__name__] if v else None
         return dict_

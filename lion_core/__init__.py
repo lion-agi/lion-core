@@ -26,4 +26,4 @@
 
 from .setting import LN_UNDEFINED
 from . import libs as CoreLib
-from .sys_util import SysUtil as CoreUtil
+from .sys_utils import SysUtil as CoreUtil

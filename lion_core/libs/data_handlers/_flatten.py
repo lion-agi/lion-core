@@ -16,7 +16,7 @@ Helper Functions:
 
 from typing import Any, Generator
 
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.libs.data_handlers._to_list import to_list
 from lion_core.libs.data_handlers._to_dict import to_dict
 

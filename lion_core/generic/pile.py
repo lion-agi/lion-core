@@ -16,7 +16,7 @@ from typing import Any, TypeVar, Type, Iterable
 from pydantic import Field
 
 from lion_core.abc.space import Collective
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
 from lion_core.exceptions import (
     ItemNotFoundError,

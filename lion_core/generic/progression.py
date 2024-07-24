@@ -22,7 +22,7 @@ from pydantic import Field, field_validator
 
 from lion_core.abc.space import Ordering
 from lion_core.libs import to_list
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
 from lion_core.exceptions import ItemNotFoundError, LionTypeError
 from .util import validate_order, to_list_type
@@ -130,7 +130,9 @@ class Progression(Element, Ordering):
             ItemNotFoundError: If the requested index or slice is out of range.
         """
         if not isinstance(key, int | slice):
-            raise TypeError(f"indices must be integers or slices, not {key.__class__.__name__}")
+            raise TypeError(
+                f"indices must be integers or slices, not {key.__class__.__name__}"
+            )
 
         try:
             a = self.order[key]
@@ -312,7 +314,11 @@ class Progression(Element, Ordering):
         Raises:
             ValueError: If the item is not found.
         """
-        return self.order.index(SysUtil.get_id(item), start, end) if end else self.order.index(SysUtil.get_id(item), start)
+        return (
+            self.order.index(SysUtil.get_id(item), start, end)
+            if end
+            else self.order.index(SysUtil.get_id(item), start)
+        )
 
     def remove(self, item: Any) -> None:
         """
