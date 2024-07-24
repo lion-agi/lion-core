@@ -8,7 +8,7 @@ from typing import Any
 from lion_core.libs import ucall
 from lion_core.abc import Action
 
-from .tool import Tool
+from lion_core.action.tool import Tool
 
 
 class FunctionCalling(Action):

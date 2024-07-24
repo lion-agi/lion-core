@@ -7,8 +7,8 @@ from lion_core.abc.observer import BaseManager
 from lion_core.communication.action_request import ActionRequest
 from lion_core.libs import fuzzy_parse_json, to_list
 
-from .function_calling import FunctionCalling
-from .tool import Tool, func_to_tool
+from lion_core.action.function_calling import FunctionCalling
+from lion_core.action.tool import Tool, func_to_tool
 
 ToolType = bool | Tool | str | list[Tool | str | dict[str, Any]] | dict[str, Any]
 

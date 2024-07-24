@@ -15,7 +15,7 @@ from lion_core.abc.concept import AbstractElement
 from lion_core.abc.characteristic import Temporal, Observable
 from lion_core.setting import TIME_CONFIG
 from lion_core.sys_util import SysUtil
-from lion_core.class_registry import LION_CLASS_REGISTRY
+from lion_core.class_registry import LION_CLASS_REGISTRY, get_class
 from lion_core.exceptions import LionIDError
 
 T = TypeVar("T", bound="Element")
@@ -82,10 +82,9 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
     def from_dict(cls, data, **kwargs) -> T:
         """create an instance of the Element or its subclass from a dictionary."""
         if "lion_class" in data:
-            cls = LION_CLASS_REGISTRY.get(data.pop("lion_class"), cls)
-        if hasattr(cls, "from_dict"):
-            if cls.from_dict != Element.from_dict:
-                return cls.from_dict(data, **kwargs)
+            cls = get_class(data.pop("lion_class"))
+        if cls.from_dict.__func__ != Element.from_dict.__func__:
+            return cls.from_dict(data, **kwargs)
         return cls.model_validate(data, **kwargs)
 
     def to_dict(self, **kwargs) -> dict:

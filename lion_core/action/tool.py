@@ -111,7 +111,9 @@ class Tool(Element):
         Returns:
             A string representation of the Tool.
         """
-        timestamp_str = datetime.fromtimestamp(self.timestamp).isoformat(timespec="minutes")
+        timestamp_str = datetime.fromtimestamp(self.timestamp).isoformat(
+            timespec="minutes"
+        )
         return (
             f"{self.class_name()}(ln_id={self.ln_id[:6]}.., "
             f"timestamp={timestamp_str}), "
