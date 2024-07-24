@@ -3,24 +3,18 @@ import asyncio
 from typing import Any
 
 from lion_core.abc import BaseManager
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.generic.util import to_list_type
 from lion_core.generic.pile import pile, Pile
 from lion_core.generic.exchange import Exchange
 
-from .mail import Mail, Package
+from lion_core.communication.mail import Mail, Package
 
 
 class MailManager(BaseManager):
+    """Manages mail operations for multiple sources in the Lion framework"""
 
     def __init__(self, sources: list[Any]):
-        """
-        Initialize the MailManager.
-
-        Args:
-            sources: A list of sources to manage mail for.
-        """
-        super().__init__()
         self.sources: Pile[Any] = pile()
         self.mails: dict[str, dict[str, deque]] = {}
         self.execute_stop: bool = False
@@ -28,16 +22,8 @@ class MailManager(BaseManager):
         if sources:
             self.add_sources(sources)
 
-    def add_sources(self, sources: list[Any]) -> None:
-        """
-        Add new sources to the MailManager.
-
-        Args:
-            sources: A list of sources to add.
-
-        Raises:
-            ValueError: If adding a source fails.
-        """
+    def add_sources(self, sources: Any) -> None:
+        """Add new sources to the MailManager."""
         try:
             sources = to_list_type(sources)
             self.sources.include(sources)
@@ -69,15 +55,7 @@ class MailManager(BaseManager):
         return mail
 
     def delete_source(self, source_id: str) -> None:
-        """
-        Delete a source from the MailManager.
-
-        Args:
-            source_id: The ID of the source to delete.
-
-        Raises:
-            ValueError: If the source does not exist.
-        """
+        """Delete a source from the MailManager."""
         if source_id not in self.sources:
             raise ValueError(f"Source {source_id} does not exist.")
         self.sources.pop(source_id)

@@ -1,13 +1,28 @@
-"""Message module for the Lion framework's communication system."""
+"""
+Copyright 2024 HaiyangLi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
+from __future__ import annotations
 
 from enum import Enum
+from typing import Any
 from pydantic import Field, field_validator
-from typing import Any, Dict, List
-from pydantic import Field
-from lion_core.sys_util import SysUtil
-from lion_core.exceptions import LionIDError, LionTypeError
-from lion_core.graph.node import Node
-from .mail import BaseCommunication
+from lion_core.abc import Relational
+from lion_core.generic.note import Note
+from lion_core.generic.component import Component
+from lion_core.communication.mail import BaseMail
 
 
 class MessageField(str, Enum):
@@ -29,35 +44,13 @@ class MessageRole(str, Enum):
     ASSISTANT = "assistant"
 
 
-class RoledMessage(Node, BaseCommunication):
+class RoledMessage(Relational, Component, BaseMail):
     """A base class representing a message with validators and properties."""
 
-    sender: str = Field(
-        "N/A",
-        title="Sender",
-        description="The ID of the sender node, or 'system', 'user', or 'assistant'.",
+    content: Note = Field(
+        default_factory=Note,
+        description="The content of the message.",
     )
-
-    recipient: str = Field(
-        "N/A",
-        title="Recipient",
-        description="The ID of the recipient node, or 'system', 'user', or 'assistant'.",
-    )
-
-    @field_validator("sender", "recipient", mode="before")
-    @classmethod
-    def _validate_sender_recipient(cls, value: Any) -> str:
-        """Validate the sender and recipient fields."""
-        if value in ["system", "user", "N/A", "assistant"]:
-            return value
-
-        if value is None:
-            return "N/A"
-
-        try:
-            return SysUtil.get_id(value)
-        except LionIDError:
-            raise LionTypeError(f"Invalid sender or recipient type: {type(value)}")
 
     role: MessageRole | None = Field(
         default=None,
@@ -66,7 +59,7 @@ class RoledMessage(Node, BaseCommunication):
     )
 
     @property
-    def image_content(self) -> List[Dict[str, Any]] | None:
+    def image_content(self) -> list[dict[str, Any]] | None:
         """Return image content if present in the message."""
         msg_ = self.chat_msg
         if isinstance(msg_, dict) and isinstance(msg_["content"], list):
@@ -74,31 +67,47 @@ class RoledMessage(Node, BaseCommunication):
         return None
 
     @property
-    def chat_msg(self) -> Dict[str, Any] | None:
+    def chat_msg(self) -> dict[str, Any] | None:
         """Return message in chat representation."""
         try:
-            return self._check_chat_msg()
-        except:
+            return self._format_content()
+        except Exception:
             return None
 
-    def _check_chat_msg(self) -> Dict[str, Any]:
-        """Validate and format the message for chat representation."""
-        if self.role is None:
-            raise ValueError("Message role not set")
+    @field_validator("role")
+    def _validate_role(cls, v: Any) -> MessageRole | None:
+        if isinstance(v, MessageRole):
+            return v
+        elif isinstance(v, str) and v in [i.value for i in MessageRole]:
+            return MessageRole(v)
+        raise ValueError(f"Invalid message role: {v}")
 
-        role = self.role.value if isinstance(self.role, Enum) else self.role
-        if role not in [i.value for i in MessageRole]:
-            raise ValueError(f"Invalid message role: {role}")
+    def _format_content(self) -> dict[str, Any]:
+        content = None
+        if self.content.get("images", None) is not None:
+            content = self.content.to_dict()
+        else:
+            content = str(self.content.to_dict()["context"])
+        return {"role": self.role.value, "content": content}
 
-        content_dict: dict = SysUtil.copy(self.content)
+    def clone(self) -> RoledMessage:
+        """Creates a copy of the current System object."""
 
-        if not content_dict.get("images", None):
-            if len(content_dict) == 1:
-                content_dict = str(list(content_dict.values())[0])
-            else:
-                content_dict = str(content_dict)
-
-        return {"role": role, "content": content_dict}
+        copy_ = RoledMessage(
+            role=self.role,
+            sender=None,
+            recipient=None,
+            content=Note(self.content.to_dict()),
+        )
+        copy_.metadata.set(
+            "clone_info",
+            {
+                "original_ln_id": self.ln_id,
+                "original_sender": self.sender,
+                "original_timestamp": self.timestamp,
+            },
+        )
+        return copy_
 
     def __str__(self) -> str:
         """Provide a string representation of the message with content preview."""

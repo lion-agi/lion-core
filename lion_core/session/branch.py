@@ -1,3 +1,19 @@
+"""
+Copyright 2024 HaiyangLi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from typing import Any, Callable
 
 from lion_core.abc import BaseiModel
@@ -7,20 +23,16 @@ from lion_core.generic.progression import progression
 from lion_core.generic.exchange import Exchange
 from lion_core.action.tool import Tool
 from lion_core.action.tool_manager import ToolManager
-from lion_core.communication import (
-    RoledMessage,
-    System,
-    Instruction,
-    AssistantResponse,
-    ActionRequest,
-    ActionResponse,
-    create_message,
-    MailManager,
-    Mail,
-)
-from lion_core.record.log_manager import LogManager
-from .base import BaseSession
-from .utils import validate_messages, validate_system
+from lion_core.communication.message import RoledMessage
+from lion_core.communication.system import System
+from lion_core.communication.instruction import Instruction
+from lion_core.communication.assistant_response import AssistantResponse
+from lion_core.communication.action_request import ActionRequest
+from lion_core.communication.action_response import ActionResponse
+from lion_core.communication.mail_manager import MailManager
+from lion_core.communication.mail import Mail
+from lion_core.session.utils import validate_messages, validate_system, create_message
+from lion_core.session.base import BaseSession
 
 
 class Branch(BaseSession):
@@ -28,9 +40,8 @@ class Branch(BaseSession):
     def __init__(
         self,
         system: System,
-        messages: Pile[RoledMessage],
+        messages: Pile,
         tool_manager: ToolManager,
-        log_manager: LogManager,
         mail_manager: MailManager,
         mailbox: Exchange,
         name: str,
@@ -39,7 +50,6 @@ class Branch(BaseSession):
         self.system = system
         self.messages = messages
         self.tool_manager = tool_manager
-        self.log_manager = log_manager
         self.mail_manager = mail_manager
         self.mailbox = mailbox
         self.name = name
@@ -67,7 +77,7 @@ class Branch(BaseSession):
         # will return a new pile
         return pile(validate_messages(value), RoledMessage)
 
-    def include_message(
+    def add_message(
         self,
         *,
         system: dict | str | System | None = None,

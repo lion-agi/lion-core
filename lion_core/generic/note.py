@@ -1,3 +1,19 @@
+"""
+Copyright 2024 HaiyangLi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from __future__ import annotations
 
 from typing import Any
@@ -10,6 +26,7 @@ from lion_core.libs import (
     flatten,
 )
 from lion_core.setting import LN_UNDEFINED
+from lion_core.sys_utils import SysUtil
 
 
 class Note(BaseModel):
@@ -18,11 +35,14 @@ class Note(BaseModel):
     content: dict[str, Any] = Field(default_factory=dict)
 
     model_config = ConfigDict(
-        # extra="allow",
         arbitrary_types_allowed=True,
         use_enum_values=True,
         populate_by_name=True,
     )
+
+    def __init__(self, d_={}, **kwargs):
+        d_ = {**d_, **kwargs}
+        self.content = d_
 
     def pop(self, indices: list[str], default: Any = LN_UNDEFINED) -> Any:
         """
@@ -117,17 +137,23 @@ class Note(BaseModel):
             return flatten(self.content).items()
         return self.content.items()
 
-    def to_dict(self, **kwargs) -> dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the Note to a dictionary.
 
         Returns:
             A dictionary representation of the Note.
         """
-        return self.model_dump(**kwargs)
+        return SysUtil.copy(self.content, deep=True)
+
+    def clear(self):
+        """
+        Clear the content of the Note.
+        """
+        self.content.clear()
 
     @classmethod
-    def from_dict(cls, dict_: dict[str, Any]) -> Note:
+    def from_dict(cls, d_: dict[str, Any], **kwargs) -> Note:
         """
         Create a Note from a dictionary.
 
@@ -137,4 +163,13 @@ class Note(BaseModel):
         Returns:
             A Note object.
         """
-        return cls(content=dict_)
+        return cls(d_=d_, **kwargs)
+
+    def __len__(self) -> int:
+        return len(self.content)
+
+    def __iter__(self):
+        return iter(self.content)
+
+    def __next__(self):
+        return next(self.content)

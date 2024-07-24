@@ -1,7 +1,17 @@
-"""System utility module for the Lion framework.
+"""
+Copyright 2024 HaiyangLi
 
-This module provides utility functions for time operations, object copying,
-and unique identifier generation used throughout the Lion framework.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 from __future__ import annotations
@@ -13,6 +23,7 @@ import random
 from hashlib import sha256
 from datetime import datetime, timezone
 
+from lion_core.abc.characteristic import Observable
 from .setting import TIME_CONFIG, LION_ID_CONFIG
 from .exceptions import LionIDError
 
@@ -161,20 +172,34 @@ class SysUtil:
         if isinstance(item, Sequence) and len(item) == 1:
             item = item[0]
 
+        if hasattr(item, "ln_id") and isinstance(item, Observable):
+            item = item.ln_id
+
         prefix = config["prefix"]
         n = int(config["n"])
         n_hyphens = int(config["num_hyphens"])
+        postfix = config["postfix"]
 
-        if isinstance(item, str) and (
-            (item.startswith(prefix) and len(item) == (len(prefix) + n + n_hyphens))
-            or (len(item) == 32)  # for backward compatibility
+        id_len = (
+            (len(prefix) if prefix else 0)
+            + n
+            + n_hyphens
+            + (len(postfix) if postfix else 0)
+        )
+
+        if all(
+            (
+                isinstance(item, str),
+                (False if prefix and not item.startswith(prefix) else True),
+                (False if postfix and not item.endswith(postfix) else True),
+                len(item) == id_len,
+            )
+        ) or (
+            len(item) == 32  # for backward compatibility
         ):
+
             return item
-
-        if hasattr(item, "ln_id"):
-            return item.ln_id
-
-        raise LionIDError("Item must contain a Lion ID.")
+        raise LionIDError("Item must be observable and contain a valid Lion ID.")
 
     @staticmethod
     def is_id(item: Any, /, *, config: dict = LION_ID_CONFIG) -> bool:
@@ -216,5 +241,6 @@ def _insert_random_hyphens(
         modifiable_part = modifiable_part[:pos] + "-" + modifiable_part[pos:]
 
     return prefix + modifiable_part + postfix
+
 
 # File: lion_core/sys_util.py

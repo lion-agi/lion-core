@@ -1,3 +1,19 @@
+"""
+Copyright 2024 HaiyangLi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -14,8 +30,8 @@ from pydantic import (
 from lion_core.abc.concept import AbstractElement
 from lion_core.abc.characteristic import Temporal, Observable
 from lion_core.setting import TIME_CONFIG
-from lion_core.sys_util import SysUtil
-from lion_core.class_registry import LION_CLASS_REGISTRY
+from lion_core.sys_utils import SysUtil
+from lion_core.class_registry import LION_CLASS_REGISTRY, get_class
 from lion_core.exceptions import LionIDError
 
 T = TypeVar("T", bound="Element")
@@ -82,10 +98,9 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
     def from_dict(cls, data, **kwargs) -> T:
         """create an instance of the Element or its subclass from a dictionary."""
         if "lion_class" in data:
-            cls = LION_CLASS_REGISTRY.get(data.pop("lion_class"), cls)
-        if hasattr(cls, "from_dict"):
-            if cls.from_dict != Element.from_dict:
-                return cls.from_dict(data, **kwargs)
+            cls = get_class(data.pop("lion_class"))
+        if cls.from_dict.__func__ != Element.from_dict.__func__:
+            return cls.from_dict(data, **kwargs)
         return cls.model_validate(data, **kwargs)
 
     def to_dict(self, **kwargs) -> dict:

@@ -21,14 +21,25 @@ Usage:
     LION_CLASS_REGISTRY["MyClassName"] = MyClass
 """
 
-from typing import Dict, Type, TypeVar
-from .libs._helper import mor
+from typing import Type, TypeVar
+from lion_core.libs._helper import get_class_file_registry, get_class_objects
+import os
 
 T = TypeVar("T")
-LION_CLASS_REGISTRY: Dict[str, Type[T]] = {}
+LION_CLASS_REGISTRY: dict[str, Type[T]] = {}
+LION_CLASS_FILE_REGISTRY: dict[str, str] = {}
+
+pattern_list = ["lion_core/generic", "lion_core/communication", "lion_core/action"]
 
 
-def get_class(class_name: str, base_class: type[T]) -> type[T]:
+if not LION_CLASS_FILE_REGISTRY:
+    script_path = os.path.abspath(__file__)
+    script_dir = os.path.dirname(script_path)
+
+    LION_CLASS_FILE_REGISTRY = get_class_file_registry(script_dir, pattern_list)
+
+
+def get_class(class_name: str) -> type:
     """
     Retrieve a class by name from the registry or dynamically import it.
 
@@ -39,7 +50,6 @@ def get_class(class_name: str, base_class: type[T]) -> type[T]:
 
     Args:
         class_name: The name of the class to retrieve.
-        base_class: The expected base class of the retrieved class.
 
     Returns:
         The requested class, which is a subclass of base_class.
@@ -59,13 +69,10 @@ def get_class(class_name: str, base_class: type[T]) -> type[T]:
         return LION_CLASS_REGISTRY[class_name]
 
     try:
-        found_class = mor(class_name)
-        if issubclass(found_class, base_class):
-            LION_CLASS_REGISTRY[class_name] = found_class
-            return found_class
-        else:
-            raise ValueError(f"{class_name} is not a subclass of {base_class.__name__}")
-    except ValueError as e:
+        found_class_filepath = LION_CLASS_FILE_REGISTRY[class_name]
+        found_class_dict = get_class_objects(found_class_filepath)
+        return found_class_dict[class_name]
+    except Exception as e:
         raise ValueError(f"Unable to find class {class_name}: {e}")
 
 

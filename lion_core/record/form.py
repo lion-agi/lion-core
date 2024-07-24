@@ -1,9 +1,17 @@
 """
-Specialized implementation of BaseForm for dynamic form management.
+Copyright 2024 HaiyangLi
 
-This module defines the Form class, which manages form fields dynamically
-based on specified assignments. It supports initialization and management
-of input and requested fields.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 from functools import singledispatchmethod
@@ -13,12 +21,12 @@ from typing import Any
 from pydantic import Field
 
 from lion_core.setting import BASE_LION_FIELDS, LN_UNDEFINED
-from lion_core.libs import to_dict, lcall, strip_lower
+from lion_core.libs import to_dict
 from lion_core.abc import MutableRecord
 from lion_core.exceptions import LionTypeError, LionValueError
 from lion_core.generic.component import Component
 from lion_core.generic.pile import Pile
-from .util import get_input_output_fields
+from lion_core.record.utils import get_input_output_fields
 
 
 class Form(Component, MutableRecord):
@@ -292,6 +300,7 @@ class Form(Component, MutableRecord):
     def _get_field_annotation(self, field: Any) -> dict[str, Any]:
         return {}
 
+    # use list comprehension
     @_get_field_annotation.register(str)
     def _(self, field: str) -> dict[str, Any]:
         dict_ = {field: self.all_fields[field].annotation}
@@ -299,7 +308,7 @@ class Form(Component, MutableRecord):
             if "|" in str(v):
                 v = str(v)
                 v = v.split("|")
-                dict_[k] = lcall(v, strip_lower)
+                dict_[k] = [str(i).lower().strip() for i in v]
             else:
                 dict_[k] = [v.__name__] if v else None
         return dict_

@@ -7,7 +7,6 @@ from lion_core.libs.parsers._util import py_json_msp
 def function_to_schema(
     f_,
     style: Literal["google", "rest"] = "google",
-    /,
     *,
     f_description=None,
     p_description=None,

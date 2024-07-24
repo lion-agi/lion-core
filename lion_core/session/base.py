@@ -1,5 +1,5 @@
 from lion_core.abc import AbstractSpace, Observable, Temporal
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 
 
 class BaseSession(AbstractSpace, Observable, Temporal):

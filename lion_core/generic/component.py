@@ -1,3 +1,19 @@
+"""
+Copyright 2024 HaiyangLi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from __future__ import annotations
 from typing import Any, TypeVar, ClassVar, Type
 
@@ -5,14 +21,13 @@ from pydantic import Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.setting import LN_UNDEFINED
 from lion_core.exceptions import LionValueError
-from lion_core.class_registry import LION_CLASS_REGISTRY
+from lion_core.class_registry import get_class
 from lion_core.converter import ConverterRegistry, Converter
-from .element import Element
-from .note import Note
-
+from lion_core.generic.element import Element
+from lion_core.generic.note import Note
 
 T = TypeVar("T", bound=Element)
 
@@ -21,7 +36,6 @@ DEFAULT_SERIALIZATION_INCLUDE: set[str] = {
     "content",
     "ln_id",
     "timestamp",
-    "extra_fields",
     "embedding",
 }
 
@@ -194,34 +208,30 @@ class Component(Element):
         return dict_
 
     @classmethod
-    def from_dict(
-        cls, data: dict, include=DEFAULT_SERIALIZATION_INCLUDE, **kwargs
-    ) -> T:
+    def from_dict(cls, data: dict, **kwargs) -> T:
         """
         Create a component instance from a dictionary.
 
         Args:
             data: The dictionary containing component data.
-            include: Fields to include in the reconstruction. Defaults to DEFAULT_SERIALIZATION_INCLUDE.
             **kwargs: Additional arguments for Pydantic model validation.
 
         Returns:
             T: An instance of the Component class or its subclass.
         """
         if "lion_class" in data:
-            cls = LION_CLASS_REGISTRY.get(data.pop("lion_class"), cls)
+            cls = get_class(data.pop("lion_class"))
+        if cls.from_dict.__func__ != Component.from_dict.__func__:
+            return cls.from_dict(data, **kwargs)
 
-        extra_fields = data.pop("extra_fields", {})
-        d_ = {}
-
-        for k, v in data.items():
-            if not k in include:
-                extra_fields[k] = v
-            else:
-                d_[k] = v
-
-        d_["extra_fields"] = extra_fields
-        return cls.model_validate(d_, **kwargs)
+        extra_fields = {}
+        for k, v in list(data.items()):
+            if k not in cls.model_fields:
+                extra_fields[k] = data.pop(k)
+        obj = cls.model_validate(data, **kwargs)
+        for k, v in extra_fields.items():
+            obj.add_field(name=k, value=v)
+        return obj
 
     def __setattr__(self, name: str, value: Any) -> None:
         """
@@ -272,14 +282,29 @@ class Component(Element):
         if len(content_preview) == 50:
             content_preview += "..."
 
-        return (
+        output_str = (
             f"{self.__class__.__name__}("
             f"ln_id={self.ln_id[:8]}..., "
             f"timestamp={str(self._created_datetime)[:-6]}, "
             f"content='{content_preview}', "
             f"metadata_keys={list(self.metadata.keys())}, "
-            f"extra_fields_keys={list(self.extra_fields.keys())})"
         )
+
+        for i, j in self.model_dump().items():
+            if i not in ["ln_id", "timestamp", "metadata", "content", "embedding"]:
+                if isinstance(j, dict):
+                    output_str += f"{i}={list(j.keys())}, "
+                elif isinstance(j, str):
+                    j_preview = j[:50]
+                    if len(j_preview) == 50:
+                        j_preview = j_preview + "..."
+                    output_str += f"{i}={j_preview}, "
+                else:
+                    output_str += f"{i}={j}, "
+
+        output_str += f"extra_fields_keys={list(self.extra_fields.keys())})"
+
+        return output_str
 
     def __repr__(self) -> str:
         """Return a detailed string representation of the component."""
@@ -307,14 +332,28 @@ class Component(Element):
         dict_ = self.model_dump()
         extra_fields = dict_.pop("extra_fields", {})
 
-        return (
+        repr_str = (
             f"{self.class_name()}("
             f"ln_id={repr(self.ln_id)}, "
             f"timestamp={str(self._created_datetime)[:-6]}, "
             f"content={content_repr}, "
             f"metadata={truncate_dict(self.metadata.content)}, "
-            f"extra_fields={truncate_dict(extra_fields)})"
         )
+
+        for i, j in dict_.items():
+            if i not in ["ln_id", "timestamp", "metadata", "content", "embedding"]:
+                if isinstance(j, dict):
+                    repr_str += f"{i}={truncate_dict(j)}, "
+                elif isinstance(j, str):
+                    j_repr = j
+                    if len(j) > 100:
+                        j_repr = j[:97] + "..."
+                    repr_str += f"{i}={j_repr}, "
+                else:
+                    repr_str += f"{i}={j}, "
+
+        repr_str += f"extra_fields={truncate_dict(extra_fields)})"
+        return repr_str
 
     @classmethod
     def get_converter_registry(cls) -> ConverterRegistry:

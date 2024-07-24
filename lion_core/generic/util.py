@@ -25,9 +25,9 @@ from typing import (
     runtime_checkable,
 )
 
-from lion_core.abc.space import Collective, Ordering
+from lion_core.abc.space import Collective
 from lion_core.exceptions import LionIDError, LionValueError, LionTypeError
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
 
 T = TypeVar("T")
