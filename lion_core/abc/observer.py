@@ -5,7 +5,7 @@ distributed computing.
 """
 
 from abc import abstractmethod
-from .concept import AbstractObserver
+from lion_core.abc.concept import AbstractObserver
 
 
 class BaseManager(AbstractObserver):
