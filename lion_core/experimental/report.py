@@ -18,8 +18,8 @@ from lion_core.generic.component import Component
 from lion_core.exceptions import LionTypeError, LionValueError
 
 
-from .util import get_input_output_fields
-from .form import Form
+from ..record.utils import get_input_output_fields
+from ..record.form import Form
 
 
 class Report(Component, ImmutableRecord):

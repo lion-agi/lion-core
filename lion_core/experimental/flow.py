@@ -8,8 +8,8 @@ from lion_core.abc import Collective
 from lion_core.generic.element import Element
 from lion_core.exceptions import LionTypeError, ItemNotFoundError
 
-from .progression import Progression, progression
-from .pile import Pile, pile
+from ..generic.progression import Progression, progression
+from ..generic.pile import Pile, pile
 
 
 class Flow(Element):

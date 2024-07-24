@@ -23,18 +23,18 @@ class LogManager(BaseManager):
         log_entry = self.default_log_class(**data)
         self.logs.append(log_entry)
 
-    def dump_log(self, *args, **kwargs):
-        """
-        kwargs for pile.dump function,
-        """
-        return self.logs.dump(*args, **kwargs)
+    # def dump_log(self, *args, **kwargs):
+    #     """
+    #     kwargs for pile.dump function,
+    #     """
+    #     return self.logs.dump(*args, **kwargs)
 
-    def load_log(self, data: List[dict], *args, **kwargs) -> None:
-        """
-        kwargs for pile.load function,
-        pile function should include all the load method kwargs
-        """
-        self.logs = Pile.load(data, *args, **kwargs)
+    # def load_log(self, data: List[dict], *args, **kwargs) -> None:
+    #     """
+    #     kwargs for pile.load function,
+    #     pile function should include all the load method kwargs
+    #     """
+    #     self.logs = Pile.load(data, *args, **kwargs)
 
 
 # File: lion_core/log/log_manager.py
