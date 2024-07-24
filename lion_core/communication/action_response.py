@@ -1,113 +1,58 @@
 from __future__ import annotations
 from typing import Any
-from pydantic import Field
-from lion_core.libs import to_dict
-from lion_core.sys_util import SysUtil
-from .message import RoledMessage, MessageRole
-from .action_request import ActionRequest
+
+from lion_core.exceptions import LionValueError
+from lion_core.generic.note import Note
+from lion_core.communication.message import RoledMessage, MessageRole
+from lion_core.communication.action_request import ActionRequest
 
 
-# action response must correlates to a specific action request
 class ActionResponse(RoledMessage):
-
-    action_request_id: str | None = Field(
-        None,
-        description="The id of the action request that this response corresponds to",
-    )
-
-    function: str | None = Field(None, description="The name of the function called")
-    arguments: dict | None = Field(None, description="The keyword arguments provided")
-    func_outputs: Any | None = Field(
-        None, description="The output of the function call"
-    )
+    """Represents a response to an action request in the system."""
 
     def __init__(
         self,
         action_request: ActionRequest,
-        sender: str,
-        func_outputs: Any,
-        **kwargs: Any,
+        sender: Any,
+        func_output: Any,
     ):
-        """
-        Initializes the ActionResponse.
-
-        Args:
-            action_request: The action request this response corresponds to.
-            sender: The sender of the action request.
-            func_outputs: The output of the function call.
-            **kwargs: Additional keyword arguments.
-
-        Raises:
-            ValueError: If the action request has already been responded to.
-        """
-        if action_request.is_responded:
-            raise ValueError("Action request has already been responded to")
-
         super().__init__(
             role=MessageRole.ASSISTANT,
             sender=sender or "N/A",  # sender is the actionable component
-            recipient=action_request.sender,  # recipient is the assistant who made the request
-            content={
-                "action_response": {
-                    **action_request.action_request_dict,
-                    "output": func_outputs,
-                }
-            },
-            **kwargs,
+            recipient=action_request.sender,
+            content=prepare_action_response_content(action_request, func_output),
         )
-        self.update_request(action_request)
-        self.func_outputs = func_outputs
-
-    def update_request(self, action_request: ActionRequest) -> None:
-        """
-        Updates the action request details in the action response.
-
-        Args:
-            action_request: The action request to update from.
-        """
-        self.function = action_request.function
-        self.arguments = action_request.arguments
-        self.actionb_request_id = action_request.ln_id
-        action_request.action_response = self.ln_id
+        action_request.content["action_response_id"] = self.ln_id
 
     @property
-    def action_response_dict(self) -> dict[str, Any]:
-        """
-        Converts the action response to a dictionary.
+    def func_output(self) -> Any:
+        """Get the function output from the action response."""
+        return self.content.get(["action_response", "output"])
 
-        Returns:
-            A dictionary representation of the action response.
-        """
-        return {
-            "function": self.function,
-            "arguments": self.arguments,
-            "output": self.func_outputs,
-        }
+    @property
+    def response_dict(self) -> dict[str, Any]:
+        """Get the action response as a dictionary."""
+        return self.content.get("action_response", {})
 
-    def clone(self, **kwargs: Any) -> ActionResponse:
-        """
-        Creates a copy of the current object with optional additional arguments.
+    @property
+    def action_request_id(self) -> str | None:
+        """Get the ID of the corresponding action request."""
+        return self.content.get("action_request_id")
 
-        This method clones the current object, preserving its function and
-        arguments. It also retains the original `action_request`, `func_outputs`,
-        and metadata, while allowing for the addition of new attributes through
-        keyword arguments.
 
-        Args:
-            **kwargs: Optional keyword arguments to be included in the cloned object.
+def prepare_action_response_content(
+    action_request: ActionRequest,
+    func_output: Any,
+) -> Note:
+    """Prepare the content for an action response."""
+    if action_request.is_responded:
+        raise LionValueError("Action request has already been responded to")
 
-        Returns:
-            A new instance of the object with the same function, arguments,
-            and additional keyword arguments.
-        """
-
-        arguments = to_dict(SysUtil.copy(self.arguments))
-        action_request = ActionRequest(function=self.function, arguments=arguments)
-        action_response_copy = ActionResponse(action_request=action_request, **kwargs)
-        action_response_copy.actionb_request_id = self.actionb_request_id
-        action_response_copy.func_outputs = self.func_outputs
-        action_response_copy.metadata.set("origin_ln_id", self.ln_id)
-        return action_response_copy
+    dict_ = action_request.request_dict
+    dict_["output"] = func_output
+    content = Note({"action_request_id": action_request.ln_id})
+    content["action_response"] = dict_
+    return content
 
 
 # File: lion_core/communication/action_response.py
