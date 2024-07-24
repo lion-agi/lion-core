@@ -166,3 +166,4 @@ cython_debug/
 # Exclude setup.py and pyproject.toml from version control
 setup.py
 pyproject.toml
+.idea/
