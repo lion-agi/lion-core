@@ -7,44 +7,18 @@ from lion_core.abc.observer import BaseManager
 from lion_core.communication.action_request import ActionRequest
 from lion_core.libs import fuzzy_parse_json, to_list
 
-from .function_calling import FunctionCalling
-from .tool import Tool, func_to_tool
-
-ToolType = bool | Tool | str | list[Tool | str | dict[str, Any]] | dict[str, Any]
+from lion_core.action.function_calling import FunctionCalling
+from lion_core.action.tool import Tool, func_to_tool, ToolType
 
 
 class ToolManager(BaseManager):
-    """
-    Manages tools in the system.
-
-    This class provides functionality to register tools, invoke them based on
-    various input formats, and retrieve tool schemas. It serves as a central
-    registry for all available tools in the system.
-
-    Attributes:
-        registry (dict[str, Tool]): A dictionary storing registered tools,
-            with tool names as keys and Tool objects as values.
-    """
+    """Manages tools in the system."""
 
     def __init__(self, registry: dict[str, Tool] | None = None) -> None:
-        """
-        Initialize a new instance of ToolManager.
-
-        Args:
-            registry: Initial tool registry. If None, an empty registry is created.
-        """
         self.registry: dict[str, Tool] = registry or {}
 
     def __contains__(self, tool: Tool | str | Callable[..., Any]) -> bool:
-        """
-        Check if a tool is registered.
-
-        Args:
-            tool: The tool to check for.
-
-        Returns:
-            True if the tool is registered, False otherwise.
-        """
+        """Check if a tool is registered."""
         if isinstance(tool, Tool):
             return tool.function_name in self.registry
         elif isinstance(tool, str):
@@ -92,11 +66,14 @@ class ToolManager(BaseManager):
         Args:
             tools: The tools to register.
 
+        Raises:
+            ValueError: If the tool is already registered and update is False.
+            TypeError: If the element tool is not a Tool object or callable.
+
         Returns:
             True if all tools were registered successfully.
         """
-        tools_list = to_list(tools)
-        print(tools_list)
+        tools_list = to_list(tools, dropna=True, flatten=True)
         return all(self.register_tool(tool) for tool in tools_list)
 
     @singledispatchmethod
@@ -158,15 +135,7 @@ class ToolManager(BaseManager):
         raise ValueError(f"Invalid function call {func_call}")
 
     async def invoke(self, func_call: Any) -> Any:
-        """
-        Invoke a tool based on the provided function call.
-
-        Args:
-            func_call: The function call to invoke.
-
-        Returns:
-            The result of the invoked function.
-        """
+        """Invoke a tool based on the provided function call."""
         function_calling = self.match_tool(func_call)
         return await function_calling.invoke()
 
@@ -188,6 +157,10 @@ class ToolManager(BaseManager):
             tools: Specification of which tools to retrieve schemas for.
             **kwargs: Additional keyword arguments.
 
+        Raises:
+            ValueError: If a specified tool is not registered.
+            TypeError: If an unsupported tool type is provided.
+
         Returns:
             Tool schemas.
         """
@@ -198,19 +171,6 @@ class ToolManager(BaseManager):
         return tool_kwarg | kwargs
 
     def _get_tool_schema(self, tool: Any) -> dict[str, Any] | list[dict[str, Any]]:
-        """
-        Retrieve the schema for a specific tool or list of tools.
-
-        Args:
-            tool: The tool or tools to retrieve schemas for.
-
-        Returns:
-            Tool schema(s).
-
-        Raises:
-            ValueError: If a specified tool is not registered.
-            TypeError: If an unsupported tool type is provided.
-        """
         if isinstance(tool, dict):
             return tool
         elif isinstance(tool, Tool) or isinstance(tool, str):

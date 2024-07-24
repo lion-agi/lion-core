@@ -5,7 +5,7 @@ from typing import Any, Callable
 
 from pydantic import Field, field_serializer
 
-from lion_core.generic import Element
+from lion_core.generic.element import Element
 from lion_core.libs import function_to_schema, to_list
 
 
@@ -160,5 +160,7 @@ def func_to_tool(
 
     return tools
 
+
+ToolType = bool | Tool | str | list[Tool | str | dict[str, Any]] | dict[str, Any]
 
 # File: lion_core/action/tool.py
