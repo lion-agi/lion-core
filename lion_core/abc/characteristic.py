@@ -1,6 +1,6 @@
 """Characteristic classes for the Lion framework."""
 
-from .concept import Tao
+from lion_core.abc.concept import Tao
 
 
 class Characteristic(Tao):

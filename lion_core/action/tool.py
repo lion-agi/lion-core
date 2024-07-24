@@ -164,4 +164,6 @@ def func_to_tool(
     return tools
 
 
+ToolType = bool | Tool | str | list[Tool | str | dict[str, Any]] | dict[str, Any]
+
 # File: lion_core/action/tool.py
