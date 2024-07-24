@@ -2,7 +2,9 @@ from collections.abc import Mapping
 from typing import Type
 import sys
 import os
+import ast
 import datetime
+import importlib.util
 from hashlib import sha256
 import random
 from functools import lru_cache
@@ -74,3 +76,42 @@ def mor(class_name: str) -> type:
         if hasattr(module, class_name):
             return getattr(module, class_name)
     raise ValueError(f"Class '{class_name}' not found in any loaded module")
+
+
+def get_file_classes(file_path):
+    with open(file_path, "r") as file:
+        file_content = file.read()
+
+    tree = ast.parse(file_content)
+
+    class_file_dict = {}
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef):
+            class_file_dict[node.name] = file_path
+
+    return class_file_dict
+
+
+def get_class_file_registry(folder_path, pattern_list):
+    class_file_registry = {}
+    for root, _, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith(".py"):
+                if any(pattern in root for pattern in pattern_list):
+                    class_file_dict = get_file_classes(os.path.join(root, file))
+                    class_file_registry.update(class_file_dict)
+    return class_file_registry
+
+
+def get_class_objects(file_path):
+    class_objects = {}
+    spec = importlib.util.spec_from_file_location("module.name", file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    for class_name in dir(module):
+        obj = getattr(module, class_name)
+        if isinstance(obj, type):
+            class_objects[class_name] = obj
+
+    return class_objects
