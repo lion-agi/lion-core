@@ -1,17 +1,17 @@
 """
-Flatten nested dictionaries or lists into single-level dictionaries.
+Copyright 2024 HaiyangLi
 
-This module provides functions to flatten nested structures and retrieve
-flattened keys. It supports various options for customizing the flattening
-process.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Functions:
-    flatten: Flatten a nested dictionary or list.
-    get_flattened_keys: Get keys from a flattened representation.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-Helper Functions:
-    _dynamic_flatten_in_place: Recursively flatten a structure in place.
-    _dynamic_flatten_generator: Generate flattened key-value pairs.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 from typing import Any, Generator

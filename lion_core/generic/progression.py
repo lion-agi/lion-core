@@ -1,16 +1,17 @@
 """
-Defines the Progression class for managing ordered sequences in the Lion framework.
+Copyright 2024 HaiyangLi
 
-This module provides the Progression class, a flexible container for ordered
-lists of Lion IDs. It supports various operations including addition, removal,
-and manipulation of elements, as well as list-like indexing and slicing.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Key components:
-- Progression: Main class for handling ordered sequences of Lion IDs.
-- progression: Utility function for creating Progression instances.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-The Progression class is a core data structure in Lion, designed to work
-seamlessly with other Lion components and support complex data manipulations.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 from __future__ import annotations

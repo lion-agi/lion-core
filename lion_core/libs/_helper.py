@@ -1,13 +1,27 @@
+"""
+Copyright 2024 HaiyangLi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from collections.abc import Mapping
 from typing import Type
-import sys
 import os
 import ast
 import datetime
 import importlib.util
 from hashlib import sha256
 import random
-from functools import lru_cache
 
 
 def unique_hash(n: int = 32) -> str:
@@ -53,29 +67,6 @@ def insert_random_hyphens(
         modifiable_part = modifiable_part[:pos] + "-" + modifiable_part[pos:]
 
     return prefix + modifiable_part + postfix
-
-
-@lru_cache
-def mor(class_name: str) -> type:
-    """
-    Module Object Registry function for dynamic class loading.
-
-    This function attempts to find and return a class based on its name.
-    It searches through all loaded modules in sys.modules.
-
-    Args:
-        class_name: The name of the class to find.
-
-    Returns:
-        The requested class.
-
-    Raises:
-        ValueError: If the class is not found in any loaded module.
-    """
-    for module_name, module in sys.modules.items():
-        if hasattr(module, class_name):
-            return getattr(module, class_name)
-    raise ValueError(f"Class '{class_name}' not found in any loaded module")
 
 
 def get_file_classes(file_path):

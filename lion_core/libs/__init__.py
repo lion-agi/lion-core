@@ -1,7 +1,7 @@
-from .data_handlers import *
-from .function_handlers import *
-from .parsers import *
-from ._helper import unique_hash, is_same_dtype, insert_random_hyphens, mor
+from lion_core.libs.data_handlers import *
+from lion_core.libs.function_handlers import *
+from lion_core.libs.parsers import *
+from lion_core.libs._helper import unique_hash, is_same_dtype, insert_random_hyphens
 
 
 __all__ = [
@@ -50,5 +50,4 @@ __all__ = [
     "xml_to_dict",
     "unique_hash",
     "insert_random_hyphens",
-    "mor",
 ]
