@@ -2,7 +2,7 @@ import unittest
 import asyncio
 import time
 from unittest.mock import patch
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 
 from lion_core.libs.function_handlers._throttle import Throttle
 

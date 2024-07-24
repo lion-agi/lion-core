@@ -1,11 +1,27 @@
+"""
+Copyright 2024 HaiyangLi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from typing import Any
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.generic.pile import pile, Pile
-from lion_core.communication import MailManager
 from lion_core.generic.util import to_list_type
 from lion_core.generic.exchange import Exchange
-from .base import BaseSession
-from .branch import Branch
+from lion_core.communication.mail_manager import MailManager
+from lion_core.session.base import BaseSession
+from lion_core.session.branch import Branch
 
 
 class Session(BaseSession):
@@ -49,7 +65,7 @@ class Session(BaseSession):
             raise ValueError(
                 f"Branch {branch.name or branch.ln_id[:8]}.. does not exist."
             )
-        self.branches.remove(branch)
+        self.branches.exclude(branch)
         if delete:
             del branch
 

@@ -1,9 +1,9 @@
-from ._choose_most_similar import choose_most_similar
-from ._extract_docstring import extract_docstring_details
-from ._extract_code_block import extract_code_block
-from ._fuzzy_parse_json import fuzzy_parse_json, fix_json_string
-from ._as_readable_json import as_readable_json
-from ._md_to_json import (
+from lion_core.libs.parsers._choose_most_similar import choose_most_similar
+from lion_core.libs.parsers._extract_docstring import extract_docstring_details
+from lion_core.libs.parsers._extract_code_block import extract_code_block
+from lion_core.libs.parsers._fuzzy_parse_json import fuzzy_parse_json, fix_json_string
+from lion_core.libs.parsers._as_readable_json import as_readable_json
+from lion_core.libs.parsers._md_to_json import (
     extract_json_block,
     md_to_json,
     escape_chars_in_json,

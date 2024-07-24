@@ -1,16 +1,17 @@
 """
-Defines the Progression class for managing ordered sequences in the Lion framework.
+Copyright 2024 HaiyangLi
 
-This module provides the Progression class, a flexible container for ordered
-lists of Lion IDs. It supports various operations including addition, removal,
-and manipulation of elements, as well as list-like indexing and slicing.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Key components:
-- Progression: Main class for handling ordered sequences of Lion IDs.
-- progression: Utility function for creating Progression instances.
+    http://www.apache.org/licenses/LICENSE-2.0
 
-The Progression class is a core data structure in Lion, designed to work
-seamlessly with other Lion components and support complex data manipulations.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ from pydantic import Field, field_validator
 
 from lion_core.abc.space import Ordering
 from lion_core.libs import to_list
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
 from lion_core.exceptions import ItemNotFoundError, LionTypeError
 from .util import validate_order, to_list_type
@@ -130,7 +131,9 @@ class Progression(Element, Ordering):
             ItemNotFoundError: If the requested index or slice is out of range.
         """
         if not isinstance(key, int | slice):
-            raise TypeError(f"indices must be integers or slices, not {key.__class__.__name__}")
+            raise TypeError(
+                f"indices must be integers or slices, not {key.__class__.__name__}"
+            )
 
         try:
             a = self.order[key]
@@ -312,7 +315,11 @@ class Progression(Element, Ordering):
         Raises:
             ValueError: If the item is not found.
         """
-        return self.order.index(SysUtil.get_id(item), start, end) if end else self.order.index(SysUtil.get_id(item), start)
+        return (
+            self.order.index(SysUtil.get_id(item), start, end)
+            if end
+            else self.order.index(SysUtil.get_id(item), start)
+        )
 
     def remove(self, item: Any) -> None:
         """

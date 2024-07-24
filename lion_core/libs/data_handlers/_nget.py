@@ -1,12 +1,17 @@
 """
-Retrieve a value from a nested structure using a list of indices.
+Copyright 2024 HaiyangLi
 
-This module provides a function to navigate through a nested dictionary or
-list based on provided indices and return the value found at the target
-location.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Functions:
-- nget: Retrieve a value from a nested structure using a list of indices.
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 from lion_core.libs.data_handlers._util import get_target_container

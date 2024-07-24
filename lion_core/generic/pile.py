@@ -1,13 +1,17 @@
 """
-Defines the Pile class for managing flexible Element collections in Lion.
+Copyright 2024 HaiyangLi
 
-This module provides the Pile class, a versatile container combining list-like
-and dictionary-like behaviors for storing and manipulating Element objects. It
-supports type checking, ordered access, and various collection operations.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Key components:
-- Pile: Main class for managing collections of Elements.
-- pile: Utility function for creating Pile instances.
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 from __future__ import annotations
@@ -16,7 +20,7 @@ from typing import Any, TypeVar, Type, Iterable
 from pydantic import Field
 
 from lion_core.abc.space import Collective
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
 from lion_core.exceptions import (
     ItemNotFoundError,

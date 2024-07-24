@@ -1,4 +1,4 @@
-from ...generic.rule.base import Rule
+from lion_core.rule.base import Rule
 
 
 """
