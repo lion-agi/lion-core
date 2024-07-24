@@ -12,11 +12,11 @@ setup(
     name="lion_core",
     version="0.1.0",
     author="HaiyangLi",
-    author_email="",
+    author_email="quantocean.li@gmail.com",
     description="A core package for the Lion framework.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/ohdearquant/lion-core",
+    url="https://github.com/lion-agi/lion-core",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
