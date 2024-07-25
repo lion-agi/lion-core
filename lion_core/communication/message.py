@@ -16,6 +16,7 @@ limitations under the License.
 
 from __future__ import annotations
 
+import inspect
 from enum import Enum
 from typing import Any
 from pydantic import Field, field_validator
@@ -42,6 +43,12 @@ class MessageRole(str, Enum):
     SYSTEM = "system"
     USER = "user"
     ASSISTANT = "assistant"
+
+
+class MessageCloneFlag(str, Enum):
+    """Enum to signal constructing a clone Message"""
+
+    MESSAGE_CLONE = "MESSAGE_CLONE"
 
 
 class RoledMessage(Relational, Component, BaseMail):
@@ -76,38 +83,31 @@ class RoledMessage(Relational, Component, BaseMail):
 
     @field_validator("role")
     def _validate_role(cls, v: Any) -> MessageRole | None:
-        if isinstance(v, MessageRole):
-            return v
-        elif isinstance(v, str) and v in [i.value for i in MessageRole]:
+        if v in MessageRole:
             return MessageRole(v)
         raise ValueError(f"Invalid message role: {v}")
 
     def _format_content(self) -> dict[str, Any]:
-        content = None
-        if self.content.get("images", None) is not None:
+        if self.content.get("images", None):
             content = self.content.to_dict()
         else:
-            content = str(self.content.to_dict()["context"])
+            content = str(self.content.to_dict())
         return {"role": self.role.value, "content": content}
 
     def clone(self) -> RoledMessage:
         """Creates a copy of the current System object."""
 
-        copy_ = RoledMessage(
-            role=self.role,
-            sender=None,
-            recipient=None,
-            content=Note(self.content.to_dict()),
-        )
-        copy_.metadata.set(
-            "clone_info",
-            {
-                "original_ln_id": self.ln_id,
-                "original_sender": self.sender,
-                "original_timestamp": self.timestamp,
-            },
-        )
-        return copy_
+        cls = self.__class__
+        signature = inspect.signature(cls.__init__)
+        param_num = len(signature.parameters) - 1
+
+        init_args = [MessageCloneFlag.MESSAGE_CLONE] * param_num
+
+        obj = cls(*init_args)
+        obj.content = self.content
+        obj.metadata.set("clone_from", self)
+
+        return obj
 
     def __str__(self) -> str:
         """Provide a string representation of the message with content preview."""

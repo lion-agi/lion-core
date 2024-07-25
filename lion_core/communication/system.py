@@ -1,6 +1,6 @@
 from typing import Any
 from lion_core.communication.utils import format_system_content
-from lion_core.communication.message import RoledMessage, MessageRole
+from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
 
 
 class System(RoledMessage):
@@ -8,10 +8,10 @@ class System(RoledMessage):
 
     def __init__(
         self,
-        system: Any = None,
-        sender: str | None = None,
-        recipient: str | None = None,
-        with_datetime: bool | str | None = None,
+        system: Any | MessageCloneFlag = None,
+        sender: str | None | MessageCloneFlag = None,
+        recipient: str | None | MessageCloneFlag = None,
+        with_datetime: bool | str | None | MessageCloneFlag = None,
     ):
         """
         Initialize a System message instance.
@@ -22,6 +22,13 @@ class System(RoledMessage):
             recipient: The intended recipient of the system message.
             with_datetime: Flag or string to include datetime in the message.
         """
+        if all(
+            x == MessageCloneFlag.MESSAGE_CLONE
+            for x in [system, sender, recipient, with_datetime]
+        ):
+            super().__init__(role=MessageRole.SYSTEM)
+            return
+
         super().__init__(
             role=MessageRole.SYSTEM,
             sender=sender or "system",

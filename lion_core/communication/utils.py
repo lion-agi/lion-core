@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 from lion_core.sys_utils import SysUtil
 from lion_core.generic.note import Note
 from lion_core.libs import fuzzy_parse_json, to_str, to_dict
@@ -24,7 +24,7 @@ def prepare_action_request(func: str | Callable, arguments: dict) -> Note:
         raise ValueError(f"Invalid arguments: {arguments}")
 
     arguments = _prepare_arguments(arguments)
-    return Note({"action_request": {"function": func, "arguments": arguments}})
+    return Note(**{"action_request": {"function": func, "arguments": arguments}})
 
 
 def validate_sender_recipient(value: Any) -> str:
@@ -58,6 +58,10 @@ def prepare_instruction_content(
     requested_fields: dict | None = None,
     image_detail: str | None = None,
 ):
+    if image_detail:
+        if image_detail not in ["low", "high", "auto"]:
+            image_detail = "auto"
+
     content_dict = {
         "instruction": instruction or "N/A",
         "context": context,
@@ -77,15 +81,14 @@ def prepare_instruction_content(
     return content
 
 
-def format_image_content(d_: dict, images: list, image_detail: str):
+def format_image_content(
+    text_content: str, images: list, image_detail: Literal["low", "high", "auto"]
+):
 
-    d_.pop("image_detail", None)
-    d_.pop("requested_fields", None)
-
-    d_["content"] = [{"type": "text", "text": d_["content"]}]
+    content = [{"type": "text", "text": text_content}]
 
     for i in images:
-        d_["content"].append(
+        content.append(
             {
                 "type": "image_url",
                 "image_url": {
@@ -94,18 +97,18 @@ def format_image_content(d_: dict, images: list, image_detail: str):
                 },
             }
         )
-    return d_
+    return content
 
 
 def format_system_content(with_datetime: bool | str | None, _str) -> Note:
     _str = _str or DEFAULT_SYSTEM
     if not with_datetime:
-        return Note({"system_info": str(_str)})
+        return Note(**{"system_info": str(_str)})
     if isinstance(with_datetime, str):
-        return Note({"system_info": f"{_str}. System Date: {with_datetime}"})
+        return Note(**{"system_info": f"{_str}. System Date: {with_datetime}"})
     if with_datetime:
         return Note(
-            {
+            **{
                 "system_info": f"{_str}. System Date: {SysUtil.time(type_='iso', timespec='minutes')}"
             }
         )

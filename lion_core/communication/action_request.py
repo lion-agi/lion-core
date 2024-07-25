@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Any, Callable
 
-from lion_core.communication.message import RoledMessage, MessageRole
+from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
 from lion_core.communication.utils import prepare_action_request
 
 
@@ -10,11 +10,18 @@ class ActionRequest(RoledMessage):
 
     def __init__(
         self,
-        func: str | Callable,
-        arguments: dict,
-        sender: Any,
-        recipient: Any,
+        func: str | Callable | MessageCloneFlag,
+        arguments: dict | MessageCloneFlag,
+        sender: Any | MessageCloneFlag,
+        recipient: Any | MessageCloneFlag,
     ):
+        if all(
+            x == MessageCloneFlag.MESSAGE_CLONE
+            for x in [func, arguments, sender, recipient]
+        ):
+            super().__init__(role=MessageRole.ASSISTANT)
+            return
+
         func = func.__name__ if callable(func) else func
 
         super().__init__(

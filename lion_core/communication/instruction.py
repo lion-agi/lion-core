@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import Any
+from typing import Any, Literal
 from lion_core.record.form import Form
-from lion_core.communication.message import RoledMessage, MessageRole
+from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
 from lion_core.communication.utils import (
     prepare_instruction_content,
     format_image_content,
@@ -13,13 +13,13 @@ class Instruction(RoledMessage):
 
     def __init__(
         self,
-        instruction: Any,
-        context: Any = None,
-        images: list = None,
-        sender: Any = None,
-        recipient: Any = None,
-        requested_fields: dict = None,
-        image_detail: str = None,
+        instruction: Any | MessageCloneFlag,
+        context: Any | MessageCloneFlag = None,
+        images: list | MessageCloneFlag = None,
+        sender: Any | MessageCloneFlag = None,
+        recipient: Any | MessageCloneFlag = None,
+        requested_fields: dict | MessageCloneFlag = None,
+        image_detail: Literal["low", "high", "auto"] | MessageCloneFlag = None,
     ):
         """
         Initialize an Instruction instance.
@@ -33,6 +33,21 @@ class Instruction(RoledMessage):
             requested_fields: Dictionary of fields requested in the response.
             image_detail: Level of detail for image processing.
         """
+        if all(
+            x == MessageCloneFlag.MESSAGE_CLONE
+            for x in [
+                instruction,
+                context,
+                images,
+                sender,
+                recipient,
+                requested_fields,
+                image_detail,
+            ]
+        ):
+            super().__init__(role=MessageRole.USER)
+            return
+
         super().__init__(
             role=MessageRole.USER,
             content=prepare_instruction_content(
@@ -57,7 +72,7 @@ class Instruction(RoledMessage):
         form: Form,
         sender: str | None = None,
         recipient: Any = None,
-        image: str | None = None,
+        images: str | None = None,
         image_detail: str | None = None,
     ) -> Instruction:
         """
@@ -67,14 +82,14 @@ class Instruction(RoledMessage):
             form: The form containing instruction details.
             sender: The sender of the instruction.
             recipient: The recipient of the instruction.
-            image: The image content in base64 encoding.
+            images: The image content in base64 encoding.
 
         Returns:
             The created Instruction instance.
         """
         return cls(
             **form.instruction_dict,
-            image=image,
+            images=images,
             sender=sender,
             recipient=recipient,
             image_detail=image_detail,
@@ -85,9 +100,18 @@ class Instruction(RoledMessage):
         if isinstance(_msg["content"], str):
             return _msg
 
-        return format_image_content(
-            _msg, self.content.get("images"), self.content.get("image_detail")
-        )
+        else:
+            content = _msg["content"]
+            content.pop("images")
+            content.pop("image_detail")
+            text_content = str(content)
+            content = format_image_content(
+                text_content,
+                self.content.get(["images"]),
+                self.content.get(["image_detail"]),
+            )
+            _msg["content"] = content
+            return _msg
 
 
 # File: lion_core/communication/instruction.py
