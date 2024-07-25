@@ -33,7 +33,7 @@ class MailManager(BaseManager):
             raise ValueError(f"Failed to add source. Error {e}")
 
     @staticmethod
-    def create_mail(sender: str, recipient: str, category: str, package: Any) -> Mail:
+    def create_mail(sender: str, recipient: str, category: str, package: Any, request_source=None) -> Mail:
         """
         Create a new Mail object.
 
@@ -42,11 +42,12 @@ class MailManager(BaseManager):
             recipient: The ID of the recipient.
             category: The category of the mail.
             package: The content of the mail.
+            request_source: The source of the request.
 
         Returns:
             A new Mail object.
         """
-        pack = Package(category=category, package=package)
+        pack = Package(category=category, package=package, request_source=request_source)
         mail = Mail(
             sender=sender,
             recipient=recipient,
