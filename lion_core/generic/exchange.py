@@ -16,7 +16,7 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import TypeVar, List, Literal
+from typing import List, Literal
 from pydantic import Field
 
 from lion_core.abc.space import Container
@@ -25,9 +25,7 @@ from lion_core.exceptions import ItemExistsError, LionValueError
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import Progression, progression
-
-
-T = TypeVar("T")
+from lion_core.communication.mail import Mail
 
 
 class Exchange(Element, Container):
@@ -42,7 +40,7 @@ class Exchange(Element, Container):
     """
 
     pile: Pile = Field(
-        default_factory=lambda: pile(),
+        default_factory=lambda: pile(item_type=Mail),
         description="The pile of items in the exchange.",
         title="pending items",
     )
@@ -60,7 +58,7 @@ class Exchange(Element, Container):
         title="pending outgoing items",
     )
 
-    def __contains__(self, item: T) -> bool:
+    def __contains__(self, item: Mail) -> bool:
         """
         Check if an item is in the pile.
 
@@ -82,8 +80,8 @@ class Exchange(Element, Container):
         """
         return list(self.pending_ins.keys())
 
-    def include(self, item: T, direction: Literal["in", "out"]):
-        if not getattr(item, "sender", None) or not getattr(item, "recipient", None):
+    def include(self, item: Mail, direction: Literal["in", "out"]):
+        if not isinstance(item, Mail):
             raise LionValueError(
                 "Invalid item to include. Item must have sender and recipient."
             )
@@ -102,7 +100,7 @@ class Exchange(Element, Container):
         elif direction == "out":
             self.pending_outs.include(item)
 
-    def exclude(self, item: T):
+    def exclude(self, item: Mail):
         self.pile.exclude(item)
         self.pending_outs.exclude(item)
         for v in self.pending_ins.values():
