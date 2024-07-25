@@ -203,6 +203,8 @@ class Component(Element):
             dict[str, Any]: A dictionary representation of the component.
         """
         dict_ = self.model_dump(**kwargs)
+        dict_["metadata"] = dict_["metadata"]["content"]
+        dict_["content"] = dict_["content"]["content"]
         extra_fields = dict_.pop("extra_fields", {})
         dict_ = {**dict_, **extra_fields, "lion_class": self.class_name()}
         return dict_

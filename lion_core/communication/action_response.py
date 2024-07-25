@@ -3,7 +3,7 @@ from typing import Any
 
 from lion_core.exceptions import LionValueError
 from lion_core.generic.note import Note
-from lion_core.communication.message import RoledMessage, MessageRole
+from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
 from lion_core.communication.action_request import ActionRequest
 
 
@@ -12,10 +12,17 @@ class ActionResponse(RoledMessage):
 
     def __init__(
         self,
-        action_request: ActionRequest,
-        sender: Any,
-        func_output: Any,
+        action_request: ActionRequest | MessageCloneFlag,
+        sender: Any | MessageCloneFlag,
+        func_output: Any | MessageCloneFlag,
     ):
+        if all(
+            x == MessageCloneFlag.MESSAGE_CLONE
+            for x in [action_request, sender, func_output]
+        ):
+            super().__init__(role=MessageRole.ASSISTANT)
+            return
+
         super().__init__(
             role=MessageRole.ASSISTANT,
             sender=sender or "N/A",  # sender is the actionable component
@@ -50,7 +57,7 @@ def prepare_action_response_content(
 
     dict_ = action_request.request_dict
     dict_["output"] = func_output
-    content = Note({"action_request_id": action_request.ln_id})
+    content = Note(**{"action_request_id": action_request.ln_id})
     content["action_response"] = dict_
     return content
 
