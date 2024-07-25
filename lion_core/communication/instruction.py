@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Literal
+from typing import Any, Literal, override
 from lion_core.record.form import Form
 from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
 from lion_core.communication.utils import (
@@ -11,6 +11,7 @@ from lion_core.communication.utils import (
 class Instruction(RoledMessage):
     """Represents an instruction message in the system."""
 
+    @override
     def __init__(
         self,
         instruction: Any | MessageCloneFlag,
@@ -95,6 +96,7 @@ class Instruction(RoledMessage):
             image_detail=image_detail,
         )
 
+    @override
     def _format_content(self) -> dict[str, Any]:
         _msg = super()._format_content()
         if isinstance(_msg["content"], str):

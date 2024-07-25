@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Callable
+from typing import Any, Callable, override
 
 from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
 from lion_core.communication.utils import prepare_action_request
@@ -8,6 +8,7 @@ from lion_core.communication.utils import prepare_action_request
 class ActionRequest(RoledMessage):
     """Represents a request for an action in the system."""
 
+    @override
     def __init__(
         self,
         func: str | Callable | MessageCloneFlag,

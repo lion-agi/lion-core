@@ -16,7 +16,7 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import TypeVar, List, Literal
+from typing import TypeVar, List, Literal, override
 from pydantic import Field
 
 from lion_core.abc.space import Container
@@ -108,8 +108,10 @@ class Exchange(Element, Container):
         for v in self.pending_ins.values():
             v.exclude(item)
 
+    @override
     def __bool__(self) -> bool:
         return not self.pile.is_empty()
 
+    @override
     def __len__(self) -> int:
         return len(self.pile)

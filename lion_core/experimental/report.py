@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 from functools import singledispatchmethod
-from typing import Any, Type
+from typing import Any, Type, override
 from pydantic import Field
 from collections import deque
 
@@ -48,6 +48,7 @@ class Report(Component, ImmutableRecord):
         Form, description="The template for the forms in the report."
     )
 
+    @override
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the Report with forms based on provided assignments.
 

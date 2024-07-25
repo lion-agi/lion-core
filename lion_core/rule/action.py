@@ -15,9 +15,11 @@ limitations under the License.
 """
 
 from enum import Enum
-from lionagi.os.lib import to_list, to_dict, fuzzy_parse_json
-from ..abc import ActionError
-from .mapping import MappingRule
+from typing import override
+from lion_core.libs import fuzzy_parse_json, to_dict, to_list
+from lion_core.exceptions import LionOperationError
+
+from lion_core.rule.mapping import MappingRule
 
 
 class ActionRequestKeys(Enum):
@@ -36,6 +38,7 @@ class ActionRequestRule(MappingRule):
         discard (bool): Indicates whether to discard invalid action requests.
     """
 
+    @override
     def __init__(self, apply_type="actionrequest", discard=True, **kwargs):
         """
         Initializes the ActionRequestRule.
@@ -50,6 +53,7 @@ class ActionRequestRule(MappingRule):
         )
         self.discard = discard or self.validation_kwargs.get("discard", False)
 
+    @override
     async def validate(self, value):
         """
         Validates the action request.
@@ -63,23 +67,13 @@ class ActionRequestRule(MappingRule):
         Raises:
             ActionError: If the action request is invalid.
         """
+
         if isinstance(value, dict) and list(value.keys()) >= ["function", "arguments"]:
             return value
-        raise ActionError(f"Invalid action request: {value}")
+        raise LionOperationError(f"Invalid action request: {value}") from e
 
-    async def perform_fix(self, value):
-        """
-        Attempts to fix an invalid action request.
-
-        Args:
-            value (Any): The value of the action request to fix.
-
-        Returns:
-            Any: The fixed action request.
-
-        Raises:
-            ActionError: If the action request cannot be fixed.
-        """
+    @override
+    async def fix_field(self, value):
         corrected = []
         if isinstance(value, str):
             value = fuzzy_parse_json(value)
@@ -91,8 +85,8 @@ class ActionRequestRule(MappingRule):
                 if list(i.keys()) >= ["function", "arguments"]:
                     corrected.append(i)
                 elif not self.discard:
-                    raise ActionError(f"Invalid action request: {i}")
+                    raise LionOperationError(f"Invalid action request: {i}")
         except Exception as e:
-            raise ActionError(f"Invalid action field: ") from e
+            raise LionOperationError(f"Invalid action field: ") from e
 
         return corrected

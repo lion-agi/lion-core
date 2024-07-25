@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, override
 from lion_core.communication.utils import format_system_content
 from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
 
@@ -6,6 +6,7 @@ from lion_core.communication.message import RoledMessage, MessageRole, MessageCl
 class System(RoledMessage):
     """Represents a system message in an LLM conversation."""
 
+    @override
     def __init__(
         self,
         system: Any | MessageCloneFlag = None,

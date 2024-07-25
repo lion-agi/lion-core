@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 from __future__ import annotations
-from typing import Any, TypeVar, Type, Iterable
+from typing import Any, TypeVar, Type, Iterable, override
 
 from pydantic import Field
 
@@ -64,6 +64,7 @@ class Pile(Element, Collective):
         description="Specify if enforce a strict type check if item_type is defined",
     )
 
+    @override
     def __init__(
         self,
         items: Any = None,
@@ -206,6 +207,7 @@ class Pile(Element, Collective):
         """
         return item in self.order
 
+    @override
     def __len__(self) -> int:
         """
         Get the number of items in the pile.
@@ -514,9 +516,11 @@ class Pile(Element, Collective):
 
         return Progression(order=value)
 
+    @override
     def __str__(self) -> str:
         return f"Pile({len(self)})"
 
+    @override
     def __repr__(self) -> str:
         length = len(self)
         if length == 0:

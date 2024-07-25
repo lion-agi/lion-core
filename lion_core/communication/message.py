@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import inspect
 from enum import Enum
-from typing import Any
+from typing import Any, override
 from pydantic import Field, field_validator
 from lion_core.abc import Relational
 from lion_core.generic.note import Note
@@ -109,6 +109,7 @@ class RoledMessage(Relational, Component, BaseMail):
 
         return obj
 
+    @override
     def __str__(self) -> str:
         """Provide a string representation of the message with content preview."""
         content_preview = (

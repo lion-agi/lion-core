@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any
+from typing import Any, override
 
 from lion_core.exceptions import LionValueError
 from lion_core.generic.note import Note
@@ -10,6 +10,7 @@ from lion_core.communication.action_request import ActionRequest
 class ActionResponse(RoledMessage):
     """Represents a response to an action request in the system."""
 
+    @override
     def __init__(
         self,
         action_request: ActionRequest | MessageCloneFlag,

@@ -1,9 +1,11 @@
 import asyncio
+from typing import override
+
 from lion_core.abc import Action, BaseProcessor
 from lion_core.action.status import ActionStatus
 
 
-class ActionQueue(BaseProcessor):
+class ActionProcessor(BaseProcessor):
 
     def __init__(self, capacity: int, refresh_time: float):
 
@@ -40,6 +42,7 @@ class ActionQueue(BaseProcessor):
         """Return whether the queue has been stopped."""
         return self._stop_event.is_set()
 
+    @override
     async def process(self) -> None:
         """Process the work items in the queue."""
         tasks = set()

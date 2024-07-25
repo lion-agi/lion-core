@@ -17,7 +17,7 @@ limitations under the License.
 from __future__ import annotations
 
 import contextlib
-from typing import Any, Iterator
+from typing import Any, Iterator, override
 
 from pydantic import Field, field_validator
 
@@ -286,6 +286,7 @@ class Progression(Element, Ordering):
         """
         return progression(reversed(self.order), name=self.name)
 
+    @override
     def __eq__(self, other: object) -> bool:
         """
         Compare two Progression instances for equality.
@@ -383,6 +384,7 @@ class Progression(Element, Ordering):
             return 0
         return self.order.count(SysUtil.get_id(item))
 
+    @override
     def __bool__(self) -> bool:
         """
         Check if the container is considered True.
@@ -462,6 +464,7 @@ class Progression(Element, Ordering):
             new_order.remove(i)
         return Progression(order=new_order)
 
+    @override
     def __repr__(self) -> str:
         """
         Return a string representation of the progression.
@@ -471,6 +474,7 @@ class Progression(Element, Ordering):
         """
         return f"Progression({self.order})"
 
+    @override
     def __str__(self) -> str:
         """
         Return a string representation of the progression.

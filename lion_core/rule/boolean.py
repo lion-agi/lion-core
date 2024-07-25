@@ -1,6 +1,7 @@
-from typing import Any
-from lionagi.os.lib import strip_lower
-from .base import Rule
+from typing import Any, override
+from lion_core.libs import strip_lower
+from lion_core.rule.base import Rule
+from lion_core.exceptions import LionOperationError
 
 
 class BooleanRule(Rule):
@@ -13,9 +14,11 @@ class BooleanRule(Rule):
 
     fields: list[str] = ["action_required"]
 
+    @override
     def __init__(self, apply_type="bool", **kwargs):
         super().__init__(apply_type=apply_type, **kwargs)
 
+    @override
     async def validate(self, value: Any) -> bool:
         """
         Validate that the value is a boolean.
@@ -31,21 +34,10 @@ class BooleanRule(Rule):
         """
         if isinstance(value, bool):
             return value
-        raise ValueError(f"Invalid boolean value.")
+        raise LionOperationError(f"Invalid boolean value.")
 
-    async def perform_fix(self, value: Any) -> bool:
-        """
-        Attempt to fix the value by converting it to a boolean.
-
-        Args:
-            value (Any): The value to fix.
-
-        Returns:
-            bool: The fixed value.
-
-        Raises:
-            ValueError: If the value cannot be converted to a boolean.
-        """
+    @override
+    async def fix_field(self, value) -> bool:
         value = strip_lower(value)
         if value in ["true", "1", "correct", "yes"]:
             return True
@@ -53,4 +45,4 @@ class BooleanRule(Rule):
         elif value in ["false", "0", "incorrect", "no", "none", "n/a"]:
             return False
 
-        raise ValueError(f"Failed to convert {value} into a boolean value")
+        raise LionOperationError(f"Failed to convert {value} into a boolean value")

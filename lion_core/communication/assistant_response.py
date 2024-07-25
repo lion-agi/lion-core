@@ -1,10 +1,11 @@
-from typing import Any
+from typing import Any, override
 from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
 
 
 class AssistantResponse(RoledMessage):
     """Represents a response from an assistant in the system."""
 
+    @override
     def __init__(
         self,
         assistant_response: dict | MessageCloneFlag,

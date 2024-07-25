@@ -53,6 +53,9 @@ class BaseProcessor(AbstractObserver):
 
 
 class BaseEngine(AbstractObserver):
+    
+    # engine must have processor or executor
+    
     @abstractmethod
     async def run(self, *args, **kwargs):
         """Asynchronously runs the engine's core functionality."""
