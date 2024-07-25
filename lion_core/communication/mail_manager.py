@@ -14,8 +14,8 @@ from lion_core.communication.mail import Mail, Package
 class MailManager(BaseManager):
     """Manages mail operations for multiple sources in the Lion framework"""
 
-    def __init__(self, sources: list[Any]):
-        self.sources: Pile[Any] = pile()
+    def __init__(self, sources: list[Any] = None):
+        self.sources: Pile = pile()
         self.mails: dict[str, dict[str, deque]] = {}
         self.execute_stop: bool = False
 
@@ -103,7 +103,7 @@ class MailManager(BaseManager):
             return
         for key in list(self.mails[recipient].keys()):
             pending_mails = self.mails[recipient].pop(key)
-            mailbox = (
+            mailbox: Exchange = (
                 self.sources[recipient]
                 if isinstance(self.sources[recipient], Exchange)
                 else self.sources[recipient].mailbox
