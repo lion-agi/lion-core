@@ -173,3 +173,9 @@ class Note(BaseModel):
 
     def __next__(self):
         return next(self.content)
+
+    def __str__(self) -> str:
+        return str(self.content)
+
+    def __repr__(self) -> str:
+        return repr(self.content)
