@@ -26,7 +26,7 @@ from lion_core.libs import to_list
 from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
 from lion_core.exceptions import ItemNotFoundError, LionTypeError
-from .util import validate_order, to_list_type
+from lion_core.generic.util import validate_order, to_list_type
 
 
 class Progression(Element, Ordering):
@@ -234,7 +234,7 @@ class Progression(Element, Ordering):
         except IndexError as e:
             raise ItemNotFoundError("pop index out of range") from e
 
-    def include(self, item: Any) -> bool:
+    def include(self, item: Any):
         """
         Include item(s) in the progression.
 
@@ -248,8 +248,8 @@ class Progression(Element, Ordering):
         """
         item_ = validate_order(item)
         for i in item_:
-            if i not in self:
-                self.extend(item)
+            if i not in self.order:
+                self.order.append(i)
 
     def exclude(self, item: int | Any):
         """
