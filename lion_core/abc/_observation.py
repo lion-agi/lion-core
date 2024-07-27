@@ -5,7 +5,7 @@ mechanics, and asynchronous programming principles.
 """
 
 from abc import abstractmethod
-from lion_core.abc.concept import AbstractObservation
+from lion_core.abc._concept import AbstractObservation
 
 
 class Event(AbstractObservation):

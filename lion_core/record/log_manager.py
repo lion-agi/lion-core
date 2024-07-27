@@ -1,8 +1,8 @@
 """LogManager module for efficient log management in the Lion framework."""
 
-from typing import Any, List, TypeVar
+from typing import Any, TypeVar
 
-from lion_core.abc.observer import BaseManager
+from lion_core.abc._observer import BaseManager
 from lion_core.generic.note import Note
 from lion_core.generic.pile import Pile, pile
 

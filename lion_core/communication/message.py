@@ -21,8 +21,7 @@ from enum import Enum
 from typing import Any, override
 from pydantic import Field, field_validator
 from lion_core.abc import Relational
-from lion_core.generic.note import Note
-from lion_core.generic.component import Component
+from lion_core.generic import Note, Component
 from lion_core.communication.mail import BaseMail
 
 

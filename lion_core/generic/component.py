@@ -25,7 +25,8 @@ from lion_core.sys_utils import SysUtil
 from lion_core.setting import LN_UNDEFINED
 from lion_core.exceptions import LionValueError
 from lion_core.class_registry import get_class
-from lion_core.converter import ConverterRegistry, Converter
+from lion_core.converter import Converter
+from lion_core.generic.component_converter import ComponentConverterRegistry
 from lion_core.generic.element import Element
 from lion_core.generic.note import Note
 
@@ -57,7 +58,7 @@ class Component(Element):
 
     extra_fields: dict[str, Any] = Field(default_factory=dict)
 
-    _converter_registry: ClassVar = ConverterRegistry
+    _converter_registry: ClassVar = ComponentConverterRegistry
 
     @field_serializer("extra_fields")
     def _serialize_extra_fields(self, value: dict[str, FieldInfo]) -> dict[str, Any]:
@@ -364,7 +365,7 @@ class Component(Element):
         return repr_str
 
     @classmethod
-    def get_converter_registry(cls) -> ConverterRegistry:
+    def get_converter_registry(cls) -> ComponentConverterRegistry:
         """
         Get the converter registry for the class.
 

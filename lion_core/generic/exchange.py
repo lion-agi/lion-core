@@ -19,7 +19,7 @@ from __future__ import annotations
 from typing import TypeVar, List, Literal, override
 from pydantic import Field
 
-from lion_core.abc.space import Container
+from lion_core.abc._space import Container
 from lion_core.exceptions import ItemExistsError, LionValueError
 
 from lion_core.generic.element import Element

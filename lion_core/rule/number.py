@@ -66,13 +66,12 @@ class NumberRule(Rule):
             for k, v in self.validation_kwargs.items()
             if k in ["upper_bound", "lower_bound", "num_type", "precision", "num_count"]
         }
-        
+
         kwargs["num_type"] = kwargs.pop("num_type", float)
         kwargs["precision"] = kwargs.pop("precision", None)
         kwargs["num_count"] = kwargs.pop("num_count", 1)
-        
+
         try:
             return to_num(value, **self.validation_kwargs)
         except (ValueError, TypeError) as e:
             raise LionOperationError(f"Failed to convert {value} into a number") from e
-        

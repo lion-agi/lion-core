@@ -40,7 +40,7 @@ class DictConverter(Converter):
         return obj
 
     @staticmethod
-    def to_obj(self, **kwargs):
+    def to_obj(self, **kwargs) -> dict:
         return self.to_dict(**kwargs)
 
 
@@ -146,8 +146,5 @@ class ConverterRegistry:
         converter = cls.get(key)
         return converter.to_obj(obj, **kwargs)
 
-
-ConverterRegistry.register("dict", DictConverter())
-ConverterRegistry.register("json", JsonConverter())
 
 # File: lionagi/core/converter.py

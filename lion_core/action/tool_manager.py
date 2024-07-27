@@ -3,8 +3,8 @@
 from functools import singledispatchmethod
 from typing import Any, Callable
 
-from lion_core.abc.observer import BaseManager
-from lion_core.communication.action_request import ActionRequest
+from lion_core.abc import BaseManager
+from lion_core.communication import ActionRequest
 from lion_core.libs import fuzzy_parse_json, to_list
 
 from lion_core.action.function_calling import FunctionCalling

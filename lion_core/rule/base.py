@@ -25,18 +25,7 @@ from lion_core.record.log import BaseLog
 from lion_core.record.form import Form
 
 
-
-class RuleLog(BaseLog):
-    ...
-
-
-
-
-
-
-
-
-
+class RuleLog(BaseLog): ...
 
 
 class Rule(Condition, Action, Observable, Temporal):

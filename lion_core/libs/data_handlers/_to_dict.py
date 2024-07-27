@@ -137,6 +137,7 @@ def _(
 
     raise ValueError(f"Unsupported string type: {str_type}")
 
+
 @to_dict.register(Sequence)
 def _(
     input_: Sequence,
@@ -155,7 +156,6 @@ def _(
         for item in input_
     ]
     return out[0] if len(out) == 1 and isinstance(out[0], dict) else out
-
 
 
 # File: lion_core/libs/data_handlers/_to_dict.py
