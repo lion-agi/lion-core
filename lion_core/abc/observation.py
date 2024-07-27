@@ -59,6 +59,8 @@ class Action(Event):
     functions in complex adaptive systems.
     """
 
+    # action must have status
+
     @abstractmethod
     async def invoke(self, *args, **kwargs):
         """

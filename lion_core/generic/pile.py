@@ -15,10 +15,11 @@ limitations under the License.
 """
 
 from __future__ import annotations
-from typing import Any, TypeVar, Type, Iterable
+from typing import Any, TypeVar, Type, Iterable, override
 
 from pydantic import Field
 
+from lion_core.abc.characteristic import Observable
 from lion_core.abc.space import Collective
 from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
@@ -28,11 +29,11 @@ from lion_core.exceptions import (
     LionValueError,
     ItemExistsError,
 )
-from .progression import Progression, progression
-from .util import to_list_type, validate_order
+from lion_core.generic.progression import Progression, progression
+from lion_core.generic.util import to_list_type, validate_order
 from lion_core.setting import LN_UNDEFINED
 
-T = TypeVar("T", bound=Element)
+T = TypeVar("T", bound=Observable)
 
 
 class Pile(Element, Collective):
@@ -50,7 +51,7 @@ class Pile(Element, Collective):
     """
 
     pile_: dict[str, T] = Field(default_factory=dict)
-    item_type: set[Type[Element]] | None = Field(
+    item_type: set[Type[Observable]] | None = Field(
         default=None,
         description="Set of allowed types for items in the pile.",
     )
@@ -58,12 +59,18 @@ class Pile(Element, Collective):
         default_factory=progression,
         description="Progression specifying the order of items in the pile.",
     )
+    strict: bool = Field(
+        default=False,
+        description="Specify if enforce a strict type check if item_type is defined",
+    )
 
+    @override
     def __init__(
         self,
         items: Any = None,
-        item_type: set[Type[Element]] | None = None,
+        item_type: set[Type[Observable]] | None = None,
         order: Progression | list | None = None,
+        strict: bool = False,
     ):
         """
         Initialize a Pile instance.
@@ -74,12 +81,12 @@ class Pile(Element, Collective):
             order: Initial order of items (as Progression).
         """
         super().__init__()
-
+        self.strict = strict
         self.item_type = self._validate_item_type(item_type)
         self.pile_ = self._validate_pile(items)
         self.order = self._validate_order(order)
 
-    def __getitem__(self, key) -> T | "Pile[T]":
+    def __getitem__(self, key) -> T | "Pile":
         """
         Retrieve items from the pile using a key.
 
@@ -200,6 +207,7 @@ class Pile(Element, Collective):
         """
         return item in self.order
 
+    @override
     def __len__(self) -> int:
         """
         Get the number of items in the pile.
@@ -209,7 +217,7 @@ class Pile(Element, Collective):
         """
         return len(self.pile_)
 
-    def __iter__(self) -> Iterable[T]:
+    def __iter__(self) -> Iterable:
         """
         Return an iterator over the items in the pile.
 
@@ -228,7 +236,7 @@ class Pile(Element, Collective):
         """
         return list(self.order)
 
-    def values(self) -> list[T]:
+    def values(self) -> list:
         """
         Get the values of the pile in their specified order.
 
@@ -246,7 +254,7 @@ class Pile(Element, Collective):
         """
         return [(key, self.pile_[key]) for key in self.order]
 
-    def get(self, key: Any, default=LN_UNDEFINED) -> T | "Pile[T]" | None:
+    def get(self, key: Any, default=LN_UNDEFINED) -> T | "Pile" | None:
         """
         Retrieve item(s) associated with given key.
 
@@ -292,7 +300,7 @@ class Pile(Element, Collective):
                     raise ItemNotFoundError(f"Item not found. Error: {e}")
                 return default
 
-    def pop(self, key: Any, default=LN_UNDEFINED) -> T | "Pile[T]" | None:
+    def pop(self, key: Any, default=LN_UNDEFINED) -> T | "Pile" | None:
         """
         Remove and return item(s) associated with given key.
 
@@ -363,9 +371,6 @@ class Pile(Element, Collective):
 
         Args:
             item: Item(s) to include. Can be single item or collection.
-
-        Returns:
-            bool: True if item(s) in pile after operation, False otherwise.
         """
         item_dict = self._validate_pile(item)
 
@@ -383,9 +388,6 @@ class Pile(Element, Collective):
 
         Args:
             item: Item(s) to exclude. Can be single item or collection.
-
-        Returns:
-            bool: True if item(s) not in pile after operation, False otherwise.
         """
         item = to_list_type(item)
         exclude_list = []
@@ -450,9 +452,9 @@ class Pile(Element, Collective):
         value = to_list_type(value)
 
         for i in value:
-            if not issubclass(i, Element):
+            if not issubclass(i, Observable):
                 raise LionTypeError(
-                    "Item type must be a subclass of Element.", Element, type(i)
+                    "Item type must be a subclass of Observable.", Observable, type(i)
                 )
 
         if len(value) != len(set(value)):
@@ -471,12 +473,18 @@ class Pile(Element, Collective):
         result = {}
         for i in value:
             if self.item_type:
-                if type(i) not in self.item_type:
-                    raise LionTypeError(
-                        f"Invalid item type in pile. Expected {self.item_type}"
-                    )
+                if self.strict:
+                    if type(i) not in self.item_type:
+                        raise LionTypeError(
+                            f"Invalid item type in pile. Expected {self.item_type}"
+                        )
+                else:
+                    if not any(issubclass(type(i), t) for t in self.item_type):
+                        raise LionTypeError(
+                            f"Invalid item type in pile. Expected {self.item_type} or the subclasses"
+                        )
             else:
-                if not isinstance(i, Element):
+                if not isinstance(i, Observable):
                     raise LionValueError(f"Invalid pile item {i}")
 
             result[i.ln_id] = i
@@ -508,9 +516,11 @@ class Pile(Element, Collective):
 
         return Progression(order=value)
 
+    @override
     def __str__(self) -> str:
         return f"Pile({len(self)})"
 
+    @override
     def __repr__(self) -> str:
         length = len(self)
         if length == 0:
@@ -535,7 +545,7 @@ class Pile(Element, Collective):
         """
         self.update(item)
 
-    def __list__(self) -> list[T]:
+    def __list__(self) -> list:
         """
         Convert the pile to a list of unique items.
 
@@ -634,9 +644,9 @@ class Pile(Element, Collective):
 
 def pile(
     items: Any = None,
-    item_type: Type[Element] | set[Type[Element]] | None = None,
+    item_type: Type[Observable] | set[Type[Observable]] | None = None,
     order: list[str] | None = None,
-) -> Pile[T]:
+) -> Pile:
     """
     Create a new Pile instance.
 
@@ -646,7 +656,7 @@ def pile(
         order: Initial order of items.
 
     Returns:
-        Pile[T]: A new Pile instance.
+        Pile: A new Pile instance.
     """
 
     return Pile(items, item_type, order)

@@ -17,7 +17,7 @@ limitations under the License.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, TypeVar
+from typing import Any, TypeVar, override
 
 from pydantic import (
     BaseModel,
@@ -109,6 +109,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         dict_["lion_class"] = self.class_name()
         return dict_
 
+    @override
     def __str__(self) -> str:
         timestamp_str = self._created_datetime.isoformat(timespec="minutes")
         return (
@@ -116,12 +117,23 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
             f"timestamp={timestamp_str})"
         )
 
+    @override
+    def __repr__(self) -> str:
+        return self.__str__()
+
     def __hash__(self) -> int:
         return hash(self.ln_id)
 
     def __bool__(self) -> bool:
         """Always True"""
         return True
+
+    def __len__(self) -> int:
+        """Return the length of the Element."""
+        return 1
+
+    def __eq__(self, other):
+        return self is other
 
 
 # File: lion_core/generic/element.py

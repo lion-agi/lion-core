@@ -1,5 +1,6 @@
-from lionagi.os.lib import to_str
-from .base import Rule
+from typing import override
+from lion_core.libs import to_str
+from lion_core.rule.base import Rule
 
 
 class StringRule(Rule):
@@ -13,9 +14,11 @@ class StringRule(Rule):
 
     fields: list[str] = ["reason", "prediction", "answer"]
 
+    @override
     def __init__(self, apply_type="str", **kwargs):
         super().__init__(apply_type=apply_type, **kwargs)
 
+    @override
     async def validate(self, value):
         """
         Validate that the value is a string.
@@ -33,6 +36,7 @@ class StringRule(Rule):
             return value
         raise ValueError(f"Invalid string field type.")
 
+    @override
     async def perform_fix(self, value):
         """
         Attempt to convert a value to a string.

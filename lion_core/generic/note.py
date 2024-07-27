@@ -16,17 +16,25 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import Any
-from pydantic import Field, BaseModel, ConfigDict
+from functools import singledispatchmethod
+from collections.abc import Sequence, Mapping
+import contextlib
+from typing import Any, override
+from pydantic import Field, BaseModel, ConfigDict, field_serializer
 from lion_core.libs import (
     nget,
     ninsert,
     nset,
     npop,
     flatten,
+    to_dict, 
+    fuzzy_parse_json
+    
 )
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
+from lion_core.generic.element import Element
+from lion_core.communication.base import BaseMail
 
 
 class Note(BaseModel):
@@ -40,11 +48,28 @@ class Note(BaseModel):
         populate_by_name=True,
     )
 
-    def __init__(self, d_={}, **kwargs):
-        d_ = {**d_, **kwargs}
-        self.content = d_
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.content = kwargs
 
-    def pop(self, indices: list[str], default: Any = LN_UNDEFINED) -> Any:
+    @field_serializer("content")
+    def _serialize_content(self, value):
+        output_dict = SysUtil.copy(value, deep=True)
+        origin_obj = output_dict.pop("clone_from", None)
+
+        if origin_obj and isinstance(origin_obj, BaseMail):
+            info_dict = {
+                "clone_from_info": {
+                    "original_ln_id": origin_obj.ln_id,
+                    "original_timestamp": origin_obj.timestamp,
+                    "original_sender": origin_obj.sender,
+                    "original_recipient": origin_obj.recipient,
+                }
+            }
+            output_dict.update(info_dict)
+        return output_dict
+
+    def pop(self, indices: list[str] | str, default: Any = LN_UNDEFINED) -> Any:
         """
         Remove and return an item from the nested structure.
 
@@ -55,9 +80,11 @@ class Note(BaseModel):
         Returns:
             The removed item or the default value.
         """
+        if isinstance(indices, str):
+            indices = [indices]
         return npop(self.content, indices, default)
 
-    def insert(self, indices: list[str], value: Any) -> None:
+    def insert(self, indices: list[str] | str, value: Any) -> None:
         """
         Insert a value into the nested structure at the specified indices.
 
@@ -65,9 +92,11 @@ class Note(BaseModel):
             indices: The path where to insert the value.
             value: The value to insert.
         """
+        if isinstance(indices, str):
+            indices = [indices]
         ninsert(self.content, indices, value)
 
-    def set(self, indices: list[str], value: Any) -> None:
+    def set(self, indices: list[str] | str, value: Any) -> None:
         """
         Set a value in the nested structure at the specified indices.
         If the path doesn't exist, it will be created.
@@ -76,13 +105,15 @@ class Note(BaseModel):
             indices: The path where to set the value.
             value: The value to set.
         """
+        if isinstance(indices, str):
+            indices = [indices]
 
         if not self.get(indices, None):
             self.insert(indices, value)
         else:
             nset(self.content, indices, value)
 
-    def get(self, indices: list[str], default: Any = LN_UNDEFINED) -> Any:
+    def get(self, indices: list[str] | str, default: Any = LN_UNDEFINED) -> Any:
         """
         Get a value from the nested structure at the specified indices.
 
@@ -93,6 +124,8 @@ class Note(BaseModel):
         Returns:
             The value at the specified indices or the default value.
         """
+        if isinstance(indices, str):
+            indices = [indices]
         return nget(self.content, indices, default)
 
     def keys(self, flat: bool = False):
@@ -137,14 +170,15 @@ class Note(BaseModel):
             return flatten(self.content).items()
         return self.content.items()
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self, **kwargs) -> dict[str, Any]:
         """
         Convert the Note to a dictionary.
 
         Returns:
             A dictionary representation of the Note.
         """
-        return SysUtil.copy(self.content, deep=True)
+        output_dict = self.model_dump(**kwargs)
+        return output_dict["content"]
 
     def clear(self):
         """
@@ -152,18 +186,62 @@ class Note(BaseModel):
         """
         self.content.clear()
 
+    @singledispatchmethod
+    def update(self, items: Any, indices: list[str|int] = None, /):
+        try:
+            d_ = to_dict(items)
+            if isinstance(d_, dict):
+                return self.update(d_, indices)
+            if isinstance(d_, list):
+                self.set(indices, d_)
+        except Exception as e:
+            raise TypeError(f"Invalid input type for update: {type(items)}") from e
+ 
+    @update.register(dict)
+    def _(self, items: dict, indices: list[str|int] = None, /):
+        if indices:
+            a = self.get(indices, {}).update(items)
+            self.set(indices, a)
+            return
+        
+        self.content.update(items)
+
+    @update.register(Mapping)
+    def _(self, items: Mapping, indices: list[str|int] = None, /):
+        return self.update(dict(items), indices)
+
+    @update.register(str)
+    def _(self, items: str, indices: list[str|int] = None, /):
+        
+        with contextlib.suppress(ValueError):
+            items = to_dict(items, str_type="json", parser=fuzzy_parse_json)
+            
+            if isinstance(items, str):
+                with contextlib.suppress(ValueError):
+                    items = to_dict(items, str_type="xml")
+    
+        if not isinstance(items, dict):
+            raise ValueError(f"Invalid input type for update: {type(items)}")
+        
+        return self.update(items, indices)
+
+    @update.register
+    def _(self, items: Note, indices: list[str|int] = None, /):
+        return self.update(items.content, indices)
+
+    @update.register(Element)
+    def _(self, items: Element, indices: list[str|int] = None, /):
+        return self.update(items.to_dict(), indices)
+
     @classmethod
-    def from_dict(cls, d_: dict[str, Any], **kwargs) -> Note:
+    def from_dict(cls, **kwargs) -> Note:
         """
         Create a Note from a dictionary.
-
-        Args:
-            dict_: The dictionary to create the Note from.
 
         Returns:
             A Note object.
         """
-        return cls(d_=d_, **kwargs)
+        return cls(**kwargs)
 
     def __len__(self) -> int:
         return len(self.content)
@@ -172,4 +250,12 @@ class Note(BaseModel):
         return iter(self.content)
 
     def __next__(self):
-        return next(self.content)
+        return next(iter(self.content))
+
+    @override
+    def __str__(self) -> str:
+        return str(self.content)
+
+    @override
+    def __repr__(self) -> str:
+        return repr(self.content)

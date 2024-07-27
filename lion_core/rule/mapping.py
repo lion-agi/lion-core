@@ -14,9 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any
+import contextlib
+from typing import Any, override
 from collections.abc import Mapping
-from lionagi.os.lib import to_dict, force_validate_mapping, fuzzy_parse_json
+from lion_core.libs import to_dict, validate_mapping, fuzzy_parse_json
+from lion_core.exceptions import LionOperationError, LionValueError, LionTypeError
 
 from .choice import ChoiceRule
 
@@ -29,9 +31,11 @@ class MappingRule(ChoiceRule):
         apply_type (str): The type of data to which the rule applies.
     """
 
+    @override
     def __init__(self, apply_type="dict", **kwargs):
         super().__init__(apply_type=apply_type, **kwargs)
 
+    @override
     async def validate(self, value: Any, *args, **kwargs) -> Any:
         """
         Validate that the value is a mapping with specific keys.
@@ -48,48 +52,49 @@ class MappingRule(ChoiceRule):
             ValueError: If the value is not a valid mapping or has incorrect keys.
         """
         if not isinstance(value, Mapping):
-            raise ValueError("Invalid mapping field type.")
+            raise LionTypeError("Invalid mapping field type.")
 
         if self.keys:
             if (keys := set(value.keys())) != set(self.keys):
-                raise ValueError(
+                raise LionValueError(
                     f"Invalid mapping keys. Current keys {[i for i in keys]} != {self.keys}"
                 )
         return value
 
-    async def perform_fix(self, value: Any, *args, **kwargs) -> Any:
-        """
-        Attempt to fix the value by converting it to a dict and validating its keys.
+    @override
+    async def fix_field(self, value: Any, *args, **kwargs):
 
-        Args:
-            value (Any): The value to fix.
-            *args: Additional arguments.
-            **kwargs: Additional keyword arguments.
+        if isinstance(value, str):
+            with contextlib.suppress(ValueError):
+                value = to_dict(value, str_style="json", parser=fuzzy_parse_json)
+            with contextlib.suppress(ValueError):
+                value = to_dict(value, str_style="xml")
 
-        Returns:
-            Any: The fixed value.
-
-        Raises:
-            ValueError: If the value cannot be fixed.
-        """
         if not isinstance(value, dict):
             try:
                 value = to_dict(value)
-            except Exception as e:
-                raise ValueError("Invalid dict field type.") from e
+            except ValueError as e:
+                raise LionOperationError(
+                    f"Failed to fix {value} into a mapping."
+                ) from e
 
         if self.keys:
             check_keys = set(value.keys())
             if check_keys != set(self.keys):
                 try:
-                    return force_validate_mapping(value, keys=self.keys)
+                    return validate_mapping(
+                        value,
+                        keys=self.keys,
+                        fuzzy_match=True,
+                        handle_unmatched="force",
+                    )
                 except Exception as e:
-                    raise ValueError("Invalid dict keys.") from e
+                    raise LionValueError("Invalid dict keys.") from e
 
         else:
             try:
                 return fuzzy_parse_json(value)
             except Exception as e:
-                raise ValueError("Invalid dict keys.") from e
+                raise LionValueError(f"Failed to fix {value} into a mapping.") from e
 
         return value

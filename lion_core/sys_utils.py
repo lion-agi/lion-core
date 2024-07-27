@@ -178,7 +178,7 @@ class SysUtil:
         prefix = config["prefix"]
         n = int(config["n"])
         n_hyphens = int(config["num_hyphens"])
-        postfix = config["postfix"]
+        postfix = config.get("postfix", "")
 
         id_len = (
             (len(prefix) if prefix else 0)

@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 from __future__ import annotations
-from typing import Any, TypeVar, ClassVar, Type
+from typing import Any, TypeVar, ClassVar, Type, override
 
 from pydantic import Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo
@@ -192,6 +192,7 @@ class Component(Element):
         current_time = SysUtil.time()
         self.metadata.set(["last_updated", name], current_time)
 
+    @override
     def to_dict(self, **kwargs) -> dict:
         """
         Convert the component to a dictionary representation.
@@ -203,10 +204,13 @@ class Component(Element):
             dict[str, Any]: A dictionary representation of the component.
         """
         dict_ = self.model_dump(**kwargs)
+        dict_["metadata"] = dict_["metadata"]["content"]
+        dict_["content"] = dict_["content"]["content"]
         extra_fields = dict_.pop("extra_fields", {})
         dict_ = {**dict_, **extra_fields, "lion_class": self.class_name()}
         return dict_
 
+    @override
     @classmethod
     def from_dict(cls, data: dict, **kwargs) -> T:
         """
@@ -233,6 +237,7 @@ class Component(Element):
             obj.add_field(name=k, value=v)
         return obj
 
+    @override
     def __setattr__(self, name: str, value: Any) -> None:
         """
         Custom attribute setter to handle extra fields and update timestamps.
@@ -253,6 +258,7 @@ class Component(Element):
 
         self._add_last_update(name)
 
+    @override
     def __getattr__(self, name: str) -> Any:
         """
         Custom attribute getter to handle extra fields.
@@ -276,6 +282,7 @@ class Component(Element):
             f"'{self.__class__.__name__}' object has no attribute '{name}'"
         )
 
+    @override
     def __str__(self) -> str:
         """Return a concise string representation of the component."""
         content_preview = str(self.content)[:50]
@@ -306,6 +313,7 @@ class Component(Element):
 
         return output_str
 
+    @override
     def __repr__(self) -> str:
         """Return a detailed string representation of the component."""
 

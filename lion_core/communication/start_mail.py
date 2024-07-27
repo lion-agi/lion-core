@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, override
 from pydantic import Field
 
 from lion_core.abc.observation import Signal
@@ -15,6 +15,7 @@ class StartMail(Element, Signal):
         default_factory=Exchange, description="The pending start mail"
     )
 
+    @override
     def trigger(self, context: Any, structure_id: str, executable_id: str) -> None:
         """
         Triggers the start mail by including it in the mailbox.

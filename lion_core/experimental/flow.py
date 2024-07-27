@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 from collections.abc import Mapping
-from typing import Tuple, Any
+from typing import Tuple, Any, override
 
 import contextlib
 from pydantic import Field
@@ -44,6 +44,7 @@ class Flow(Element):
     registry: dict[str, str] = Field(default_factory=dict)
     default_name: str = "main"
 
+    @override
     def __init__(self, sequences: Any = None, default_name: str | None = None):
         """
         Initializes a Flow instance.
@@ -344,15 +345,13 @@ class Flow(Element):
 
         return None
 
+    @override
     def to_dict(self) -> dict[str, Any]:
         return {
             "sequences": self.sequences.to_dict(),
             "registry": self.registry,
             "default_name": self.default_name,
         }
-
-    def to_df(self):
-        return self.sequences.to_df()
 
 
 def flow(sequences: Any = None, default_name: str | None = None) -> Flow:
