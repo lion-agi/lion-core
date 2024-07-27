@@ -14,12 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, Callable
+from __future__ import annotations
+
+from typing import Any, Callable, ClassVar, override
 
 from pydantic import Field
 
 from lion_core.abc import BaseiModel
-from lion_core.libs import to_list
+from lion_core.imodel.imodel import iModel
+from lion_core.libs import is_same_dtype
 
 from lion_core.generic import (
     pile,
@@ -27,7 +30,6 @@ from lion_core.generic import (
     progression,
     Progression,
     Exchange,
-    to_list_type,
 )
 
 from lion_core.action import Tool, ToolManager
@@ -42,60 +44,112 @@ from lion_core.communication import (
     Mail,
 )
 
-from lion_core.session.utils import validate_message, validate_system, create_message
+from lion_core.session.utils import create_message
 
 from lion_core.session.base import BaseSession
-from lion_core.converter import Converter, ConverterRegistry
+from lion_core.converter import ConverterRegistry
 
 
 class BranchConverterRegistry(ConverterRegistry): ...
 
 
 class Branch(BaseSession):
+    """Represents a branch in the conversation tree with tools and messages."""
 
+    system: System | None = Field(None)
     messages: Pile | None = Field(None)
-    tool_manager: ToolManager | None = Field(None)
+    tool_manager: ToolManager = Field(default_factory=ToolManager)
     mailbox: Exchange | None = Field(None)
-    progress: Progression | None = Field(None)
+    name: str | None = Field(None)
+    user: str | None = Field(None)
+    order: Progression = Field(default_factory=progression)
+
+    _converter_registry: ClassVar = BranchConverterRegistry
 
     def __init__(
         self,
-        system: System = None,
-        system_sender: Any = None,
-        system_datetime: bool | str | None = None,
-        messages: Pile = None,
-        tools: Any = None,
+        system: System | str | dict | None = None,
+        system_sender: str | None = None,
+        system_datetime: str | bool | None = None,
+        user: str | None = None,
+        messages: Pile | None = None,
         tool_manager: ToolManager = None,
-        mail_box: Exchange = None,
-        name: str = None,
         progress: Progression = None,
+        mailbox: Exchange = None,
+        tools: Any = None,
+        imodel: BaseiModel = None,
+        name: str | None = None,
     ):
+        """
+        Initialize a Branch instance.
+
+        Args:
+            system (System | str | dict | None): The system message. Can be a
+                System Node, string, JSON-serializable dict, or None. If not a
+                System Node, one will be created. If None, a default system
+                message is used.
+            system_sender (str | None): The sender of the system message.
+            system_datetime (str | bool | None): Datetime for system message.
+                If True, adds current datetime. If str, adds that string.
+            user (str | None): The user identifier. Defaults to "user".
+            messages (Pile | None): Initial messages for the branch.
+            tool_manager (ToolManager | None): Custom tool manager. If None, a
+                new one is created.
+            mailbox (Exchange | None): Custom mailbox. If None, a new one is
+                created.
+            tools (Any): Tools to be registered. Can be individual Tool or
+                Callable objects, or collections thereof. Cannot be bool.
+            imodel (iModel | None): Custom iModel. If None, a new one is
+                created.
+            name (str | None): Optional name for the branch.
+        """
         super().__init__()
 
-        system = validate_system(
-            system,
-            sender=system_sender,
-            recipient=self.ln_id,
-            system_datetime=system_datetime,
-        )
-
-        if messages:
-            messages = pile(
-                to_list(
-                    validate_message(to_list_type(messages)), dropna=True, flatten=True
+        if not isinstance(system, System):
+            system = System(
+                system=(
+                    system or "You are a helpful assistant. Let's think step by step."
                 ),
-                RoledMessage,
+                sender=system_sender,
+                recipient=self.ln_id,
+                with_datetime=system_datetime,
             )
 
-        self.system = system
-        self.messages = messages or pile(self.system, RoledMessage)
-        self.tool_manager = tool_manager or ToolManager()
-        self.mailbox = mail_box or Exchange()
-        self.name = name or "user"
-        self.progress = progress or progression()
+        if not messages:
+            messages = pile(items={}, item_type=RoledMessage, order=None, strict=False)
+
+        user = user or "user"
+        tool_manager = tool_manager or ToolManager()
+        mailbox = mailbox or Exchange()
+        imodel = imodel or iModel()
+
+        self.messages = messages
+        self.tool_manager = tool_manager
+        self.mailbox = mailbox
+        self.name = name
+        self.user = user
+        self.imodel = imodel
+        self.order = progress or progression()
 
         if tools:
             self.tool_manager.register_tools(tools)
+
+        self.set_system(system)
+
+    def set_system(self, system: System) -> None:
+        """
+        Set or update the system message.
+
+        Args:
+            system (System): The new system message to set.
+        """
+        if len(self.order) < 1:
+            self.messages.include(system)
+            self.system = system
+            self.order[0] = self.system
+        else:
+            self.change_system(system, delete_previous_system=True)
+            self.order[0] = self.system
 
     def add_message(
         self,
@@ -251,3 +305,120 @@ class Branch(BaseSession):
         """
         for key in list(self.mailbox.pending_ins.keys()):
             self.receive(key)
+
+    @override
+    @classmethod
+    def convert_from(cls, obj: Any, key: str = "DataFrame", **kwargs) -> Branch:
+        p = cls.get_converter_registry().convert_from(obj, key=key, **kwargs)
+        return cls(messages=p, **kwargs)
+
+    @override
+    def convert_to(self, key: str, /, **kwargs: Any) -> Any:
+        return self.get_converter_registry().convert_to(self, key=key, **kwargs)
+
+    @property
+    def last_response(self) -> AssistantResponse | None:
+        """
+        Get the last assistant response.
+
+        Returns:
+            AssistantResponse | None: The last assistant response, if any.
+        """
+        for i in reversed(self.order):
+            if isinstance(self.messages[i], AssistantResponse):
+                return self.messages[i]
+
+    @property
+    def assistant_responses(self) -> Pile:
+        """
+        Get all assistant responses as a Pile.
+
+        Returns:
+            Pile: A Pile containing all assistant responses.
+        """
+        return pile(
+            [
+                self.messages[i]
+                for i in self.order
+                if isinstance(self.messages[i], AssistantResponse)
+            ]
+        )
+
+    def update_last_instruction_meta(self, meta: dict) -> None:
+        """
+        Update metadata of the last instruction.
+
+        Args:
+            meta (dict): Metadata to update.
+        """
+        for i in reversed(self.order):
+            if isinstance(self.messages[i], Instruction):
+                self.messages[i].metadata.update(["extra"], meta)
+                return
+
+    def has_tools(self) -> bool:
+        """
+        Check if the branch has any registered tools.
+
+        Returns:
+            bool: True if tools are registered, False otherwise.
+        """
+        return self.tool_manager.registry != {}
+
+    def register_tools(self, tools: Any) -> None:
+        """
+        Register new tools to the tool manager.
+
+        Args:
+            tools (Any): Tools to be registered.
+        """
+        self.tool_manager.register_tools(tools=tools)
+
+    def delete_tools(self, tools: Any, verbose: bool = True) -> bool:
+        """
+        Delete specified tools from the tool manager.
+
+        Args:
+            tools (Any): Tools to be deleted.
+            verbose (bool): If True, print status messages.
+
+        Returns:
+            bool: True if deletion was successful, False otherwise.
+        """
+        if not isinstance(tools, list):
+            tools = [tools]
+        if is_same_dtype(tools, str):
+            for act_ in tools:
+                if act_ in self.tool_manager.registry:
+                    self.tool_manager.registry.pop(act_)
+            if verbose:
+                print("tools successfully deleted")
+            return True
+        elif is_same_dtype(tools, Tool):
+            for act_ in tools:
+                if act_.function_name in self.tool_manager.registry:
+                    self.tool_manager.registry.pop(act_.function_name)
+            if verbose:
+                print("tools successfully deleted")
+            return True
+        if verbose:
+            print("tools deletion failed")
+        return False
+
+    def clear(self) -> None:
+        """Clear all messages in the branch."""
+        self.messages.clear()
+        self.order.clear()
+
+    def to_chat_messages(self) -> list[dict[str, Any]]:
+        """
+        Convert messages to a list of chat message dictionaries.
+
+        Returns:
+            list[dict[str, Any]]: A list of chat message dictionaries.
+        """
+        return [self.messages[i].chat_msg for i in self.order]
+
+    def _is_invoked(self) -> bool:
+        """Check if the last message is an ActionResponse."""
+        return isinstance(self.messages[-1], ActionResponse)

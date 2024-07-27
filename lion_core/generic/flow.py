@@ -1,224 +1,174 @@
-from functools import singledispatchmethod, partial
-from collections.abc import Mapping
-from typing import Tuple, Any, override, Literal
+from functools import partial
+from typing import Any, override, Literal
 
-import contextlib
 from pydantic import Field
 
-from lion_core.sys_utils import SysUtil
-from lion_core.setting import LionUndefined, LN_UNDEFINED
-from lion_core.abc import Collective, Container
+from lion_core.setting import LN_UNDEFINED
+from lion_core.abc import Container
 from lion_core.generic import (
-    Element,
+    Component,
     Note,
     Pile,
     pile,
     Progression,
-    progression,
-    to_list_type,
 )
-from lion_core.exceptions import (
-    LionTypeError,
-    ItemNotFoundError,
-    ItemExistsError,
-    LionValueError,
-)
-from lion_core.libs import is_same_dtype, to_list
+from lion_core.sys_utils import SysUtil
+from lion_core.exceptions import LionTypeError, ItemNotFoundError, LionValueError
+from lion_core.libs import to_list
 from pydantic_core import PydanticUndefined
 
 flow_pile = partial(pile, item_type=Progression, strict=True)
 
 
-class Flow(Element, Container):
+class Flow(Component, Container):
 
-    sequences: Pile[Progression] = Field(default_factory=flow_pile)
+    progressions: Pile[Progression] = Field(default_factory=flow_pile)
     registry: Note = Field(default_factory=Note)
-    default_name: str = "main"
+    default_name: str = Field("main")
 
     @override
-    def __init__(self, sequences: Any = None, default_name: str | None = None):
+    def __init__(self, progressions: Any = None, default_name: str | None = None):
         super().__init__()
-        self.sequences = self._validate_sequences(sequences)
+        self.progressions = self._validate_sequences(progressions)
         self.default_name = default_name or "main"
 
-    @singledispatchmethod
     def _validate_sequences(self, value: Any) -> Pile[Progression]:
-        value = to_list_type(value)
-        return self._validate_sequences(value)
-
-    @_validate_sequences.register(list)
-    def _(self, value: list[Progression]):
-        if len(value) < 1:
-            return flow_pile({})
-        if not is_same_dtype(value, Progression):
-            raise LionTypeError("Flow sequences must be of type Progression.")
-        return flow_pile(value)
-
-    @_validate_sequences.register(Mapping)
-    @_validate_sequences.register(dict)
-    def _(self, value: dict[str, Progression]):
-        value = list(value.values())
-        return self._validate_sequences(value)
-
-    @_validate_sequences.register(Pile)
-    def _validate_sequences(self, value: Any) -> Pile[Progression]:
-        return self._validate_sequences(list(value))
-
-    @_validate_sequences.register(Progression)
-    def _(self, value: Progression):
-        return self._validate_sequences([value])
+        try:
+            return flow_pile(value)
+        except Exception as e:
+            raise LionTypeError(f"Invalid sequences value. Error:{e}")
 
     def __list__(self) -> list[Progression]:
-        return [list(seq) for seq in self.sequences]
+        return list(self.progressions)
 
-    def __contains__(self, item: Any) -> bool:
-        return (
-            item in self.registry or item in self.sequences or item in self.unique_items
-        )
+    def __contains__(self, other):
+        return SysUtil.get_id(other) in self.registry.values()
 
     @property
     def unique_items(self) -> list[Any]:
-        return list({item for seq in self.sequences for item in seq})
+        return list({item for prog in self.progressions for item in prog})
 
-    def get(self, seq=None, default=LN_UNDEFINED):
-        if not seq:
+    def get(self, prog=None, default=LN_UNDEFINED):
+        if not prog:
             if self.default_name in self.registry:
-                return self.sequences[self.registry[self.default_name]]
+                return self.progressions[self.registry[self.default_name]]
             if default not in [LN_UNDEFINED, PydanticUndefined]:
                 return default
             raise ItemNotFoundError("No sequence found.")
 
-        if seq in self:
-            if not isinstance(seq, Progression):
-                if isinstance(seq, str):
-                    seq = self.registry[seq]
+        if prog in self:
+            if not isinstance(prog, Progression):
+                if isinstance(prog, str):
+                    prog = self.registry[prog]
                 else:
-                    if default is not LN_UNDEFINED:
+                    if default not in [LN_UNDEFINED, PydanticUndefined]:
                         return default
-                    raise LionTypeError("Sequence must be of type Progression.")
+                    raise LionTypeError(
+                        "progressions member must be of type or subclass of Progression."
+                    )
 
-        return self.sequences.get(seq, default)
+        return self.progressions.get(prog, default)
 
-    def __getitem__(self, seq: str | None = None) -> Progression:
-        return self.get(seq)
+    def __getitem__(self, prog: str | None = None) -> Progression:
+        return self.get(prog)
 
-    def __setitem__(self, seq: str, value: Any) -> None:
-        if not isinstance(value, Progression):
-            raise LionTypeError("Sequence must be of type Progression.")
-        if isinstance(seq, Progression):
-            seq = seq.name or seq.ln_id
-        self.sequences[seq] = value
-
-    def shape(self) -> dict[str, int]:
-        return {key: len(self.sequences[value]) for key, value in self.registry.items()}
+    def __setitem__(self, prog: str, value: Any) -> None:
+        try:
+            self.progressions[prog] = value
+            for i in self.progressions[value]:
+                self.registry[i.name or i.ln_id] = i.ln_id
+        except Exception as e:
+            raise LionValueError from e
 
     def size(self) -> int:
-        return len(to_list(list(self), flatten=True, dropna=True))
+        return len(
+            to_list(
+                [list(prog) for prog in self.progressions], flatten=True, dropna=True
+            )
+        )
 
     def clear(self) -> None:
-        self.sequences.clear()
+        self.progressions.clear()
         self.registry.clear()
 
     def append(
         self,
         item: Any,
-        seq: str | Progression = None,
-    ):
-        seq = self.get(seq)
-        seq.append(item)
+        prog: str | Progression = None,
+    ) -> None:
+        self[prog].append(item)
 
     def include(
         self,
         item: Any = None,  # if only item, we add it to default
-        seq: (
+        prog: (
             str | Progression | None
         ) = None,  # if both item and seq, we add item to seq
     ) -> bool:  # if not item, we include seq to flow
-        if not seq and item:
-            seq = self.get()
-            seq.include(item)
-            return True
+        if item:
+            self.get().include(item)
+            return
 
-        elif seq and item:
-            seq = self.get(seq)
-            seq.include(item)
-            return True
-
-        elif seq and not item:
-            if isinstance(seq, Progression):
-                if seq.name and seq.name not in self.registry:
-                    self.registry[seq.name] = seq.ln_id
+        elif prog and not item:
+            if isinstance(prog, Progression):
+                if prog.name and prog.name not in self.registry:
+                    self.registry[prog.name] = prog.ln_id
                 else:
-                    self.registry[seq.ln_id] = seq.ln_id
-            elif isinstance(seq, str):
-                seq = self.get(seq, None)
-                if seq:
-                    seq.include(item)
-                    return True
-        return False
+                    self.registry[prog.ln_id] = prog.ln_id
+            elif isinstance(prog, str):
+                prog = self.get(prog, None)
+                if prog:
+                    prog.include(item)
 
     def exclude(
         self,
         item: Any | None = None,
-        seq: str | Progression | None = None,
+        prog: str | Progression | None = None,
         how: Literal["all"] | None = None,  # "all" will exclude item from all sequences
-    ) -> bool:
-
-        # this is not allowed
-        if not item and not seq:
-            return False
+    ):
 
         if item:
             if not how == "all":
-                seq = self.get(seq)
-                seq.exclude(item)
-                return True
-            for _sq in self.sequences:
-                _sq.exclude(item)
-            return True
+                self[prog].exclude(item)
+                return
+            for _p in self.progressions:
+                _p.exclude(item)
+            return
 
-        seq = self.get(seq)
-        self.sequences.exclude(seq)
-        self.registry.pop(seq.name or seq.ln_id)
-        return True
+        self.progressions.exclude(prog)
+        self.registry.pop(prog.name or prog.ln_id)
 
-    def popleft(self, seq) -> Any:
-        seq = self.get(seq)
-        return seq.popleft()
+    def popleft(self, prog) -> Any:
+        return self[prog].popleft()
 
     def remove(
         self,
         item: Any,
-        seq: str | Progression,
+        prog: str | Progression,
     ):
-
-        seq = self.get(seq)
-        seq.remove(item)
+        return self[prog].remove(item)
 
     def __len__(self) -> int:
-        return len(self.sequences)
+        return len(self.progressions)
 
     def __iter__(self):
-        return iter(self.sequences)
+        return iter(self.progressions)
 
     def __next__(self):
         return next(iter(self))
 
+    def keys(self):
+        return self.registry.keys()
 
-def flow(sequences: Any = None, default_name: str | None = "main") -> Flow:
-    if sequences is None:
-        return Flow(default_name=default_name)
+    def values(self):
+        return self.progressions.values()
 
-    flow = Flow()
-    flow.default_name = default_name
-    flow.sequences = flow.sequences._validate_pile(sequences)
-    for seq in flow.sequences:
-        if seq.name and seq.name not in flow.registry:
-            flow.registry[seq.name] = seq.ln_id
-        else:
-            flow.registry[seq.name or seq.ln_id] = seq.ln_id
+    def items(self):
+        return ((k, self[v]) for k, v in self.registry.items())
 
-    return flow
+
+def flow(progressions: Any = None, default_name: str | None = "main") -> Flow:
+    return Flow(progressions, default_name)
 
 
 # File: lion_core/container/flow.py

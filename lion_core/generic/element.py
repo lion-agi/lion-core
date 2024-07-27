@@ -27,8 +27,8 @@ from pydantic import (
     field_validator,
 )
 
-from lion_core.abc.concept import AbstractElement
-from lion_core.abc.characteristic import Temporal, Observable
+from lion_core.abc._concept import AbstractElement
+from lion_core.abc._characteristic import Temporal, Observable
 from lion_core.setting import TIME_CONFIG
 from lion_core.sys_utils import SysUtil
 from lion_core.class_registry import LION_CLASS_REGISTRY, get_class

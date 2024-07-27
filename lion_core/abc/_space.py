@@ -1,8 +1,8 @@
 """Abstract container classes for the Lion framework."""
 
 from abc import abstractmethod
-from lion_core.abc.concept import AbstractSpace, AbstractElement
-from lion_core.abc.characteristic import Traversal
+from lion_core.abc._concept import AbstractSpace, AbstractElement
+from lion_core.abc._characteristic import Traversal
 
 
 class Container(AbstractSpace, AbstractElement):

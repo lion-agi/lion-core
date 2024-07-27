@@ -24,7 +24,5 @@ class EdgeCondition(BaseModel, Condition):
         arbitrary_types_allowed=True,
     )
 
-    async def apply(self, *args, **kwargs) -> bool: ...
-
 
 # File: lion_core/generic/edge_condition.py

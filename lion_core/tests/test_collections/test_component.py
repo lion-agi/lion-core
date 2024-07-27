@@ -5,7 +5,7 @@ import pandas as pd
 from pydantic import BaseModel, Field
 
 from lion_core.element.component import Component
-from lion_core.abc.concept import LionValueError, LionTypeError
+from lion_core.abc._concept import LionValueError, LionTypeError
 from lion_core.libs import SysUtil
 
 

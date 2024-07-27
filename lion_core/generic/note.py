@@ -17,7 +17,7 @@ limitations under the License.
 from __future__ import annotations
 
 from functools import singledispatchmethod
-from collections.abc import Sequence, Mapping
+from collections.abc import Mapping
 import contextlib
 from typing import Any, override
 from pydantic import Field, BaseModel, ConfigDict, field_serializer

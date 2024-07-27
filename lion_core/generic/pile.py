@@ -19,8 +19,8 @@ from typing import Any, TypeVar, Type, Iterable, override, Generic
 
 from pydantic import Field
 
-from lion_core.abc.characteristic import Observable
-from lion_core.abc.space import Collective
+from lion_core.abc._characteristic import Observable
+from lion_core.abc._space import Collective
 from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
 from lion_core.exceptions import (

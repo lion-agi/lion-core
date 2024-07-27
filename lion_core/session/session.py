@@ -15,8 +15,11 @@ limitations under the License.
 """
 
 from typing import Any
+
+from pydantic import Field
+from lion_core.abc import BaseiModel
 from lion_core.sys_utils import SysUtil
-from lion_core.generic.pile import pile, Pile
+from lion_core.generic import pile, Pile, Progression, progression
 from lion_core.generic.util import to_list_type
 from lion_core.generic.exchange import Exchange
 from lion_core.generic.flow import Flow, flow
@@ -24,36 +27,150 @@ from lion_core.communication.mail_manager import MailManager
 from lion_core.session.base import BaseSession
 from lion_core.session.branch import Branch
 from lion_core.exceptions import ItemNotFoundError
+from lion_core.graph.node import Node
+
+from lion_core.action.tool import Tool
+from lion_core.action.tool_manager import ToolManager
+from lion_core.communication.system import System
+
+from lion_core.session.utils import validate_message, validate_system, create_message
 
 
 class Session(BaseSession):
 
+    branches: Pile[Branch] | None = Field(
+        default_factory=lambda: pile({}, item_type=Branch, strict=False),
+    )
+
+    default_branch: Branch | None = Field(None)
+
+    mail_transfer: Exchange | None = Field(
+        default_factory=Exchange,
+        description="The exchange system for mail transfer.",
+    )
+
+    mail_manager: MailManager | None = Field(None)
+    conversations: Flow | None = Field(None)
+    name: str | None = Field(None)
+
     def __init__(
         self,
-        default_branch: Branch,
-        branches: Pile[Branch],
-        mail_transfer: Exchange,
-        flow_: Flow | None = None,
+        system: System | dict | str | list = None,
+        *,
+        system_sender: Any = None,
+        system_datetime: bool | str | None = None,
+        default_branch: Branch | str | None = None,
+        default_branch_name: str | None = None,
+        branches: Pile[Branch] | None = None,
+        mail_transfer: Exchange | None = None,
+        branch_user: str | None = None,
+        session_user: str | None = None,
+        session_name: str | None = None,
+        tools: Any = None,
+        tool_manager: ToolManager | None = None,
+        imodel: BaseiModel | None = None,
     ):
-        self.branches: Pile[Branch] = branches
-        self.default_branch: Branch = default_branch
-        self.mail_transfer: Exchange = mail_transfer
-        self.mail_manager: MailManager = MailManager([self.mail_transfer])
-        self.flow_: Flow = flow_ or flow()
+        super().__init__()
 
-    @staticmethod
-    def validate_branches(value: Any):
-        if isinstance(value, Pile):
-            for branch in value:
-                if not isinstance(branch, Branch):
-                    raise ValueError("The branches pile contains non-Branch object")
-            return value
-        else:
-            try:
-                value = pile(items=value, item_type=Branch)
-                return value
-            except Exception as e:
-                raise ValueError(f"Invalid branches value. Error:{e}")
+        if not isinstance(system, System):
+            system = System(
+                system=system,
+                sender=system_sender,
+                system_datetime=system_datetime,
+                recipient=self.ln_id,
+            )
+
+        if default_branch is None:
+            if branches and len(branches) > 0:
+                default_branch = branches[0]
+                if default_branch_name:
+                    default_branch.name = default_branch_name
+                if tool_manager:
+                    default_branch.tool_manager = tool_manager
+                if tools:
+                    default_branch.tool_manager.register_tools(tools)
+                if branch_user:
+                    default_branch.user = branch_user
+
+            elif branches is None:
+                branches = pile()
+                default_branch = self.new_branch(
+                    system=system.clone(),
+                    system_sender=system_sender,
+                    system_datetime=system_datetime,
+                    user=branch_user,
+                    imodel=imodel,
+                    name=default_branch_name,
+                    tool_manager=tool_manager,
+                    tools=tools,
+                )
+                branches += default_branch
+        if tools:
+            self.default_branch.tool_manager.register_tools(tools)
+
+        self.imodel = imodel or self.default_branch.imodel
+        self.system = system
+        self.default_branch = default_branch
+        self.branches = branches or pile({}, item_type=Branch, strict=False)
+        self.mail_transfer = mail_transfer or Exchange()
+        self.mail_manager = MailManager([self.mail_transfer])
+        self.user = session_user or "user"
+        self.name = session_name or f"Session_{self.ln_id[-5:]}"
+
+        p = pile({}, item_type=Progression, strict=False)
+        for branch in self.branches:
+            progression = branch.progress
+            progression.name = branch.name
+            p += progression
+
+        self.conversations = flow(p, self.default_branch.name)
+
+    def new_branch(
+        self,
+        system: System | None = None,
+        system_sender: str | None = None,
+        user: str | None = None,
+        messages: Pile = None,
+        progress: Progression = None,
+        tool_manager: ToolManager = None,
+        tools: Any = None,
+        imodel=None,
+    ):
+        """
+        Creates a new branch and adds it to the session.
+
+        Args:
+            system (System, optional): The system message for the branch.
+            system_sender (str, optional): The sender of the system message.
+            user (str, optional): The user associated with the branch.
+            messages (Pile, optional): The pile of messages for the branch.
+            progress (Progression, optional): The progression of messages.
+            tool_manager (ToolManager, optional): The tool manager for the branch.
+            tools (Any, optional): The tools to register with the tool manager.
+            imodel (iModel, optional): The model associated with the branch.
+
+        Returns:
+            Branch: The created branch.
+        """
+        if system is None:
+            system = self.system.clone()
+            system.sender = self.ln_id
+            system_sender = self.ln_id
+        branch = Branch(
+            system=system,
+            system_sender=system_sender,
+            user=user,
+            messages=messages,
+            progress=progress,
+            tool_manager=tool_manager,
+            tools=tools,
+            imodel=imodel or self.imodel,
+        )
+        self.branches.append(branch)
+        self.mail_manager.add_sources(branch)
+        if self.default_branch is None:
+            self.default_branch = branch
+        return branch
 
     def remove_branch(
         self,
@@ -68,12 +185,12 @@ class Session(BaseSession):
         branch: Branch = self.branches[branch]
         branch_id = branch.ln_id
 
-        self.flow_.exclude(branch.progress)
+        self.conversations.exclude(prog=branch.progress)
         self.branches.exclude(branch)
         self.mail_manager.delete_source(branch_id)
 
         if self.default_branch == branch:
-            if self.branches.size() == 0:
+            if self.branches.is_empty() == 0:
                 self.default_branch = None
             else:
                 self.default_branch = self.branches[0]
@@ -81,9 +198,56 @@ class Session(BaseSession):
         if delete:
             del branch
 
-    def change_default_branch(self, branch: Branch | str):
-        if branch not in self.branches:
-            self.add_branch(branch)
+    def split_branch(self, branch):
+        """
+        Splits a branch, creating a new branch with the same messages and tools.
+
+        Args:
+            branch (Branch | str): The branch or its ID to split.
+
+        Returns:
+            Branch: The newly created branch.
+        """
+        branch = self.branches[branch]
+        system = branch.system.clone() if branch.system else None
+        if system:
+            system.sender = branch.ln_id
+        progress = progression()
+        messages = pile()
+
+        for id_ in branch.progress:
+            clone_message = branch.messages[id_].clone()
+            progress.append(clone_message.ln_id)
+            messages.append(clone_message)
+
+        tools = (
+            list(branch.tool_manager.registry.values())
+            if branch.tool_manager.registry
+            else None
+        )
+        branch_clone = Branch(
+            system=system,
+            system_sender=branch.ln_id,
+            user=branch.user,
+            progress=progress,
+            messages=messages,
+            tools=tools,
+        )
+        for message in branch_clone.messages:
+            message.sender = branch.ln_id
+            message.recipient = branch_clone.ln_id
+        self.branches.append(branch_clone)
+        self.mail_manager.add_sources(branch_clone)
+        return branch_clone
+
+    def change_default_branch(self, branch):
+        """
+        Changes the default branch of the session.
+
+        Args:
+            branch (Branch | str): The branch or its ID to set as the default.
+        """
+        branch = self.branches[branch]
         self.default_branch = branch
 
     def collect(self, from_: Branch | str | Pile[Branch] | None):

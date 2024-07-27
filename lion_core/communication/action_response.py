@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Any, override
 
 from lion_core.exceptions import LionValueError
-from lion_core.generic.note import Note
+from lion_core.generic import Note
 from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
 from lion_core.communication.action_request import ActionRequest
 

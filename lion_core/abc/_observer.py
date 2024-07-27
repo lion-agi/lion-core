@@ -5,7 +5,7 @@ distributed computing.
 """
 
 from abc import abstractmethod
-from lion_core.abc.concept import AbstractObserver
+from lion_core.abc._concept import AbstractObserver
 
 
 class BaseManager(AbstractObserver):
@@ -51,11 +51,11 @@ class BaseProcessor(AbstractObserver):
         """
         pass
 
+    # engine must have processor or executor
+
 
 class BaseEngine(AbstractObserver):
-    
-    # engine must have processor or executor
-    
+
     @abstractmethod
     async def run(self, *args, **kwargs):
         """Asynchronously runs the engine's core functionality."""
