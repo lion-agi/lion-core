@@ -21,16 +21,7 @@ from collections.abc import Sequence, Mapping
 import contextlib
 from typing import Any, override
 from pydantic import Field, BaseModel, ConfigDict, field_serializer
-from lion_core.libs import (
-    nget,
-    ninsert,
-    nset,
-    npop,
-    flatten,
-    to_dict, 
-    fuzzy_parse_json
-    
-)
+from lion_core.libs import nget, ninsert, nset, npop, flatten, to_dict, fuzzy_parse_json
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
@@ -187,7 +178,7 @@ class Note(BaseModel):
         self.content.clear()
 
     @singledispatchmethod
-    def update(self, items: Any, indices: list[str|int] = None, /):
+    def update(self, items: Any, indices: list[str | int] = None, /):
         try:
             d_ = to_dict(items)
             if isinstance(d_, dict):
@@ -196,41 +187,41 @@ class Note(BaseModel):
                 self.set(indices, d_)
         except Exception as e:
             raise TypeError(f"Invalid input type for update: {type(items)}") from e
- 
+
     @update.register(dict)
-    def _(self, items: dict, indices: list[str|int] = None, /):
+    def _(self, items: dict, indices: list[str | int] = None, /):
         if indices:
             a = self.get(indices, {}).update(items)
             self.set(indices, a)
             return
-        
+
         self.content.update(items)
 
     @update.register(Mapping)
-    def _(self, items: Mapping, indices: list[str|int] = None, /):
+    def _(self, items: Mapping, indices: list[str | int] = None, /):
         return self.update(dict(items), indices)
 
     @update.register(str)
-    def _(self, items: str, indices: list[str|int] = None, /):
-        
+    def _(self, items: str, indices: list[str | int] = None, /):
+
         with contextlib.suppress(ValueError):
             items = to_dict(items, str_type="json", parser=fuzzy_parse_json)
-            
+
             if isinstance(items, str):
                 with contextlib.suppress(ValueError):
                     items = to_dict(items, str_type="xml")
-    
+
         if not isinstance(items, dict):
             raise ValueError(f"Invalid input type for update: {type(items)}")
-        
+
         return self.update(items, indices)
 
     @update.register
-    def _(self, items: Note, indices: list[str|int] = None, /):
+    def _(self, items: Note, indices: list[str | int] = None, /):
         return self.update(items.content, indices)
 
     @update.register(Element)
-    def _(self, items: Element, indices: list[str|int] = None, /):
+    def _(self, items: Element, indices: list[str | int] = None, /):
         return self.update(items.to_dict(), indices)
 
     @classmethod
@@ -242,6 +233,9 @@ class Note(BaseModel):
             A Note object.
         """
         return cls(**kwargs)
+
+    def __contains__(self, indices: str | list) -> bool:
+        return self.content.get(indices, LN_UNDEFINED) is not LN_UNDEFINED
 
     def __len__(self) -> int:
         return len(self.content)
@@ -259,3 +253,9 @@ class Note(BaseModel):
     @override
     def __repr__(self) -> str:
         return repr(self.content)
+
+    def __getitem__(self, *indices) -> Any:
+        return self.get(indices)
+
+    def __setitem__(self, indices: list[str | int], value: Any) -> None:
+        self.set(indices, value)

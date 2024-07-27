@@ -1,9 +1,11 @@
-from lion_core.abc import AbstractSpace, Observable, Temporal
-from lion_core.sys_utils import SysUtil
+from pydantic import Field
+from lion_core.abc import AbstractSpace, BaseiModel
+from lion_core.generic.component import Component
+from lion_core.communication import System
 
 
-class BaseSession(AbstractSpace, Observable, Temporal):
+class BaseSession(Component, AbstractSpace):
 
-    def __init__(self) -> None:
-        self.ln_id = SysUtil.id()
-        self.timestamp = SysUtil.time(type_="timestamp")
+    system: System | None = Field(None, description="The system message node.")
+    imodel: BaseiModel | None = Field(None, description="An intelligent model")
+    user: str | None = Field(None, description="The user name or id of this space")

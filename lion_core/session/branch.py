@@ -16,66 +16,86 @@ limitations under the License.
 
 from typing import Any, Callable
 
-from lion_core.abc import BaseiModel
-from lion_core.generic.pile import Pile, pile
-from lion_core.generic.progression import progression
+from pydantic import Field
 
-from lion_core.generic.exchange import Exchange
-from lion_core.action.tool import Tool
-from lion_core.action.tool_manager import ToolManager
-from lion_core.communication.message import RoledMessage
-from lion_core.communication.system import System
-from lion_core.communication.instruction import Instruction
-from lion_core.communication.assistant_response import AssistantResponse
-from lion_core.communication.action_request import ActionRequest
-from lion_core.communication.action_response import ActionResponse
-from lion_core.communication.mail_manager import MailManager
-from lion_core.communication.mail import Mail
-from lion_core.session.utils import validate_messages, validate_system, create_message
+from lion_core.abc import BaseiModel
+from lion_core.libs import to_list
+
+from lion_core.generic import (
+    pile,
+    Pile,
+    progression,
+    Progression,
+    Exchange,
+    to_list_type,
+)
+
+from lion_core.action import Tool, ToolManager
+
+from lion_core.communication import (
+    RoledMessage,
+    System,
+    Instruction,
+    AssistantResponse,
+    ActionRequest,
+    ActionResponse,
+    Mail,
+)
+
+from lion_core.session.utils import validate_message, validate_system, create_message
+
 from lion_core.session.base import BaseSession
+from lion_core.converter import Converter, ConverterRegistry
+
+
+class BranchConverterRegistry(ConverterRegistry): ...
 
 
 class Branch(BaseSession):
 
+    messages: Pile | None = Field(None)
+    tool_manager: ToolManager | None = Field(None)
+    mailbox: Exchange | None = Field(None)
+    progress: Progression | None = Field(None)
+
     def __init__(
         self,
-        system: System,
-        messages: Pile,
-        tool_manager: ToolManager,
-        mail_manager: MailManager,
-        mailbox: Exchange,
-        name: str,
+        system: System = None,
+        system_sender: Any = None,
+        system_datetime: bool | str | None = None,
+        messages: Pile = None,
+        tools: Any = None,
+        tool_manager: ToolManager = None,
+        mail_box: Exchange = None,
+        name: str = None,
+        progress: Progression = None,
     ):
         super().__init__()
-        self.system = system
-        self.messages = messages
-        self.tool_manager = tool_manager
-        self.mail_manager = mail_manager
-        self.mailbox = mailbox
-        self.name = name
 
-    @staticmethod
-    def validate_system(
-        system: Any,
-        sender,
-        recipient,
-        system_datetime,
-        system_datetime_strftime,
-        **kwargs,
-    ) -> None:
-        return validate_system(
+        system = validate_system(
             system,
-            sender=sender,
-            recipient=recipient,
+            sender=system_sender,
+            recipient=self.ln_id,
             system_datetime=system_datetime,
-            system_datetime_strftime=system_datetime_strftime,
-            **kwargs,
         )
 
-    @staticmethod
-    def validate_messages(value: Any):
-        # will return a new pile
-        return pile(validate_messages(value), RoledMessage)
+        if messages:
+            messages = pile(
+                to_list(
+                    validate_message(to_list_type(messages)), dropna=True, flatten=True
+                ),
+                RoledMessage,
+            )
+
+        self.system = system
+        self.messages = messages or pile(self.system, RoledMessage)
+        self.tool_manager = tool_manager or ToolManager()
+        self.mailbox = mail_box or Exchange()
+        self.name = name or "user"
+        self.progress = progress or progression()
+
+        if tools:
+            self.tool_manager.register_tools(tools)
 
     def add_message(
         self,

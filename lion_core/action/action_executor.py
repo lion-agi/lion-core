@@ -17,10 +17,7 @@ class ActionExecutor(BaseExecutor):
         processor_class: Type[ActionProcessor] = ActionProcessor,
         **kwargs
     ) -> None:
-        self.processor_config = {
-            "args": [capacity, refresh_time],
-            "kwargs": kwargs
-        }
+        self.processor_config = {"args": [capacity, refresh_time], "kwargs": kwargs}
         self.processor_class = processor_class
         self.pile: Pile = pile({}, Action)
         self.pending = progression()

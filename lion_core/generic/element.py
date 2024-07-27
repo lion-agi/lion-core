@@ -60,6 +60,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         arbitrary_types_allowed=True,
         use_enum_values=True,
         populate_by_name=True,
+        # protected_namespaces=("_", "__", "model_"),
     )
 
     @classmethod
@@ -131,9 +132,6 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
     def __len__(self) -> int:
         """Return the length of the Element."""
         return 1
-
-    def __eq__(self, other):
-        return self is other
 
 
 # File: lion_core/generic/element.py

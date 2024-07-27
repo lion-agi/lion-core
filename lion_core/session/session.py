@@ -19,9 +19,11 @@ from lion_core.sys_utils import SysUtil
 from lion_core.generic.pile import pile, Pile
 from lion_core.generic.util import to_list_type
 from lion_core.generic.exchange import Exchange
+from lion_core.generic.flow import Flow, flow
 from lion_core.communication.mail_manager import MailManager
 from lion_core.session.base import BaseSession
 from lion_core.session.branch import Branch
+from lion_core.exceptions import ItemNotFoundError
 
 
 class Session(BaseSession):
@@ -31,12 +33,13 @@ class Session(BaseSession):
         default_branch: Branch,
         branches: Pile[Branch],
         mail_transfer: Exchange,
+        flow_: Flow | None = None,
     ):
-        super().__init__()
         self.branches: Pile[Branch] = branches
         self.default_branch: Branch = default_branch
         self.mail_transfer: Exchange = mail_transfer
         self.mail_manager: MailManager = MailManager([self.mail_transfer])
+        self.flow_: Flow = flow_ or flow()
 
     @staticmethod
     def validate_branches(value: Any):
@@ -52,24 +55,33 @@ class Session(BaseSession):
             except Exception as e:
                 raise ValueError(f"Invalid branches value. Error:{e}")
 
-    def new_branch(self, **kwargs):
-        branch = Branch(**kwargs)
-        self.branches.include(branch)
-        return branch
-
-    def add_branch(self, branch: Branch):
-        self.branches.include(branch)
-
-    def remove_branch(self, branch, delete):
+    def remove_branch(
+        self,
+        branch: Branch | str,  # the branch to delete
+        delete: bool = False,  # whether to delete the branch from memory
+    ):
         if branch not in self.branches:
-            raise ValueError(
+            raise ItemNotFoundError(
                 f"Branch {branch.name or branch.ln_id[:8]}.. does not exist."
             )
+
+        branch: Branch = self.branches[branch]
+        branch_id = branch.ln_id
+
+        self.flow_.exclude(branch.progress)
         self.branches.exclude(branch)
+        self.mail_manager.delete_source(branch_id)
+
+        if self.default_branch == branch:
+            if self.branches.size() == 0:
+                self.default_branch = None
+            else:
+                self.default_branch = self.branches[0]
+
         if delete:
             del branch
 
-    def change_default_branch(self, branch):
+    def change_default_branch(self, branch: Branch | str):
         if branch not in self.branches:
             self.add_branch(branch)
         self.default_branch = branch

@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 from __future__ import annotations
-from typing import Any, TypeVar, Type, Iterable, override
+from typing import Any, TypeVar, Type, Iterable, override, Generic
 
 from pydantic import Field
 
@@ -36,7 +36,7 @@ from lion_core.setting import LN_UNDEFINED
 T = TypeVar("T", bound=Observable)
 
 
-class Pile(Element, Collective):
+class Pile(Element, Collective, Generic[T]):
     """
     A flexible, ordered collection of Elements with list and dict-like access.
 
@@ -646,6 +646,7 @@ def pile(
     items: Any = None,
     item_type: Type[Observable] | set[Type[Observable]] | None = None,
     order: list[str] | None = None,
+    strict: bool = False,
 ) -> Pile:
     """
     Create a new Pile instance.
@@ -659,4 +660,4 @@ def pile(
         Pile: A new Pile instance.
     """
 
-    return Pile(items, item_type, order)
+    return Pile(items=items, item_type=item_type, order=order, strict=strict)

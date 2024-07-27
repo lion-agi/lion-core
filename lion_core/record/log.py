@@ -30,16 +30,14 @@ class BaseLog(Element, ImmutableRecord):
         self, *, content: dict | Note = None, loginfo: Note | dict = None, **data: Any
     ) -> None:
         super().__init__()
-        
+
         if content:
             if isinstance(content, dict):
                 data = {**content, **data}
             elif isinstance(content, Note):
                 data = {**content.to_dict(), **data}
-        
-        self.content
-        
 
+        self.content
 
         content_ = Note(content=data)
         loginfo_ = Note(**loginfo) if isinstance(loginfo, dict) else loginfo
