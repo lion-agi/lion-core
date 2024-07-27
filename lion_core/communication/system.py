@@ -12,7 +12,7 @@ class System(RoledMessage):
         system: Any | MessageCloneFlag = None,
         sender: str | None | MessageCloneFlag = None,
         recipient: str | None | MessageCloneFlag = None,
-        with_datetime: bool | str | None | MessageCloneFlag = None,
+        system_datetime: bool | str | None | MessageCloneFlag = None,
     ):
         """
         Initialize a System message instance.
@@ -25,7 +25,7 @@ class System(RoledMessage):
         """
         if all(
             x == MessageCloneFlag.MESSAGE_CLONE
-            for x in [system, sender, recipient, with_datetime]
+            for x in [system, sender, recipient, system_datetime]
         ):
             super().__init__(role=MessageRole.SYSTEM)
             return
@@ -33,7 +33,7 @@ class System(RoledMessage):
         super().__init__(
             role=MessageRole.SYSTEM,
             sender=sender or "system",
-            content=format_system_content(with_datetime, system),
+            content=format_system_content(system_datetime, system),
             recipient=recipient or "N/A",
         )
 
