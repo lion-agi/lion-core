@@ -147,7 +147,4 @@ class ConverterRegistry:
         return converter.to_obj(obj, **kwargs)
 
 
-ConverterRegistry.register("dict", DictConverter())
-ConverterRegistry.register("json", JsonConverter())
-
 # File: lionagi/core/converter.py
