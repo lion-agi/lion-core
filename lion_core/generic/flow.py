@@ -28,7 +28,7 @@ from lion_core.generic import (
     pile,
     Progression,
 )
-from lion_core.sys_utils import SysUtil
+from lion_core.sys_util import SysUtil
 from lion_core.exceptions import LionTypeError, ItemNotFoundError, LionValueError
 from lion_core.libs import to_list
 from pydantic_core import PydanticUndefined

@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any
+from typing import Any, Type
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
-from lion_core.sys_utils import SysUtil
+from lion_core.sys_util import SysUtil
 from lion_core.setting import LN_UNDEFINED
 from lion_core.generic import pile, Pile, Progression, progression
 from lion_core.generic.util import to_list_type
@@ -49,11 +49,12 @@ class Session(BaseSession):
     mail_transfer: Exchange | None = Field(None)
     mail_manager: MailManager | None = Field(None)
     conversations: Flow | None = Field(None)
+    branch_type: Type[Branch] = PrivateAttr(Branch)
 
     def __init__(
         self,
+        branch_type: Type[Branch] = Branch,
         session_system: Any = None,
-        *,
         session_system_sender: Any = None,
         session_system_datetime: Any = None,
         session_name: str | None = None,
@@ -101,9 +102,11 @@ class Session(BaseSession):
             user=session_user,
             imodel=session_imodel or branch_imodel,
         )
+        if branch_type:
+            self.branch_type = branch_type
 
         if not branches and not default_branch:
-            self.default_branch = Branch(
+            self.default_branch = branch_type(
                 system=branch_system,
                 system_sender=branch_system_sender
                 or self.ln_id,  # the system of branch is the session
@@ -117,7 +120,7 @@ class Session(BaseSession):
                 name=branch_name,
                 mailbox=branch_mailbox,
             )
-            self.branches = pile(self.default_branch, Branch, strict=False)
+            self.branches = pile(self.default_branch, branch_type, strict=False)
 
         elif branches and not default_branch:
             self.branches = branches
@@ -125,9 +128,9 @@ class Session(BaseSession):
 
         elif not branches and default_branch:
             self.default_branch = default_branch
-            self.branches = pile(default_branch, Branch, strict=False)
+            self.branches = pile(default_branch, branch_type, strict=False)
 
-        self.mail_transfer = mail_transfer or Exchange()
+        self.mail_transfer = mail_transfer
         self.mail_manager = MailManager([self.mail_transfer])
         if not conversations:
             conversations = flow(
@@ -171,7 +174,7 @@ class Session(BaseSession):
             system.sender = self.ln_id
             system_sender = self.ln_id
 
-        branch = Branch(
+        branch = self.branch_type(
             system=system,
             system_sender=system_sender,
             system_datetime=system_datetime,

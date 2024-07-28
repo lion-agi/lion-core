@@ -19,7 +19,7 @@ from typing import Any, Callable, override
 
 from lion_core.abc import Condition, Observable, Temporal, Action
 from lion_core.exceptions import LionOperationError
-from lion_core.sys_utils import SysUtil
+from lion_core.sys_util import SysUtil
 from lion_core.libs import ucall
 from lion_core.record.log import BaseLog
 from lion_core.record.form import Form

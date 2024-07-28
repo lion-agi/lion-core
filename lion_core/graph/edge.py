@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import Field
 
 from lion_core.abc import Relational
-from lion_core.sys_utils import SysUtil
+from lion_core.sys_util import SysUtil
 from lion_core.generic import Note, Component
 from lion_core.graph.edge_condition import EdgeCondition
 

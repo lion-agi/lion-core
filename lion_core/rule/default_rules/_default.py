@@ -1,9 +1,9 @@
 from enum import Enum
-from .choice import ChoiceRule
-from .mapping import MappingRule
-from .number import NumberRule
-from .boolean import BooleanRule
-from .string import StringRule
+from ..choice import ChoiceRule
+from ..mapping import MappingRule
+from ..number import NumberRule
+from ..boolean import BooleanRule
+from ..string import StringRule
 from .action import ActionRequestRule
 
 
