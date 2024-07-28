@@ -416,11 +416,6 @@ class Branch(BaseSession):
             print("tools deletion failed")
         return False
 
-    def clear(self) -> None:
-        """Clear all messages in the branch."""
-        self.messages.clear()
-        self.order.clear()
-
     def to_chat_messages(self) -> list[dict[str, Any]]:
         """
         Convert messages to a list of chat message dictionaries.
