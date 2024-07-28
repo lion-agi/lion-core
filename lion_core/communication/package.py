@@ -41,7 +41,7 @@ class Package(Observable, Temporal):
         self,
         category: PackageCategory | str,
         package: Any,
-        request_source: Any,
+        request_source: Any = None,
     ):
         """
         Initialize a Package instance.

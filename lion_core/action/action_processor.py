@@ -48,7 +48,7 @@ class ActionProcessor(BaseProcessor):
         tasks = set()
         while self.available_capacity > 0 and self.queue.qsize() > 0:
             next = await self.dequeue()
-            next.status = ActionStatus.IN_PROGRESS
+            next.status = ActionStatus.PROCESSING
             task = asyncio.create_task(next.invoke())
             tasks.add(task)
             self.available_capacity -= 1
