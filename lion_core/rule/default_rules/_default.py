@@ -1,10 +1,10 @@
 from enum import Enum
-from ..choice import ChoiceRule
-from ..mapping import MappingRule
-from ..number import NumberRule
-from ..boolean import BooleanRule
-from ..string import StringRule
-from .action import ActionRequestRule
+from lion_core.rule.default_rules.choice import ChoiceRule
+from lion_core.rule.default_rules.mapping import MappingRule
+from lion_core.rule.default_rules.number import NumberRule
+from lion_core.rule.default_rules.boolean import BooleanRule
+from lion_core.rule.default_rules.string import StringRule
+from lion_core.rule.default_rules.action import ActionRequestRule
 
 
 class DEFAULT_RULES(Enum):

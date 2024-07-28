@@ -19,11 +19,11 @@ from lion_core.abc import BaseManager
 
 from typing import Any, Dict, List, Union
 from lion_core.sys_util import SysUtil
-from ..rule.base import Rule
-from ..rule import DEFAULT_RULES
-from ..rule import RuleBook
-from ..report.form import Form
-from ..report.report import Report
+from lion_core.rule.base import Rule
+from lion_core.rule.default_rules import DEFAULT_RULES
+from lion_core.experimental.rulebook import RuleBook
+from lion_core.record.form import Form
+from lion_core.record.report import Report
 
 _DEFAULT_RULEORDER = [
     "choice",

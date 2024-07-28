@@ -24,7 +24,7 @@ from pydantic_core import PydanticUndefined
 from lion_core.sys_util import SysUtil
 from lion_core.setting import LN_UNDEFINED
 from lion_core.exceptions import LionValueError
-from lion_core.class_registry import get_class
+from lion_core._class_registry import get_class
 from lion_core.converter import Converter
 from lion_core.generic.component_converter import ComponentConverterRegistry
 from lion_core.generic.element import Element
