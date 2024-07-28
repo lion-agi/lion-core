@@ -8,9 +8,9 @@ from lion_core.libs.parsers._md_to_json import (
     md_to_json,
     escape_chars_in_json,
 )
-from ._force_validate_mapping import validate_mapping
+from ._validate_mapping import validate_mapping
 from ._validate_keys import validate_keys
-from ._force_validate_boolean import force_validate_boolean
+from ._validate_boolean import validate_boolean
 from ._function_to_schema import function_to_schema
 from ._xml_parser import xml_to_dict
 
@@ -24,7 +24,7 @@ __all__ = [
     "fuzzy_parse_json",
     "validate_mapping",
     "validate_keys",
-    "force_validate_boolean",
+    "validate_boolean",
     "function_to_schema",
     "extract_json_block",
     "fix_json_string",

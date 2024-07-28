@@ -56,12 +56,11 @@ class BranchConverterRegistry(ConverterRegistry): ...
 class Branch(BaseSession):
     """Represents a branch in the conversation tree with tools and messages."""
 
-    system: System | None = Field(None)
     messages: Pile | None = Field(None)
     tool_manager: ToolManager = Field(default_factory=ToolManager)
     mailbox: Exchange | None = Field(None)
     name: str | None = Field(None)
-    user: str | None = Field(None)
+
     order: Progression = Field(default_factory=progression)
 
     _converter_registry: ClassVar = BranchConverterRegistry
