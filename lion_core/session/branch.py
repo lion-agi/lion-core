@@ -16,6 +16,7 @@ limitations under the License.
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any, Callable, ClassVar, override
 
 from pydantic import Field
@@ -23,17 +24,8 @@ from pydantic import Field
 from lion_core.abc import BaseiModel
 from lion_core.imodel.imodel import iModel
 from lion_core.libs import is_same_dtype
-
-from lion_core.generic import (
-    pile,
-    Pile,
-    progression,
-    Progression,
-    Exchange,
-)
-
+from lion_core.generic import pile, Pile, progression, Progression, Exchange
 from lion_core.action import Tool, ToolManager
-
 from lion_core.communication import (
     RoledMessage,
     System,
@@ -42,105 +34,95 @@ from lion_core.communication import (
     ActionRequest,
     ActionResponse,
     Mail,
+    Package,
 )
-
-from lion_core.session.utils import create_message
-
 from lion_core.session.base import BaseSession
 from lion_core.converter import ConverterRegistry
+from lion_core.session.utils import validate_message, create_message
+
+msg_pile = partial(pile, item_type=RoledMessage, strict=False)
 
 
-class BranchConverterRegistry(ConverterRegistry): ...
+class BranchConverterRegistry(ConverterRegistry):
+    """Registry for Branch converters."""
+
+    pass
 
 
 class Branch(BaseSession):
-    """Represents a branch in the conversation tree with tools and messages."""
+    """
+    Represents a branch in the conversation tree with tools and messages.
+
+    This class manages a conversation branch, including messages, tools,
+    and communication within the branch.
+    """
 
     messages: Pile | None = Field(None)
-    tool_manager: ToolManager = Field(default_factory=ToolManager)
+    tool_manager: ToolManager | None = Field(None)
     mailbox: Exchange | None = Field(None)
-    name: str | None = Field(None)
-
-    order: Progression = Field(default_factory=progression)
+    progress: Progression | None = Field(None)
 
     _converter_registry: ClassVar = BranchConverterRegistry
 
     def __init__(
         self,
-        system: System | str | dict | None = None,
+        system: Any = None,
         system_sender: str | None = None,
-        system_datetime: str | bool | None = None,
-        user: str | None = None,
-        messages: Pile | None = None,
-        tool_manager: ToolManager = None,
-        progress: Progression = None,
-        mailbox: Exchange = None,
-        tools: Any = None,
-        imodel: BaseiModel = None,
+        system_datetime: Any = None,
         name: str | None = None,
+        user: str | None = None,
+        imodel: iModel | None = None,
+        messages: Pile | None = None,
+        tool_manager: ToolManager | None = None,
+        mailbox: Exchange | None = None,
+        progress: Progression | None = None,
+        tools: Any = None,
     ):
         """
         Initialize a Branch instance.
 
         Args:
-            system (System | str | dict | None): The system message. Can be a
-                System Node, string, JSON-serializable dict, or None. If not a
-                System Node, one will be created. If None, a default system
-                message is used.
-            system_sender (str | None): The sender of the system message.
-            system_datetime (str | bool | None): Datetime for system message.
-                If True, adds current datetime. If str, adds that string.
-            user (str | None): The user identifier. Defaults to "user".
-            messages (Pile | None): Initial messages for the branch.
-            tool_manager (ToolManager | None): Custom tool manager. If None, a
-                new one is created.
-            mailbox (Exchange | None): Custom mailbox. If None, a new one is
-                created.
-            tools (Any): Tools to be registered. Can be individual Tool or
-                Callable objects, or collections thereof. Cannot be bool.
-            imodel (iModel | None): Custom iModel. If None, a new one is
-                created.
-            name (str | None): Optional name for the branch.
+            system: System message for the branch.
+            system_sender: Sender of the system message.
+            system_datetime: Datetime for the system message.
+            name: Name of the branch.
+            user: User identifier for the branch.
+            imodel: iModel for the branch.
+            messages: Initial messages for the branch.
+            tool_manager: Tool manager for the branch.
+            mailbox: Mailbox for the branch.
+            progress: Progress tracker for the branch.
+            tools: Tools to be registered in the branch.
         """
-        super().__init__()
 
-        if not isinstance(system, System):
-            system = System(
-                system=(
-                    system or "You are a helpful assistant. Let's think step by step."
-                ),
-                sender=system_sender,
-                recipient=self.ln_id,
-                with_datetime=system_datetime,
-            )
+        super().__init__(
+            system=system,
+            system_sender=system_sender,
+            system_datetime=system_datetime,
+            name=name,
+            user=user,
+            imodel=imodel,
+        )
 
-        if not messages:
-            messages = pile(items={}, item_type=RoledMessage, order=None, strict=False)
+        self.messages = msg_pile(validate_message(messages))
+        self.progress = progress or progression(list(self.messages), name=self.name)
 
-        user = user or "user"
-        tool_manager = tool_manager or ToolManager()
-        mailbox = mailbox or Exchange()
-        imodel = imodel or iModel()
+        if self.system not in self.messages:
+            self.messages.include(self.system)
+            self.progress.insert(0, self.system)
 
-        self.messages = messages
-        self.tool_manager = tool_manager
-        self.mailbox = mailbox
-        self.name = name
-        self.user = user
-        self.imodel = imodel
-        self.order = progress or progression()
+        self.tool_manager = tool_manager or ToolManager()
+        self.mailbox = mailbox or Exchange()
 
         if tools:
             self.tool_manager.register_tools(tools)
 
-        self.set_system(system)
-
     def set_system(self, system: System) -> None:
         """
-        Set or update the system message.
+        Set or update the system message for the branch.
 
         Args:
-            system (System): The new system message to set.
+            system: The new system message.
         """
         if len(self.order) < 1:
             self.messages.include(system)
@@ -168,10 +150,19 @@ class Branch(BaseSession):
         requested_fields: dict[str, str] | None = None,
         system_datetime: bool | str | None = None,
         system_datetime_strftime: str | None = None,
-        metadata: Any = None,  # extra metadata
+        metadata: Any = None,
         delete_previous_system: bool = False,
-        **kwargs,  # additional context fields
+        **kwargs,
     ) -> bool:
+        """
+        Add a message to the branch.
+
+        Args:
+            Various parameters for different types of messages and metadata.
+
+        Returns:
+            bool: True if the message was successfully added.
+        """
         if assistant_response:
             sender = self.ln_id
 
@@ -219,11 +210,21 @@ class Branch(BaseSession):
 
         return self.messages.include(_msg)
 
-    def clear_messages(self):
+    def clear_messages(self) -> None:
+        """Clear all messages except the system message."""
         self.messages.clear()
+        self.progress.clear()
         self.messages.include(self.system)
+        self.progress.insert(0, self.system)
 
     def change_system(self, system: System, delete_previous_system: bool = False):
+        """
+        Change the system message.
+
+        Args:
+            system: The new system message.
+            delete_previous_system: If True, delete the previous system message.
+        """
         old_system = self.system
         self.system = system
         self.messages[0] = self.system  # system must be in first message position
@@ -234,12 +235,23 @@ class Branch(BaseSession):
     def send(
         self, recipient: str, category: str, package: Any, request_source: str
     ) -> None:
-        mail = self.mail_manager.create_mail(
+        """
+        Send a mail to a recipient.
+
+        Args:
+            recipient: The recipient's ID.
+            category: The category of the mail.
+            package: The content of the mail.
+            request_source: The source of the request.
+        """
+        package = Package(
+            category=category, package=package, request_source=request_source
+        )
+
+        mail = Mail(
             sender=self.ln_id,
             recipient=recipient,
-            category=category,
             package=package,
-            request_source=request_source,
         )
         self.mailbox.include(mail, "out")
 
@@ -421,3 +433,6 @@ class Branch(BaseSession):
     def _is_invoked(self) -> bool:
         """Check if the last message is an ActionResponse."""
         return isinstance(self.messages[-1], ActionResponse)
+
+
+# File: lion_core/session/branch.py

@@ -21,14 +21,35 @@ from lion_core.communication import System
 from lion_core.graph.node import Node
 from lion_core.imodel.imodel import iModel
 
+from lion_core.session.utils import validate_system
+
 
 class BaseSession(Node, AbstractSpace):
 
-    system: System | None = Field(None, description="The system message node.")
-    user: str | None = Field(None, description="The user name or id of this space")
+    system: System | None = Field(None)
+    user: str | None = Field(None)
     imodel: iModel | None = Field(None)
+    name: str | None = Field(None)
 
     def __init__(
         self,
         system: Any = None,
-    ): ...
+        system_sender: Any = None,
+        system_datetime: Any = None,
+        name: str | None = None,
+        user: str | None = None,
+        imodel: iModel | None = None,
+    ):
+        super().__init__()
+        self.system = validate_system(
+            system=system,
+            sender=system_sender,
+            recipient=self.ln_id,
+            system_datetime=system_datetime,
+        )
+        self.name = name
+        self.user = user
+        self.imodel = imodel
+
+
+# File: lion_core/session/base.py
