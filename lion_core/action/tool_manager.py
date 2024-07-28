@@ -42,17 +42,13 @@ class ToolManager(BaseManager):
         return False
 
     def register_tool(
-        self, tool: Tool | Callable[..., Any], update: bool = False
-    ) -> bool:
+        self, tool: Tool | Callable[..., Any], update: bool = False):
         """
         Register a single tool.
 
         Args:
             tool: The tool to register.
             update: Whether to update an existing tool. Defaults to False.
-
-        Returns:
-            True if registration was successful.
 
         Raises:
             ValueError: If the tool is already registered and update is False.
@@ -69,11 +65,9 @@ class ToolManager(BaseManager):
             raise TypeError("Please register a Tool object or callable.")
 
         self.registry[tool.function_name] = tool
-        return True
 
     def register_tools(
-        self, tools: list[Tool | Callable[..., Any]] | Tool | Callable[..., Any]
-    ) -> bool:
+        self, tools: list[Tool | Callable[..., Any]] | Tool | Callable[..., Any]):
         """
         Register multiple tools.
 
@@ -84,11 +78,9 @@ class ToolManager(BaseManager):
             ValueError: If the tool is already registered and update is False.
             TypeError: If the element tool is not a Tool object or callable.
 
-        Returns:
-            True if all tools were registered successfully.
         """
-        tools_list = to_list(tools, dropna=True, flatten=True)
-        return all(self.register_tool(tool) for tool in tools_list)
+        tools_list = tools if isinstance(tools, list) else [tools]
+        [self.register_tool(tool) for tool in tools_list]
 
     @singledispatchmethod
     def match_tool(self, func_call: Any) -> FunctionCalling:
@@ -178,8 +170,11 @@ class ToolManager(BaseManager):
         Returns:
             Tool schemas.
         """
-        if isinstance(tools, bool) and tools is True:
-            tool_kwarg = {"tools": self.schema_list}
+        if isinstance(tools, bool):
+            if tools:
+                tool_kwarg = {"tools": self.schema_list}
+            else:
+                tool_kwarg = {}
         else:
             tool_kwarg = {"tools": self._get_tool_schema(tools)}
         return tool_kwarg | kwargs

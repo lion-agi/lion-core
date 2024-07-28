@@ -10,7 +10,7 @@ from lion_core.communication.package import Package
 class StartMail(Element, Signal):
     """a start mail node that triggers the initiation of a process."""
 
-    mailbox: Exchange[Mail] = Field(
+    mailbox: Exchange = Field(
         default_factory=Exchange, description="The pending start mail"
     )
 

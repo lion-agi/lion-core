@@ -650,7 +650,7 @@ def pile(
     items: Any = None,
     item_type: Type[Observable] | set[Type[Observable]] | None = None,
     order: list[str] | None = None,
-    strict: bool = False,
+    strict: bool = False
 ) -> Pile:
     """
     Create a new Pile instance.
