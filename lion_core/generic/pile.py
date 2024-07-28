@@ -641,6 +641,10 @@ class Pile(Element, Collective, Generic[T]):
         self.order.insert(index, item_order)
         self.pile_.update(item_dict)
 
+    @override
+    def __bool__(self) -> bool:
+        return not self.is_empty()
+
 
 def pile(
     items: Any = None,

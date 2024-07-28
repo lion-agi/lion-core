@@ -2,10 +2,12 @@ from typing import Any, Literal
 
 from pydantic import Field
 
-from lion_core.abc import Event
+from lion_core.abc import Event, Relational
 from lion_core.sys_utils import SysUtil
 from lion_core.generic import Pile, pile, Note
 from lion_core.exceptions import LionRelationError, ItemExistsError, ItemNotFoundError
+from lion_core.graph.edge_condition import EdgeCondition
+from lion_core.graph.edge import Edge
 from lion_core.graph.node import Node
 from lion_core.graph.edge import Edge
 
@@ -46,6 +48,28 @@ class Graph(Node):
             return
         except ItemExistsError as e:
             raise LionRelationError(f"Error adding node: {e}")
+
+    def add_edge(
+        self,
+        head: Relational | str,
+        tail: Relational | str,
+        condition: EdgeCondition | None = None,
+        labels: list[str] | None = None,
+    ):
+        try:
+            for i in [head, tail]:
+                if i not in self:
+                    if not isinstance(i, Relational):
+                        raise LionRelationError(f"Node {i} not found in the graph.")
+
+            # if head and tail are not in self.internal_nodes:
+            # they are relational objects now after the above check
+            edge = Edge(head=head, tail=tail, condition=condition, labels=labels)
+            self.internal_nodes.include([head, tail])
+            self.internal_edges.include(edge)
+
+        except Exception as e:
+            raise LionRelationError(f"Error adding edge: ") from e
 
     def remove_node(
         self,
@@ -109,7 +133,7 @@ class Graph(Node):
         out["tail"] = pile(out.get("tail", []), item_type=Edge)
 
         for i in ["head", "tail"]:
-            if not out.get(i, []):
+            if not out.get(i):
                 out.pop(i)
 
         return {k: pile(v, item_type=Edge) for k, v in out.items()}
