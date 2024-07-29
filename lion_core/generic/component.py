@@ -118,6 +118,9 @@ class Component(Element):
             name=name, value=value, annotation=annotation, field_obj=field_obj, **kwargs
         )
 
+    # when updating field, we do not check the validity of annotation
+    # meaning current value will not get validated, and can lead to errors when storing and loading
+    # if you change annotation to a type that is not compatible with the current value
     def update_field(
         self,
         name: str,
