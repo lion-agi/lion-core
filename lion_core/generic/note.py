@@ -264,5 +264,5 @@ class Note(BaseModel):
         indices = list(indices[0]) if isinstance(indices[0], tuple) else list(indices)
         return self.get(indices)
 
-    def __setitem__(self, indices: list[str | int], value: Any) -> None:
+    def __setitem__(self, indices: str | tuple, value: Any) -> None:
         self.set(indices, value)

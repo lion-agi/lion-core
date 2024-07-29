@@ -62,7 +62,7 @@ class Component(Element):
 
     @field_serializer("metadata")
     def _serialize_metadata(self, value):
-        return value.content
+        return value.to_dict()
 
     @field_serializer("extra_fields")
     def _serialize_extra_fields(self, value: dict[str, FieldInfo]) -> dict[str, Any]:
@@ -231,6 +231,7 @@ class Component(Element):
         Returns:
             T: An instance of the Component class or its subclass.
         """
+        data = SysUtil.copy(data)
         if "lion_class" in data:
             cls = get_class(data.pop("lion_class"))
         if cls.from_dict.__func__ != Component.from_dict.__func__:
