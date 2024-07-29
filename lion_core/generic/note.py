@@ -19,13 +19,15 @@ from __future__ import annotations
 from functools import singledispatchmethod
 from collections.abc import Mapping
 import contextlib
-from typing import Any, override
+from typing import Any, override, TYPE_CHECKING
 from pydantic import Field, BaseModel, ConfigDict, field_serializer
 from lion_core.libs import nget, ninsert, nset, npop, flatten, to_dict, fuzzy_parse_json
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
-from lion_core.communication.base import BaseMail
+
+if TYPE_CHECKING:
+    from lion_core.communication.base import BaseMail
 
 
 class Note(BaseModel):
@@ -43,8 +45,13 @@ class Note(BaseModel):
         super().__init__()
         self.content = kwargs
 
+    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
+        super().__pydantic_init_subclass__(**kwargs)
+        cls.update.register(cls, cls._update_with_note)
+
     @field_serializer("content")
     def _serialize_content(self, value):
+        from lion_core.communication.base import BaseMail
         output_dict = SysUtil.copy(value, deep=True)
         origin_obj = output_dict.pop("clone_from", None)
 
@@ -216,13 +223,12 @@ class Note(BaseModel):
 
         return self.update(items, indices)
 
-    @update.register
-    def _(self, items: Note, indices: list[str | int] = None, /):
-        return self.update(items.content, indices)
-
     @update.register(Element)
     def _(self, items: Element, indices: list[str | int] = None, /):
         return self.update(items.to_dict(), indices)
+
+    def _update_with_note(self, items: Note, indices: list[str | int] = None, /):
+        return self.update(items.content, indices)
 
     @classmethod
     def from_dict(cls, **kwargs) -> Note:
@@ -255,6 +261,7 @@ class Note(BaseModel):
         return repr(self.content)
 
     def __getitem__(self, *indices) -> Any:
+        indices = list(indices[0]) if isinstance(indices[0], tuple) else list(indices)
         return self.get(indices)
 
     def __setitem__(self, indices: list[str | int], value: Any) -> None:

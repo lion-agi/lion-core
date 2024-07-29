@@ -60,6 +60,10 @@ class Component(Element):
 
     _converter_registry: ClassVar = ComponentConverterRegistry
 
+    @field_serializer("metadata")
+    def _serialize_metadata(self, value):
+        return value.content
+
     @field_serializer("extra_fields")
     def _serialize_extra_fields(self, value: dict[str, FieldInfo]) -> dict[str, Any]:
         """Custom serializer for extra fields."""
@@ -205,8 +209,8 @@ class Component(Element):
             dict[str, Any]: A dictionary representation of the component.
         """
         dict_ = self.model_dump(**kwargs)
-        dict_["metadata"] = dict_["metadata"]["content"]
-        dict_["content"] = dict_["content"]["content"]
+        if isinstance(self.content, Note):
+            dict_["content"] = dict_["content"]["content"]
         extra_fields = dict_.pop("extra_fields", {})
         dict_ = {**dict_, **extra_fields, "lion_class": self.class_name()}
         return dict_
