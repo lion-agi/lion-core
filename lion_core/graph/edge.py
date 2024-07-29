@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from pydantic import Field
+from typing import Any
+from pydantic import Field, field_serializer
 
 from lion_core.abc import Relational
 from lion_core.sys_utils import SysUtil
-from lion_core.generic import Note, Component
+from lion_core.generic import Note, Element
 from lion_core.graph.edge_condition import EdgeCondition
 
 
-class Edge(Component):
+class Edge(Element):
     """
     Represents an edge in a graph structure.
 
@@ -30,7 +31,8 @@ class Edge(Component):
         head: Relational | str,
         tail: Relational | str,
         condition: EdgeCondition | None = None,
-        labels: list[str] | None = None,
+        label: list[str] | None = None,
+        **kwargs
     ):
         """
         Initialize an Edge.
@@ -40,17 +42,21 @@ class Edge(Component):
             tail: The tail node or its ID.
             condition: Optional condition for the edge.
             labels: Optional list of labels for the edge.
+            kwargs: Optional edge properties
         """
         head = SysUtil.get_id(head)
         tail = SysUtil.get_id(tail)
 
-        super().__init__()
-        self.head = head
-        self.tail = tail
+        super().__init__(head=head, tail=tail)
         if condition:
             self.properties.set("condition", condition)
-        if labels:
-            self.properties.set("labels", labels)
+        if label:
+            self.properties.set("label", label)
+        self.properties.update(kwargs)
+
+    @field_serializer("properties")
+    def _serialize_properties(self, value):
+        return value.content
 
     async def check_condition(self, *args, **kwargs) -> bool:
         """
