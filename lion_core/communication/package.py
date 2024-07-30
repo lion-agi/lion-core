@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any
 
 from lion_core.abc import Observable, Temporal
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 
 
 class PackageCategory(str, Enum):

@@ -18,7 +18,7 @@ from typing import Any, Type
 
 from pydantic import Field, PrivateAttr
 
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.setting import LN_UNDEFINED
 from lion_core.generic import pile, Pile, Progression, progression
 from lion_core.generic.util import to_list_type

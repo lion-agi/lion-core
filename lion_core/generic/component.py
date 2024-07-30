@@ -21,7 +21,7 @@ from pydantic import Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.setting import LN_UNDEFINED
 from lion_core.exceptions import LionValueError
 from lion_core._class_registry import get_class

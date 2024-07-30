@@ -24,7 +24,7 @@ from pydantic import Field, BaseModel, ConfigDict, field_serializer
 from lion_core.abc import Container
 from lion_core.libs import nget, ninsert, nset, npop, flatten, to_dict, fuzzy_parse_json
 from lion_core.setting import LN_UNDEFINED
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
 
 if TYPE_CHECKING:

@@ -29,7 +29,7 @@ from lion_core.communication.system import System
 from lion_core.generic.pile import Pile
 from lion_core.libs import to_dict, strip_lower, nget, to_list
 from lion_core.setting import LionUndefined, LN_UNDEFINED
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 
 """
 messages:

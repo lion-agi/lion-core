@@ -18,7 +18,7 @@ from lion_core.abc import BaseManager
 
 
 from typing import Any, Dict, List, Union
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.rule.base import Rule
 from lion_core.rule.default_rules import DEFAULT_RULES
 from lion_core.experimental.rulebook import RuleBook

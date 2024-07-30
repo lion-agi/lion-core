@@ -19,7 +19,7 @@ from typing import Any, Literal
 from pydantic import Field, field_serializer
 
 from lion_core.abc import Event, Relational
-from lion_core.sys_util import SysUtil
+from lion_core.sys_utils import SysUtil
 from lion_core.generic import Pile, pile, Note
 from lion_core.exceptions import LionRelationError, ItemExistsError, ItemNotFoundError
 from lion_core.graph.edge_condition import EdgeCondition

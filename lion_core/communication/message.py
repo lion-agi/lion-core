@@ -22,7 +22,7 @@ from typing import Any, override
 from pydantic import Field, field_validator
 from lion_core.abc import Relational
 from lion_core.sys_utils import SysUtil
-from lion_core.class_registry import get_class
+from lion_core._class_registry import get_class
 from lion_core.generic import Note, Component
 from lion_core.communication.mail import BaseMail
 
