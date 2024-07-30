@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Any, Literal, override
 from lion_core.record.form import Form
-from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
+from lion_core.communication.message import RoledMessage, MessageRole, MessageFlag
 from lion_core.communication.utils import (
     prepare_instruction_content,
     format_image_content,
@@ -14,13 +14,14 @@ class Instruction(RoledMessage):
     @override
     def __init__(
         self,
-        instruction: Any | MessageCloneFlag,
-        context: Any | MessageCloneFlag = None,
-        images: list | MessageCloneFlag = None,
-        sender: Any | MessageCloneFlag = None,
-        recipient: Any | MessageCloneFlag = None,
-        requested_fields: dict | MessageCloneFlag = None,
-        image_detail: Literal["low", "high", "auto"] | MessageCloneFlag = None,
+        instruction: Any | MessageFlag,
+        context: Any | MessageFlag = None,
+        images: list | MessageFlag = None,
+        sender: Any | MessageFlag = None,
+        recipient: Any | MessageFlag = None,
+        requested_fields: dict | MessageFlag = None,
+        image_detail: Literal["low", "high", "auto"] | MessageFlag = None,
+        protected_init_params: dict | None = None
     ):
         """
         Initialize an Instruction instance.
@@ -35,7 +36,22 @@ class Instruction(RoledMessage):
             image_detail: Level of detail for image processing.
         """
         if all(
-            x == MessageCloneFlag.MESSAGE_CLONE
+            x == MessageFlag.MESSAGE_LOAD
+            for x in [
+                instruction,
+                context,
+                images,
+                sender,
+                recipient,
+                requested_fields,
+                image_detail,
+            ]
+        ):
+            super().__init__(**protected_init_params)
+            return
+
+        if all(
+            x == MessageFlag.MESSAGE_CLONE
             for x in [
                 instruction,
                 context,

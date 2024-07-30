@@ -118,9 +118,9 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
             f"timestamp={timestamp_str})"
         )
 
-    @override
-    def __repr__(self) -> str:
-        return self.__str__()
+    # @override
+    # def __repr__(self) -> str:
+    #     return self.__str__()
 
     def __hash__(self) -> int:
         return hash(self.ln_id)

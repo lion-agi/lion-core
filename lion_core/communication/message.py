@@ -21,6 +21,8 @@ from enum import Enum
 from typing import Any, override
 from pydantic import Field, field_validator
 from lion_core.abc import Relational
+from lion_core.sys_utils import SysUtil
+from lion_core.class_registry import get_class
 from lion_core.generic import Note, Component
 from lion_core.communication.mail import BaseMail
 
@@ -44,10 +46,11 @@ class MessageRole(str, Enum):
     ASSISTANT = "assistant"
 
 
-class MessageCloneFlag(str, Enum):
+class MessageFlag(str, Enum):
     """Enum to signal constructing a clone Message"""
 
     MESSAGE_CLONE = "MESSAGE_CLONE"
+    MESSAGE_LOAD = "MESSAGE_LOAD"
 
 
 class RoledMessage(Relational, Component, BaseMail):
@@ -98,14 +101,36 @@ class RoledMessage(Relational, Component, BaseMail):
 
         cls = self.__class__
         signature = inspect.signature(cls.__init__)
-        param_num = len(signature.parameters) - 1
+        param_num = len(signature.parameters) - 2
 
-        init_args = [MessageCloneFlag.MESSAGE_CLONE] * param_num
+        init_args = [MessageFlag.MESSAGE_CLONE] * param_num
 
         obj = cls(*init_args)
         obj.content = self.content
         obj.metadata.set("clone_from", self)
 
+        return obj
+
+    @override
+    @classmethod
+    def from_dict(cls, data: dict, **kwargs) -> RoledMessage:
+        data = SysUtil.copy(data)
+        if "lion_class" in data:
+            cls = get_class(data.pop("lion_class"))
+        signature = inspect.signature(cls.__init__)
+        param_num = len(signature.parameters) - 2
+
+        init_args = [MessageFlag.MESSAGE_LOAD] * param_num
+
+        extra_fields = {}
+        for k, v in list(data.items()):
+            if k not in cls.model_fields:
+                extra_fields[k] = data.pop(k)
+
+        obj = cls(*init_args, protected_init_params=data)
+
+        for k, v in extra_fields.items():
+            obj.add_field(name=k, value=v)
         return obj
 
     @override
