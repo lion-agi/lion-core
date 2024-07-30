@@ -3,7 +3,7 @@ import asyncio
 from typing import Any
 
 from lion_core.abc import BaseManager
-from lion_core.sys_utils import SysUtil
+from lion_core.sys_util import SysUtil
 from lion_core.generic import to_list_type, pile, Pile, Exchange
 
 from lion_core.communication.mail import Mail, Package
@@ -12,8 +12,8 @@ from lion_core.communication.mail import Mail, Package
 class MailManager(BaseManager):
     """Manages mail operations for multiple sources in the Lion framework"""
 
-    def __init__(self, sources: list[Any]):
-        self.sources: Pile[Any] = pile()
+    def __init__(self, sources: list[Any] = None):
+        self.sources: Pile = pile()
         self.mails: dict[str, dict[str, deque]] = {}
         self.execute_stop: bool = False
 
@@ -31,7 +31,9 @@ class MailManager(BaseManager):
             raise ValueError(f"Failed to add source. Error {e}")
 
     @staticmethod
-    def create_mail(sender: str, recipient: str, category: str, package: Any) -> Mail:
+    def create_mail(
+        sender: str, recipient: str, category: str, package: Any, request_source=None
+    ) -> Mail:
         """
         Create a new Mail object.
 
@@ -40,11 +42,14 @@ class MailManager(BaseManager):
             recipient: The ID of the recipient.
             category: The category of the mail.
             package: The content of the mail.
+            request_source: The source of the request.
 
         Returns:
             A new Mail object.
         """
-        pack = Package(category=category, package=package)
+        pack = Package(
+            category=category, package=package, request_source=request_source
+        )
         mail = Mail(
             sender=sender,
             recipient=recipient,
@@ -101,7 +106,7 @@ class MailManager(BaseManager):
             return
         for key in list(self.mails[recipient].keys()):
             pending_mails = self.mails[recipient].pop(key)
-            mailbox = (
+            mailbox: Exchange = (
                 self.sources[recipient]
                 if isinstance(self.sources[recipient], Exchange)
                 else self.sources[recipient].mailbox

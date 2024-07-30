@@ -191,46 +191,46 @@ class TestExtractDocstringDetails(unittest.TestCase):
 
 class TestForceValidateBoolean(unittest.TestCase):
     def test_boolean_true(self):
-        self.assertTrue(force_validate_boolean(True))
-        self.assertTrue(force_validate_boolean("true"))
-        self.assertTrue(force_validate_boolean("1"))
-        self.assertTrue(force_validate_boolean("yes"))
-        self.assertTrue(force_validate_boolean("correct"))
+        self.assertTrue(validate_boolean(True))
+        self.assertTrue(validate_boolean("true"))
+        self.assertTrue(validate_boolean("1"))
+        self.assertTrue(validate_boolean("yes"))
+        self.assertTrue(validate_boolean("correct"))
 
     def test_boolean_false(self):
-        self.assertFalse(force_validate_boolean(False))
-        self.assertFalse(force_validate_boolean("false"))
-        self.assertFalse(force_validate_boolean("0"))
-        self.assertFalse(force_validate_boolean("no"))
-        self.assertFalse(force_validate_boolean("incorrect"))
-        self.assertFalse(force_validate_boolean("none"))
-        self.assertFalse(force_validate_boolean("n/a"))
+        self.assertFalse(validate_boolean(False))
+        self.assertFalse(validate_boolean("false"))
+        self.assertFalse(validate_boolean("0"))
+        self.assertFalse(validate_boolean("no"))
+        self.assertFalse(validate_boolean("incorrect"))
+        self.assertFalse(validate_boolean("none"))
+        self.assertFalse(validate_boolean("n/a"))
 
     def test_invalid_conversion(self):
         try:
-            force_validate_boolean("invalid")
+            validate_boolean("invalid")
         except Exception as e:
             self.assertIsInstance(e, ValueError)
 
         try:
-            force_validate_boolean(123)
+            validate_boolean(123)
         except Exception as e:
             self.assertIsInstance(e, ValueError)
 
         try:
-            force_validate_boolean(None)
+            validate_boolean(None)
         except Exception as e:
             self.assertIsInstance(e, ValueError)
 
     def test_strip_whitespace(self):
-        self.assertTrue(force_validate_boolean("  true  "))
-        self.assertFalse(force_validate_boolean("  false  "))
+        self.assertTrue(validate_boolean("  true  "))
+        self.assertFalse(validate_boolean("  false  "))
 
     def test_case_insensitive(self):
-        self.assertTrue(force_validate_boolean("TRUE"))
-        self.assertTrue(force_validate_boolean("Yes"))
-        self.assertFalse(force_validate_boolean("FALSE"))
-        self.assertFalse(force_validate_boolean("No"))
+        self.assertTrue(validate_boolean("TRUE"))
+        self.assertTrue(validate_boolean("Yes"))
+        self.assertFalse(validate_boolean("FALSE"))
+        self.assertFalse(validate_boolean("No"))
 
 
 class TestForceValidateKeys2(unittest.TestCase):

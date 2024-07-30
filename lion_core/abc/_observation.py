@@ -1,8 +1,4 @@
-"""
-Abstract event classes for the Lion framework, modeling dynamic,
-state-changing entities. Incorporates complex systems theory, quantum
-mechanics, and asynchronous programming principles.
-"""
+"""Abstract event classes"""
 
 from abc import abstractmethod
 from lion_core.abc._concept import AbstractObservation

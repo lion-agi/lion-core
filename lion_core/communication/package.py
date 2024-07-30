@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any
 
 from lion_core.abc import Observable, Temporal
-from lion_core.sys_utils import SysUtil
+from lion_core.sys_util import SysUtil
 
 
 class PackageCategory(str, Enum):
@@ -41,7 +41,7 @@ class Package(Observable, Temporal):
         self,
         category: PackageCategory | str,
         package: Any,
-        request_source: Any,
+        request_source: Any = None,
     ):
         """
         Initialize a Package instance.

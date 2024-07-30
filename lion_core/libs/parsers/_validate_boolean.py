@@ -5,7 +5,7 @@ from typing import Any
 from lion_core.libs.data_handlers import strip_lower
 
 
-def force_validate_boolean(x: Any) -> bool:
+def validate_boolean(x: Any) -> bool:
     """
     Forcefully validate and convert the input into a boolean value.
 

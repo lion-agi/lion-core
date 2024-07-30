@@ -30,8 +30,8 @@ from pydantic import (
 from lion_core.abc._concept import AbstractElement
 from lion_core.abc._characteristic import Temporal, Observable
 from lion_core.setting import TIME_CONFIG
-from lion_core.sys_utils import SysUtil
-from lion_core.class_registry import LION_CLASS_REGISTRY, get_class
+from lion_core.sys_util import SysUtil
+from lion_core._class_registry import LION_CLASS_REGISTRY, get_class
 from lion_core.exceptions import LionIDError
 
 T = TypeVar("T", bound="Element")
@@ -118,9 +118,9 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
             f"timestamp={timestamp_str})"
         )
 
-    @override
-    def __repr__(self) -> str:
-        return self.__str__()
+    # @override
+    # def __repr__(self) -> str:
+    #     return self.__str__()
 
     def __hash__(self) -> int:
         return hash(self.ln_id)

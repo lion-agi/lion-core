@@ -1,7 +1,7 @@
 from lion_core.communication.base import BaseMail
 from lion_core.communication.mail import Mail
 from lion_core.communication.mail_manager import MailManager
-from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
+from lion_core.communication.message import RoledMessage, MessageRole, MessageFlag
 from lion_core.communication.system import System
 from lion_core.communication.instruction import Instruction
 from lion_core.communication.assistant_response import AssistantResponse
@@ -17,7 +17,7 @@ __all__ = [
     "MailManager",
     "RoledMessage",
     "MessageRole",
-    "MessageCloneFlag",
+    "MessageFlag",
     "System",
     "Instruction",
     "AssistantResponse",

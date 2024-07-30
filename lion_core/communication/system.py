@@ -1,6 +1,6 @@
 from typing import Any, override
 from lion_core.communication.utils import format_system_content
-from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
+from lion_core.communication.message import RoledMessage, MessageRole, MessageFlag
 
 
 class System(RoledMessage):
@@ -9,10 +9,11 @@ class System(RoledMessage):
     @override
     def __init__(
         self,
-        system: Any | MessageCloneFlag = None,
-        sender: str | None | MessageCloneFlag = None,
-        recipient: str | None | MessageCloneFlag = None,
-        system_datetime: bool | str | None | MessageCloneFlag = None,
+        system: Any | MessageFlag = None,
+        sender: str | None | MessageFlag = None,
+        recipient: str | None | MessageFlag = None,
+        system_datetime: bool | str | None | MessageFlag = None,
+        protected_init_params: dict | None = None
     ):
         """
         Initialize a System message instance.
@@ -21,10 +22,17 @@ class System(RoledMessage):
             system: The main content of the system message.
             sender: The sender of the system message.
             recipient: The intended recipient of the system message.
-            with_datetime: Flag or string to include datetime in the message.
+            system_datetime: Flag or string to include datetime in the message.
         """
         if all(
-            x == MessageCloneFlag.MESSAGE_CLONE
+            x == MessageFlag.MESSAGE_LOAD
+            for x in [system, sender, recipient, system_datetime]
+        ):
+            super().__init__(**protected_init_params)
+            return
+        
+        if all(
+            x == MessageFlag.MESSAGE_CLONE
             for x in [system, sender, recipient, system_datetime]
         ):
             super().__init__(role=MessageRole.SYSTEM)
