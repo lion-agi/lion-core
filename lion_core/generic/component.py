@@ -191,12 +191,6 @@ class Component(Element):
         self._add_last_update(name)
 
     def _add_last_update(self, name: str) -> None:
-        """
-        Add or update the last update timestamp for a field.
-
-        Args:
-            name: The name of the field being updated.
-        """
         current_time = SysUtil.time()
         self.metadata.set(["last_updated", name], current_time)
 
@@ -248,16 +242,6 @@ class Component(Element):
 
     @override
     def __setattr__(self, name: str, value: Any) -> None:
-        """
-        Custom attribute setter to handle extra fields and update timestamps.
-
-        Args:
-            name: The name of the attribute to set.
-            value: The value to set.
-
-        Raises:
-            AttributeError: If attempting to directly assign to metadata.
-        """
         if name == "metadata":
             raise AttributeError("Cannot directly assign to metadata.")
         if name in self.extra_fields:
@@ -269,18 +253,6 @@ class Component(Element):
 
     @override
     def __getattr__(self, name: str) -> Any:
-        """
-        Custom attribute getter to handle extra fields.
-
-        Args:
-            name: The name of the attribute to get.
-
-        Returns:
-            The value of the attribute.
-
-        Raises:
-            AttributeError: If the attribute does not exist.
-        """
         if name in self.extra_fields:
             return (
                 self.extra_fields[name].default
@@ -374,42 +346,18 @@ class Component(Element):
 
     @classmethod
     def get_converter_registry(cls) -> ComponentConverterRegistry:
-        """
-        Get the converter registry for the class.
-
-        Returns:
-            ConverterRegistry: The ConverterRegistry instance for the class.
-        """
+        """Get the converter registry for the class."""
         if isinstance(cls._converter_registry, type):
             cls._converter_registry = cls._converter_registry()
         return cls._converter_registry
 
     def convert_to(self, key: str = "dict", /, **kwargs: Any) -> Any:
-        """
-        Convert the component to a specified type using the ConverterRegistry.
-
-        Args:
-            key: The key of the converter to use. Defaults to "dict".
-            **kwargs: Additional keyword arguments for conversion.
-
-        Returns:
-            Any: The converted component in the specified type.
-        """
+        """Convert the component to a specified type using the ConverterRegistry."""
         return self.get_converter_registry().convert_to(self, key, **kwargs)
 
     @classmethod
     def convert_from(cls, obj: Any, key: str = "dict", /, **kwargs) -> T:
-        """
-        Convert data to create a new component instance using the ConverterRegistry.
-
-        Args:
-            obj: The object to convert from.
-            key: The key of the converter to use.
-            **kwargs: Additional keyword arguments for conversion.
-
-        Returns:
-            T: A new instance of the Component class or its subclass.
-        """
+        """Convert data to create a new component instance using the ConverterRegistry."""
         data = cls.get_converter_registry().convert_from(cls, obj, key)
         return cls.from_dict(data, **kwargs)
 

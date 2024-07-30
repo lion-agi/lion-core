@@ -1,4 +1,4 @@
-"""Abstract container classes for the Lion framework."""
+"""Abstract container classes"""
 
 from abc import abstractmethod
 from lion_core.abc._concept import AbstractSpace, AbstractElement

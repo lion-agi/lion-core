@@ -1,8 +1,4 @@
-"""
-Abstract observer classes for the Lion framework. Extends AbstractObserver
-with principles from complex systems theory, quantum observation, and
-distributed computing.
-"""
+"""Abstract observer classes"""
 
 from abc import abstractmethod
 from lion_core.abc._concept import AbstractObserver
