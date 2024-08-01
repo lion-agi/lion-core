@@ -64,18 +64,18 @@ class Flow(Component, Container):
     def unique_items(self) -> list[Any]:
         return list({item for prog in self.progressions for item in prog})
 
-    def get(self, prog=None, default=LN_UNDEFINED):
-        if not prog:
+    def get(self, prog_=None, default=LN_UNDEFINED):
+        if not prog_:
             if self.default_name in self.registry:
                 return self.progressions[self.registry[self.default_name]]
             if default not in [LN_UNDEFINED, PydanticUndefined]:
                 return default
             raise ItemNotFoundError("No sequence found.")
 
-        if prog in self:
-            if not isinstance(prog, Progression):
-                if isinstance(prog, str):
-                    prog = self.registry[prog]
+        if prog_ in self:
+            if not isinstance(prog_, Progression):
+                if isinstance(prog_, str):
+                    prog_ = self.registry[prog_]
                 else:
                     if default not in [LN_UNDEFINED, PydanticUndefined]:
                         return default
@@ -83,7 +83,7 @@ class Flow(Component, Container):
                         "progressions member must be of type or subclass of Progression."
                     )
 
-        return self.progressions.get(prog, default)
+        return self.progressions.get(prog_, default)
 
     def __getitem__(self, prog: str | None = None) -> Progression:
         return self.get(prog)
@@ -153,9 +153,6 @@ class Flow(Component, Container):
 
         self.progressions.exclude(prog)
         self.registry.pop(prog.name or prog.ln_id)
-
-    def popleft(self, prog) -> Any:
-        return self[prog].popleft()
 
     def remove(
         self,
