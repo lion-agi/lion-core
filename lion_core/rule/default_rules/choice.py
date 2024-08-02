@@ -1,6 +1,6 @@
 from typing import override
 from lion_core.libs import choose_most_similar
-from .base import Rule
+from lion_core.rule.base import Rule
 
 
 class ChoiceRule(Rule):

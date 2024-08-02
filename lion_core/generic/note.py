@@ -21,16 +21,17 @@ from collections.abc import Mapping
 import contextlib
 from typing import Any, override, TYPE_CHECKING
 from pydantic import Field, BaseModel, ConfigDict, field_serializer
+from lion_core.abc import Container
 from lion_core.libs import nget, ninsert, nset, npop, flatten, to_dict, fuzzy_parse_json
 from lion_core.setting import LN_UNDEFINED
-from lion_core.sys_utils import SysUtil
+from lion_core.sys_util import SysUtil
 from lion_core.generic.element import Element
 
 if TYPE_CHECKING:
     from lion_core.communication.base import BaseMail
 
 
-class Note(BaseModel):
+class Note(BaseModel, Container):
     """A container for managing nested dictionary data structures."""
 
     content: dict[str, Any] = Field(default_factory=dict)

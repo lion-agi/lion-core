@@ -21,7 +21,7 @@ from pydantic import Field
 
 from lion_core.abc._characteristic import Observable
 from lion_core.abc._space import Collective
-from lion_core.sys_utils import SysUtil
+from lion_core.sys_util import SysUtil
 from lion_core.generic.element import Element
 from lion_core.exceptions import (
     ItemNotFoundError,
@@ -641,12 +641,16 @@ class Pile(Element, Collective, Generic[T]):
         self.order.insert(index, item_order)
         self.pile_.update(item_dict)
 
+    @override
+    def __bool__(self) -> bool:
+        return not self.is_empty()
+
 
 def pile(
     items: Any = None,
     item_type: Type[Observable] | set[Type[Observable]] | None = None,
     order: list[str] | None = None,
-    strict: bool = False
+    strict: bool = False,
 ) -> Pile:
     """
     Create a new Pile instance.

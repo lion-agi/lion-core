@@ -20,7 +20,7 @@ from collections.abc import Mapping
 from lion_core.libs import to_dict, validate_mapping, fuzzy_parse_json
 from lion_core.exceptions import LionOperationError, LionValueError, LionTypeError
 
-from .choice import ChoiceRule
+from lion_core.rule.default_rules.choice import ChoiceRule
 
 
 class MappingRule(ChoiceRule):

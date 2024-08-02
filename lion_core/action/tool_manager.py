@@ -1,4 +1,18 @@
-"""Defines the ToolManager class for managing tools in the system."""
+"""
+Copyright 2024 HaiyangLi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 
 from functools import singledispatchmethod
 from typing import Any, Callable
@@ -27,8 +41,7 @@ class ToolManager(BaseManager):
             return tool.__name__ in self.registry
         return False
 
-    def register_tool(
-        self, tool: Tool | Callable[..., Any], update: bool = False):
+    def register_tool(self, tool: Tool | Callable[..., Any], update: bool = False):
         """
         Register a single tool.
 
@@ -53,7 +66,8 @@ class ToolManager(BaseManager):
         self.registry[tool.function_name] = tool
 
     def register_tools(
-        self, tools: list[Tool | Callable[..., Any]] | Tool | Callable[..., Any]):
+        self, tools: list[Tool | Callable[..., Any]] | Tool | Callable[..., Any]
+    ):
         """
         Register multiple tools.
 

@@ -23,7 +23,7 @@ from pydantic import Field, field_validator
 
 from lion_core.abc._space import Ordering
 from lion_core.libs import to_list
-from lion_core.sys_utils import SysUtil
+from lion_core.sys_util import SysUtil
 from lion_core.generic.element import Element
 from lion_core.exceptions import ItemNotFoundError, LionTypeError
 from lion_core.generic.util import validate_order, to_list_type
