@@ -1,11 +1,7 @@
-"""
-Abstract observer classes for the Lion framework. Extends AbstractObserver
-with principles from complex systems theory, quantum observation, and
-distributed computing.
-"""
+"""Abstract observer classes"""
 
 from abc import abstractmethod
-from lion_core.abc.concept import AbstractObserver
+from lion_core.abc._concept import AbstractObserver
 
 
 class BaseManager(AbstractObserver):
@@ -51,8 +47,11 @@ class BaseProcessor(AbstractObserver):
         """
         pass
 
+    # engine must have processor or executor
+
 
 class BaseEngine(AbstractObserver):
+
     @abstractmethod
     async def run(self, *args, **kwargs):
         """Asynchronously runs the engine's core functionality."""

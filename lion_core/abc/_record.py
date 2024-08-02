@@ -1,7 +1,7 @@
-"""Record classes for the Lion framework."""
+"""Record classes"""
 
-from lion_core.abc.concept import AbstractElement
-from lion_core.abc.characteristic import Observable, Temporal
+from lion_core.abc._concept import AbstractElement
+from lion_core.abc._characteristic import Observable, Temporal
 
 
 class BaseRecord(AbstractElement, Observable, Temporal):

@@ -1,22 +1,31 @@
 from __future__ import annotations
-from typing import Any, Callable
+from typing import Any, Callable, override
 
-from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
+from lion_core.communication.message import RoledMessage, MessageRole, MessageFlag
 from lion_core.communication.utils import prepare_action_request
 
 
 class ActionRequest(RoledMessage):
     """Represents a request for an action in the system."""
 
+    @override
     def __init__(
         self,
-        func: str | Callable | MessageCloneFlag,
-        arguments: dict | MessageCloneFlag,
-        sender: Any | MessageCloneFlag,
-        recipient: Any | MessageCloneFlag,
+        func: str | Callable | MessageFlag,
+        arguments: dict | MessageFlag,
+        sender: Any | MessageFlag,
+        recipient: Any | MessageFlag,
+        protected_init_params: dict | None = None
     ):
         if all(
-            x == MessageCloneFlag.MESSAGE_CLONE
+            x == MessageFlag.MESSAGE_LOAD
+            for x in [func, arguments, sender, recipient]
+        ):
+            super().__init__(**protected_init_params)
+            return
+
+        if all(
+            x == MessageFlag.MESSAGE_CLONE
             for x in [func, arguments, sender, recipient]
         ):
             super().__init__(role=MessageRole.ASSISTANT)

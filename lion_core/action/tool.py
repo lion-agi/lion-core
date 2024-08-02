@@ -1,12 +1,12 @@
 """Defines the Tool class for callable tools with processing capabilities."""
 
 import json
-from typing import Any, Callable, Literal
+from typing import Any, Callable, Literal, override
 from datetime import datetime
 
 from pydantic import Field, field_serializer
 
-from lion_core.generic.element import Element
+from lion_core.generic import Element
 from lion_core.libs import function_to_schema, to_list
 
 
@@ -57,6 +57,7 @@ class Tool(Element):
         description="Function to parse result to JSON serializable format.",
     )
 
+    @override
     def __init__(self, **data: Any) -> None:
         """
         Initialize a Tool instance.
@@ -104,6 +105,7 @@ class Tool(Element):
         """
         return self.schema_["function"]["name"]
 
+    @override
     def __str__(self) -> str:
         """
         Return a string representation of the Tool.

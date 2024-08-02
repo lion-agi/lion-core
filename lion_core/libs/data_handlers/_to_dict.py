@@ -121,7 +121,7 @@ def _(
 
     if str_type == "json":
         try:
-            return json.loads(input_, **kwargs) if parser is None else parser(input_)
+            return json.loads(input_, **kwargs) if parser is None else parser(input_, **kwargs)
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse JSON string") from e
 
@@ -156,12 +156,6 @@ def _(
         for item in input_
     ]
     return out[0] if len(out) == 1 and isinstance(out[0], dict) else out
-
-
-@to_dict.register(set)
-def _(input_: set, /, **kwargs: Any) -> list[Any]:
-    """Handle set inputs."""
-    return list(input_)
 
 
 # File: lion_core/libs/data_handlers/_to_dict.py

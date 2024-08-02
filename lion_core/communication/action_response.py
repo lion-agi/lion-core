@@ -1,23 +1,32 @@
 from __future__ import annotations
-from typing import Any
+from typing import Any, override
 
 from lion_core.exceptions import LionValueError
-from lion_core.generic.note import Note
-from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
+from lion_core.generic import Note
+from lion_core.communication.message import RoledMessage, MessageRole, MessageFlag
 from lion_core.communication.action_request import ActionRequest
 
 
 class ActionResponse(RoledMessage):
     """Represents a response to an action request in the system."""
 
+    @override
     def __init__(
         self,
-        action_request: ActionRequest | MessageCloneFlag,
-        sender: Any | MessageCloneFlag,
-        func_output: Any | MessageCloneFlag,
+        action_request: ActionRequest | MessageFlag,
+        sender: Any | MessageFlag,
+        func_output: Any | MessageFlag,
+        protected_init_params: dict | None = None
     ):
         if all(
-            x == MessageCloneFlag.MESSAGE_CLONE
+            x == MessageFlag.MESSAGE_LOAD
+            for x in [action_request, sender, func_output]
+        ):
+            super().__init__(**protected_init_params)
+            return
+
+        if all(
+            x == MessageFlag.MESSAGE_CLONE
             for x in [action_request, sender, func_output]
         ):
             super().__init__(role=MessageRole.ASSISTANT)

@@ -42,7 +42,7 @@ DEFAULT_SYSTEM = "You are a helpful AI assistant. Let's think step by step."
 
 
 @singledispatch
-def validate_messages(messages: Any) -> list[RoledMessage] | RoledMessage:
+def validate_message(messages: Any) -> list[RoledMessage] | RoledMessage:
     raise NotImplementedError(f"Invalid messages type: {type(messages)}")
 
 
@@ -52,12 +52,12 @@ def _(messages):
     return []
 
 
-@validate_messages.register(RoledMessage)
+@validate_message.register(RoledMessage)
 def _(messages):
     return messages
 
 
-@validate_messages.register(dict)
+@validate_message.register(dict)
 def _(messages):
     try:
         return RoledMessage.from_dict(messages)
@@ -65,59 +65,56 @@ def _(messages):
         raise ValueError(f"Error in creating message object: {e}")
 
 
-@validate_messages.register(str)
+@validate_message.register(str)
 def _(messages):
     e1 = None
     try:
         try:
             _d = to_dict(messages, str_type="json")
-            return validate_messages(_d)
+            return validate_message(_d)
         except ValueError as e:
             e1 = e
             _d = to_dict(messages, str_type="xml")
-            return validate_messages(_d)
+            return validate_message(_d)
     except ValueError as e:
         raise ValueError(f"Error in converting string to dict: {e1}, {e}")
 
 
-@validate_messages.register(Mapping)
+@validate_message.register(Mapping)
 def _(messages):
     try:
         _d = to_dict(messages)
-        return validate_messages(_d)
+        return validate_message(_d)
     except Exception as e:
         raise e
 
 
-@validate_messages.register(Sequence)
+@validate_message.register(Sequence)
 def _(messages):
     try:
         _lst_d = to_dict(messages)
         if not isinstance(_lst_d, list):
             messages = [messages]
-        return to_list([validate_messages(d) for d in _lst_d if d], faltten_=True)
+        return to_list([validate_message(d) for d in _lst_d if d], faltten_=True)
     except Exception as e:
         raise e
 
 
-@validate_messages.register(Pile)
+@validate_message.register(Pile)
 def _(messages):
     if messages.is_empty():
         return []
-    return to_list(
-        [validate_messages(d) for d in messages.values() if d], flatten_=True
-    )
+    return to_list([validate_message(d) for d in messages.values() if d], flatten_=True)
 
 
 def validate_system(
-    system: Any = None, sender=None, recipient=None, system_datetime=None, **kwargs
+    system: Any = None, sender=None, recipient=None, system_datetime=None
 ) -> None:
 
     config = {
         "sender": sender,
         "recipient": recipient,
         "system_datetime": system_datetime,
-        **kwargs,
     }
 
     config = {k: v for k, v in config.items() if v not in [None, LN_UNDEFINED]}

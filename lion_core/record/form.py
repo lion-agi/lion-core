@@ -16,7 +16,7 @@ limitations under the License.
 
 from functools import singledispatchmethod
 from collections import deque
-from typing import Any
+from typing import Any, override
 
 from pydantic import Field
 
@@ -60,6 +60,7 @@ class Form(Component, MutableRecord):
         examples=[{"field": {"config1": "a", "config2": "b"}}],
     )
 
+    @override
     def __init__(self, **kwargs: Any) -> None:
         """
         Initialize a new instance of the Form.

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, override
 
 from lion_core.libs import ucall
 from lion_core.abc import Action
@@ -16,6 +16,7 @@ class FunctionCalling(Action):
         self.func_tool: Tool = func_tool
         self.arguments: dict[str, Any] = arguments or {}
 
+    @override
     async def invoke(self) -> Any:
         """Asynchronously invoke the stored function with the arguments."""
         kwargs = self.arguments

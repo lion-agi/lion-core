@@ -1,18 +1,27 @@
-from typing import Any
-from lion_core.communication.message import RoledMessage, MessageRole, MessageCloneFlag
+from typing import Any, override
+from lion_core.communication.message import RoledMessage, MessageRole, MessageFlag
 
 
 class AssistantResponse(RoledMessage):
     """Represents a response from an assistant in the system."""
 
+    @override
     def __init__(
         self,
-        assistant_response: dict | MessageCloneFlag,
-        sender: Any | MessageCloneFlag,
-        recipient: Any | MessageCloneFlag,
+        assistant_response: dict | MessageFlag,
+        sender: Any | MessageFlag,
+        recipient: Any | MessageFlag,
+        protected_init_params: dict | None = None
     ):
         if all(
-            x == MessageCloneFlag.MESSAGE_CLONE
+            x == MessageFlag.MESSAGE_LOAD
+            for x in [assistant_response, sender, recipient]
+        ):
+            super().__init__(**protected_init_params)
+            return
+
+        if all(
+            x == MessageFlag.MESSAGE_CLONE
             for x in [assistant_response, sender, recipient]
         ):
             super().__init__(role=MessageRole.ASSISTANT)

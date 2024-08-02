@@ -15,56 +15,70 @@ limitations under the License.
 """
 
 from abc import abstractmethod
-from typing import Any, Callable
+from typing import Any, Callable, override
+
+from pydantic import Field
+
+from lion_core.setting import LN_UNDEFINED
 
 from lion_core.abc import Condition, Observable, Temporal, Action
 from lion_core.exceptions import LionOperationError
 from lion_core.sys_utils import SysUtil
 from lion_core.libs import ucall
+from lion_core.generic import Note, Element
+from lion_core.record.log import BaseLog
 from lion_core.record.form import Form
+
+
+class RuleLog(BaseLog): ...
 
 
 class Rule(Condition, Action, Observable, Temporal):
 
-    fix: bool = False
-    validation_kwargs: dict = {}
-    apply_types: list[str] | None = None
-    exclude_types: list[str] | None = None
+    base_config = {}
 
     def __init__(
         self,
-        fix=None,
-        apply_types=None,
-        exclude_types=None,
-        apply_fields=None,
-        exclude_fields=None,
-        **kwargs,
-    ) -> None:
-        """
-        Initialize a Rule instance.
+        fix: bool = False,
+        apply_types: list[str] | None = None,
+        exclude_types: list[str] | None = None,
+        apply_fields: list[str] = None,
+        exclude_fields: list[str] = None,
+        **kwargs,  # validation_kwargs
+    ):
 
-        Args:
-            fix: Whether to attempt fixing invalid values.
-            apply_types: Types of fields to apply the rule to.
-            exclude_types: Types of fields to exclude from the rule.
-            apply_fields: Specific fields to apply the rule to.
-            exclude_fields: Specific fields to exclude from the rule.
-            **kwargs: Additional keyword arguments for validation.
-        """
+        super().__init__()
         self.ln_id = SysUtil.id()
         self.timestamp = SysUtil.time(type_="timestamp")
-        self._is_active = False
-        self.accepted_fields = apply_fields or []
-        self.exclude_fields = exclude_fields or []
-        if fix:
-            self.fix = fix
-        if apply_types:
-            self.apply_types = apply_types
-        if exclude_types:
-            self.exclude_types = exclude_types
-        if kwargs:
-            self.validation_kwargs = {**self.validation_kwargs, **kwargs}
+        config = {**self.base_config, **kwargs}
+        self.rule_info = Note(
+            **{
+                "fix": fix,
+                "apply_types": apply_types or config.pop("apply_types", []),
+                "exclude_types": exclude_types or [],
+                "apply_fields": apply_fields or [],
+                "exclude_fields": exclude_fields or [],
+                **config,
+            }
+        )
 
+    @property
+    def validation_kwargs(self) -> dict:
+        return {
+            k: v
+            for k, v in self.rule_info.to_dict().items()
+            if k
+            not in [
+                "fix",
+                "apply_types",
+                "exclude_types",
+                "apply_fields",
+                "exclude_fields",
+            ]
+        }
+
+    # must only return True or False
+    @override
     async def apply(
         self,
         field: str,
@@ -74,7 +88,9 @@ class Rule(Condition, Action, Observable, Temporal):
         apply_fields: list[str] = None,
         exclude_fields: list[str] = None,
         annotation: list | str = None,
-        check_func: Callable = None,  # takes priority over annotation and self.rule_condition
+        check_func: (
+            Callable | Any
+        ) = None,  # takes priority over annotation and self.rule_condition
         **kwargs,  # additional kwargs for custom check func or self.rule_condition
     ) -> bool:
         """
@@ -99,8 +115,10 @@ class Rule(Condition, Action, Observable, Temporal):
         if field not in form.work_fields:
             return False
 
-        apply_fields = apply_fields or self.accepted_fields
-        exclude_fields = exclude_fields or self.exclude_fields
+        apply_fields: list = apply_fields or self.rule_info.get(["apply_fields"], [])
+        exclude_fields: list = exclude_fields or self.rule_info.get(
+            ["exclude_fields"], []
+        )
 
         if exclude_fields and field in exclude_fields:
             return False
@@ -127,13 +145,16 @@ class Rule(Condition, Action, Observable, Temporal):
 
         if annotation and len(annotation) > 0:
             for i in annotation:
-                if i in self.apply_types and i not in self.exclude_types:
+                if i in self.rule_info.get(
+                    ["apply_types"], []
+                ) and i not in self.rule_info.get(["exclude_types"], []):
                     return True
             return False
 
         return False
 
-    async def invoke(self, field: str, value: Any, form: Any) -> Any:
+    @override
+    async def invoke(self, value) -> Any:
         """
         Invoke the rule on a field value.
 
@@ -154,7 +175,7 @@ class Rule(Condition, Action, Observable, Temporal):
             return await self.validate(value, **self.validation_kwargs)
 
         except Exception as e1:
-            if self.fix:
+            if self["fix"]:
                 try:
                     a = await self.perform_fix(value, **self.validation_kwargs)
                     return a
@@ -162,6 +183,7 @@ class Rule(Condition, Action, Observable, Temporal):
                     raise LionOperationError("failed to fix field") from e2
             raise LionOperationError("failed to validate field") from e1
 
+    # must only return True or False
     async def rule_condition(
         self, field: str, value: Any, form: Form, *args, **kwargs
     ) -> bool:
@@ -176,23 +198,20 @@ class Rule(Condition, Action, Observable, Temporal):
         """
         return False
 
-    async def perform_fix(self, value: Any, *args, **kwargs) -> Any:
-        """
-        Perform a fix on an invalid value.
+    # can return corrected value, raise error, or return None (surpress)
+    async def perform_fix(self, value: Any, *args, surpress=False, **kwargs) -> Any:
+        try:
+            return await self.fix_field(value, *args, **kwargs)
+        except Exception as e:
+            if surpress:
+                return None
+            raise LionOperationError("Failed to fix field") from e
 
-        This method should be overridden in subclasses to implement
-        specific fixing logic.
-
-        Args:
-            value: The value to fix.
-            *args: Additional positional arguments.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Any: The fixed value (returns the original value by default).
-        """
+    # must return corrected value or raise error
+    async def fix_field(self, value: Any, *args, **kwargs):
         return value
 
+    # must return correct value as is or raise error
     @abstractmethod
     async def validate(self, value: Any, *args, **kwargs) -> Any:
         """

@@ -15,9 +15,11 @@ limitations under the License.
 """
 
 from enum import Enum
-from lionagi.os.lib import to_list, to_dict, fuzzy_parse_json
-from ..abc import ActionError
-from .mapping import MappingRule
+from typing import override
+from lion_core.libs import fuzzy_parse_json, to_dict, to_list
+from lion_core.exceptions import LionOperationError
+
+from lion_core.rule.default_rules.mapping import MappingRule
 
 
 class ActionRequestKeys(Enum):
@@ -25,7 +27,7 @@ class ActionRequestKeys(Enum):
     ARGUMENTS = "arguments"
 
 
-class ActionRequestRule(MappingRule):
+class FunctionCallingRule(MappingRule):
     """
     Rule for validating and fixing action requests.
 
@@ -36,20 +38,17 @@ class ActionRequestRule(MappingRule):
         discard (bool): Indicates whether to discard invalid action requests.
     """
 
-    def __init__(self, apply_type="actionrequest", discard=True, **kwargs):
-        """
-        Initializes the ActionRequestRule.
+    base_config = {
+        "apply_types": ["functioncalling"],
+        "keys": ["function", "arguments"],
+        "discard": True,
+    }
 
-        Args:
-            apply_type (str): The type of data to which the rule applies.
-            discard (bool, optional): Indicates whether to discard invalid action requests.
-            **kwargs: Additional keyword arguments for initialization.
-        """
-        super().__init__(
-            apply_type=apply_type, keys=ActionRequestKeys, fix=True, **kwargs
-        )
-        self.discard = discard or self.validation_kwargs.get("discard", False)
+    @property
+    def discard(self):
+        return self.rule_info.get("discard", True)
 
+    @override
     async def validate(self, value):
         """
         Validates the action request.
@@ -63,36 +62,29 @@ class ActionRequestRule(MappingRule):
         Raises:
             ActionError: If the action request is invalid.
         """
-        if isinstance(value, dict) and list(value.keys()) >= ["function", "arguments"]:
-            return value
-        raise ActionError(f"Invalid action request: {value}")
 
-    async def perform_fix(self, value):
-        """
-        Attempts to fix an invalid action request.
+        try:
+            return await super().validate(value)
+        except LionOperationError as e:
+            raise LionOperationError(f"Invalid action request: ") from e
 
-        Args:
-            value (Any): The value of the action request to fix.
-
-        Returns:
-            Any: The fixed action request.
-
-        Raises:
-            ActionError: If the action request cannot be fixed.
-        """
+    # we do not attempt to fix the keys
+    # because if the keys are wrong, action is not safe to operate, and is meaningless
+    @override
+    async def fix_field(self, value):
         corrected = []
         if isinstance(value, str):
             value = fuzzy_parse_json(value)
 
         try:
-            value = to_list(value)
+            value = to_list(value, flatten=True, dropna=True)
             for i in value:
-                i = to_dict(i)
+                i = to_dict(i, **self.validation_kwargs)
                 if list(i.keys()) >= ["function", "arguments"]:
                     corrected.append(i)
                 elif not self.discard:
-                    raise ActionError(f"Invalid action request: {i}")
+                    raise LionOperationError(f"Invalid action request: {i}")
         except Exception as e:
-            raise ActionError(f"Invalid action field: ") from e
+            raise LionOperationError(f"Invalid action field: ") from e
 
         return corrected

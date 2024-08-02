@@ -1,5 +1,6 @@
-from lionagi.os.lib import choose_most_similar
-from .base import Rule
+from typing import override
+from lion_core.libs import choose_most_similar
+from lion_core.rule.base import Rule
 
 
 class ChoiceRule(Rule):
@@ -11,10 +12,19 @@ class ChoiceRule(Rule):
         keys (list): The list of valid choices.
     """
 
-    def __init__(self, apply_type="enum", **kwargs):
-        super().__init__(apply_type=apply_type, **kwargs)
-        self.keys = self.validation_kwargs.get("keys", None)
+    base_config = {
+        "apply_types": ["enum"],
+    }
 
+    @override
+    def __init__(self, *, keys: list[str] = None, **kwargs):
+        super().__init__(keys=keys, **kwargs)
+
+    @property
+    def keys(self):
+        return self.rule_info.get(["keys"], [])
+
+    @override
     async def validate(self, value: str, *args, **kwargs) -> str:
         """
         Validate that the value is within the set of predefined choices.
@@ -34,7 +44,8 @@ class ChoiceRule(Rule):
             raise ValueError(f"{value} is not in chocies {self.keys}")
         return value
 
-    async def perform_fix(self, value):
+    @override
+    async def fix_field(self, value, *args, **kwargs):
         """
         Suggest a fix for a value that is not within the set of predefined choices.
 

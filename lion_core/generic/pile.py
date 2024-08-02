@@ -15,12 +15,12 @@ limitations under the License.
 """
 
 from __future__ import annotations
-from typing import Any, TypeVar, Type, Iterable
+from typing import Any, TypeVar, Type, Iterable, override, Generic
 
 from pydantic import Field
 
-from lion_core.abc.characteristic import Observable
-from lion_core.abc.space import Collective
+from lion_core.abc._characteristic import Observable
+from lion_core.abc._space import Collective
 from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
 from lion_core.exceptions import (
@@ -36,7 +36,7 @@ from lion_core.setting import LN_UNDEFINED
 T = TypeVar("T", bound=Observable)
 
 
-class Pile(Element, Collective):
+class Pile(Element, Collective, Generic[T]):
     """
     A flexible, ordered collection of Elements with list and dict-like access.
 
@@ -64,6 +64,7 @@ class Pile(Element, Collective):
         description="Specify if enforce a strict type check if item_type is defined",
     )
 
+    @override
     def __init__(
         self,
         items: Any = None,
@@ -206,6 +207,7 @@ class Pile(Element, Collective):
         """
         return item in self.order
 
+    @override
     def __len__(self) -> int:
         """
         Get the number of items in the pile.
@@ -514,9 +516,11 @@ class Pile(Element, Collective):
 
         return Progression(order=value)
 
+    @override
     def __str__(self) -> str:
         return f"Pile({len(self)})"
 
+    @override
     def __repr__(self) -> str:
         length = len(self)
         if length == 0:
@@ -637,12 +641,16 @@ class Pile(Element, Collective):
         self.order.insert(index, item_order)
         self.pile_.update(item_dict)
 
+    @override
+    def __bool__(self) -> bool:
+        return not self.is_empty()
+
 
 def pile(
     items: Any = None,
     item_type: Type[Observable] | set[Type[Observable]] | None = None,
     order: list[str] | None = None,
-    strict: bool = False
+    strict: bool = False,
 ) -> Pile:
     """
     Create a new Pile instance.
@@ -656,4 +664,4 @@ def pile(
         Pile: A new Pile instance.
     """
 
-    return Pile(items, item_type, order, strict)
+    return Pile(items=items, item_type=item_type, order=order, strict=strict)

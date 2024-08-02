@@ -1,6 +1,6 @@
 """Mail module for the Lion framework's communication system."""
 
-from typing import Any
+from typing import Any, override
 from pydantic import Field, field_validator
 from lion_core.exceptions import LionValueError
 from lion_core.communication.base import BaseMail
@@ -35,6 +35,7 @@ class Mail(BaseMail):
         """Return the category of the package."""
         return self.package.category
 
+    @override
     @field_validator("sender", "recipient", mode="before")
     @classmethod
     def _validate_sender_recipient(cls, value: Any) -> str:

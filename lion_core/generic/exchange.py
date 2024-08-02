@@ -16,16 +16,18 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import List, Literal
+from typing import List, Literal, override, TYPE_CHECKING
 from pydantic import Field
 
-from lion_core.abc.space import Container
+from lion_core.abc._space import Container
 from lion_core.exceptions import ItemExistsError, LionValueError
 
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import Progression, progression
-from lion_core.communication.mail import Mail
+
+if TYPE_CHECKING:
+    from lion_core.communication.mail import Mail
 
 
 class Exchange(Element, Container):
@@ -83,7 +85,7 @@ class Exchange(Element, Container):
     def include(self, item: Mail, direction: Literal["in", "out"]):
         if not isinstance(item, Mail):
             raise LionValueError(
-                "Invalid item to include. Item must have sender and recipient."
+                "Invalid item to include. Item must be a mail."
             )
         if item in self.pile:
             raise ItemExistsError(f"{item} is already pending in the exchange")
@@ -106,8 +108,10 @@ class Exchange(Element, Container):
         for v in self.pending_ins.values():
             v.exclude(item)
 
+    @override
     def __bool__(self) -> bool:
         return not self.pile.is_empty()
 
+    @override
     def __len__(self) -> int:
         return len(self.pile)

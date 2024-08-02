@@ -1,11 +1,11 @@
-from lion_core.abc.concept import (
+from lion_core.abc._concept import (
     AbstractSpace,
     AbstractElement,
     AbstractObserver,
     AbstractObservation,
 )
 
-from lion_core.abc.characteristic import (
+from lion_core.abc._characteristic import (
     Observable,
     Temporal,
     Relational,
@@ -15,14 +15,14 @@ from lion_core.abc.characteristic import (
     # Stochastic,
 )
 
-from lion_core.abc.space import (
+from lion_core.abc._space import (
     Container,
     Ordering,
     Collective,
     Structure,
 )
 
-from lion_core.abc.observer import (
+from lion_core.abc._observer import (
     BaseManager,
     BaseExecutor,
     BaseProcessor,
@@ -30,9 +30,9 @@ from lion_core.abc.observer import (
     BaseEngine,
 )
 
-from lion_core.abc.observation import Event, Condition, Signal, Action
+from lion_core.abc._observation import Event, Condition, Signal, Action
 
-from .record import (
+from ._record import (
     BaseRecord,
     MutableRecord,
     ImmutableRecord,

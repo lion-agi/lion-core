@@ -16,20 +16,22 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import Any
+from functools import singledispatchmethod
+from collections.abc import Mapping
+import contextlib
+from typing import Any, override, TYPE_CHECKING
 from pydantic import Field, BaseModel, ConfigDict, field_serializer
-from lion_core.libs import (
-    nget,
-    ninsert,
-    nset,
-    npop,
-    flatten,
-)
+from lion_core.abc import Container
+from lion_core.libs import nget, ninsert, nset, npop, flatten, to_dict, fuzzy_parse_json
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
+from lion_core.generic.element import Element
+
+if TYPE_CHECKING:
+    from lion_core.communication.base import BaseMail
 
 
-class Note(BaseModel):
+class Note(BaseModel, Container):
     """A container for managing nested dictionary data structures."""
 
     content: dict[str, Any] = Field(default_factory=dict)
@@ -44,12 +46,17 @@ class Note(BaseModel):
         super().__init__()
         self.content = kwargs
 
+    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
+        super().__pydantic_init_subclass__(**kwargs)
+        cls.update.register(cls, cls._update_with_note)
+
     @field_serializer("content")
     def _serialize_content(self, value):
+        from lion_core.communication.base import BaseMail
         output_dict = SysUtil.copy(value, deep=True)
         origin_obj = output_dict.pop("clone_from", None)
 
-        if origin_obj:
+        if origin_obj and isinstance(origin_obj, BaseMail):
             info_dict = {
                 "clone_from_info": {
                     "original_ln_id": origin_obj.ln_id,
@@ -178,6 +185,52 @@ class Note(BaseModel):
         """
         self.content.clear()
 
+    @singledispatchmethod
+    def update(self, items: Any, indices: list[str | int] = None, /):
+        try:
+            d_ = to_dict(items)
+            if isinstance(d_, dict):
+                return self.update(d_, indices)
+            if isinstance(d_, list):
+                self.set(indices, d_)
+        except Exception as e:
+            raise TypeError(f"Invalid input type for update: {type(items)}") from e
+
+    @update.register(dict)
+    def _(self, items: dict, indices: list[str | int] = None, /):
+        if indices:
+            a = self.get(indices, {}).update(items)
+            self.set(indices, a)
+            return
+
+        self.content.update(items)
+
+    @update.register(Mapping)
+    def _(self, items: Mapping, indices: list[str | int] = None, /):
+        return self.update(dict(items), indices)
+
+    @update.register(str)
+    def _(self, items: str, indices: list[str | int] = None, /):
+
+        with contextlib.suppress(ValueError):
+            items = to_dict(items, str_type="json", parser=fuzzy_parse_json)
+
+            if isinstance(items, str):
+                with contextlib.suppress(ValueError):
+                    items = to_dict(items, str_type="xml")
+
+        if not isinstance(items, dict):
+            raise ValueError(f"Invalid input type for update: {type(items)}")
+
+        return self.update(items, indices)
+
+    @update.register(Element)
+    def _(self, items: Element, indices: list[str | int] = None, /):
+        return self.update(items.to_dict(), indices)
+
+    def _update_with_note(self, items: Note, indices: list[str | int] = None, /):
+        return self.update(items.content, indices)
+
     @classmethod
     def from_dict(cls, **kwargs) -> Note:
         """
@@ -188,6 +241,9 @@ class Note(BaseModel):
         """
         return cls(**kwargs)
 
+    def __contains__(self, indices: str | list) -> bool:
+        return self.content.get(indices, LN_UNDEFINED) is not LN_UNDEFINED
+
     def __len__(self) -> int:
         return len(self.content)
 
@@ -197,8 +253,17 @@ class Note(BaseModel):
     def __next__(self):
         return next(iter(self.content))
 
+    @override
     def __str__(self) -> str:
         return str(self.content)
 
+    @override
     def __repr__(self) -> str:
         return repr(self.content)
+
+    def __getitem__(self, *indices) -> Any:
+        indices = list(indices[0]) if isinstance(indices[0], tuple) else list(indices)
+        return self.get(indices)
+
+    def __setitem__(self, indices: str | tuple, value: Any) -> None:
+        self.set(indices, value)

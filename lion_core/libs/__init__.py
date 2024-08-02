@@ -42,7 +42,7 @@ __all__ = [
     "fuzzy_parse_json",
     "validate_mapping",
     "validate_keys",
-    "force_validate_boolean",
+    "validate_boolean",
     "function_to_schema",
     "extract_json_block",
     "fix_json_string",

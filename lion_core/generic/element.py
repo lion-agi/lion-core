@@ -17,7 +17,7 @@ limitations under the License.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, TypeVar
+from typing import Any, TypeVar, override
 
 from pydantic import (
     BaseModel,
@@ -27,11 +27,11 @@ from pydantic import (
     field_validator,
 )
 
-from lion_core.abc.concept import AbstractElement
-from lion_core.abc.characteristic import Temporal, Observable
+from lion_core.abc._concept import AbstractElement
+from lion_core.abc._characteristic import Temporal, Observable
 from lion_core.setting import TIME_CONFIG
 from lion_core.sys_utils import SysUtil
-from lion_core.class_registry import LION_CLASS_REGISTRY, get_class
+from lion_core._class_registry import LION_CLASS_REGISTRY, get_class
 from lion_core.exceptions import LionIDError
 
 T = TypeVar("T", bound="Element")
@@ -60,6 +60,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         arbitrary_types_allowed=True,
         use_enum_values=True,
         populate_by_name=True,
+        # protected_namespaces=("_", "__", "model_"),
     )
 
     @classmethod
@@ -109,6 +110,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         dict_["lion_class"] = self.class_name()
         return dict_
 
+    @override
     def __str__(self) -> str:
         timestamp_str = self._created_datetime.isoformat(timespec="minutes")
         return (
@@ -116,12 +118,20 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
             f"timestamp={timestamp_str})"
         )
 
+    # @override
+    # def __repr__(self) -> str:
+    #     return self.__str__()
+
     def __hash__(self) -> int:
         return hash(self.ln_id)
 
     def __bool__(self) -> bool:
         """Always True"""
         return True
+
+    def __len__(self) -> int:
+        """Return the length of the Element."""
+        return 1
 
 
 # File: lion_core/generic/element.py

@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 from __future__ import annotations
-from typing import Any, TypeVar, ClassVar, Type
+from typing import Any, TypeVar, ClassVar, Type, override
 
 from pydantic import Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo
@@ -24,8 +24,9 @@ from pydantic_core import PydanticUndefined
 from lion_core.sys_utils import SysUtil
 from lion_core.setting import LN_UNDEFINED
 from lion_core.exceptions import LionValueError
-from lion_core.class_registry import get_class
-from lion_core.converter import ConverterRegistry, Converter
+from lion_core._class_registry import get_class
+from lion_core.converter import Converter
+from lion_core.generic.component_converter import ComponentConverterRegistry
 from lion_core.generic.element import Element
 from lion_core.generic.note import Note
 
@@ -57,7 +58,11 @@ class Component(Element):
 
     extra_fields: dict[str, Any] = Field(default_factory=dict)
 
-    _converter_registry: ClassVar = ConverterRegistry
+    _converter_registry: ClassVar = ComponentConverterRegistry
+
+    @field_serializer("metadata")
+    def _serialize_metadata(self, value):
+        return value.to_dict()
 
     @field_serializer("extra_fields")
     def _serialize_extra_fields(self, value: dict[str, FieldInfo]) -> dict[str, Any]:
@@ -113,6 +118,9 @@ class Component(Element):
             name=name, value=value, annotation=annotation, field_obj=field_obj, **kwargs
         )
 
+    # when updating field, we do not check the validity of annotation
+    # meaning current value will not get validated, and can lead to errors when storing and loading
+    # if you change annotation to a type that is not compatible with the current value
     def update_field(
         self,
         name: str,
@@ -183,15 +191,10 @@ class Component(Element):
         self._add_last_update(name)
 
     def _add_last_update(self, name: str) -> None:
-        """
-        Add or update the last update timestamp for a field.
-
-        Args:
-            name: The name of the field being updated.
-        """
         current_time = SysUtil.time()
         self.metadata.set(["last_updated", name], current_time)
 
+    @override
     def to_dict(self, **kwargs) -> dict:
         """
         Convert the component to a dictionary representation.
@@ -203,12 +206,13 @@ class Component(Element):
             dict[str, Any]: A dictionary representation of the component.
         """
         dict_ = self.model_dump(**kwargs)
-        dict_["metadata"] = dict_["metadata"]["content"]
-        dict_["content"] = dict_["content"]["content"]
+        if isinstance(self.content, Note):
+            dict_["content"] = dict_["content"]["content"]
         extra_fields = dict_.pop("extra_fields", {})
         dict_ = {**dict_, **extra_fields, "lion_class": self.class_name()}
         return dict_
 
+    @override
     @classmethod
     def from_dict(cls, data: dict, **kwargs) -> T:
         """
@@ -221,6 +225,7 @@ class Component(Element):
         Returns:
             T: An instance of the Component class or its subclass.
         """
+        data = SysUtil.copy(data)
         if "lion_class" in data:
             cls = get_class(data.pop("lion_class"))
         if cls.from_dict.__func__ != Component.from_dict.__func__:
@@ -235,17 +240,8 @@ class Component(Element):
             obj.add_field(name=k, value=v)
         return obj
 
+    @override
     def __setattr__(self, name: str, value: Any) -> None:
-        """
-        Custom attribute setter to handle extra fields and update timestamps.
-
-        Args:
-            name: The name of the attribute to set.
-            value: The value to set.
-
-        Raises:
-            AttributeError: If attempting to directly assign to metadata.
-        """
         if name == "metadata":
             raise AttributeError("Cannot directly assign to metadata.")
         if name in self.extra_fields:
@@ -255,19 +251,8 @@ class Component(Element):
 
         self._add_last_update(name)
 
+    @override
     def __getattr__(self, name: str) -> Any:
-        """
-        Custom attribute getter to handle extra fields.
-
-        Args:
-            name: The name of the attribute to get.
-
-        Returns:
-            The value of the attribute.
-
-        Raises:
-            AttributeError: If the attribute does not exist.
-        """
         if name in self.extra_fields:
             return (
                 self.extra_fields[name].default
@@ -278,6 +263,7 @@ class Component(Element):
             f"'{self.__class__.__name__}' object has no attribute '{name}'"
         )
 
+    @override
     def __str__(self) -> str:
         """Return a concise string representation of the component."""
         content_preview = str(self.content)[:50]
@@ -308,6 +294,7 @@ class Component(Element):
 
         return output_str
 
+    @override
     def __repr__(self) -> str:
         """Return a detailed string representation of the component."""
 
@@ -358,43 +345,19 @@ class Component(Element):
         return repr_str
 
     @classmethod
-    def get_converter_registry(cls) -> ConverterRegistry:
-        """
-        Get the converter registry for the class.
-
-        Returns:
-            ConverterRegistry: The ConverterRegistry instance for the class.
-        """
+    def get_converter_registry(cls) -> ComponentConverterRegistry:
+        """Get the converter registry for the class."""
         if isinstance(cls._converter_registry, type):
             cls._converter_registry = cls._converter_registry()
         return cls._converter_registry
 
     def convert_to(self, key: str = "dict", /, **kwargs: Any) -> Any:
-        """
-        Convert the component to a specified type using the ConverterRegistry.
-
-        Args:
-            key: The key of the converter to use. Defaults to "dict".
-            **kwargs: Additional keyword arguments for conversion.
-
-        Returns:
-            Any: The converted component in the specified type.
-        """
+        """Convert the component to a specified type using the ConverterRegistry."""
         return self.get_converter_registry().convert_to(self, key, **kwargs)
 
     @classmethod
     def convert_from(cls, obj: Any, key: str = "dict", /, **kwargs) -> T:
-        """
-        Convert data to create a new component instance using the ConverterRegistry.
-
-        Args:
-            obj: The object to convert from.
-            key: The key of the converter to use.
-            **kwargs: Additional keyword arguments for conversion.
-
-        Returns:
-            T: A new instance of the Component class or its subclass.
-        """
+        """Convert data to create a new component instance using the ConverterRegistry."""
         data = cls.get_converter_registry().convert_from(cls, obj, key)
         return cls.from_dict(data, **kwargs)
 
