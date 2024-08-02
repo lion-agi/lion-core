@@ -9,6 +9,10 @@ class LionUndefined:
     def __bool__(self):
         return False
 
+    def __deepcopy__(self, memo):
+        # Ensure LN_UNDEFINED is universal
+        return self
+
     def __repr__(self):
         return "LN_UNDEFINED"
 
