@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 import contextlib
-from typing import Any, override
+from typing import Any, override, Literal, Callable
 from collections.abc import Mapping
 from lion_core.libs import to_dict, validate_mapping, fuzzy_parse_json
 from lion_core.exceptions import LionOperationError, LionValueError, LionTypeError
@@ -31,12 +31,18 @@ class MappingRule(ChoiceRule):
         apply_type (str): The type of data to which the rule applies.
     """
 
-    @override
-    def __init__(self, apply_type="dict", **kwargs):
-        super().__init__(apply_type=apply_type, **kwargs)
+    base_config = {
+        "apply_types": ["dict"],
+        "score_func": None,
+        "fuzzy_match": True,
+        "fill_value": None,
+        "fill_mapping": None,
+        "strict": False,
+        "handle_unmatched": "force",
+    }
 
     @override
-    async def validate(self, value: Any, *args, **kwargs) -> Any:
+    async def validate(self, value: Any) -> Any:
         """
         Validate that the value is a mapping with specific keys.
 
@@ -64,6 +70,9 @@ class MappingRule(ChoiceRule):
     @override
     async def fix_field(self, value: Any, *args, **kwargs):
 
+        if isinstance(value, list) and len(value) == 1:
+            value = value[0]
+
         if isinstance(value, str):
             with contextlib.suppress(ValueError):
                 value = to_dict(value, str_style="json", parser=fuzzy_parse_json)
@@ -83,14 +92,10 @@ class MappingRule(ChoiceRule):
             if check_keys != set(self.keys):
                 try:
                     return validate_mapping(
-                        value,
-                        keys=self.keys,
-                        fuzzy_match=True,
-                        handle_unmatched="force",
+                        value, keys=self.keys, **self.validation_kwargs
                     )
                 except Exception as e:
                     raise LionValueError("Invalid dict keys.") from e
-
         else:
             try:
                 return fuzzy_parse_json(value)

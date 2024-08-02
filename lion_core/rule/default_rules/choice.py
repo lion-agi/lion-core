@@ -12,10 +12,17 @@ class ChoiceRule(Rule):
         keys (list): The list of valid choices.
     """
 
+    base_config = {
+        "apply_types": ["enum"],
+    }
+
     @override
-    def __init__(self, apply_type="enum", **kwargs):
-        super().__init__(apply_type=apply_type, **kwargs)
-        self.keys = self.validation_kwargs.get("keys", None)
+    def __init__(self, *, keys: list[str] = None, **kwargs):
+        super().__init__(keys=keys, **kwargs)
+
+    @property
+    def keys(self):
+        return self.rule_info.get(["keys"], [])
 
     @override
     async def validate(self, value: str, *args, **kwargs) -> str:
