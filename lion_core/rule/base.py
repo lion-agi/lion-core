@@ -54,7 +54,7 @@ class Rule(Condition, Action, Observable, Temporal):
         self.rule_info = Note(
             **{
                 "fix": fix,
-                "apply_types": apply_types or config.get("apply_types", []),
+                "apply_types": apply_types or config.pop("apply_types", []),
                 "exclude_types": exclude_types or [],
                 "apply_fields": apply_fields or [],
                 "exclude_fields": exclude_fields or [],
