@@ -1,7 +1,7 @@
 from lion_core.libs import strip_lower
 
 
-def get_input_output_fields(str_: str) -> list[list[str]]:
+def get_input_output_fields(str_: str) -> tuple[list[str], list[str]]:
     if str_ is None:
         return [], []
 

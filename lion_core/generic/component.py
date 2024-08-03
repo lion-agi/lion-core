@@ -244,6 +244,8 @@ class Component(Element):
     def __setattr__(self, name: str, value: Any) -> None:
         if name == "metadata":
             raise AttributeError("Cannot directly assign to metadata.")
+        elif name == "extra_fields":
+            raise AttributeError("Cannot directly assign to extra_fields")
         if name in self.extra_fields:
             object.__setattr__(self, name, value)
         else:
