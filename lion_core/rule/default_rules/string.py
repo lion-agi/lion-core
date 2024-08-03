@@ -1,4 +1,4 @@
-from typing import override
+from typing import override, Any
 from lion_core.libs import to_str
 from lion_core.rule.base import Rule
 
@@ -12,11 +12,12 @@ class StringRule(Rule):
         apply_type (str): The type of data to which the rule applies.
     """
 
-    fields: list[str] = ["reason", "prediction", "answer"]
-
-    @override
-    def __init__(self, apply_type="str", **kwargs):
-        super().__init__(apply_type=apply_type, **kwargs)
+    base_config = {
+        "use_model_dump": True,
+        "strip_lower": False,
+        "chars": None,
+        "apply_types": ["str"],
+    }
 
     @override
     async def validate(self, value):
@@ -32,7 +33,7 @@ class StringRule(Rule):
         Raises:
             ValueError: If the value is not a string or is an empty string.
         """
-        if isinstance(value, str) or value == "":
+        if isinstance(value, str):
             return value
         raise ValueError(f"Invalid string field type.")
 
@@ -53,4 +54,5 @@ class StringRule(Rule):
         try:
             return to_str(value, **self.validation_kwargs)
         except Exception as e:
+            value = str(value)[30] + ".." if len(str(value)) > 30 else str(value)
             raise ValueError(f"Failed to convert {value} into a string value") from e

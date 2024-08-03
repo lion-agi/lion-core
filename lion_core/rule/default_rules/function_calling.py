@@ -27,7 +27,7 @@ class ActionRequestKeys(Enum):
     ARGUMENTS = "arguments"
 
 
-class ActionRequestRule(MappingRule):
+class FunctionCallingRule(MappingRule):
     """
     Rule for validating and fixing action requests.
 
@@ -38,20 +38,15 @@ class ActionRequestRule(MappingRule):
         discard (bool): Indicates whether to discard invalid action requests.
     """
 
-    @override
-    def __init__(self, apply_type="actionrequest", discard=True, **kwargs):
-        """
-        Initializes the ActionRequestRule.
+    base_config = {
+        "apply_types": ["functioncalling"],
+        "keys": ["function", "arguments"],
+        "discard": True,
+    }
 
-        Args:
-            apply_type (str): The type of data to which the rule applies.
-            discard (bool, optional): Indicates whether to discard invalid action requests.
-            **kwargs: Additional keyword arguments for initialization.
-        """
-        super().__init__(
-            apply_type=apply_type, keys=ActionRequestKeys, fix=True, **kwargs
-        )
-        self.discard = discard or self.validation_kwargs.get("discard", False)
+    @property
+    def discard(self):
+        return self.rule_info.get("discard", True)
 
     @override
     async def validate(self, value):
@@ -68,10 +63,13 @@ class ActionRequestRule(MappingRule):
             ActionError: If the action request is invalid.
         """
 
-        if isinstance(value, dict) and list(value.keys()) >= ["function", "arguments"]:
-            return value
-        raise LionOperationError(f"Invalid action request: {value}") from e
+        try:
+            return await super().validate(value)
+        except LionOperationError as e:
+            raise LionOperationError(f"Invalid action request: ") from e
 
+    # we do not attempt to fix the keys
+    # because if the keys are wrong, action is not safe to operate, and is meaningless
     @override
     async def fix_field(self, value):
         corrected = []
@@ -79,9 +77,9 @@ class ActionRequestRule(MappingRule):
             value = fuzzy_parse_json(value)
 
         try:
-            value = to_list(value)
+            value = to_list(value, flatten=True, dropna=True)
             for i in value:
-                i = to_dict(i)
+                i = to_dict(i, **self.validation_kwargs)
                 if list(i.keys()) >= ["function", "arguments"]:
                     corrected.append(i)
                 elif not self.discard:
