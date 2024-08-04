@@ -10,6 +10,7 @@ from lion_core.generic.component_converter import ComponentConverterRegistry
 from lion_core.sys_utils import SysUtil
 from lion_core.exceptions import LionIDError, LionValueError, LionTypeError
 
+
 class TestComponent(unittest.TestCase):
     """Comprehensive test suite for the Component class."""
 
@@ -42,7 +43,7 @@ class TestComponent(unittest.TestCase):
             metadata=metadata,
             content=content,
             embedding=embedding,
-            extra_fields=extra_fields
+            extra_fields=extra_fields,
         )
 
         self.assertEqual(component.metadata.content, {"key": "value"})
@@ -86,7 +87,7 @@ class TestComponent(unittest.TestCase):
             ln_id=self.valid_id,
             timestamp=self.timestamp,
             content="Test content",
-            embedding=[0.1, 0.2, 0.3]
+            embedding=[0.1, 0.2, 0.3],
         )
         component.add_field("extra_field", "extra_value")
 
@@ -107,7 +108,7 @@ class TestComponent(unittest.TestCase):
             "content": "Test content",
             "embedding": [0.1, 0.2, 0.3],
             "extra_field": "extra_value",
-            "lion_class": "Component"
+            "lion_class": "Component",
         }
 
         component = Component.from_dict(input_dict)
@@ -120,11 +121,7 @@ class TestComponent(unittest.TestCase):
 
     def test_nested_structures(self):
         """Test handling of nested structures in content and metadata."""
-        nested_content = {
-            "level1": {
-                "level2": [1, 2, {"level3": "deep"}]
-            }
-        }
+        nested_content = {"level1": {"level2": [1, 2, {"level3": "deep"}]}}
         nested_metadata = Note()
         nested_metadata.update({"meta_level1": {"meta_level2": ["a", "b", "c"]}})
 
@@ -170,7 +167,6 @@ class TestComponent(unittest.TestCase):
         with self.assertRaises(ValidationError):
             component.timestamp = datetime.now().timestamp()
 
-
     def test_component_with_note_content(self):
         """Test Component with Note as content."""
         note_content = Note()
@@ -194,8 +190,9 @@ class TestComponent(unittest.TestCase):
         self.assertIn("Test content", str_repr)
         self.assertIn(self.valid_id, repr_repr)
         self.assertIn("Test content", repr_repr)
-        
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     unittest.main()
 
 # File: tests/test_component.py

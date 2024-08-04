@@ -139,7 +139,6 @@ class TestElement(unittest.TestCase):
         # Length
         self.assertEqual(len(element), 1)
 
-
     def test_element_immutability(self) -> None:
         """Test that Element instances are immutable."""
         element = Element()
@@ -148,7 +147,7 @@ class TestElement(unittest.TestCase):
 
         with self.assertRaises(ValidationError):
             element.ln_id = SysUtil.id()
-        
+
         with self.assertRaises(ValidationError):
             element.timestamp = time.time()
 
@@ -157,6 +156,7 @@ class TestElement(unittest.TestCase):
 
     def test_element_subclass_behavior(self) -> None:
         """Test that subclasses of Element maintain core behaviors."""
+
         class CustomElement(Element):
             custom_attr: str = "default"
 
@@ -185,10 +185,10 @@ class TestElement(unittest.TestCase):
         dict1 = element1.to_dict()
         dict2 = element2.to_dict()
 
-        self.assertNotEqual(dict1['ln_id'], dict2['ln_id'])
-        self.assertNotEqual(dict1['timestamp'], dict2['timestamp'])
+        self.assertNotEqual(dict1["ln_id"], dict2["ln_id"])
+        self.assertNotEqual(dict1["timestamp"], dict2["timestamp"])
         self.assertEqual(dict1.keys(), dict2.keys())
-        self.assertEqual(dict1['lion_class'], dict2['lion_class'])
+        self.assertEqual(dict1["lion_class"], dict2["lion_class"])
 
     def test_element_large_batch_creation(self) -> None:
         """Test creation of a large batch of Elements."""
@@ -196,10 +196,14 @@ class TestElement(unittest.TestCase):
         elements = [Element() for _ in range(batch_size)]
 
         self.assertEqual(len(elements), batch_size)
-        self.assertEqual(len(set(e.ln_id for e in elements)), batch_size)  # All IDs should be unique
+        self.assertEqual(
+            len(set(e.ln_id for e in elements)), batch_size
+        )  # All IDs should be unique
 
         timestamps = [e.timestamp for e in elements]
-        self.assertAlmostEqual(min(timestamps), max(timestamps), delta=1.0)  # All timestamps should be within 1 second
+        self.assertAlmostEqual(
+            min(timestamps), max(timestamps), delta=1.0
+        )  # All timestamps should be within 1 second
 
     def test_element_from_dict_with_extra_fields(self) -> None:
         """Test Element creation from a dict with extra fields."""
@@ -210,7 +214,7 @@ class TestElement(unittest.TestCase):
             # "extra_field2": 42
         }
         element = Element.from_dict(extra_dict)
-        
+
         self.assertEqual(element.ln_id, extra_dict["ln_id"])
         self.assertEqual(element.timestamp, extra_dict["timestamp"])
 

@@ -16,31 +16,30 @@ limitations under the License.
 
 from __future__ import annotations
 
-from functools import partial
-from typing import Any, Callable, ClassVar, override
+from typing import Any, Callable, ClassVar, override, Literal
 
 from pydantic import Field
 
-from lion_core.abc import BaseiModel
-from lion_core.imodel.imodel import iModel
+from lion_core.abc import BaseiModel, Observable
 from lion_core.libs import is_same_dtype
-from lion_core.generic import pile, Pile, progression, Progression, Exchange
-from lion_core.action import Tool, ToolManager
-from lion_core.communication import (
-    RoledMessage,
-    System,
-    Instruction,
-    AssistantResponse,
-    ActionRequest,
-    ActionResponse,
-    Mail,
-    Package,
-)
-from lion_core.session.base import BaseSession
 from lion_core.converter import ConverterRegistry
-from lion_core.session.utils import validate_message, create_message
+from lion_core.generic.pile import pile, Pile
+from lion_core.generic.progression import prog, Progression
+from lion_core.generic.exchange import Exchange
 
-msg_pile = partial(pile, item_type=RoledMessage, strict=False)
+from lion_core.imodel.imodel import iModel
+from lion_core.action import Tool, ToolManager
+from lion_core.communication.message import RoledMessage
+from lion_core.communication.system import System
+from lion_core.communication.instruction import Instruction
+from lion_core.communication.assistant_response import AssistantResponse
+from lion_core.communication.action_request import ActionRequest
+from lion_core.communication.action_response import ActionResponse
+from lion_core.communication.message import RoledMessage, MessageFlag
+from lion_core.communication.package import Package
+from lion_core.communication.mail import Mail
+from lion_core.session.base import BaseSession
+from lion_core.session.utils import validate_message, create_message
 
 
 class BranchConverterRegistry(ConverterRegistry):
@@ -103,9 +102,9 @@ class Branch(BaseSession):
             user=user,
             imodel=imodel,
         )
+        self.messages = pile(validate_message(messages), {RoledMessage}, strict=False)
 
-        self.messages = msg_pile(validate_message(messages))
-        self.progress = progress or progression(list(self.messages), name=self.name)
+        self.progress = progress or prog(list(self.messages), name=self.name)
 
         if self.system not in self.messages:
             self.messages.include(self.system)
@@ -124,35 +123,34 @@ class Branch(BaseSession):
         Args:
             system: The new system message.
         """
-        if len(self.order) < 1:
+        if len(self.progress) < 1:
             self.messages.include(system)
             self.system = system
-            self.order[0] = self.system
+            self.progress[0] = self.system
         else:
-            self.change_system(system, delete_previous_system=True)
-            self.order[0] = self.system
+            self._change_system(system, delete_previous_system=True)
+            self.progress[0] = self.system
 
     def add_message(
         self,
         *,
-        system: dict | str | System | None = None,
-        instruction: dict | str | Instruction | None = None,
-        context: dict | str | None = None,
-        assistant_response: dict | str | AssistantResponse | None = None,
-        function: str | Callable | None = None,
-        argument: dict | None = None,
-        func_output: Any = None,
-        action_request: ActionRequest = None,
-        action_response: Any = None,
-        image: str | list[str] = None,
-        sender: Any = None,
-        recipient: Any = None,
-        requested_fields: dict[str, str] | None = None,
-        system_datetime: bool | str | None = None,
-        system_datetime_strftime: str | None = None,
+        sender: Observable | str | None = None,
+        recipient: Observable | str | None = None,
+        instruction: Any = None,
+        context: Any = None,
+        request_fields: dict | MessageFlag = None,
+        system: Any = None,
+        assistant_response: Any = None,
+        action_request: ActionRequest | None = None,
+        action_response: ActionResponse | None = None,
+        images: list | MessageFlag = None,
+        image_detail: Literal["low", "high", "auto"] | MessageFlag = None,
+        system_datetime: bool | str | None | MessageFlag = None,
+        func: str | Callable | MessageFlag = None,
+        arguments: dict | MessageFlag = None,
+        func_output: Any | MessageFlag = None,
         metadata: Any = None,
         delete_previous_system: bool = False,
-        **kwargs,
     ) -> bool:
         """
         Add a message to the branch.
@@ -167,27 +165,26 @@ class Branch(BaseSession):
             sender = self.ln_id
 
         _msg = create_message(
-            system=system,
+            sender=sender,
+            recipient=recipient,
             instruction=instruction,
             context=context,
+            request_fields=request_fields,
+            system=system,
             assistant_response=assistant_response,
-            function=function,
-            argument=argument,
-            func_output=func_output,
             action_request=action_request,
             action_response=action_response,
-            sender=sender,
-            image=image,
-            recipient=recipient,
-            requested_fields=requested_fields,
+            images=images,
+            image_detail=image_detail,
             system_datetime=system_datetime,
-            system_datetime_strftime=system_datetime_strftime,
-            **kwargs,
+            func=func,
+            arguments=arguments,
+            func_output=func_output,
         )
 
         if isinstance(_msg, System):
             _msg.recipient = self.ln_id  # the branch itself, system is to the branch
-            self.change_system(_msg, delete_previous_system=delete_previous_system)
+            self._change_system(_msg, delete_previous_system)
 
         if isinstance(_msg, Instruction):
             _msg.sender = sender or self.user
@@ -195,7 +192,7 @@ class Branch(BaseSession):
 
         if isinstance(_msg, AssistantResponse):
             _msg.sender = sender or self.ln_id
-            _msg.recipient = recipient or "user"
+            _msg.recipient = recipient or self.user or "user"
 
         if isinstance(_msg, ActionRequest):
             _msg.sender = sender or self.ln_id
@@ -206,7 +203,7 @@ class Branch(BaseSession):
             _msg.recipient = recipient or self.ln_id
 
         if metadata:
-            _msg.metadata.insert(["extra"], metadata)
+            _msg.metadata.update(metadata, ["extra"])
 
         return self.messages.include(_msg)
 
@@ -217,7 +214,7 @@ class Branch(BaseSession):
         self.messages.include(self.system)
         self.progress.insert(0, self.system)
 
-    def change_system(self, system: System, delete_previous_system: bool = False):
+    def _change_system(self, system: System, delete_previous_system: bool = False):
         """
         Change the system message.
 
@@ -274,7 +271,7 @@ class Branch(BaseSession):
         Raises:
             ValueError: If the sender does not exist or the mail category is invalid.
         """
-        skipped_requests = progression()
+        skipped_requests = prog()
         if sender not in self.mailbox.pending_ins.keys():
             raise ValueError(f"No package from {sender}")
         while self.mailbox.pending_ins[sender].size() > 0:
@@ -335,7 +332,7 @@ class Branch(BaseSession):
         Returns:
             AssistantResponse | None: The last assistant response, if any.
         """
-        for i in reversed(self.order):
+        for i in reversed(self.progress):
             if isinstance(self.messages[i], AssistantResponse):
                 return self.messages[i]
 
@@ -350,7 +347,7 @@ class Branch(BaseSession):
         return pile(
             [
                 self.messages[i]
-                for i in self.order
+                for i in self.progress
                 if isinstance(self.messages[i], AssistantResponse)
             ]
         )
@@ -362,9 +359,9 @@ class Branch(BaseSession):
         Args:
             meta (dict): Metadata to update.
         """
-        for i in reversed(self.order):
+        for i in reversed(self.progress):
             if isinstance(self.messages[i], Instruction):
-                self.messages[i].metadata.update(["extra"], meta)
+                self.messages[i].metadata.update(meta, ["extra"])
                 return
 
     def has_tools(self) -> bool:
@@ -423,7 +420,7 @@ class Branch(BaseSession):
         Returns:
             list[dict[str, Any]]: A list of chat message dictionaries.
         """
-        return [self.messages[i].chat_msg for i in self.order]
+        return [self.messages[i].chat_msg for i in self.progress]
 
     def _is_invoked(self) -> bool:
         """Check if the last message is an ActionResponse."""

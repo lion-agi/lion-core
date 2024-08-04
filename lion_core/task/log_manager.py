@@ -6,7 +6,7 @@ from lion_core.abc._observer import BaseManager
 from lion_core.generic.note import Note
 from lion_core.generic.pile import Pile, pile
 
-from .log import BaseLog
+from ..generic.log import BaseLog
 
 T = TypeVar("T", bound=BaseLog)
 

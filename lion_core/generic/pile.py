@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from __future__ import annotations
 from typing import Any, TypeVar, Type, Iterable, override, Generic
 
 from pydantic import Field
@@ -29,8 +28,8 @@ from lion_core.exceptions import (
     LionValueError,
     ItemExistsError,
 )
-from lion_core.generic.progression import Progression, progression
-from lion_core.generic.util import to_list_type, validate_order
+from lion_core.generic.progression import Progression, prog
+from lion_core.generic.utils import to_list_type, validate_order
 from lion_core.setting import LN_UNDEFINED
 
 T = TypeVar("T", bound=Observable)
@@ -56,7 +55,7 @@ class Pile(Element, Collective, Generic[T]):
         description="Set of allowed types for items in the pile.",
     )
     order: Progression = Field(
-        default_factory=progression,
+        default_factory=prog,
         description="Progression specifying the order of items in the pile.",
     )
     strict: bool = Field(
@@ -554,7 +553,7 @@ class Pile(Element, Collective, Generic[T]):
         """
         return self.values()
 
-    def __add__(self, other: T) -> Pile:
+    def __add__(self, other: T) -> "Pile":
         """
         Create a new pile by including item(s) using `+`.
 
@@ -571,7 +570,7 @@ class Pile(Element, Collective, Generic[T]):
         result.include(other)
         return result
 
-    def __sub__(self, other) -> Pile:
+    def __sub__(self, other) -> "Pile":
         """
         Create a new pile by excluding item(s) using `-`.
 
@@ -588,7 +587,7 @@ class Pile(Element, Collective, Generic[T]):
         result.pop(other)
         return result
 
-    def __iadd__(self, other: T) -> Pile:
+    def __iadd__(self, other: T) -> "Pile":
         """
         Include item(s) in the current pile in place using `+=`.
 

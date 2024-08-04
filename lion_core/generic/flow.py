@@ -21,13 +21,12 @@ from pydantic import Field
 
 from lion_core.setting import LN_UNDEFINED
 from lion_core.abc import Container
-from lion_core.generic import (
-    Component,
-    Note,
-    Pile,
-    pile,
-    Progression,
-)
+from lion_core.generic.component import Component
+from lion_core.generic.pile import Pile, pile
+from lion_core.generic.progression import Progression
+from lion_core.generic.note import Note
+
+
 from lion_core.sys_utils import SysUtil
 from lion_core.exceptions import LionTypeError, ItemNotFoundError, LionValueError
 from lion_core.libs import to_list

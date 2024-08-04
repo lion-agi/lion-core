@@ -1,5 +1,10 @@
 from typing import Any, override
-from lion_core.communication.message import RoledMessage, MessageRole, MessageFlag
+
+from lion_core.communication.message import (
+    RoledMessage,
+    MessageRole,
+    MessageFlag,
+)
 
 
 class AssistantResponse(RoledMessage):
@@ -11,19 +16,15 @@ class AssistantResponse(RoledMessage):
         assistant_response: dict | MessageFlag,
         sender: Any | MessageFlag,
         recipient: Any | MessageFlag,
-        protected_init_params: dict | None = None
+        protected_init_params: dict | None = None,
     ):
-        if all(
-            x == MessageFlag.MESSAGE_LOAD
-            for x in [assistant_response, sender, recipient]
-        ):
+        message_flags = [assistant_response, sender, recipient]
+
+        if all(x == MessageFlag.MESSAGE_LOAD for x in message_flags):
             super().__init__(**protected_init_params)
             return
 
-        if all(
-            x == MessageFlag.MESSAGE_CLONE
-            for x in [assistant_response, sender, recipient]
-        ):
+        if all(x == MessageFlag.MESSAGE_CLONE for x in message_flags):
             super().__init__(role=MessageRole.ASSISTANT)
             return
 

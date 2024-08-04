@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from __future__ import annotations
-
 from functools import singledispatchmethod
 from collections.abc import Mapping
 import contextlib
@@ -28,7 +26,7 @@ from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
 
 if TYPE_CHECKING:
-    from lion_core.communication.base import BaseMail
+    from lion_core.communication.base_mail import BaseMail
 
 
 class Note(BaseModel, Container):
@@ -51,8 +49,9 @@ class Note(BaseModel, Container):
         cls.update.register(cls, cls._update_with_note)
 
     @field_serializer("content")
-    def _serialize_content(self, value):
-        from lion_core.communication.base import BaseMail
+    def _serialize_content(self, value: Any) -> dict[str, Any]:
+        from lion_core.communication.base_mail import BaseMail
+
         output_dict = SysUtil.copy(value, deep=True)
         origin_obj = output_dict.pop("clone_from", None)
 
@@ -228,11 +227,11 @@ class Note(BaseModel, Container):
     def _(self, items: Element, indices: list[str | int] = None, /):
         return self.update(items.to_dict(), indices)
 
-    def _update_with_note(self, items: Note, indices: list[str | int] = None, /):
+    def _update_with_note(self, items: "Note", indices: list[str | int] = None, /):
         return self.update(items.content, indices)
 
     @classmethod
-    def from_dict(cls, **kwargs) -> Note:
+    def from_dict(cls, **kwargs) -> "Note":
         """
         Create a Note from a dictionary.
 
@@ -267,3 +266,16 @@ class Note(BaseModel, Container):
 
     def __setitem__(self, indices: str | tuple, value: Any) -> None:
         self.set(indices, value)
+
+
+def note(**kwargs) -> Note:
+    """
+    Create a Note object from keyword arguments.
+
+    Returns:
+        A Note object.
+    """
+    return Note(**kwargs)
+
+
+__all__ = ["Note", "note"]

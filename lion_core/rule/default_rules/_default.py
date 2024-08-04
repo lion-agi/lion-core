@@ -14,3 +14,13 @@ DEFAULT_RULES = {
     "STR": StringRule,
     "ACTION": FunctionCallingRule,
 }
+
+
+DEFAULT_RULEORDER = [
+    "CHOICE",
+    "MAPPING",
+    "ACTION",
+    "NUMBER",
+    "BOOL",
+    "STR",
+]

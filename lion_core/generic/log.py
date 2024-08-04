@@ -1,6 +1,5 @@
 """Base module for logging in the Lion framework."""
 
-from __future__ import annotations
 from typing import Any, override
 
 from pydantic import Field

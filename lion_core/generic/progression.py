@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from __future__ import annotations
-
 import contextlib
 from typing import Any, Iterator, override
 
@@ -26,7 +24,7 @@ from lion_core.libs import to_list
 from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
 from lion_core.exceptions import ItemNotFoundError, LionTypeError
-from lion_core.generic.util import validate_order, to_list_type
+from lion_core.generic.utils import validate_order, to_list_type
 
 
 class Progression(Element, Ordering):
@@ -117,7 +115,7 @@ class Progression(Element, Ordering):
         """
         return len(self.order)
 
-    def __getitem__(self, key: int | slice) -> str | Progression:
+    def __getitem__(self, key: int | slice) -> str | "Progression":
         """
         Get an item or slice of items from the progression.
 
@@ -284,7 +282,7 @@ class Progression(Element, Ordering):
         Returns:
             Iterator[str]: An iterator over the reversed Lion IDs in the progression.
         """
-        return progression(reversed(self.order), name=self.name)
+        return prog(reversed(self.order), name=self.name)
 
     @override
     def __eq__(self, other: object) -> bool:
@@ -359,7 +357,7 @@ class Progression(Element, Ordering):
         except IndexError as e:
             raise ItemNotFoundError from e
 
-    def extend(self, item: Progression | Any) -> None:
+    def extend(self, item: "Progression" | Any) -> None:
         """
         Extend the progression from the right with item(s).
 
@@ -394,7 +392,7 @@ class Progression(Element, Ordering):
         """
         return not self.is_empty()
 
-    def __add__(self, other: Any) -> Progression:
+    def __add__(self, other: Any) -> "Progression":
         """
         Add an item or items to the end of the progression.
 
@@ -409,7 +407,7 @@ class Progression(Element, Ordering):
         new_order.extend(other)
         return Progression(order=new_order)
 
-    def __radd__(self, other: Any) -> Progression:
+    def __radd__(self, other: Any) -> "Progression":
         """
         Add this progression to another item or progression.
 
@@ -422,7 +420,7 @@ class Progression(Element, Ordering):
 
         return self + other
 
-    def __iadd__(self, other: Any) -> Progression:
+    def __iadd__(self, other: Any) -> "Progression":
         """
         Add an item to the end of the progression in-place.
 
@@ -435,7 +433,7 @@ class Progression(Element, Ordering):
         self.append(other)
         return self
 
-    def __isub__(self, other: Any) -> Progression:
+    def __isub__(self, other: Any) -> "Progression":
         """
         Remove an item from the progression in-place.
 
@@ -448,7 +446,7 @@ class Progression(Element, Ordering):
         self.remove(other)
         return self
 
-    def __sub__(self, other: Any) -> Progression:
+    def __sub__(self, other: Any) -> "Progression":
         """
         Remove an item or items from the progression.
 
@@ -504,7 +502,7 @@ class Progression(Element, Ordering):
             self.order.insert(index, SysUtil.get_id(i))
 
 
-def progression(order: Any = None, name: str | None = None) -> Progression:
+def prog(order: Any = None, name: str | None = None) -> Progression:
     """
     Create a new Progression instance.
 

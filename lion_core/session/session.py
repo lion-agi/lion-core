@@ -20,16 +20,19 @@ from pydantic import Field, PrivateAttr
 
 from lion_core.sys_utils import SysUtil
 from lion_core.setting import LN_UNDEFINED
-from lion_core.generic import pile, Pile, Progression, progression
-from lion_core.generic.util import to_list_type
+from lion_core.exceptions import ItemNotFoundError, LionValueError
+
+from lion_core.generic.pile import pile, Pile
+from lion_core.generic.progression import prog, Progression
+from lion_core.generic.utils import to_list_type
 from lion_core.generic.exchange import Exchange
 from lion_core.generic.flow import Flow, flow
-from lion_core.communication import MailManager, RoledMessage
-from lion_core.session.base import BaseSession
-from lion_core.session.branch import Branch
-from lion_core.exceptions import ItemNotFoundError, LionValueError
+from lion_core.communication.message import RoledMessage
+from lion_core.communication.mail_manager import MailManager
 from lion_core.action.tool_manager import ToolManager
 from lion_core.imodel.imodel import iModel
+from lion_core.session.base import BaseSession
+from lion_core.session.branch import Branch
 
 
 class Session(BaseSession):
@@ -139,7 +142,7 @@ class Session(BaseSession):
             )
         self.conversations = conversations
 
-    def new_branch(
+    async def new_branch(
         self,
         system: Any = None,
         system_sender: str | None = None,
@@ -152,7 +155,7 @@ class Session(BaseSession):
         mailbox: Exchange | None = None,
         progress: Progression | None = None,
         tools: Any = None,
-    ):
+    ) -> Branch:
         """
         Create a new branch in the session.
 
@@ -191,6 +194,7 @@ class Session(BaseSession):
         self.mail_manager.add_sources(branch)
         if self.default_branch is None:
             self.default_branch = branch
+        return branch
 
     def remove_branch(
         self,
@@ -241,7 +245,7 @@ class Session(BaseSession):
         system = branch.system.clone() if branch.system else None
         if system:
             system.sender = branch.ln_id
-        progress = progression()
+        progress = prog()
         messages = pile({}, RoledMessage, strict=False)
 
         for id_ in branch.progress:

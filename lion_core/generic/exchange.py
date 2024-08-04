@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from __future__ import annotations
-
 from typing import List, Literal, override, TYPE_CHECKING
 from pydantic import Field
 
@@ -24,7 +22,7 @@ from lion_core.exceptions import ItemExistsError, LionValueError
 
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
-from lion_core.generic.progression import Progression, progression
+from lion_core.generic.progression import Progression, prog
 
 if TYPE_CHECKING:
     from lion_core.communication.mail import Mail
@@ -55,7 +53,7 @@ class Exchange(Element, Container):
     )
 
     pending_outs: Progression = Field(
-        default_factory=lambda: progression(),
+        default_factory=lambda: prog(),
         description="The pending outgoing items to the exchange.",
         title="pending outgoing items",
     )
@@ -84,9 +82,7 @@ class Exchange(Element, Container):
 
     def include(self, item: Mail, direction: Literal["in", "out"]):
         if not isinstance(item, Mail):
-            raise LionValueError(
-                "Invalid item to include. Item must be a mail."
-            )
+            raise LionValueError("Invalid item to include. Item must be a mail.")
         if item in self.pile:
             raise ItemExistsError(f"{item} is already pending in the exchange")
         if direction not in ["in", "out"]:

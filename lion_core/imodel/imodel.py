@@ -15,10 +15,23 @@ limitations under the License.
 """
 
 from lion_core.abc import BaseiModel
-from lion_core.generic import Element
+from lion_core.generic.element import Element
 
 
-class iModel(Element, BaseiModel): ...
+class iModel(Element, BaseiModel):
+
+    async def update_status(self, *args, **kwargs) -> None:
+        """
+        Update the status of the iModel.
+
+        Args:
+            status (str): The status of the iModel.
+            state (str): The state of the iModel.
+
+        Returns:
+            None
+        """
+        pass
 
 
 __all__ = ["iModel"]

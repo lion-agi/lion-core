@@ -3,7 +3,7 @@
 from typing import Any, override
 from pydantic import Field, field_validator
 from lion_core.exceptions import LionValueError
-from lion_core.communication.base import BaseMail
+from lion_core.communication.base_mail import BaseMail
 from lion_core.communication.package import PackageCategory, Package
 
 

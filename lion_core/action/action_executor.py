@@ -1,7 +1,8 @@
 from typing import Type
 
 from lion_core.abc import Action, BaseExecutor
-from lion_core.generic import progression, Pile, pile
+from lion_core.generic.pile import Pile, pile
+from lion_core.generic.progression import prog, Progression
 
 from lion_core.action.action_processor import ActionProcessor
 from lion_core.action.status import ActionStatus
@@ -19,7 +20,7 @@ class ActionExecutor(BaseExecutor):
         self.processor_config = {"args": [capacity, refresh_time], "kwargs": kwargs}
         self.processor_class = processor_class
         self.pile: Pile = pile({}, Action)
-        self.pending = progression()
+        self.pending: Progression = prog()
 
     async def append(self, action: Action):
         self.pile.append(action)

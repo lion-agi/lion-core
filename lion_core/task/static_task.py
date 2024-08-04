@@ -12,11 +12,11 @@ from pydantic.fields import FieldInfo
 
 from lion_core.setting import LN_UNDEFINED
 from lion_core.exceptions import LionValueError
-from lion_core.record.base_form import BaseForm
-from lion_core.record.utils import get_input_output_fields
+from lion_core.task.base import BaseTask
+from lion_core.task.utils import get_input_output_fields
 
 
-class StaticForm(BaseForm):
+class StaticTask(BaseTask):
 
     @model_validator(mode="before")
     @classmethod
@@ -59,13 +59,13 @@ class StaticForm(BaseForm):
 
     @model_validator(mode="after")
     def check_input_output_fields(self):
-        for i in self.input_fields:
+        for i in self.request_fields:
             if i in self.model_fields:
-                self.input_kwargs[i] = getattr(self, i)
+                self.init_input_kwargs[i] = getattr(self, i)
             else:
-                self.add_field(i, value=self.input_kwargs.get(i, LN_UNDEFINED))
+                self.add_field(i, value=self.init_input_kwargs.get(i, LN_UNDEFINED))
 
-        for i in self.requested_fields:
+        for i in self.request_fields:
             if i not in self.all_fields:
                 self.add_field(i)
         return self
@@ -76,8 +76,8 @@ class StaticForm(BaseForm):
             raise AttributeError(f"{name} should not be modified after init")
 
         super().__setattr__(name, value)
-        if name in self.input_fields:
-            self.input_kwargs[name] = value
+        if name in self.request_fields:
+            self.init_input_kwargs[name] = value
 
     @override
     def update_field(
@@ -91,32 +91,32 @@ class StaticForm(BaseForm):
         super().update_field(
             name=name, value=value, annotation=annotation, field_obj=field_obj, **kwargs
         )
-        if name in self.input_fields:
-            self.input_kwargs[name] = getattr(self, name)
+        if name in self.request_fields:
+            self.init_input_kwargs[name] = getattr(self, name)
 
     @classmethod
-    def from_form(
+    def from_record(
         cls,
         assignment: str,
-        form: BaseForm,
+        subjective: BaseTask,
         task: Any = None,
         fill_inputs: bool = True,
         none_as_valid_value: bool = False,
     ):
-        if inspect.isclass(form):
-            if not issubclass(form, BaseForm):
+        if inspect.isclass(subjective):
+            if not issubclass(subjective, BaseTask):
                 raise LionValueError(
                     "Invalid form class. The form must be a subclass of BaseForm."
                 )
-            template_name = form.model_fields["template_name"].default
-            form_fields = form.model_fields
+            template_name = subjective.model_fields["template_name"].default
+            form_fields = subjective.model_fields
         else:
-            if not isinstance(form, BaseForm):
+            if not isinstance(subjective, BaseTask):
                 raise LionValueError(
                     "Invalid form instance. The form must be an instance of a subclass of BaseForm."
                 )
-            template_name = form.template_name
-            form_fields = form.all_fields
+            template_name = subjective.template_name
+            form_fields = subjective.all_fields
         obj = cls(
             assignment=assignment,
             template_name=template_name,
@@ -128,10 +128,10 @@ class StaticForm(BaseForm):
             if not none_as_valid_value and getattr(obj, i) is None:
                 setattr(obj, i, LN_UNDEFINED)
         if fill_inputs:
-            if inspect.isclass(form):
+            if inspect.isclass(subjective):
                 raise LionValueError(
                     "fill_inputs does not support passing a form class. "
                     "Please pass an instance of a form instead or set fill_inputs to False."
                 )
-            obj.fill_input_fields(form=form)
+            obj.fill_input_fields(form=subjective)
         return obj

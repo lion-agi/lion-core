@@ -22,8 +22,8 @@ from lion_core.sys_utils import SysUtil
 from lion_core.rule.base import Rule
 from lion_core.rule.default_rules import DEFAULT_RULES
 from lion_core.experimental.rulebook import RuleBook
-from lion_core.record.form import Form
-from lion_core.record.report import Report
+from lion_core.task.base import Form
+from lion_core.task.report import Report
 
 _DEFAULT_RULEORDER = [
     "choice",

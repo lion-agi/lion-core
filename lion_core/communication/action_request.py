@@ -1,8 +1,36 @@
 from __future__ import annotations
 from typing import Any, Callable, override
 
-from lion_core.communication.message import RoledMessage, MessageRole, MessageFlag
-from lion_core.communication.utils import prepare_action_request
+from lion_core.libs import to_dict, to_str, fuzzy_parse_json
+from lion_core.generic.note import Note
+from lion_core.communication.message import (
+    RoledMessage,
+    MessageRole,
+    MessageFlag,
+)
+
+
+def prepare_action_request(func: str | Callable, arguments: dict) -> Note:
+    def _prepare_arguments(_arg: Any) -> dict[str, Any]:
+        """Prepare and validate the arguments for an action request."""
+        if not isinstance(_arg, dict):
+            try:
+                _arg = to_dict(
+                    to_str(_arg),
+                    str_type="json",
+                    parser=fuzzy_parse_json,
+                )
+            except ValueError:
+                _arg = to_dict(to_str(_arg), str_type="xml")
+            except Exception as e:
+                raise ValueError(f"Invalid arguments: {e}") from e
+
+        if isinstance(arguments, dict):
+            return arguments
+        raise ValueError(f"Invalid arguments: {arguments}")
+
+    arguments = _prepare_arguments(arguments)
+    return Note(**{"action_request": {"function": func, "arguments": arguments}})
 
 
 class ActionRequest(RoledMessage):
@@ -15,19 +43,15 @@ class ActionRequest(RoledMessage):
         arguments: dict | MessageFlag,
         sender: Any | MessageFlag,
         recipient: Any | MessageFlag,
-        protected_init_params: dict | None = None
+        protected_init_params: dict | None = None,
     ):
-        if all(
-            x == MessageFlag.MESSAGE_LOAD
-            for x in [func, arguments, sender, recipient]
-        ):
+        message_flags = [func, arguments, sender, recipient]
+
+        if all(x == MessageFlag.MESSAGE_LOAD for x in message_flags):
             super().__init__(**protected_init_params)
             return
 
-        if all(
-            x == MessageFlag.MESSAGE_CLONE
-            for x in [func, arguments, sender, recipient]
-        ):
+        if all(x == MessageFlag.MESSAGE_CLONE for x in message_flags):
             super().__init__(role=MessageRole.ASSISTANT)
             return
 

@@ -1,10 +1,24 @@
-from __future__ import annotations
 from typing import Any, override
 
 from lion_core.exceptions import LionValueError
-from lion_core.generic import Note
+from lion_core.generic.note import Note
 from lion_core.communication.message import RoledMessage, MessageRole, MessageFlag
 from lion_core.communication.action_request import ActionRequest
+
+
+def prepare_action_response_content(
+    action_request: ActionRequest,
+    func_output: Any,
+) -> Note:
+    """Prepare the content for an action response."""
+    if action_request.is_responded:
+        raise LionValueError("Action request already responded to")
+
+    dict_ = action_request.request_dict
+    dict_["output"] = func_output
+    content = Note(action_request_id=action_request.ln_id)
+    content["action_response"] = dict_
+    return content
 
 
 class ActionResponse(RoledMessage):
@@ -16,19 +30,15 @@ class ActionResponse(RoledMessage):
         action_request: ActionRequest | MessageFlag,
         sender: Any | MessageFlag,
         func_output: Any | MessageFlag,
-        protected_init_params: dict | None = None
+        protected_init_params: dict | None = None,
     ):
-        if all(
-            x == MessageFlag.MESSAGE_LOAD
-            for x in [action_request, sender, func_output]
-        ):
+        message_flags = [action_request, sender, func_output]
+
+        if all(x == MessageFlag.MESSAGE_LOAD for x in message_flags):
             super().__init__(**protected_init_params)
             return
 
-        if all(
-            x == MessageFlag.MESSAGE_CLONE
-            for x in [action_request, sender, func_output]
-        ):
+        if all(x == MessageFlag.MESSAGE_CLONE for x in message_flags):
             super().__init__(role=MessageRole.ASSISTANT)
             return
 
@@ -36,7 +46,10 @@ class ActionResponse(RoledMessage):
             role=MessageRole.ASSISTANT,
             sender=sender or "N/A",  # sender is the actionable component
             recipient=action_request.sender,
-            content=prepare_action_response_content(action_request, func_output),
+            content=prepare_action_response_content(
+                action_request,
+                func_output,
+            ),
         )
         action_request.content["action_response_id"] = self.ln_id
 
@@ -55,20 +68,13 @@ class ActionResponse(RoledMessage):
         """Get the ID of the corresponding action request."""
         return self.content.get("action_request_id")
 
-
-def prepare_action_response_content(
-    action_request: ActionRequest,
-    func_output: Any,
-) -> Note:
-    """Prepare the content for an action response."""
-    if action_request.is_responded:
-        raise LionValueError("Action request has already been responded to")
-
-    dict_ = action_request.request_dict
-    dict_["output"] = func_output
-    content = Note(**{"action_request_id": action_request.ln_id})
-    content["action_response"] = dict_
-    return content
+    def update_request(self, action_request: ActionRequest, func_output):
+        """Update the action response with new request and output."""
+        self.content = prepare_action_response_content(
+            action_request,
+            func_output,
+        )
+        action_request.content.set(["action_response_id"], self.ln_id)
 
 
 # File: lion_core/communication/action_response.py
