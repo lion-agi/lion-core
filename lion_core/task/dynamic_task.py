@@ -33,7 +33,7 @@ class DynamicTask(BaseTask):
 
     @property
     def current_step_assignment(self):
-        input_str = ", ".join(self.input_fields)
+        input_str = ", ".join(self.request_fields)
         requested_str = ", ".join(self.request_fields)
         output = " -> ".join([input_str, requested_str])
         return output
@@ -41,8 +41,8 @@ class DynamicTask(BaseTask):
     def append_to_input(self, field: str, value=LN_UNDEFINED):
         if field not in self.all_fields:
             self.add_field(field)
-        if field not in self.input_fields:
-            self.input_fields.append(field)
+        if field not in self.request_fields:
+            self.request_fields.append(field)
         if value is not LN_UNDEFINED:
             setattr(self, field, value)
 
@@ -64,8 +64,8 @@ class DynamicTask(BaseTask):
 
         for i in field:
             i = i.strip()
-            if i in self.input_fields:
-                self.input_fields.remove(i)
+            if i in self.request_fields:
+                self.request_fields.remove(i)
                 self.init_input_kwargs.pop(i)
 
     def remove_from_request(self, field: str):

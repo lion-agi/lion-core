@@ -39,7 +39,7 @@ class Form(Component, MutableRecord):
         examples=["input1, input2 -> output"],
     )
 
-    input_fields: list[str] = Field(
+    request_fields: list[str] = Field(
         default_factory=list,
         description="Fields required to carry out the objective of the form.",
     )
@@ -71,14 +71,14 @@ class Form(Component, MutableRecord):
             **kwargs: Arbitrary keyword arguments for the parent class.
         """
         super().__init__(**kwargs)
-        self.input_fields, self.requested_fields = get_input_output_fields(
+        self.request_fields, self.requested_fields = get_input_output_fields(
             self.assignment
         )
 
-        for i in self.input_fields:
+        for i in self.request_fields:
             self.append_to_input(i)
 
-        for i in self.input_fields + self.requested_fields:
+        for i in self.request_fields + self.requested_fields:
             if i not in self.all_fields:
                 self.add_field(i, value=LN_UNDEFINED)
 
@@ -96,7 +96,7 @@ class Form(Component, MutableRecord):
             k: v
             for k, v in dict_.items()
             if k not in BASE_LION_FIELDS
-            and k in self.input_fields + self.requested_fields
+            and k in self.request_fields + self.requested_fields
         }
 
     def append_to_request(self, field: str, value: Any = LN_UNDEFINED) -> None:
@@ -146,7 +146,7 @@ class Form(Component, MutableRecord):
                 self.add_field(i, value=value)
 
             if i not in self.requested_fields:
-                self.input_fields.append(i)
+                self.request_fields.append(i)
                 self.validation_kwargs[i] = getattr(
                     self.all_fields[i], "validation_kwargs", {}
                 )
@@ -233,9 +233,9 @@ class Form(Component, MutableRecord):
             f"""
         ## input: {i}:
         - description: {getattr(self.all_fields[i], "description", "N/A")}
-        - value: {str(self.__getattribute__(self.input_fields[idx]))}
+        - value: {str(self.__getattribute__(self.request_fields[idx]))}
         """
-            for idx, i in enumerate(self.input_fields)
+            for idx, i in enumerate(self.request_fields)
         )
 
     @property
@@ -253,7 +253,7 @@ class Form(Component, MutableRecord):
         ## Task Instructions
         Please follow prompts to complete the task:
         1. Your task is: {self.task}
-        2. The provided input fields are: {', '.join(self.input_fields)}
+        2. The provided input fields are: {', '.join(self.request_fields)}
         3. The requested output fields are: {', '.join(self.requested_fields)}
         4. Provide your response in the specified JSON format.
         """
@@ -285,7 +285,7 @@ class Form(Component, MutableRecord):
     def check_is_workable(self, strict=True):
         if strict and self.is_filled:
             raise LionValueError("Form is already filled, cannot be worked on again")
-        for field in self.input_fields:
+        for field in self.request_fields:
             if getattr(self, field, LN_UNDEFINED) is LN_UNDEFINED:
                 raise LionValueError(f"Required field {field} is not provided")
         return True

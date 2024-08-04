@@ -4,6 +4,8 @@
 # 2. only allow append_to (input/requested)
 # 3. mainly when fields are already defined in all_fields, add_field tends not to be called in append_to
 
+from typing import Any, Literal
+
 from pydantic import model_validator
 
 from lion_core.setting import LN_UNDEFINED
@@ -49,7 +51,7 @@ class Task(BaseTask):
 
     @model_validator(mode="after")
     def check_input_output_fields(self):
-        for i in self.input_fields:
+        for i in self.request_fields:
             if i in self.model_fields:
                 self.init_input_kwargs[i] = getattr(self, i)
             else:
@@ -63,8 +65,8 @@ class Task(BaseTask):
     def append_to_input(self, field: str, value=LN_UNDEFINED):
         if field not in self.all_fields:
             self.add_field(field)
-        if field not in self.input_fields:
-            self.input_fields.append(field)
+        if field not in self.request_fields:
+            self.request_fields.append(field)
         if value is not LN_UNDEFINED:
             setattr(self, field, value)
 

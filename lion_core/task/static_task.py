@@ -59,7 +59,7 @@ class StaticTask(BaseTask):
 
     @model_validator(mode="after")
     def check_input_output_fields(self):
-        for i in self.input_fields:
+        for i in self.request_fields:
             if i in self.model_fields:
                 self.init_input_kwargs[i] = getattr(self, i)
             else:
@@ -76,7 +76,7 @@ class StaticTask(BaseTask):
             raise AttributeError(f"{name} should not be modified after init")
 
         super().__setattr__(name, value)
-        if name in self.input_fields:
+        if name in self.request_fields:
             self.init_input_kwargs[name] = value
 
     @override
@@ -91,32 +91,32 @@ class StaticTask(BaseTask):
         super().update_field(
             name=name, value=value, annotation=annotation, field_obj=field_obj, **kwargs
         )
-        if name in self.input_fields:
+        if name in self.request_fields:
             self.init_input_kwargs[name] = getattr(self, name)
 
     @classmethod
-    def from_form(
+    def from_record(
         cls,
         assignment: str,
-        form: BaseTask,
+        subjective: BaseTask,
         task: Any = None,
         fill_inputs: bool = True,
         none_as_valid_value: bool = False,
     ):
-        if inspect.isclass(form):
-            if not issubclass(form, BaseTask):
+        if inspect.isclass(subjective):
+            if not issubclass(subjective, BaseTask):
                 raise LionValueError(
                     "Invalid form class. The form must be a subclass of BaseForm."
                 )
-            template_name = form.model_fields["template_name"].default
-            form_fields = form.model_fields
+            template_name = subjective.model_fields["template_name"].default
+            form_fields = subjective.model_fields
         else:
-            if not isinstance(form, BaseTask):
+            if not isinstance(subjective, BaseTask):
                 raise LionValueError(
                     "Invalid form instance. The form must be an instance of a subclass of BaseForm."
                 )
-            template_name = form.template_name
-            form_fields = form.all_fields
+            template_name = subjective.template_name
+            form_fields = subjective.all_fields
         obj = cls(
             assignment=assignment,
             template_name=template_name,
@@ -128,10 +128,10 @@ class StaticTask(BaseTask):
             if not none_as_valid_value and getattr(obj, i) is None:
                 setattr(obj, i, LN_UNDEFINED)
         if fill_inputs:
-            if inspect.isclass(form):
+            if inspect.isclass(subjective):
                 raise LionValueError(
                     "fill_inputs does not support passing a form class. "
                     "Please pass an instance of a form instead or set fill_inputs to False."
                 )
-            obj.fill_input_fields(form=form)
+            obj.fill_input_fields(form=subjective)
         return obj
