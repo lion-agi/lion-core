@@ -50,6 +50,7 @@ async def process_chat(
     strict_validation: bool = False,
     use_annotation: bool = True,
     return_branch: bool = False,
+    costs=(0,0),
     **kwargs: Any,
 ) -> tuple["Branch", Any] | Any:
     """
@@ -115,7 +116,6 @@ async def process_chat(
 
     imodel = imodel or branch.imodel
     payload, completion = await imodel.chat(branch.to_chat_messages(), **config)
-    costs = imodel.endpoints.get(["chat/completions", "model", "costs"], (0, 0))
 
     _msg = await parse_chatcompletion(
         branch=branch,
