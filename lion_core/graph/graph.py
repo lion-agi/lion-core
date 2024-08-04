@@ -20,7 +20,8 @@ from pydantic import Field, field_serializer
 
 from lion_core.abc import Event, Relational
 from lion_core.sys_utils import SysUtil
-from lion_core.generic import Pile, pile, Note
+from lion_core.generic.pile import Pile, pile
+from lion_core.generic.note import Note
 from lion_core.exceptions import LionRelationError, ItemExistsError, ItemNotFoundError
 from lion_core.graph.edge_condition import EdgeCondition
 from lion_core.graph.edge import Edge
@@ -51,7 +52,7 @@ class Graph(Node):
     node_edge_mapping: Note = Field(
         default_factory=Note,
         description="The mapping for node and edges for search",
-        exclude=True
+        exclude=True,
     )
 
     @field_serializer("internal_nodes", "internal_edges")
@@ -92,8 +93,13 @@ class Graph(Node):
         try:
             if not isinstance(edge, Edge):
                 raise LionRelationError("Failed to add edge: Invalid edge type.")
-            if edge.head not in self.internal_nodes or edge.tail not in self.internal_nodes:
-                raise LionRelationError("Failed to add edge: Either edge head or tail node does not exist in the graph.")
+            if (
+                edge.head not in self.internal_nodes
+                or edge.tail not in self.internal_nodes
+            ):
+                raise LionRelationError(
+                    "Failed to add edge: Either edge head or tail node does not exist in the graph."
+                )
             self.internal_edges.insert(-1, edge)
             self.node_edge_mapping[edge.head, "out", edge.ln_id] = edge.tail
             self.node_edge_mapping[edge.tail, "in", edge.ln_id] = edge.head
@@ -193,5 +199,6 @@ class Graph(Node):
             node_id = edge.tail
             result.append(self.internal_nodes[node_id])
         return Pile(items=result, item_type={Node})
+
 
 # File: lion_core/graph/graph.py

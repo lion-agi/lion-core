@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 from lion_core.abc import BaseiModel
-from lion_core.generic import Element
+from lion_core.generic.element import Element
 
 
 class iModel(Element, BaseiModel): ...

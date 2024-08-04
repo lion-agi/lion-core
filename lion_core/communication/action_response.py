@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Any, override
 
 from lion_core.exceptions import LionValueError
-from lion_core.generic import Note
+from lion_core.generic.note import Note
 from lion_core.communication.message import RoledMessage, MessageRole, MessageFlag
 from lion_core.communication.action_request import ActionRequest
 
@@ -16,11 +16,10 @@ class ActionResponse(RoledMessage):
         action_request: ActionRequest | MessageFlag,
         sender: Any | MessageFlag,
         func_output: Any | MessageFlag,
-        protected_init_params: dict | None = None
+        protected_init_params: dict | None = None,
     ):
         if all(
-            x == MessageFlag.MESSAGE_LOAD
-            for x in [action_request, sender, func_output]
+            x == MessageFlag.MESSAGE_LOAD for x in [action_request, sender, func_output]
         ):
             super().__init__(**protected_init_params)
             return

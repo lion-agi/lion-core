@@ -20,8 +20,9 @@ from pydantic import Field, PrivateAttr
 
 from lion_core.sys_utils import SysUtil
 from lion_core.setting import LN_UNDEFINED
-from lion_core.generic import pile, Pile, Progression, progression
-from lion_core.generic.util import to_list_type
+from lion_core.generic.pile import pile, Pile
+from lion_core.generic.progression import prog, Progression
+from lion_core.generic.utils import to_list_type
 from lion_core.generic.exchange import Exchange
 from lion_core.generic.flow import Flow, flow
 from lion_core.communication import MailManager, RoledMessage
@@ -241,7 +242,7 @@ class Session(BaseSession):
         system = branch.system.clone() if branch.system else None
         if system:
             system.sender = branch.ln_id
-        progress = progression()
+        progress = prog()
         messages = pile({}, RoledMessage, strict=False)
 
         for id_ in branch.progress:

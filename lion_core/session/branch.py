@@ -24,7 +24,9 @@ from pydantic import Field
 from lion_core.abc import BaseiModel
 from lion_core.imodel.imodel import iModel
 from lion_core.libs import is_same_dtype
-from lion_core.generic import pile, Pile, progression, Progression, Exchange
+from lion_core.generic.pile import pile, Pile
+from lion_core.generic.progression import prog, Progression
+from lion_core.generic.exchange import Exchange
 from lion_core.action import Tool, ToolManager
 from lion_core.communication import (
     RoledMessage,
@@ -105,7 +107,7 @@ class Branch(BaseSession):
         )
 
         self.messages = msg_pile(validate_message(messages))
-        self.progress = progress or progression(list(self.messages), name=self.name)
+        self.progress = progress or prog(list(self.messages), name=self.name)
 
         if self.system not in self.messages:
             self.messages.include(self.system)
@@ -274,7 +276,7 @@ class Branch(BaseSession):
         Raises:
             ValueError: If the sender does not exist or the mail category is invalid.
         """
-        skipped_requests = progression()
+        skipped_requests = prog()
         if sender not in self.mailbox.pending_ins.keys():
             raise ValueError(f"No package from {sender}")
         while self.mailbox.pending_ins[sender].size() > 0:

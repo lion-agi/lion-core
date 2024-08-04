@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Any, Literal, override
-from lion_core.record.form import Form
+from lion_core.generic.form import Form
 from lion_core.communication.message import RoledMessage, MessageRole, MessageFlag
 from lion_core.communication.utils import (
     prepare_instruction_content,
@@ -21,7 +21,7 @@ class Instruction(RoledMessage):
         recipient: Any | MessageFlag = None,
         requested_fields: dict | MessageFlag = None,
         image_detail: Literal["low", "high", "auto"] | MessageFlag = None,
-        protected_init_params: dict | None = None
+        protected_init_params: dict | None = None,
     ):
         """
         Initialize an Instruction instance.

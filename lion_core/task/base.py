@@ -8,8 +8,6 @@ from lion_core.generic.component import Component
 
 class BaseTask(Component, MutableRecord):
 
-    template_name: str = "default_task"
-
     assignment: str | None = Field(
         None,
         description="The objective of the form.",
@@ -186,3 +184,6 @@ class BaseTask(Component, MutableRecord):
             field: self.all_fields[field].description or "N/A"
             for field in self.request_fields
         }
+
+
+__all__ = ["BaseTask"]

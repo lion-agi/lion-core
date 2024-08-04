@@ -5,7 +5,8 @@ from pydantic import Field, field_serializer
 
 from lion_core.abc import Relational
 from lion_core.sys_utils import SysUtil
-from lion_core.generic import Note, Element
+from lion_core.generic.note import Note
+from lion_core.generic.element import Element
 from lion_core.graph.edge_condition import EdgeCondition
 
 
@@ -32,7 +33,7 @@ class Edge(Element):
         tail: Relational | str,
         condition: EdgeCondition | None = None,
         label: list[str] | None = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize an Edge.

@@ -11,7 +11,7 @@ class AssistantResponse(RoledMessage):
         assistant_response: dict | MessageFlag,
         sender: Any | MessageFlag,
         recipient: Any | MessageFlag,
-        protected_init_params: dict | None = None
+        protected_init_params: dict | None = None,
     ):
         if all(
             x == MessageFlag.MESSAGE_LOAD

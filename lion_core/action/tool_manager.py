@@ -41,8 +41,7 @@ class ToolManager(BaseManager):
             return tool.__name__ in self.registry
         return False
 
-    def register_tool(
-        self, tool: Tool | Callable[..., Any], update: bool = False):
+    def register_tool(self, tool: Tool | Callable[..., Any], update: bool = False):
         """
         Register a single tool.
 
@@ -67,7 +66,8 @@ class ToolManager(BaseManager):
         self.registry[tool.function_name] = tool
 
     def register_tools(
-        self, tools: list[Tool | Callable[..., Any]] | Tool | Callable[..., Any]):
+        self, tools: list[Tool | Callable[..., Any]] | Tool | Callable[..., Any]
+    ):
         """
         Register multiple tools.
 
@@ -80,7 +80,10 @@ class ToolManager(BaseManager):
 
         """
         tools_list = tools if isinstance(tools, list) else [tools]
-        [self.register_tool(tool) for tool in tools_list]
+        [
+            self.register_tool(tool)
+            for tool in to_list(tools_list, dropna=True, flatten=True)
+        ]
 
     @singledispatchmethod
     def match_tool(self, func_call: Any) -> FunctionCalling:

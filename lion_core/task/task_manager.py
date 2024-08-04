@@ -8,7 +8,7 @@ from lion_core.task.base import BaseTask
 from lion_core.task.dynamic_task import DynamicTask
 from lion_core.task.static_task import StaticTask
 from lion_core.task.appending_task import Task
-from lion_core.record.form import Form
+from lion_core.generic.form import Form
 
 
 # task manager fill task with info from record, kwargs or other tasks

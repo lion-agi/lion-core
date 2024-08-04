@@ -15,18 +15,16 @@ class ActionRequest(RoledMessage):
         arguments: dict | MessageFlag,
         sender: Any | MessageFlag,
         recipient: Any | MessageFlag,
-        protected_init_params: dict | None = None
+        protected_init_params: dict | None = None,
     ):
         if all(
-            x == MessageFlag.MESSAGE_LOAD
-            for x in [func, arguments, sender, recipient]
+            x == MessageFlag.MESSAGE_LOAD for x in [func, arguments, sender, recipient]
         ):
             super().__init__(**protected_init_params)
             return
 
         if all(
-            x == MessageFlag.MESSAGE_CLONE
-            for x in [func, arguments, sender, recipient]
+            x == MessageFlag.MESSAGE_CLONE for x in [func, arguments, sender, recipient]
         ):
             super().__init__(role=MessageRole.ASSISTANT)
             return

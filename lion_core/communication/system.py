@@ -13,7 +13,7 @@ class System(RoledMessage):
         sender: str | None | MessageFlag = None,
         recipient: str | None | MessageFlag = None,
         system_datetime: bool | str | None | MessageFlag = None,
-        protected_init_params: dict | None = None
+        protected_init_params: dict | None = None,
     ):
         """
         Initialize a System message instance.
@@ -30,7 +30,7 @@ class System(RoledMessage):
         ):
             super().__init__(**protected_init_params)
             return
-        
+
         if all(
             x == MessageFlag.MESSAGE_CLONE
             for x in [system, sender, recipient, system_datetime]

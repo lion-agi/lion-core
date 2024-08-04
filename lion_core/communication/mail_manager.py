@@ -4,7 +4,9 @@ from typing import Any
 
 from lion_core.abc import BaseManager
 from lion_core.sys_utils import SysUtil
-from lion_core.generic import to_list_type, pile, Pile, Exchange
+from lion_core.generic.pile import pile, Pile
+from lion_core.generic.exchange import Exchange
+from lion_core.generic.utils import to_list_type
 
 from lion_core.communication.mail import Mail, Package
 
@@ -31,7 +33,9 @@ class MailManager(BaseManager):
             raise ValueError(f"Failed to add source. Error {e}")
 
     @staticmethod
-    def create_mail(sender: str, recipient: str, category: str, package: Any, request_source=None) -> Mail:
+    def create_mail(
+        sender: str, recipient: str, category: str, package: Any, request_source=None
+    ) -> Mail:
         """
         Create a new Mail object.
 
@@ -45,7 +49,9 @@ class MailManager(BaseManager):
         Returns:
             A new Mail object.
         """
-        pack = Package(category=category, package=package, request_source=request_source)
+        pack = Package(
+            category=category, package=package, request_source=request_source
+        )
         mail = Mail(
             sender=sender,
             recipient=recipient,

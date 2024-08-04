@@ -121,7 +121,11 @@ def _(
 
     if str_type == "json":
         try:
-            return json.loads(input_, **kwargs) if parser is None else parser(input_, **kwargs)
+            return (
+                json.loads(input_, **kwargs)
+                if parser is None
+                else parser(input_, **kwargs)
+            )
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse JSON string") from e
 

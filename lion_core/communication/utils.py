@@ -16,7 +16,7 @@ limitations under the License.
 
 from typing import Any, Callable, Literal
 from lion_core.sys_utils import SysUtil
-from lion_core.generic import Note
+from lion_core.generic.note import Note
 from lion_core.libs import fuzzy_parse_json, to_str, to_dict
 from lion_core.exceptions import LionIDError, LionValueError
 

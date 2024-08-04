@@ -26,7 +26,7 @@ from lion_core.libs import to_list
 from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
 from lion_core.exceptions import ItemNotFoundError, LionTypeError
-from lion_core.generic.util import validate_order, to_list_type
+from lion_core.generic.utils import validate_order, to_list_type
 
 
 class Progression(Element, Ordering):
@@ -284,7 +284,7 @@ class Progression(Element, Ordering):
         Returns:
             Iterator[str]: An iterator over the reversed Lion IDs in the progression.
         """
-        return progression(reversed(self.order), name=self.name)
+        return prog(reversed(self.order), name=self.name)
 
     @override
     def __eq__(self, other: object) -> bool:
@@ -504,7 +504,7 @@ class Progression(Element, Ordering):
             self.order.insert(index, SysUtil.get_id(i))
 
 
-def progression(order: Any = None, name: str | None = None) -> Progression:
+def prog(order: Any = None, name: str | None = None) -> Progression:
     """
     Create a new Progression instance.
 

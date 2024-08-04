@@ -29,8 +29,8 @@ from lion_core.exceptions import (
     LionValueError,
     ItemExistsError,
 )
-from lion_core.generic.progression import Progression, progression
-from lion_core.generic.util import to_list_type, validate_order
+from lion_core.generic.progression import Progression, prog
+from lion_core.generic.utils import to_list_type, validate_order
 from lion_core.setting import LN_UNDEFINED
 
 T = TypeVar("T", bound=Observable)
@@ -56,7 +56,7 @@ class Pile(Element, Collective, Generic[T]):
         description="Set of allowed types for items in the pile.",
     )
     order: Progression = Field(
-        default_factory=progression,
+        default_factory=prog,
         description="Progression specifying the order of items in the pile.",
     )
     strict: bool = Field(

@@ -28,7 +28,7 @@ from lion_core.exceptions import LionTypeError, LionValueError
 
 
 from lion_core.task.utils import get_input_output_fields
-from lion_core.record.form import Form
+from lion_core.task.base import Form
 
 
 class Report(Component, ImmutableRecord):

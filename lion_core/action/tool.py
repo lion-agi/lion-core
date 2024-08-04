@@ -6,7 +6,7 @@ from datetime import datetime
 
 from pydantic import Field, field_serializer
 
-from lion_core.generic import Element
+from lion_core.generic.element import Element
 from lion_core.libs import function_to_schema, to_list
 
 
