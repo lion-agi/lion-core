@@ -115,7 +115,7 @@ class Progression(Element, Ordering):
         """
         return len(self.order)
 
-    def __getitem__(self, key: int | slice) -> str | "Progression":
+    def __getitem__(self, key: int | slice):
         """
         Get an item or slice of items from the progression.
 
@@ -357,7 +357,7 @@ class Progression(Element, Ordering):
         except IndexError as e:
             raise ItemNotFoundError from e
 
-    def extend(self, item: "Progression" | Any) -> None:
+    def extend(self, item: Any) -> None:
         """
         Extend the progression from the right with item(s).
 

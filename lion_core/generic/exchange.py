@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import List, Literal, override, TYPE_CHECKING
+from typing import List, Literal, override
 from pydantic import Field
 
 from lion_core.abc._space import Container
@@ -23,9 +23,7 @@ from lion_core.exceptions import ItemExistsError, LionValueError
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import Progression, prog
-
-if TYPE_CHECKING:
-    from lion_core.communication.mail import Mail
+from lion_core.communication.mail import Mail
 
 
 class Exchange(Element, Container):
