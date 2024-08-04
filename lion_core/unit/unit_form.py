@@ -1,22 +1,35 @@
+"""
+Module for defining and creating Unit Forms in the Lion framework.
+
+This module provides the UnitForm class, which represents a base form for
+units with fields for confidence scoring and reasoning, and a function to
+create instances of UnitForm.
+"""
+
 from enum import Enum
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from pydantic import Field
 
 from lion_core.libs import to_dict
-from lion_core.session.branch import Branch
 from lion_core.generic.form import Form
 from lion_core.task.appending_task import Task
+
+if TYPE_CHECKING:
+    from lion_core.session.branch import Branch
 
 
 class UnitForm(Task):
     """
-    A base form class for units that includes fields for confidence scoring and reasoning.
+    A base form class for units that includes fields for confidence scoring
+    and reasoning.
 
     Attributes:
         template_name (str): The name of the template.
-        confidence_score (float): A numeric confidence score between 0 and 1 with precision to 2 decimal places.
-        reason (str | None): A field for providing concise reasoning for the process.
+        confidence_score (float): A numeric confidence score between 0 and 1
+            with precision to 2 decimal places.
+        reason (str | None): A field for providing concise reasoning for the
+            process.
     """
 
     template_name: str = "UnitDirective"
@@ -24,7 +37,10 @@ class UnitForm(Task):
     confidence_score: float = Field(
         None,
         description=(
-            "Provide a numeric confidence score on how likely you successfully achieved the task  between 0 and 1, with precision in 2 decimal places. 1 being very confident in a good job, 0 is not confident at all."
+            "Provide a numeric confidence score on how likely you successfully "
+            "achieved the task  between 0 and 1, with precision in 2 decimal "
+            "places. 1 being very confident in a good job, 0 is not confident "
+            "at all."
         ),
         validation_kwargs={
             "upper_bound": 1,
@@ -37,7 +53,8 @@ class UnitForm(Task):
     reason: str | None = Field(
         None,
         description=(
-            "Explain yourself, provide concise reasoning for the process. Must start with: Let's think step by step, "
+            "Explain yourself, provide concise reasoning for the process. "
+            "Must start with: Let's think step by step, "
         ),
     )
 
@@ -50,8 +67,8 @@ class UnitForm(Task):
             "Must use provided functions and parameters, DO NOT MAKE UP NAMES!!! "
             "Flag `action_required` as True if filled. When providing parameters, "
             "you must follow the provided type and format. If the parameter is a "
-            "number, you should provide a number like 1, 23, or 1.1 if float is "
-            "allowed."
+            "number, you should provide a number like 1/6, 23, 1.1, 314e-10, or 3.5-4j"
+            "if float is allowed."
         ),
         examples=["{action_1: {function: 'add', arguments: {num1: 1, num2: 2}}}"],
     )
@@ -337,7 +354,39 @@ def create_unit_form(
     clear_messages: bool = False,
     return_branch: bool = False,
 ) -> tuple[Branch, UnitForm] | UnitForm:
+    """
+    Create a UnitForm instance based on the given parameters.
 
+    Args:
+        branch: The Branch instance to associate with the form.
+        form: An existing Form instance to use as a base (optional).
+        instruction: Additional instruction for the form.
+        context: Additional context for the form.
+        tools: Tools configuration for the form.
+        reason: Flag to include reasoning in the form.
+        predict: Flag to include prediction in the form.
+        score: Flag to include scoring in the form.
+        select: Selection parameter for the form.
+        plan: Planning parameter for the form.
+        brainstorm: Flag to include brainstorming in the form.
+        reflect: Flag to include reflection in the form.
+        tool_schema: Schema of available tools.
+        allow_action: Flag to allow actions in the form.
+        allow_extension: Flag to allow extensions in the form.
+        max_extension: Maximum number of extensions allowed.
+        confidence: Confidence parameter for the form.
+        score_num_digits: Number of digits for scoring.
+        score_range: Range for scoring.
+        select_choices: Choices for selection.
+        plan_num_step: Number of steps in the plan.
+        predict_num_sentences: Number of sentences for prediction.
+        clear_messages: Flag to clear existing messages.
+        return_branch: Flag to return the branch along with the form.
+
+    Returns:
+        A tuple of (Branch, UnitForm) if return_branch is True, otherwise just
+        the UnitForm.
+    """
     if clear_messages:
         branch.clear()
 

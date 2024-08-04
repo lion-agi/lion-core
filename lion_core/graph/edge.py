@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
 from pydantic import Field, field_serializer
 
 from lion_core.abc import Relational
@@ -76,5 +75,7 @@ class Edge(Element):
             return await condition.apply(*args, **kwargs)
         return True  # If no condition exists, the edge is always traversable
 
+
+__all__ = ["Edge"]
 
 # File: lion_core/graph/edge.py

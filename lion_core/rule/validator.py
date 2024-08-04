@@ -9,7 +9,7 @@ from lion_core.rule.default_rules._default import DEFAULT_RULES, DEFAULT_RULEORD
 from lion_core.rule.rulebook import RuleBook
 
 
-class BaseValidator(BaseExecutor, Temporal, Observable):
+class Validator(BaseExecutor, Temporal, Observable):
 
     def __init__(
         self,

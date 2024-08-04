@@ -1,11 +1,13 @@
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from lion_core.libs import nmerge, validate_mapping
 from lion_core.generic.form import Form
-from lion_core.session.branch import Branch
 from lion_core.unit.unit_form import create_unit_form
 from lion_core.unit.process_chat import process_chat
 from lion_core.unit.process_act import process_act
+
+if TYPE_CHECKING:
+    from lion_core.session.branch import Branch
 
 
 async def prepare_output(form: Form, verbose_direct: bool) -> Form:
@@ -76,7 +78,7 @@ async def process_direct(
     predict_num_sentences: int | None = None,
     clear_messages: bool = False,
     verbose_direct: bool = True,
-    image: str | list[str] | None = None,
+    images: str | list[str] | None = None,
     image_path: str | None = None,
     return_branch: bool = False,
     **kwargs: Any,
@@ -148,15 +150,13 @@ async def process_direct(
         print("Chatting with model...")
 
     form = await process_chat(
-        branch=branch, form=form, image=image, image_path=image_path, **kwargs
+        branch=branch, form=form, images=images, image_path=image_path, **kwargs
     )
 
     if allow_action and getattr(form, "action_required", None):
         if actions := getattr(form, "actions", None):
             if verbose_direct:
-                print(
-                    "Found action requests in model response. " "Processing actions..."
-                )
+                print("Found action requests in model response. Processing actions...")
 
             form = await process_act(
                 branch=branch,

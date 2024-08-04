@@ -21,11 +21,13 @@ from typing import Any, Callable, ClassVar, override, Literal
 from pydantic import Field
 
 from lion_core.abc import BaseiModel, Observable
-from lion_core.imodel.imodel import iModel
 from lion_core.libs import is_same_dtype
+from lion_core.converter import ConverterRegistry
 from lion_core.generic.pile import pile, Pile
 from lion_core.generic.progression import prog, Progression
 from lion_core.generic.exchange import Exchange
+
+from lion_core.imodel.imodel import iModel
 from lion_core.action import Tool, ToolManager
 from lion_core.communication.message import RoledMessage
 from lion_core.communication.system import System
@@ -36,10 +38,7 @@ from lion_core.communication.action_response import ActionResponse
 from lion_core.communication.message import RoledMessage, MessageFlag
 from lion_core.communication.package import Package
 from lion_core.communication.mail import Mail
-
-
 from lion_core.session.base import BaseSession
-from lion_core.converter import ConverterRegistry
 from lion_core.session.utils import validate_message, create_message
 
 

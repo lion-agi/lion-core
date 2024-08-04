@@ -1,16 +1,28 @@
-from typing import Any, Literal
+"""
+Module for processing chat interactions in the Lion framework.
+
+This module provides the main function for handling chat processing,
+including configuration, completion, action requests, and validation.
+"""
+
+from typing import Any, Literal, TYPE_CHECKING
+
 from lion_core.abc import BaseProcessor
 from lion_core.communication.action_request import ActionRequest
-from lion_core.session.branch import Branch
-
 from lion_core.unit.process_config import process_chat_config
-from lion_core.unit.process_completion import parse_chatcompletion, parse_model_response
+from lion_core.unit.process_completion import (
+    parse_chatcompletion,
+    parse_model_response,
+)
 from lion_core.unit.process_action_request import process_action_request
 from lion_core.unit.process_validation import process_validation
 
+if TYPE_CHECKING:
+    from lion_core.session.branch import Branch
+
 
 async def process_chat(
-    branch: Branch,
+    branch: "Branch",
     *,
     form=None,
     sender=None,
@@ -39,32 +51,31 @@ async def process_chat(
     use_annotation: bool = True,
     return_branch: bool = False,
     **kwargs: Any,
-) -> tuple[Branch, Any] | Any:
+) -> tuple["Branch", Any] | Any:
     """
     Process chat interaction.
 
     Args:
         branch: The branch to process the chat for.
         form: The form associated with the chat.
-        clear_messages: Whether to clear existing messages.
-        system: System message configuration.
-        system_metadata: Additional system metadata.
-        system_datetime: Datetime for the system message.
-        delete_previous_system: Whether to delete the previous system message.
-        instruction: Instruction for the chat.
-        context: Additional context for the chat.
-        action_request: Action request for the chat.
-        image: Image data for the chat.
-        image_path: Path to an image file.
         sender: Sender of the message.
         recipient: Recipient of the message.
-        requested_fields: Fields requested in the response.
-        metadata: Additional metadata for the instruction.
-        tools: Whether to include tools in the configuration.
-        invoke_tool: Whether to invoke tools for action requests.
-        model_config: Additional model configuration.
+        instruction: Instruction for the chat.
+        context: Additional context for the chat.
+        request_fields: Fields requested in the response.
+        system: System message configuration.
+        action_request: Action request for the chat.
         imodel: The iModel to use for chat completion.
-        handle_unmatched: Strategy for handling unmatched fields.
+        images: Image data for the chat.
+        image_path: Path to an image file.
+        image_detail: Detail level for image processing.
+        system_datetime: Datetime for the system message.
+        metadata: Additional metadata for the instruction.
+        delete_previous_system: Whether to delete the previous system message.
+        tools: Whether to include tools in the configuration.
+        system_metadata: Additional system metadata.
+        model_config: Additional model configuration.
+        clear_messages: Whether to clear existing messages.
         fill_value: Value to use for filling unmatched fields.
         fill_mapping: Mapping for filling unmatched fields.
         validator: The validator to use for form validation.
@@ -106,7 +117,7 @@ async def process_chat(
     payload, completion = await imodel.chat(branch.to_chat_messages(), **config)
     costs = imodel.endpoints.get(["chat/completions", "model", "costs"], (0, 0))
 
-    _msg = parse_chatcompletion(
+    _msg = await parse_chatcompletion(
         branch=branch,
         imodel=imodel,
         payload=payload,
@@ -141,6 +152,11 @@ async def process_chat(
             strict=strict_validation,
             use_annotation=use_annotation,
         )
-        return branch, form if return_branch else form.work_fields
+        return (branch, form) if return_branch else form.work_fields
 
-    return branch, _res if return_branch else _res
+    return (branch, _res) if return_branch else _res
+
+
+__all__ = ["process_chat"]
+
+# File: lion_core/chat/processing.py

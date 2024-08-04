@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
 from lion_core.libs import validate_mapping
 
 from lion_core.session.branch import Branch
@@ -7,6 +7,10 @@ from lion_core.generic.note import note
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.action_response import ActionResponse
 from lion_core.unit.process_action_request import process_action_request
+
+
+if TYPE_CHECKING:
+    from lion_core.session.branch import Branch
 
 
 async def process_act(
