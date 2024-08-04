@@ -33,11 +33,7 @@ class MailManager(BaseManager):
 
     @staticmethod
     def create_mail(
-        sender: str,
-        recipient: str,
-        category: str,
-        package: Any,
-        request_source=None
+        sender: str, recipient: str, category: str, package: Any, request_source=None
     ) -> Mail:
         """
         Create a new Mail object.
@@ -53,9 +49,7 @@ class MailManager(BaseManager):
             A new Mail object.
         """
         pack = Package(
-            category=category,
-            package=package,
-            request_source=request_source
+            category=category, package=package, request_source=request_source
         )
         mail = Mail(
             sender=sender,
@@ -92,9 +86,7 @@ class MailManager(BaseManager):
             mail_id = mailbox.pending_outs.popleft()
             mail: Mail = mailbox.pile.pop(mail_id)
             if mail.recipient not in self.sources:
-                raise ValueError(
-                    f"Recipient source {mail.recipient} does not exist"
-                )
+                raise ValueError(f"Recipient source {mail.recipient} does not exist")
             if mail.sender not in self.mails[mail.recipient]:
                 self.mails[mail.recipient].update({mail.sender: deque()})
             self.mails[mail.recipient][mail.sender].append(mail)

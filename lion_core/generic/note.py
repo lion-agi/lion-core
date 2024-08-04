@@ -28,7 +28,7 @@ from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
 
 if TYPE_CHECKING:
-    from lion_core.communication.base import BaseMail
+    from lion_core.communication.base_mail import BaseMail
 
 
 class Note(BaseModel, Container):
@@ -52,7 +52,7 @@ class Note(BaseModel, Container):
 
     @field_serializer("content")
     def _serialize_content(self, value: Any) -> dict[str, Any]:
-        from lion_core.communication.base import BaseMail
+        from lion_core.communication.base_mail import BaseMail
 
         output_dict = SysUtil.copy(value, deep=True)
         origin_obj = output_dict.pop("clone_from", None)
@@ -268,3 +268,16 @@ class Note(BaseModel, Container):
 
     def __setitem__(self, indices: str | tuple, value: Any) -> None:
         self.set(indices, value)
+
+
+def note(**kwargs) -> Note:
+    """
+    Create a Note object from keyword arguments.
+
+    Returns:
+        A Note object.
+    """
+    return Note(**kwargs)
+
+
+__all__ = ["Note", "note"]

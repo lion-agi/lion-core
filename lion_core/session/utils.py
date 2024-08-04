@@ -20,6 +20,7 @@ from collections.abc import Mapping, Sequence
 from functools import singledispatch
 from typing import Any, Callable
 
+from lion_core.abc import Observable
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.action_response import ActionResponse
 from lion_core.communication.assistant_response import AssistantResponse
@@ -129,40 +130,26 @@ def validate_system(
     return System(system, **config)
 
 
-def create_message(
-    *,
-    system: dict | str | System | None,
-    instruction: dict | str | Instruction | None,
-    context: dict | str | None,
-    assistant_response: dict | str | AssistantResponse | None,
-    function: str | Callable | None,
-    argument: dict | None,
-    func_output: Any,
-    action_request: ActionRequest,
-    action_response: Any,
-    image: str | list[str],
-    sender: Any,
-    recipient: Any,
-    requested_fields: dict[str, str] | None,
-    system_datetime: bool | str | None,
-    system_datetime_strftime: str | None,
-    **kwargs: Any,
-) -> RoledMessage:
-    """Creates a message based on the provided parameters."""
-
-    if sender:
-        sender = SysUtil.get_id(sender)
-    if recipient:
-        recipient = SysUtil.get_id(recipient)
+def _handle_action(
+    sender: Observable | str | None = None,
+    recipient: Observable | str | None = None,
+    action_request: ActionRequest | None = None,
+    action_response: ActionResponse | None = None,
+    func: str | Callable | None = None,
+    arguments: dict | None = None,
+    func_output: Any = None,
+) -> ActionRequest | ActionResponse | None:
 
     if func_output or action_response:
-        if not action_request:
+        if not action_request or not isinstance(action_request, ActionRequest):
             raise ValueError(
                 "Error: please provide an corresponding action request for an action response."
             )
 
         if isinstance(action_response, ActionResponse):
-            action_response.update_request(action_request)
+            action_response.update_request(
+                action_request=action_request, func_output=func_output
+            )
             return action_response
 
         return ActionResponse(
@@ -178,17 +165,52 @@ def create_message(
             )
         return action_request
 
-    if function:
-        if callable(function):
-            function = function.__name__
-        if not argument:
+    if func:
+        if callable(func):
+            func = func.__name__
+        if not arguments:
             raise ValueError("Error: please provide arguments for the function.")
         return ActionRequest(
-            function=function,
-            arguments=argument,
+            function=func,
+            arguments=arguments,
             sender=sender,
             recipient=recipient,
         )
+
+
+def create_message(
+    *,
+    sender: Observable | str | None = None,
+    recipient: Observable | str | None = None,
+    # message parameters
+    instruction: Instruction | Any = None,
+    context: Any = None,
+    system: System | Any = None,
+    assistant_response: AssistantResponse | str | dict | None = None,
+    action_request: ActionRequest | None = None,
+    action_response: ActionResponse | None = None,
+    # additional parameters
+    images=None,
+    requested_fields=None,
+    image_detail=None,
+    func=None,
+    arguments=None,
+    func_output=None,
+    system_datetime=None,
+):
+
+    if (
+        a := _handle_action(
+            sender=sender,
+            recipient=recipient,
+            action_request=action_request,
+            action_response=action_response,
+            func=func,
+            arguments=arguments,
+            func_output=func_output,
+        )
+    ) is not None:
+        return a
 
     a = {
         "system": system,
@@ -202,7 +224,7 @@ def create_message(
         raise ValueError("Error: Message can only have one role")
 
     if not func_output:
-        for k, v in a.items():
+        for _, v in a.items():
             if isinstance(v, RoledMessage):
                 if isinstance(v, Instruction):
                     if context:
@@ -236,7 +258,7 @@ def create_message(
             context=context,
             sender=sender,
             recipient=recipient,
-            requested_fields=requested_fields,
+            request_fields=requested_fields,
             images=image,
             **kwargs,
         )

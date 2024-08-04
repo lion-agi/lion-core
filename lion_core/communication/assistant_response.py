@@ -33,9 +33,7 @@ class AssistantResponse(RoledMessage):
             sender=sender or "N/A",
             recipient=recipient,
         )
-        self.content["assistant_response"] = assistant_response.get(
-            "content", ""
-        )
+        self.content["assistant_response"] = assistant_response.get("content", "")
 
     @property
     def response(self) -> Any:

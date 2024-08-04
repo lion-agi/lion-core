@@ -28,8 +28,7 @@ class BaseMail(Element):
         "N/A",
         title="Sender",
         description=(
-            "The ID of the sender node, or 'system', 'user', "
-            "or 'assistant'."
+            "The ID of the sender node, or 'system', 'user', " "or 'assistant'."
         ),
     )
 
@@ -37,8 +36,7 @@ class BaseMail(Element):
         "N/A",
         title="Recipient",
         description=(
-            "The ID of the recipient node, or 'system', 'user', "
-            "or 'assistant'."
+            "The ID of the recipient node, or 'system', 'user', " "or 'assistant'."
         ),
     )
 
