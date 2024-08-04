@@ -7,11 +7,11 @@
 from pydantic import model_validator
 
 from lion_core.setting import LN_UNDEFINED
-from lion_core.record.base_form import BaseForm
-from lion_core.record.utils import get_input_output_fields
+from lion_core.task.base import BaseTask
+from lion_core.task.utils import get_input_output_fields
 
 
-class Form(BaseForm):
+class Task(BaseTask):
 
     @model_validator(mode="before")
     @classmethod
@@ -51,11 +51,11 @@ class Form(BaseForm):
     def check_input_output_fields(self):
         for i in self.input_fields:
             if i in self.model_fields:
-                self.input_kwargs[i] = getattr(self, i)
+                self.init_input_kwargs[i] = getattr(self, i)
             else:
-                self.add_field(i, value=self.input_kwargs.get(i, LN_UNDEFINED))
+                self.add_field(i, value=self.init_input_kwargs.get(i, LN_UNDEFINED))
 
-        for i in self.requested_fields:
+        for i in self.request_fields:
             if i not in self.all_fields:
                 self.add_field(i)
         return self
@@ -68,12 +68,12 @@ class Form(BaseForm):
         if value is not LN_UNDEFINED:
             setattr(self, field, value)
 
-        self.input_kwargs[field] = getattr(self, field)
+        self.init_input_kwargs[field] = getattr(self, field)
 
     def append_to_request(self, field: str, value=LN_UNDEFINED):
         if field not in self.all_fields:
             self.add_field(field)
-        if field not in self.requested_fields:
-            self.requested_fields.append(field)
+        if field not in self.request_fields:
+            self.request_fields.append(field)
         if value is not LN_UNDEFINED:
             setattr(self, field, value)

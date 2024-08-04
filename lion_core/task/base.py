@@ -3,13 +3,11 @@ from pydantic import Field
 
 from lion_core.setting import LN_UNDEFINED
 from lion_core.abc import MutableRecord
-from lion_core.sys_utils import SysUtil
-from lion_core.exceptions import LionValueError
-from lion_core.generic.component import Component, T
+from lion_core.generic.component import Component
 
 
-class BaseForm(Component, MutableRecord):
-    template_name: str = "default_base_form"
+class BaseTask(Component, MutableRecord):
+    template_name: str = "default_task"
 
     assignment: str | None = Field(
         None,
@@ -22,7 +20,7 @@ class BaseForm(Component, MutableRecord):
         description="Fields required to obtain the requested fields for the form's objective",
     )
 
-    requested_fields: list[str] = Field(
+    request_fields: list[str] = Field(
         default_factory=list, description="Fields requested to be filled."
     )
 
@@ -30,11 +28,22 @@ class BaseForm(Component, MutableRecord):
         default_factory=str,
         description="The work to be done by the form, including custom instructions.",
     )
+    
+    task_description: str = Field(
+        str,
+        description="Description of the task",
+    )
 
-    input_kwargs: dict = Field(default_factory=dict, exclude=True)
+    init_input_kwargs: dict = Field(default_factory=dict, exclude=True)
 
     none_as_valid_value: bool = Field(
         default=False, description="Indicate whether to treat None as a valid value."
+    )
+
+    has_processed: bool = Field(
+        False,
+        description="Indicate whether the task has been processed.",
+        exclude=True,
     )
 
     @override
@@ -50,12 +59,12 @@ class BaseForm(Component, MutableRecord):
     @property
     def work_fields(self) -> dict[str, Any]:
         result = {}
-        for i in self.input_fields + self.requested_fields:
+        for i in self.input_fields + self.request_fields:
             result[i] = getattr(self, i)
         return result
 
     @property
-    def filled(self) -> bool:
+    def is_completed(self) -> bool:
         if self.none_as_valid_value:
             if LN_UNDEFINED in self.work_fields.values():
                 return False
@@ -71,7 +80,7 @@ class BaseForm(Component, MutableRecord):
                 return True
 
     @property
-    def workable(self) -> bool:
+    def is_workable(self) -> bool:
         for i in self.input_fields:
             if self.none_as_valid_value:
                 if getattr(self, i) is LN_UNDEFINED:
@@ -79,57 +88,9 @@ class BaseForm(Component, MutableRecord):
             else:
                 if getattr(self, i) is LN_UNDEFINED or getattr(self, i) is None:
                     return False
-        if self.filled:
+        if self.is_completed:
             return False
         return True
-
-    def fill(self, form: "BaseForm" = None, **kwargs):
-        self.fill_input_fields(form=form, **kwargs)
-        self.fill_requested_fields(form=form, **kwargs)
-
-    def fill_input_fields(self, form: "BaseForm" = None, **kwargs):
-        if form is not None and not isinstance(form, BaseForm):
-            raise LionValueError(
-                "Invalid form for fill. Should be a instance of BaseForm."
-            )
-        for i in self.input_fields:
-            if self.none_as_valid_value:
-                if getattr(self, i) is not LN_UNDEFINED:
-                    continue
-                value = kwargs.get(i, LN_UNDEFINED)
-                if value is LN_UNDEFINED:
-                    value = SysUtil.copy(getattr(form, i, LN_UNDEFINED))
-                if value is not LN_UNDEFINED:
-                    setattr(self, i, value)
-            else:
-                if getattr(self, i) is None or getattr(self, i) is LN_UNDEFINED:
-                    value = kwargs.get(i)
-                    if value is LN_UNDEFINED or value is None:
-                        value = SysUtil.copy(getattr(form, i, LN_UNDEFINED))
-                    if value is not LN_UNDEFINED and value is not None:
-                        setattr(self, i, value)
-
-    def fill_requested_fields(self, form: "BaseForm" = None, **kwargs):
-        if form is not None and not isinstance(form, BaseForm):
-            raise LionValueError(
-                "Invalid form for fill. Should be a instance of BaseForm."
-            )
-        for i in self.requested_fields:
-            if self.none_as_valid_value:
-                if getattr(self, i) is not LN_UNDEFINED:
-                    continue
-                value = kwargs.get(i, LN_UNDEFINED)
-                if value is LN_UNDEFINED:
-                    value = SysUtil.copy(getattr(form, i, LN_UNDEFINED))
-                if value is not LN_UNDEFINED:
-                    setattr(self, i, value)
-            else:
-                if getattr(self, i) is None or getattr(self, i) is LN_UNDEFINED:
-                    value = kwargs.get(i)
-                    if value is LN_UNDEFINED or value is None:
-                        value = SysUtil.copy(getattr(form, i, LN_UNDEFINED))
-                    if value is not LN_UNDEFINED and value is not None:
-                        setattr(self, i, value)
 
     @property
     def instruction_dict(self) -> dict:
@@ -169,7 +130,7 @@ class BaseForm(Component, MutableRecord):
             Please follow prompts to complete the task:
             1. Your task is: {self.task}
             2. The provided input fields are: {', '.join(self.input_fields)}
-            3. The requested output fields are: {', '.join(self.requested_fields)}
+            3. The requested output fields are: {', '.join(self.request_fields)}
             4. Provide your response in the specified JSON format.
             """
 
@@ -183,5 +144,5 @@ class BaseForm(Component, MutableRecord):
         """
         return {
             field: self.all_fields[field].description or "N/A"
-            for field in self.requested_fields
+            for field in self.request_fields
         }

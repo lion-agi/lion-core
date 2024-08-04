@@ -26,7 +26,7 @@ from lion_core.abc import MutableRecord
 from lion_core.exceptions import LionTypeError, LionValueError
 from lion_core.generic.component import Component
 from lion_core.generic.pile import Pile
-from lion_core.record.utils import get_input_output_fields
+from lion_core.task.utils import get_input_output_fields
 
 
 class Form(Component, MutableRecord):
