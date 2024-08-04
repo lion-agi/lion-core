@@ -55,6 +55,7 @@ def prepare_instruction_content(
         out_["images"] = images if isinstance(images, list) else [images]
         out_["image_detail"] = image_detail or "low"
     if request_fields:
+        out_["request_fields"] = request_fields
         out_["request_response_format"] = prepare_request_response_format(
             request_fields
         )
@@ -144,6 +145,12 @@ class Instruction(RoledMessage):
         """Returns the main instruction content."""
         return self.content.get(["instruction"], None)
 
+    def update_request_fields(self, request_fields: dict):
+        self.content["request_fields"].update(request_fields)
+        self.content["request_response_format"] = prepare_request_response_format(
+            self.content["request_fields"]
+        )
+
     def update_context(self, *args, **kwargs):
         """Adds new context to the instruction."""
         self.content["context"] = self.content.get("context", [])
@@ -165,16 +172,16 @@ class Instruction(RoledMessage):
         text_content = str(content)
         content = format_image_content(
             text_content,
-            self.content.get(["images"]),
-            self.content.get(["image_detail"]),
+            self.content["images"],
+            self.content["image_detail"],
         )
         _msg["content"] = content
         return _msg
 
     @classmethod
-    def from_task(
+    def from_form(
         cls,
-        task: BaseTask,
+        form: BaseTask,
         sender: str | None = None,
         recipient: Any = None,
         images: str | None = None,
@@ -193,13 +200,13 @@ class Instruction(RoledMessage):
             Instruction: A new Instruction instance.
         """
         self: Instruction = cls(
-            **task.instruction_dict,
+            **form.instruction_dict,
             images=images,
             sender=sender,
             recipient=recipient,
             image_detail=image_detail,
         )
-        self.metadata.set("origin_task", task.ln_id)
+        self.metadata.set("origin_task", form.ln_id)
         return self
 
 

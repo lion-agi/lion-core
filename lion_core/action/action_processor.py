@@ -18,10 +18,10 @@ class ActionProcessor(BaseProcessor):
         self.queue = asyncio.Queue()
         self._stop_event = asyncio.Event()
         self.available_capacity = capacity
-        self.execution_mode = False
+        self.execution_mode: bool = False
         self.refresh_time = refresh_time
 
-    async def enqueue(self, action) -> None:
+    async def enqueue(self, action: Action) -> None:
         """Enqueue a work item."""
         await self.queue.put(action)
 
@@ -47,7 +47,7 @@ class ActionProcessor(BaseProcessor):
         """Process the work items in the queue."""
         tasks = set()
         while self.available_capacity > 0 and self.queue.qsize() > 0:
-            next = await self.dequeue()
+            next: Action = await self.dequeue()
             next.status = ActionStatus.PROCESSING
             task = asyncio.create_task(next.invoke())
             tasks.add(task)

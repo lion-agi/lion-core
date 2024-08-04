@@ -17,7 +17,7 @@ limitations under the License.
 from typing import Any
 from pydantic import Field
 from lion_core.abc import AbstractSpace
-from lion_core.communication import System
+from lion_core.communication.system import System
 from lion_core.graph.node import Node
 from lion_core.imodel.imodel import iModel
 

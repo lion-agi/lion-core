@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from __future__ import annotations
-
 from functools import singledispatchmethod
 from collections.abc import Mapping
 import contextlib
@@ -229,11 +227,11 @@ class Note(BaseModel, Container):
     def _(self, items: Element, indices: list[str | int] = None, /):
         return self.update(items.to_dict(), indices)
 
-    def _update_with_note(self, items: Note, indices: list[str | int] = None, /):
+    def _update_with_note(self, items: "Note", indices: list[str | int] = None, /):
         return self.update(items.content, indices)
 
     @classmethod
-    def from_dict(cls, **kwargs) -> Note:
+    def from_dict(cls, **kwargs) -> "Note":
         """
         Create a Note from a dictionary.
 
