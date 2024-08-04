@@ -7,12 +7,11 @@ from lion_core.sys_utils import SysUtil
 from lion_core.generic.pile import pile, Pile
 from lion_core.generic.exchange import Exchange
 from lion_core.generic.utils import to_list_type
-
 from lion_core.communication.mail import Mail, Package
 
 
 class MailManager(BaseManager):
-    """Manages mail operations for multiple sources in the Lion framework"""
+    """Manages mail operations for multiple sources in the Lion framework."""
 
     def __init__(self, sources: list[Any] = None):
         self.sources: Pile = pile()
@@ -34,7 +33,11 @@ class MailManager(BaseManager):
 
     @staticmethod
     def create_mail(
-        sender: str, recipient: str, category: str, package: Any, request_source=None
+        sender: str,
+        recipient: str,
+        category: str,
+        package: Any,
+        request_source=None
     ) -> Mail:
         """
         Create a new Mail object.
@@ -50,7 +53,9 @@ class MailManager(BaseManager):
             A new Mail object.
         """
         pack = Package(
-            category=category, package=package, request_source=request_source
+            category=category,
+            package=package,
+            request_source=request_source
         )
         mail = Mail(
             sender=sender,
@@ -87,7 +92,9 @@ class MailManager(BaseManager):
             mail_id = mailbox.pending_outs.popleft()
             mail: Mail = mailbox.pile.pop(mail_id)
             if mail.recipient not in self.sources:
-                raise ValueError(f"Recipient source {mail.recipient} does not exist")
+                raise ValueError(
+                    f"Recipient source {mail.recipient} does not exist"
+                )
             if mail.sender not in self.mails[mail.recipient]:
                 self.mails[mail.recipient].update({mail.sender: deque()})
             self.mails[mail.recipient][mail.sender].append(mail)
