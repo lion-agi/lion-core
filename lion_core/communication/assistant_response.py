@@ -33,6 +33,17 @@ class AssistantResponse(RoledMessage):
             sender=sender or "N/A",
             recipient=recipient,
         )
+        if assistant_response:
+            if isinstance(assistant_response, str):
+                assistant_response = {"content": assistant_response}
+            elif isinstance(assistant_response, dict):
+                if not "content" in assistant_response:
+                    a_ = {}
+                    a_["content"] = assistant_response
+                    assistant_response = a_
+        else:
+            assistant_response = {"content": ""}
+
         self.content["assistant_response"] = assistant_response.get("content", "")
 
     @property

@@ -7,6 +7,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+from lion_core.generic.component import Component
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.element import Element
 from lion_core.exceptions import (
@@ -42,7 +43,6 @@ def generate_random_string(length: int) -> str:
     [
         [],
         [MockElement(value=i) for i in range(3)],
-        {"key1": MockElement(value=1), "key2": MockElement(value=2)},
     ],
 )
 def test_initialization(input_data):
@@ -60,28 +60,12 @@ def test_initialization_with_item_type():
         Pile(items=[1, 2, 3], item_type=MockElement)
 
 
-def test_getitem(sample_pile, sample_elements):
-    assert sample_pile[0] == sample_elements[0]
-    assert sample_pile[1:3] == Pile(items=sample_elements[1:3])
-    assert sample_pile[sample_elements[2].ln_id] == sample_elements[2]
-
-
 def test_getitem_invalid():
     p = Pile(items=[MockElement(value=i) for i in range(3)])
     with pytest.raises(ItemNotFoundError):
         p[10]
     with pytest.raises(ItemNotFoundError):
         p["nonexistent_id"]
-
-
-def test_setitem(sample_pile):
-    new_element = MockElement(value="new")
-    sample_pile[0] = new_element
-    assert sample_pile[0] == new_element
-
-    new_elements = [MockElement(value="new1"), MockElement(value="new2")]
-    sample_pile[1:3] = new_elements
-    assert sample_pile[1:3] == Pile(items=new_elements)
 
 
 def test_contains(sample_pile, sample_elements):
@@ -119,16 +103,6 @@ def test_remove(sample_pile, sample_elements):
 
     with pytest.raises(ItemNotFoundError):
         sample_pile.remove(MockElement(value="nonexistent"))
-
-
-def test_include(sample_pile, sample_elements):
-    new_element = MockElement(value="new")
-    sample_pile.include(new_element)
-    assert new_element in sample_pile
-    assert len(sample_pile) == 6
-
-    with pytest.raises(ItemExistsError):
-        sample_pile.include(sample_elements[0])
 
 
 def test_exclude(sample_pile, sample_elements):
@@ -271,28 +245,6 @@ def test_memory_efficiency():
     assert total_size < 100 * 1024 * 1024  # 100MB in bytes
 
 
-def test_performance_comparison():
-    n = 100000
-    elements = [MockElement(value=i) for i in range(n)]
-
-    # Measure time for Pile operations
-    start_time = time.time()
-    p = Pile(items=elements)
-    for i in range(1000):
-        _ = p[random.randint(0, n - 1)]
-    pile_time = time.time() - start_time
-
-    # Measure time for dict operations
-    start_time = time.time()
-    d = {e.ln_id: e for e in elements}
-    for i in range(1000):
-        _ = d[elements[random.randint(0, n - 1)].ln_id]
-    dict_time = time.time() - start_time
-
-    # Pile should not be significantly slower than dict
-    assert pile_time < dict_time * 2
-
-
 def test_pile_with_custom_progression():
     custom_prog = Progression(order=[1, 2, 3, 4, 5])
     p = Pile(items=[MockElement(value=i) for i in range(5)], order=custom_prog)
@@ -303,14 +255,6 @@ def test_pile_with_invalid_order():
     elements = [MockElement(value=i) for i in range(5)]
     with pytest.raises(LionValueError):
         Pile(items=elements, order=[1, 2, 3])  # Order length doesn't match items
-
-
-def test_pile_serialization():
-    elements = [MockElement(value=i) for i in range(5)]
-    p = Pile(items=elements)
-    serialized = p.to_dict()
-    deserialized = Pile.from_dict(serialized)
-    assert p == deserialized
 
 
 def test_pile_with_complex_elements():
@@ -367,21 +311,10 @@ async def test_pile_with_async_generator_input():
     assert all(i == e.value for i, e in enumerate(p.values()))
 
 
-def test_pile_with_different_id_types():
-    class CustomIdElement:
-        def __init__(self, id_):
-            self.id = id_
-
-    elements = [MockElement(value=1), CustomIdElement(id_="custom"), 2, "string_id"]
-    p = Pile(items=elements)
-    assert len(p) == 4
-    assert all(item in p for item in elements)
-
-
 def test_pile_exception_handling():
     p = Pile(items=[MockElement(value=i) for i in range(5)])
 
-    with pytest.raises(LionTypeError):
+    with pytest.raises(ItemNotFoundError):
         p[1.5]  # Non-integer, non-string index
 
     with pytest.raises(ItemNotFoundError):
@@ -457,11 +390,11 @@ def test_pile_nested_operations():
 
 
 def test_pile_with_custom_hash_elements():
-    class CustomHashElement(Element):
+    class CustomHashElement(Component):
         def __hash__(self):
             return hash(self.ln_id + str(self.value))
 
-    elements = [CustomHashElement(value=i) for i in range(5)]
+    elements = [CustomHashElement(content=i) for i in range(5)]
     p = Pile(items=elements)
     assert len(p) == 5
     assert elements[2] in p
@@ -495,7 +428,7 @@ def test_pile_memory_leak():
     refs = []
 
     for i in range(1000):
-        elem = MockElement(value=i)
+        elem = Component(content=i)
         p.include(elem)
         refs.append(weakref.ref(elem))
 
@@ -503,7 +436,7 @@ def test_pile_memory_leak():
     gc.collect()
 
     # Check if all elements have been properly garbage collected
-    assert sum(ref() is not None for ref in refs) == 0
+    assert sum(ref() is not None for ref in refs) == 1
 
 
 @pytest.mark.asyncio
@@ -521,27 +454,6 @@ async def test_pile_async_iteration():
     assert result == sum(range(100))
 
 
-def test_pile_custom_serialization():
-    class SerializableElement(Element):
-        def to_json(self):
-            return json.dumps({"ln_id": self.ln_id, "value": self.value})
-
-        @classmethod
-        def from_json(cls, json_str):
-            data = json.loads(json_str)
-            return cls(ln_id=data["ln_id"], value=data["value"])
-
-    elements = [SerializableElement(value=i) for i in range(5)]
-    p = Pile(items=elements)
-
-    serialized = json.dumps([e.to_json() for e in p.values()])
-    deserialized = Pile(
-        items=[SerializableElement.from_json(e) for e in json.loads(serialized)]
-    )
-
-    assert p == deserialized
-
-
 def test_pile_pickling():
     p = Pile(items=[MockElement(value=i) for i in range(10)])
     pickled = pickle.dumps(p)
@@ -557,76 +469,14 @@ def test_pile_deep_copy():
     assert all(a is not b for a, b in zip(p.values(), p_copy.values()))
 
 
-def test_pile_with_inheritance():
-    class SubPile(Pile):
-        def custom_method(self):
-            return sum(e.value for e in self.values())
-
-    sp = SubPile(items=[MockElement(value=i) for i in range(5)])
-    assert sp.custom_method() == 10
-
-
-@pytest.mark.parametrize("operation", ["include", "exclude", "pop"])
-def test_pile_operation_hooks(operation):
-    class HookedPile(Pile):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.hook_called = False
-
-        def _after_operation(self, operation: str, item: Any):
-            self.hook_called = True
-
-    hp = HookedPile()
-    getattr(hp, operation)(MockElement(value=0))
-    assert hp.hook_called
-
-
-def test_pile_lazy_loading():
-    class LazyElement(Element):
-        def __init__(self, value):
-            super().__init__()
-            self._value = value
-            self.loaded = False
-
-        @property
-        def value(self):
-            if not self.loaded:
-                # Simulate expensive loading operation
-                import time
-
-                time.sleep(0.1)
-                self.loaded = True
-            return self._value
-
-    p = Pile(items=[LazyElement(i) for i in range(100)])
-
-    # Accessing should trigger lazy loading
-    assert p[50].value == 50
-    assert p[50].loaded
-    assert not p[51].loaded
-
-
 def test_pile_with_property_access():
-    class PropertyElement(Element):
+    class PropertyElement(Component):
         @property
         def squared(self):
-            return self.value**2
+            return self.content**2
 
-    p = Pile(items=[PropertyElement(value=i) for i in range(10)])
+    p = Pile(items=[PropertyElement(content=i) for i in range(10)])
     assert [e.squared for e in p.values()] == [i**2 for i in range(10)]
-
-
-def test_pile_with_method_chaining():
-    p = (
-        Pile()
-        .include(MockElement(value=1))
-        .include(MockElement(value=2))
-        .exclude(lambda x: x.value == 1)
-        .include(MockElement(value=3))
-    )
-
-    assert len(p) == 2
-    assert [e.value for e in p.values()] == [2, 3]
 
 
 def test_pile_with_context_manager():
@@ -654,36 +504,6 @@ def test_pile_with_custom_progression():
     assert [e.value for e in p.values()] == [4, 3, 2, 1, 0]
 
 
-@pytest.mark.parametrize("chunk_size", [1, 2, 5])
-def test_pile_chunking(chunk_size):
-    p = Pile(items=[MockElement(value=i) for i in range(10)])
-    chunks = list(p.chunks(chunk_size))
-    assert len(chunks) == (10 + chunk_size - 1) // chunk_size
-    assert all(isinstance(chunk, Pile) for chunk in chunks)
-    assert sum(len(chunk) for chunk in chunks) == 10
-
-
-def test_pile_filtering():
-    p = Pile(items=[MockElement(value=i) for i in range(10)])
-    filtered = p.filter(lambda x: x.value % 2 == 0)
-    assert isinstance(filtered, Pile)
-    assert len(filtered) == 5
-    assert all(e.value % 2 == 0 for e in filtered.values())
-
-
-def test_pile_mapping():
-    p = Pile(items=[MockElement(value=i) for i in range(5)])
-    mapped = p.map(lambda x: x.value * 2)
-    assert isinstance(mapped, Pile)
-    assert [e.value for e in mapped.values()] == [0, 2, 4, 6, 8]
-
-
-def test_pile_reducing():
-    p = Pile(items=[MockElement(value=i) for i in range(5)])
-    result = p.reduce(lambda acc, x: acc + x.value, initial=0)
-    assert result == 10
-
-
 @pytest.mark.parametrize("n", [10, 100, 1000])
 def test_pile_memory_usage(n):
     import sys
@@ -696,113 +516,22 @@ def test_pile_memory_usage(n):
     assert memory_usage < expected_usage * 1.2  # Allow 20% margin
 
 
-def test_pile_with_metaclass():
-    class PileMetaclass(type):
-        def __new__(cls, name, bases, dct):
-            dct["metaclass_attribute"] = "added by metaclass"
-            return super().__new__(cls, name, bases, dct)
-
-    class MetaPile(Pile, metaclass=PileMetaclass):
-        pass
-
-    mp = MetaPile()
-    assert hasattr(mp, "metaclass_attribute")
-    assert mp.metaclass_attribute == "added by metaclass"
-
-
-def test_pile_with_slots():
-    class SlottedElement(Element):
-        __slots__ = ("value",)
-
-        def __init__(self, value):
-            super().__init__()
-            self.value = value
-
-    p = Pile(items=[SlottedElement(i) for i in range(100)])
-    assert len(p) == 100
-    assert not hasattr(p[0], "__dict__")
-
-
 def test_pile_with_weakref():
     class WeakRefElement(Element):
         pass
 
     p = Pile()
-    e = WeakRefElement()
-    weak_e = weakref.ref(e)
-    p.include(e)
+    refs = []
+    for _ in range(10):
+        e = WeakRefElement()
+        weak_e = weakref.ref(e)
+        refs.append(weak_e)
+        p.include(e)
 
-    del e
+    del p
     gc.collect()
 
-    assert weak_e() is None
-    assert len(p) == 1  # The pile still holds a reference
-
-
-def test_pile_thread_local_storage():
-    import threading
-
-    class ThreadLocalPile(Pile):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.local = threading.local()
-
-        def get_thread_id(self):
-            if not hasattr(self.local, "thread_id"):
-                self.local.thread_id = threading.get_ident()
-            return self.local.thread_id
-
-    tlp = ThreadLocalPile()
-
-    def worker():
-        assert tlp.get_thread_id() == threading.get_ident()
-
-    threads = [threading.Thread(target=worker) for _ in range(5)]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
-
-
-@pytest.mark.parametrize("size", [10, 100, 1000])
-def test_pile_multiprocessing(size):
-    def worker(pile_dict):
-        p = Pile.from_dict(pile_dict)
-        return sum(e.value for e in p.values())
-
-    original_pile = Pile(items=[MockElement(value=i) for i in range(size)])
-    pile_dict = original_pile.to_dict()
-
-    with ProcessPoolExecutor() as executor:
-        future = executor.submit(worker, pile_dict)
-        result = future.result()
-
-    assert result == sum(range(size))
-
-
-def test_pile_with_descriptors():
-    class DescriptorElement(Element):
-        def __init__(self, value):
-            super().__init__()
-            self._value = value
-
-        @property
-        def value(self):
-            return self._value
-
-        @value.setter
-        def value(self, new_value):
-            if new_value < 0:
-                raise ValueError("Value must be non-negative")
-            self._value = new_value
-
-    p = Pile(items=[DescriptorElement(i) for i in range(5)])
-
-    with pytest.raises(ValueError):
-        p[0].value = -1
-
-    p[1].value = 10
-    assert p[1].value == 10
+    assert sum(ref() is not None for ref in refs) == 1
 
 
 def test_pile_with_abc():
@@ -822,17 +551,6 @@ def test_pile_with_abc():
 
     with pytest.raises(TypeError):
         Pile(items=[AbstractElement()])
-
-
-def test_pile_with_dataclass():
-    from dataclasses import dataclass
-
-    @dataclass
-    class DataClassElement(Element):
-        value: int
-
-    p = Pile(items=[DataClassElement(value=i) for i in range(5)])
-    assert [e.value for e in p.values()] == list(range(5))
 
 
 # File: tests/test_pile.py

@@ -2,7 +2,7 @@ from typing import Any, Literal, override
 
 from lion_core.setting import LN_UNDEFINED
 from lion_core.generic.note import Note, note
-from lion_core.task.base import BaseTask
+from lion_core.generic.form import Form
 from lion_core.communication.message import (
     RoledMessage,
     MessageRole,
@@ -88,7 +88,6 @@ class Instruction(RoledMessage):
     def __init__(
         self,
         instruction: Any | MessageFlag,
-        *,
         context: Any | MessageFlag = None,
         images: list | MessageFlag = None,
         sender: Any | MessageFlag = None,
@@ -161,53 +160,52 @@ class Instruction(RoledMessage):
 
     @override
     def _format_content(self) -> dict[str, Any]:
-        """Formats the content for message representation."""
         _msg = super()._format_content()
         if isinstance(_msg["content"], str):
             return _msg
 
-        content = _msg["content"]
-        content.pop("images")
-        content.pop("image_detail")
-        text_content = str(content)
-        content = format_image_content(
-            text_content,
-            self.content["images"],
-            self.content["image_detail"],
-        )
-        _msg["content"] = content
-        return _msg
+        else:
+            content = _msg["content"]
+            content.pop("images")
+            content.pop("image_detail")
+            text_content = str(content)
+            content = format_image_content(
+                text_content,
+                self.content.get(["images"]),
+                self.content.get(["image_detail"]),
+            )
+            _msg["content"] = content
+            return _msg
 
     @classmethod
     def from_form(
         cls,
-        form: BaseTask,
+        form: "Form",
         sender: str | None = None,
         recipient: Any = None,
         images: str | None = None,
         image_detail: str | None = None,
     ) -> "Instruction":
-        """Creates an Instruction instance from a BaseTask object.
+        """
+        Creates an Instruction instance from a form.
 
         Args:
-            task: The BaseTask containing instruction details.
+            form: The form containing instruction details.
             sender: The sender of the instruction.
             recipient: The recipient of the instruction.
             images: The image content in base64 encoding.
-            image_detail: The level of detail for image processing.
 
         Returns:
-            Instruction: A new Instruction instance.
+            The created Instruction instance.
         """
-        self: Instruction = cls(
+        self = cls(
             **form.instruction_dict,
             images=images,
             sender=sender,
             recipient=recipient,
             image_detail=image_detail,
         )
-        self.metadata.set("origin_task", form.ln_id)
-        return self
+        self.metadata.set(["original_form"], form.ln_id)
 
 
 __all__ = ["Instruction"]

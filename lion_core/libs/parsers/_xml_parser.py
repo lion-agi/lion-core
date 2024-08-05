@@ -37,7 +37,10 @@ def xml_to_dict(xml_string: str) -> dict[str, Any]:
     Raises:
         ValueError: If the XML is malformed or parsing fails.
     """
-    return XMLParser(xml_string).parse()
+    a = XMLParser(xml_string).parse()
+    if "root" in a:
+        return a["root"]
+    return a
 
 
 class XMLParser:

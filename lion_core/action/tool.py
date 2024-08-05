@@ -4,7 +4,7 @@ import json
 from typing import Any, Callable, Literal, override
 from datetime import datetime
 
-from pydantic import Field, field_serializer
+from pydantic import Field, field_serializer, field_validator
 
 from lion_core.generic.element import Element
 from lion_core.libs import function_to_schema, to_list
@@ -70,6 +70,14 @@ class Tool(Element):
         super().__init__(**data)
         if self.schema_ is None:
             self.schema_ = function_to_schema(self.function)
+
+    @field_validator("function")
+    def _validate_function(cls, v: Any) -> Callable[..., Any]:
+        if not callable(v):
+            raise ValueError("Function must be callable.")
+        if not hasattr(v, "__name__"):
+            raise ValueError("Function must have a name.")
+        return v
 
     @field_serializer(
         "function",
@@ -143,9 +151,6 @@ def func_to_tool(
 
     Returns:
         A list of Tool objects created from the provided function(s).
-
-    Raises:
-        ValueError: If the length of parsers doesn't match the functions.
     """
     funcs = to_list(func_)
     parsers = to_list(parser)

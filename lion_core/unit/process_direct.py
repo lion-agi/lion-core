@@ -119,7 +119,7 @@ async def process_direct(
     Returns:
         The processed form, optionally with the branch.
     """
-    branch, form = create_unit_form(
+    branch, report = create_unit_form(
         branch=branch,
         form=form,
         instruction=instruction,
@@ -149,7 +149,9 @@ async def process_direct(
     if verbose_direct:
         print("Chatting with model...")
 
-    form = await process_chat(
+    task1 = report.new_task(task1)
+
+    form1 = await process_chat(
         branch=branch, form=form, images=images, image_path=image_path, **kwargs
     )
 
@@ -246,6 +248,10 @@ async def process_direct(
 
         for action_response in action_responses:
             nmerge([form.action_response, action_response])
+
+    report = ...
+    report["final_form"] = ...
+    report["all_tasks"] = Pile()
 
     form = await prepare_output(form, verbose_direct)
 
