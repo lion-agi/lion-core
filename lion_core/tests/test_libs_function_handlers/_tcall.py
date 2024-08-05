@@ -1,4 +1,4 @@
-import unittest
+import pytest
 import asyncio
 from unittest.mock import patch, AsyncMock
 
@@ -31,61 +31,134 @@ async def mock_handler(e: Exception) -> str:
     return f"handled: {str(e)}"
 
 
-class TestTCallFunction(unittest.IsolatedAsyncioTestCase):
+async def async_func_with_kwargs(x: int, add: int) -> int:
+    await asyncio.sleep(0.1)
+    return x + add
 
-    async def test_tcall_async_func(self):
-        result = await tcall(async_func, 1)
-        self.assertEqual(result, 2)
 
-    async def test_tcall_sync_func(self):
-        result = await tcall(sync_func, 1)
-        self.assertEqual(result, 2)
+@pytest.mark.asyncio
+async def test_tcall_async_func():
+    result = await tcall(async_func, 1)
+    assert result == 2
 
-    async def test_tcall_async_func_with_timing(self):
-        result, duration = await tcall(async_func, 1, timing=True)
-        self.assertEqual(result, 2)
-        self.assertTrue(duration > 0)
 
-    async def test_tcall_sync_func_with_timing(self):
-        result, duration = await tcall(sync_func, 1, timing=True)
-        self.assertEqual(result, 2)
-        self.assertTrue(duration > 0)
+@pytest.mark.asyncio
+async def test_tcall_sync_func():
+    result = await tcall(sync_func, 1)
+    assert result == 2
 
-    async def test_tcall_async_func_with_error(self):
-        with self.assertRaises(RuntimeError):
-            await tcall(async_func_with_error, 3)
 
-    async def test_tcall_sync_func_with_error(self):
-        with self.assertRaises(RuntimeError):
-            await tcall(sync_func_with_error, 3)
+@pytest.mark.asyncio
+async def test_tcall_async_func_with_timing():
+    result, duration = await tcall(async_func, 1, timing=True)
+    assert result == 2
+    assert duration > 0
 
-    async def test_tcall_with_error_handling(self):
-        error_map = {ValueError: mock_handler}
-        result = await tcall(async_func_with_error, 3, error_map=error_map)
-        self.assertEqual(result, None)  # Custom error handling does not change result
 
-    async def test_tcall_with_initial_delay(self):
-        with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-            result = await tcall(async_func, 1, initial_delay=0.5)
-            mock_sleep.assert_any_call(0.5)
-            self.assertEqual(result, 2)
+@pytest.mark.asyncio
+async def test_tcall_sync_func_with_timing():
+    result, duration = await tcall(sync_func, 1, timing=True)
+    assert result == 2
+    assert duration > 0
 
-    async def test_tcall_with_timeout(self):
-        with self.assertRaises(asyncio.TimeoutError):
-            await tcall(async_func, 1, timeout=0.05)
 
-    async def test_tcall_with_suppress_err(self):
-        result = await tcall(async_func_with_error, 3, suppress_err=True, default=0)
-        self.assertEqual(result, 0)
+@pytest.mark.asyncio
+async def test_tcall_async_func_with_error():
+    with pytest.raises(RuntimeError):
+        await tcall(async_func_with_error, 3)
 
-    async def test_tcall_with_kwargs(self):
-        async def async_func_with_kwargs(x: int, add: int) -> int:
+
+@pytest.mark.asyncio
+async def test_tcall_sync_func_with_error():
+    with pytest.raises(RuntimeError):
+        await tcall(sync_func_with_error, 3)
+
+
+@pytest.mark.asyncio
+async def test_tcall_with_error_handling():
+    error_map = {ValueError: mock_handler}
+    result = await tcall(async_func_with_error, 3, error_map=error_map)
+    assert result is None  # Custom error handling does not change result
+
+
+@pytest.mark.asyncio
+async def test_tcall_with_initial_delay():
+    with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        result = await tcall(async_func, 1, initial_delay=0.5)
+        mock_sleep.assert_any_call(0.5)
+        assert result == 2
+
+
+@pytest.mark.asyncio
+async def test_tcall_with_timeout():
+    with pytest.raises(asyncio.TimeoutError):
+        await tcall(async_func, 1, timeout=0.05)
+
+
+@pytest.mark.asyncio
+async def test_tcall_with_suppress_err():
+    result = await tcall(async_func_with_error, 3, suppress_err=True, default=0)
+    assert result == 0
+
+
+@pytest.mark.asyncio
+async def test_tcall_with_kwargs():
+    result = await tcall(async_func_with_kwargs, 1, add=2)
+    assert result == 3
+
+from types import AsyncGenerator
+
+@pytest.mark.asyncio
+async def test_tcall_with_generator():
+    async def async_generator():
+        for i in range(3):
+            yield i
+
+    result = await tcall(async_generator)
+    assert isinstance(result, AsyncGenerator)
+
+
+@pytest.mark.asyncio
+async def test_tcall_with_class_method():
+    class TestClass:
+        async def async_method(self, x):
             await asyncio.sleep(0.1)
-            return x + add
+            return x * 2
 
-        result = await tcall(async_func_with_kwargs, 1, add=2)
-        self.assertEqual(result, 3)
+    obj = TestClass()
+    result = await tcall(obj.async_method, 5)
+    assert result == 10
 
 
-if __name__ == "__main__":
-    unittest.main()
+@pytest.mark.asyncio
+async def test_tcall_with_lambda():
+    result = await tcall(lambda x: x * 3, 4)
+    assert result == 12
+
+
+@pytest.mark.asyncio
+async def test_tcall_with_recursive_function():
+    async def async_factorial(n):
+        if n == 0:
+            return 1
+        return n * await tcall(async_factorial, n - 1)
+
+    result = await tcall(async_factorial, 5)
+    assert result == 120
+
+
+@pytest.mark.asyncio
+async def test_tcall_performance():
+    async def slow_function():
+        await asyncio.sleep(0.5)
+        return "Done"
+
+    import time
+
+    start = time.time()
+    await tcall(slow_function)
+    duration = time.time() - start
+    assert 0.5 <= duration < 0.6
+
+
+# File: tests/test_tcall.py

@@ -206,6 +206,9 @@ def test_frozenset():
     ]
 
 
+import json
+
+
 def test_bytes_with_non_utf8():
     assert to_str(b"\xff\xfe") == "��"
 

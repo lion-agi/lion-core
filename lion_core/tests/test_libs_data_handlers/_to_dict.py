@@ -268,6 +268,9 @@ def test_large_nested_structure(benchmark):
     assert result["level1"]["level2"]["level3"]["level4"] is not None
 
 
+import json
+
+
 def test_custom_json_encoder():
     class CustomEncoder(json.JSONEncoder):
         def default(self, obj):
