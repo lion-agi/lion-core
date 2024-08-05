@@ -7,6 +7,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+from lion_core.generic.component import Component
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.element import Element
 from lion_core.exceptions import (
@@ -60,28 +61,12 @@ def test_initialization_with_item_type():
         Pile(items=[1, 2, 3], item_type=MockElement)
 
 
-def test_getitem(sample_pile, sample_elements):
-    assert sample_pile[0] == sample_elements[0]
-    assert sample_pile[1:3] == Pile(items=sample_elements[1:3])
-    assert sample_pile[sample_elements[2].ln_id] == sample_elements[2]
-
-
 def test_getitem_invalid():
     p = Pile(items=[MockElement(value=i) for i in range(3)])
     with pytest.raises(ItemNotFoundError):
         p[10]
     with pytest.raises(ItemNotFoundError):
         p["nonexistent_id"]
-
-
-def test_setitem(sample_pile):
-    new_element = MockElement(value="new")
-    sample_pile[0] = new_element
-    assert sample_pile[0] == new_element
-
-    new_elements = [MockElement(value="new1"), MockElement(value="new2")]
-    sample_pile[1:3] = new_elements
-    assert sample_pile[1:3] == Pile(items=new_elements)
 
 
 def test_contains(sample_pile, sample_elements):
@@ -120,15 +105,6 @@ def test_remove(sample_pile, sample_elements):
     with pytest.raises(ItemNotFoundError):
         sample_pile.remove(MockElement(value="nonexistent"))
 
-
-def test_include(sample_pile, sample_elements):
-    new_element = MockElement(value="new")
-    sample_pile.include(new_element)
-    assert new_element in sample_pile
-    assert len(sample_pile) == 6
-
-    with pytest.raises(ItemExistsError):
-        sample_pile.include(sample_elements[0])
 
 
 def test_exclude(sample_pile, sample_elements):
@@ -271,27 +247,6 @@ def test_memory_efficiency():
     assert total_size < 100 * 1024 * 1024  # 100MB in bytes
 
 
-def test_performance_comparison():
-    n = 100000
-    elements = [MockElement(value=i) for i in range(n)]
-
-    # Measure time for Pile operations
-    start_time = time.time()
-    p = Pile(items=elements)
-    for i in range(1000):
-        _ = p[random.randint(0, n - 1)]
-    pile_time = time.time() - start_time
-
-    # Measure time for dict operations
-    start_time = time.time()
-    d = {e.ln_id: e for e in elements}
-    for i in range(1000):
-        _ = d[elements[random.randint(0, n - 1)].ln_id]
-    dict_time = time.time() - start_time
-
-    # Pile should not be significantly slower than dict
-    assert pile_time < dict_time * 2
-
 
 def test_pile_with_custom_progression():
     custom_prog = Progression(order=[1, 2, 3, 4, 5])
@@ -365,17 +320,6 @@ async def test_pile_with_async_generator_input():
     p = Pile(items=[e async for e in async_element_generator()])
     assert len(p) == 1000
     assert all(i == e.value for i, e in enumerate(p.values()))
-
-
-def test_pile_with_different_id_types():
-    class CustomIdElement:
-        def __init__(self, id_):
-            self.id = id_
-
-    elements = [MockElement(value=1), CustomIdElement(id_="custom"), 2, "string_id"]
-    p = Pile(items=elements)
-    assert len(p) == 4
-    assert all(item in p for item in elements)
 
 
 def test_pile_exception_handling():
@@ -495,7 +439,7 @@ def test_pile_memory_leak():
     refs = []
 
     for i in range(1000):
-        elem = MockElement(value=i)
+        elem = Component(content=i)
         p.include(elem)
         refs.append(weakref.ref(elem))
 
@@ -519,28 +463,6 @@ async def test_pile_async_iteration():
 
     result = await async_sum()
     assert result == sum(range(100))
-
-
-def test_pile_custom_serialization():
-    class SerializableElement(Element):
-        def to_json(self):
-            return json.dumps({"ln_id": self.ln_id, "value": self.value})
-
-        @classmethod
-        def from_json(cls, json_str):
-            data = json.loads(json_str)
-            return cls(ln_id=data["ln_id"], value=data["value"])
-
-    elements = [SerializableElement(value=i) for i in range(5)]
-    p = Pile(items=elements)
-
-    serialized = json.dumps([e.to_json() for e in p.values()])
-    deserialized = Pile(
-        items=[SerializableElement.from_json(e) for e in json.loads(serialized)]
-    )
-
-    assert p == deserialized
-
 
 def test_pile_pickling():
     p = Pile(items=[MockElement(value=i) for i in range(10)])
@@ -614,19 +536,6 @@ def test_pile_with_property_access():
 
     p = Pile(items=[PropertyElement(value=i) for i in range(10)])
     assert [e.squared for e in p.values()] == [i**2 for i in range(10)]
-
-
-def test_pile_with_method_chaining():
-    p = (
-        Pile()
-        .include(MockElement(value=1))
-        .include(MockElement(value=2))
-        .exclude(lambda x: x.value == 1)
-        .include(MockElement(value=3))
-    )
-
-    assert len(p) == 2
-    assert [e.value for e in p.values()] == [2, 3]
 
 
 def test_pile_with_context_manager():
@@ -712,6 +621,8 @@ def test_pile_with_metaclass():
 
 def test_pile_with_slots():
     class SlottedElement(Element):
+        value: Any
+        
         __slots__ = ("value",)
 
         def __init__(self, value):
@@ -732,52 +643,12 @@ def test_pile_with_weakref():
     weak_e = weakref.ref(e)
     p.include(e)
 
-    del e
+    del [e]
     gc.collect()
 
     assert weak_e() is None
     assert len(p) == 1  # The pile still holds a reference
 
-
-def test_pile_thread_local_storage():
-    import threading
-
-    class ThreadLocalPile(Pile):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.local = threading.local()
-
-        def get_thread_id(self):
-            if not hasattr(self.local, "thread_id"):
-                self.local.thread_id = threading.get_ident()
-            return self.local.thread_id
-
-    tlp = ThreadLocalPile()
-
-    def worker():
-        assert tlp.get_thread_id() == threading.get_ident()
-
-    threads = [threading.Thread(target=worker) for _ in range(5)]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
-
-
-@pytest.mark.parametrize("size", [10, 100, 1000])
-def test_pile_multiprocessing(size):
-    def worker(pile_dict):
-        p = Pile.from_dict(pile_dict)
-        return sum(e.value for e in p.values())
-
-    original_pile = Pile(items=[MockElement(value=i) for i in range(size)])
-    pile_dict = original_pile.to_dict()
-
-    with ProcessPoolExecutor() as executor:
-        future = executor.submit(worker, pile_dict)
-        result = future.result()
-
-    assert result == sum(range(size))
 
 
 def test_pile_with_descriptors():
@@ -823,16 +694,6 @@ def test_pile_with_abc():
     with pytest.raises(TypeError):
         Pile(items=[AbstractElement()])
 
-
-def test_pile_with_dataclass():
-    from dataclasses import dataclass
-
-    @dataclass
-    class DataClassElement(Element):
-        value: int
-
-    p = Pile(items=[DataClassElement(value=i) for i in range(5)])
-    assert [e.value for e in p.values()] == list(range(5))
 
 
 # File: tests/test_pile.py

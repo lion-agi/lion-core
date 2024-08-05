@@ -138,7 +138,7 @@ class Progression(Element, Ordering):
             if not a:
                 raise ItemNotFoundError(f"index {key} item not found")
             if isinstance(key, slice):
-                return Progression(order=a)
+                return self.__class__(order=a)
             else:
                 return a
         except IndexError:
@@ -282,7 +282,7 @@ class Progression(Element, Ordering):
         Returns:
             Iterator[str]: An iterator over the reversed Lion IDs in the progression.
         """
-        return prog(reversed(self.order), name=self.name)
+        return self.__class__(reversed(self.order), name=self.name)
 
     @override
     def __eq__(self, other: object) -> bool:
@@ -405,7 +405,7 @@ class Progression(Element, Ordering):
         other = validate_order(other)
         new_order = list(self)
         new_order.extend(other)
-        return Progression(order=new_order)
+        return self.__class__(order=new_order)
 
     def __radd__(self, other: Any) -> "Progression":
         """
@@ -460,7 +460,7 @@ class Progression(Element, Ordering):
         new_order = list(self)
         for i in other:
             new_order.remove(i)
-        return Progression(order=new_order)
+        return self.__class__(order=new_order)
 
     @override
     def __repr__(self) -> str:
@@ -500,6 +500,9 @@ class Progression(Element, Ordering):
         item_ = validate_order(item)
         for i in reversed(item_):
             self.order.insert(index, SysUtil.get_id(i))
+
+    def __hash__(self) -> int:
+        return hash(self.ln_id)
 
 
 def prog(order: Any = None, name: str | None = None) -> Progression:

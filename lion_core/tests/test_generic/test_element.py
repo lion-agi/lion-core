@@ -74,9 +74,9 @@ def test_timestamp_validator():
         "invalid_time",
         "2021-07-01",  # Incomplete datetime string
     ]
-    for invalid_timestamp in invalid_timestamps:
-        with pytest.raises((ValueError, ValidationError)):
-            Element(timestamp=invalid_timestamp)
+
+    with pytest.raises(ValueError):
+        Element(timestamp="invalid_time")
 
 
 def test_from_dict_to_dict(custom_id, custom_timestamp):

@@ -16,14 +16,14 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import Any, Callable, ClassVar, override, Literal
+from typing import Any, Callable, ClassVar, override, Literal, Type
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from lion_core.abc import BaseiModel, Observable
 from lion_core.libs import is_same_dtype
 from lion_core.converter import ConverterRegistry
-from lion_core.generic.pile import pile, Pile
+from lion_core.generic.pile import Pile
 from lion_core.generic.progression import prog, Progression
 from lion_core.generic.exchange import Exchange
 
@@ -60,6 +60,7 @@ class Branch(BaseSession):
     tool_manager: ToolManager | None = Field(None)
     mailbox: Exchange | None = Field(None)
     progress: Progression | None = Field(None)
+    pile_type: Type[Pile] = PrivateAttr(Pile)
 
     _converter_registry: ClassVar = BranchConverterRegistry
 
@@ -102,7 +103,9 @@ class Branch(BaseSession):
             user=user,
             imodel=imodel,
         )
-        self.messages = pile(validate_message(messages), {RoledMessage}, strict=False)
+        self.messages = self.pile_type(
+            validate_message(messages), {RoledMessage}, strict=False
+        )
 
         self.progress = progress or prog(list(self.messages), name=self.name)
 
@@ -344,7 +347,7 @@ class Branch(BaseSession):
         Returns:
             Pile: A Pile containing all assistant responses.
         """
-        return pile(
+        return self.pile_type(
             [
                 self.messages[i]
                 for i in self.progress

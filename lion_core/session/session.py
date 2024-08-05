@@ -258,7 +258,7 @@ class Session(BaseSession):
             if branch.tool_manager.registry
             else None
         )
-        branch_clone = Branch(
+        branch_clone = self.branch_type(
             system=system,
             system_sender=branch.ln_id,
             user=branch.user,
