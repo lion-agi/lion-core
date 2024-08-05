@@ -14,14 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, TypeVar, Type, Iterable, override, Generic
+import asyncio
+from typing import Any, TypeVar, Type, Iterable, override, Generic, AsyncIterator
 
-from pydantic import Field
+from pydantic import Field, field_serializer
 
 from lion_core.abc._characteristic import Observable
 from lion_core.abc._space import Collective
 from lion_core.sys_utils import SysUtil
-from lion_core.generic.element import Element
+from lion_core.generic.component import Element
 from lion_core.exceptions import (
     ItemNotFoundError,
     LionTypeError,
@@ -53,10 +54,12 @@ class Pile(Element, Collective, Generic[T]):
     item_type: set[Type[Observable]] | None = Field(
         default=None,
         description="Set of allowed types for items in the pile.",
+        exclude=True,
     )
     order: Progression = Field(
         default_factory=prog,
         description="Progression specifying the order of items in the pile.",
+        exclude=True,
     )
     strict: bool = Field(
         default=False,
@@ -70,6 +73,7 @@ class Pile(Element, Collective, Generic[T]):
         item_type: set[Type[Observable]] | None = None,
         order: Progression | list | None = None,
         strict: bool = False,
+        **kwargs,
     ):
         """
         Initialize a Pile instance.
@@ -79,10 +83,16 @@ class Pile(Element, Collective, Generic[T]):
             item_type: Allowed types for items in the pile.
             order: Initial order of items (as Progression).
         """
-        super().__init__()
+        _config = {}
+        if "ln_id" in kwargs:
+            _config["ln_id"] = kwargs["ln_id"]
+        if "created" in kwargs:
+            _config["created"] = kwargs["created"]
+
+        super().__init__(**_config)
         self.strict = strict
         self.item_type = self._validate_item_type(item_type)
-        self.pile_ = self._validate_pile(items)
+        self.pile_ = self._validate_pile(items or kwargs.get("pile_", {}))
         self.order = self._validate_order(order)
 
     def __getitem__(self, key) -> T | "Pile":
@@ -643,6 +653,56 @@ class Pile(Element, Collective, Generic[T]):
     @override
     def __bool__(self) -> bool:
         return not self.is_empty()
+
+    @field_serializer("pile_")
+    def _(self, value):
+        return [i.to_dict() for i in value.values()]
+
+    @classmethod
+    def from_dict(cls, data) -> T:
+        items = data.pop("pile_", [])
+        items = [Element.from_dict(i) for i in items]
+        return cls(items=items, **data)
+
+    def __aiter__(self) -> AsyncIterator[T]:
+        """
+        Return an asynchronous iterator over the items in the pile.
+
+        Returns:
+            AsyncIterator[T]: An asynchronous iterator over the pile's items.
+        """
+        return self.AsyncPileIterator(self)
+
+    async def __anext__(self) -> T:
+        """
+        Return the next item in the pile asynchronously.
+
+        Returns:
+            T: The next item in the pile.
+
+        Raises:
+            StopAsyncIteration: When there are no more items in the pile.
+        """
+        try:
+            return await anext(self.AsyncPileIterator(self))
+        except StopAsyncIteration:
+            raise StopAsyncIteration("End of pile")
+
+    class AsyncPileIterator:
+        def __init__(self, pile: "Pile[T]"):
+            self.pile = pile
+            self.index = 0
+
+        def __aiter__(self) -> AsyncIterator[T]:
+            return self
+
+        async def __anext__(self) -> T:
+            if self.index >= len(self.pile):
+                raise StopAsyncIteration
+            item = self.pile[self.pile.order[self.index]]
+            self.index += 1
+            await asyncio.sleep(0)  # Yield control to the event loop
+            return item
 
 
 def pile(
