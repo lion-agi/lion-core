@@ -29,7 +29,7 @@ class MailManager(BaseManager):
             for item in sources:
                 self.mails[item.ln_id] = {}
         except Exception as e:
-            raise ValueError(f"Failed to add source. Error {e}")
+            raise ValueError(f"Failed to add source.") from e
 
     @staticmethod
     def create_mail(

@@ -43,7 +43,7 @@ class AssistantResponse(RoledMessage):
                     assistant_response = a_
         else:
             assistant_response = {"content": ""}
-        
+
         self.content["assistant_response"] = assistant_response.get("content", "")
 
     @property

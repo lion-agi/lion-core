@@ -285,6 +285,13 @@ def test_instruction_update_context_various_types():
     assert isinstance(instruction.content["context"][2], dict)
 
 
+# Test clone method
+def test_instruction_clone():
+    original = Instruction("Test", context="Original context")
+    cloned = original.clone()
+    assert original.instruct == cloned.instruct
+
+
 # Test for potential memory leaks
 def test_instruction_memory_usage():
     import sys

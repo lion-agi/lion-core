@@ -41,7 +41,6 @@ class System(RoledMessage):
     def __init__(
         self,
         system: Any | MessageFlag = None,
-        *,
         sender: str | None | MessageFlag = None,
         recipient: str | None | MessageFlag = None,
         system_datetime: bool | str | None | MessageFlag = None,

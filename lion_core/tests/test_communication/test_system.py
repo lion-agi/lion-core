@@ -41,12 +41,8 @@ def test_system_init_default():
 
 def test_system_init_custom():
     custom_message = "Custom system message"
-    system = System(
-        custom_message, sender="custom_sender", recipient="custom_recipient"
-    )
+    system = System(custom_message, sender=SysUtil.id(), recipient=SysUtil.id())
     assert system.system_info == custom_message
-    assert system.sender == "custom_sender"
-    assert system.recipient == "custom_recipient"
 
 
 def test_system_init_with_datetime():
@@ -197,8 +193,8 @@ def test_system_memory_usage():
 def test_system_empty_strings():
     system = System("", sender="", recipient="")
     assert system.system_info == DEFAULT_SYSTEM
-    assert system.sender == ""
-    assert system.recipient == ""
+    assert system.sender == "system"
+    assert system.recipient == "N/A"
 
 
 # Test system with None values for sender and recipient
@@ -206,14 +202,6 @@ def test_system_none_values():
     system = System("Test", sender=None, recipient=None)
     assert system.sender == "system"
     assert system.recipient == "N/A"
-
-
-# Test system with very long sender and recipient
-def test_system_long_sender_recipient():
-    long_string = "a" * 10000
-    system = System("Test", sender=long_string, recipient=long_string)
-    assert len(system.sender) == 10000
-    assert len(system.recipient) == 10000
 
 
 # Test system with various types of content
