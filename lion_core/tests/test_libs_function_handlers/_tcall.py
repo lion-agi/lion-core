@@ -1,6 +1,7 @@
 import pytest
 import asyncio
 from unittest.mock import patch, AsyncMock
+from typing import AsyncGenerator
 
 from lion_core.libs.function_handlers._tcall import tcall
 
@@ -106,7 +107,6 @@ async def test_tcall_with_kwargs():
     result = await tcall(async_func_with_kwargs, 1, add=2)
     assert result == 3
 
-from types import AsyncGenerator
 
 @pytest.mark.asyncio
 async def test_tcall_with_generator():

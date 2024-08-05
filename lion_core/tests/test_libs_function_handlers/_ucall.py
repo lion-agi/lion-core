@@ -1,5 +1,6 @@
 import pytest
 import asyncio
+from typing import AsyncGenerator
 from unittest.mock import patch
 
 from lion_core.libs.function_handlers._ucall import ucall
@@ -88,7 +89,6 @@ async def test_ucall_with_kwargs():
     result = await ucall(async_func_with_kwargs, 1, add=2)
     assert result == 3
 
-from typing import AsyncGenerator
 
 @pytest.mark.asyncio
 async def test_ucall_with_generator():
