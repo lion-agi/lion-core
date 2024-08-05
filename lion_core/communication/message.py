@@ -105,6 +105,7 @@ class RoledMessage(Relational, Component, BaseMail):
         init_args = [MessageFlag.MESSAGE_CLONE] * param_num
 
         obj = cls(*init_args)
+        obj.role = self.role
         obj.content = self.content
         obj.metadata.set("clone_from", self)
 

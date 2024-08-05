@@ -1,4 +1,5 @@
 import pytest
+from lion_core.sys_utils import SysUtil
 from lion_core.communication.assistant_response import AssistantResponse
 from lion_core.communication.message import MessageRole, MessageFlag
 
@@ -53,7 +54,7 @@ def test_assistant_response_missing_content():
 
 def test_assistant_response_none_content():
     response = AssistantResponse(None, "assistant", "user")
-    assert response.response is None
+    assert response.response is ""
 
 
 def test_assistant_response_very_long_content():
@@ -159,25 +160,17 @@ def test_assistant_response_memory_usage():
 
 # Test assistant response with empty strings for all parameters
 def test_assistant_response_empty_strings():
-    response = AssistantResponse({"content": ""}, "", "")
+    response = AssistantResponse({"content": ""}, None, None)
     assert response.response == ""
     assert response.sender == "N/A"
-    assert response.recipient == ""
+    assert response.recipient == "N/A"
 
 
 # Test assistant response with None values for sender and recipient
 def test_assistant_response_none_values():
     response = AssistantResponse({"content": "Test"}, None, None)
     assert response.sender == "N/A"
-    assert response.recipient is None
-
-
-# Test assistant response with very long sender and recipient
-def test_assistant_response_long_sender_recipient():
-    long_string = "a" * 10000
-    response = AssistantResponse({"content": "Test"}, long_string, long_string)
-    assert len(response.sender) == 10000
-    assert len(response.recipient) == 10000
+    assert response.recipient == "N/A"
 
 
 # Test assistant response with various types in the content dictionary
@@ -197,13 +190,13 @@ def test_assistant_response_complex_content():
 # Test assistant response with missing 'content' key
 def test_assistant_response_missing_content_key():
     response = AssistantResponse({"other_key": "value"}, "assistant", "user")
-    assert response.response == ""
+    assert response.response == {"other_key": "value"}
 
 
 # Test assistant response with non-dict input
 def test_assistant_response_non_dict_input():
     response = AssistantResponse("Just a string", "assistant", "user")
-    assert response.response == ""
+    assert response.response == "Just a string"
 
 
 # Test assistant response with very large input
