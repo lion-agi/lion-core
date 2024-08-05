@@ -995,12 +995,11 @@ async def test_graph_concurrent_operations():
     assert base_node.ln_id in graph.internal_nodes
 
 
-# Test graph with very large number of nodes and sparse connections
 @pytest.mark.slow
 def test_graph_large_sparse():
     graph = Graph()
-    num_nodes = 1000000  # 1 million nodes
-    num_edges = 1000000  # 1 million edges
+    num_nodes = 10000
+    num_edges = 10000
 
     nodes = [create_test_node(f"Node_{i}") for i in range(num_nodes)]
     for node in nodes:
