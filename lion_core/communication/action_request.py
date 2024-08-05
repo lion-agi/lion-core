@@ -12,6 +12,8 @@ from lion_core.communication.message import (
 def prepare_action_request(func: str | Callable, arguments: dict) -> Note:
     def _prepare_arguments(_arg: Any) -> dict[str, Any]:
         """Prepare and validate the arguments for an action request."""
+        if _arg is None:
+            return {}
         if not isinstance(_arg, dict):
             try:
                 _arg = to_dict(
@@ -24,9 +26,9 @@ def prepare_action_request(func: str | Callable, arguments: dict) -> Note:
             except Exception as e:
                 raise ValueError(f"Invalid arguments: {e}") from e
 
-        if isinstance(arguments, dict):
-            return arguments
-        raise ValueError(f"Invalid arguments: {arguments}")
+        if isinstance(_arg, dict):
+            return _arg
+        raise ValueError(f"Invalid arguments: {_arg}")
 
     arguments = _prepare_arguments(arguments)
     return Note(**{"action_request": {"function": func, "arguments": arguments}})

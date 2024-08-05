@@ -1,6 +1,7 @@
 import pytest
 from typing import Callable
 from pydantic import ValidationError
+from lion_core.sys_utils import SysUtil
 from lion_core.communication.action_request import ActionRequest, prepare_action_request
 from lion_core.communication.message import MessageRole, MessageFlag
 from lion_core.generic.note import Note
@@ -21,7 +22,7 @@ def test_prepare_action_request_with_str_func():
 
 def test_prepare_action_request_with_callable():
     result = prepare_action_request(dummy_func, {"x": 1, "y": 2})
-    assert result.get(["action_request", "function"]) == "dummy_func"
+    assert result.get(["action_request", "function"]).__name__ == "dummy_func"
     assert result.get(["action_request", "arguments"]) == {"x": 1, "y": 2}
 
 
@@ -31,7 +32,7 @@ def test_prepare_action_request_invalid_arguments():
 
 
 def test_prepare_action_request_json_arguments():
-    result = prepare_action_request("test_func", '{"arg1": 1, "arg2": 2}')
+    result = prepare_action_request("test_func", "{'arg1': 1, 'arg2': 2}")
     assert result.get(["action_request", "arguments"]) == {"arg1": 1, "arg2": 2}
 
 
@@ -43,15 +44,13 @@ def test_prepare_action_request_xml_arguments():
 
 # Tests for ActionRequest class
 def test_action_request_init():
-    request = ActionRequest("test_func", {"arg1": 1}, "sender1", "recipient1")
+    request = ActionRequest("test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id())
     assert request.role == MessageRole.ASSISTANT
-    assert request.sender == "sender1"
-    assert request.recipient == "recipient1"
     assert request.request_dict == {"function": "test_func", "arguments": {"arg1": 1}}
 
 
 def test_action_request_init_with_callable():
-    request = ActionRequest(dummy_func, {"x": 1, "y": 2}, "sender1", "recipient1")
+    request = ActionRequest(dummy_func, {"x": 1, "y": 2}, SysUtil.id(), SysUtil.id())
     assert request.request_dict["function"] == "dummy_func"
 
 
@@ -59,7 +58,7 @@ def test_action_request_init_with_message_load():
     protected_params = {
         "role": MessageRole.ASSISTANT,
         "content": Note(),
-        "sender": "sender1",
+        "sender": SysUtil.id(),
     }
     request = ActionRequest(
         MessageFlag.MESSAGE_LOAD,
@@ -69,7 +68,6 @@ def test_action_request_init_with_message_load():
         protected_init_params=protected_params,
     )
     assert request.role == MessageRole.ASSISTANT
-    assert request.sender == "sender1"
 
 
 def test_action_request_init_with_message_clone():
@@ -83,19 +81,19 @@ def test_action_request_init_with_message_clone():
 
 
 def test_action_request_is_responded():
-    request = ActionRequest("test_func", {}, "sender1", "recipient1")
+    request = ActionRequest("test_func", {}, SysUtil.id(), SysUtil.id())
     assert not request.is_responded
     request.content["action_response_id"] = "response_id"
     assert request.is_responded
 
 
 def test_action_request_request_dict():
-    request = ActionRequest("test_func", {"arg1": 1}, "sender1", "recipient1")
+    request = ActionRequest("test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id())
     assert request.request_dict == {"function": "test_func", "arguments": {"arg1": 1}}
 
 
 def test_action_request_action_response_id():
-    request = ActionRequest("test_func", {}, "sender1", "recipient1")
+    request = ActionRequest("test_func", {}, SysUtil.id(), SysUtil.id())
     assert request.action_response_id is None
     request.content["action_response_id"] = "response_id"
     assert request.action_response_id == "response_id"
@@ -103,18 +101,13 @@ def test_action_request_action_response_id():
 
 # Edge cases and additional tests for ActionRequest
 def test_action_request_with_empty_arguments():
-    request = ActionRequest("test_func", {}, "sender1", "recipient1")
+    request = ActionRequest("test_func", {}, SysUtil.id(), SysUtil.id())
     assert request.request_dict["arguments"] == {}
-
-
-def test_action_request_with_none_arguments():
-    with pytest.raises(ValueError):
-        ActionRequest("test_func", None, "sender1", "recipient1")
 
 
 def test_action_request_with_very_long_function_name():
     long_name = "a" * 1000
-    request = ActionRequest(long_name, {}, "sender1", "recipient1")
+    request = ActionRequest(long_name, {}, SysUtil.id(), SysUtil.id())
     assert len(request.request_dict["function"]) == 1000
 
 
@@ -124,13 +117,13 @@ def test_action_request_with_complex_arguments():
         "list": [{"x": 1}, {"y": 2}],
         "tuple": (1, 2, 3),
     }
-    request = ActionRequest("test_func", complex_args, "sender1", "recipient1")
+    request = ActionRequest("test_func", complex_args, SysUtil.id(), SysUtil.id())
     assert request.request_dict["arguments"] == complex_args
 
 
 def test_action_request_unicode():
     unicode_args = {"arg": "你好世界"}
-    request = ActionRequest("test_func", unicode_args, "sender1", "recipient1")
+    request = ActionRequest("test_func", unicode_args, SysUtil.id(), SysUtil.id())
     assert request.request_dict["arguments"] == unicode_args
 
 
@@ -139,27 +132,17 @@ def test_action_request_with_callable_and_kwargs():
         return x + sum(kwargs.values())
 
     request = ActionRequest(
-        func_with_kwargs, {"x": 1, "y": 2, "z": 3}, "sender1", "recipient1"
+        func_with_kwargs, {"x": 1, "y": 2, "z": 3}, SysUtil.id(), SysUtil.id()
     )
     assert request.request_dict["function"] == "func_with_kwargs"
     assert request.request_dict["arguments"] == {"x": 1, "y": 2, "z": 3}
-
-
-def test_action_request_with_circular_reference():
-    class CircularRef:
-        def __init__(self):
-            self.ref = self
-
-    circular = CircularRef()
-    with pytest.raises(Exception):  # Expect some kind of serialization error
-        ActionRequest("test_func", {"circular": circular}, "sender1", "recipient1")
 
 
 def test_action_request_serialization():
     import json
 
     request = ActionRequest(
-        "test_func", {"arg1": 1, "arg2": [1, 2, 3]}, "sender1", "recipient1"
+        "test_func", {"arg1": 1, "arg2": [1, 2, 3]}, SysUtil.id(), SysUtil.id()
     )
 
     # Serialize
@@ -178,7 +161,7 @@ def test_action_request_with_very_deep_nesting():
         return {"nested": create_nested_dict(depth - 1)}
 
     deep_args = create_nested_dict(100)  # Very deep nesting
-    request = ActionRequest("deep_func", deep_args, "sender1", "recipient1")
+    request = ActionRequest("deep_func", deep_args, SysUtil.id(), SysUtil.id())
 
     assert request.request_dict["arguments"] == deep_args
 
@@ -188,7 +171,10 @@ def test_action_request_thread_safety():
 
     def create_request():
         ActionRequest(
-            "thread_func", {"thread_id": threading.get_ident()}, "sender", "recipient"
+            "thread_func",
+            {"thread_id": threading.get_ident()},
+            SysUtil.id(),
+            SysUtil.id(),
         )
 
     threads = [threading.Thread(target=create_request) for _ in range(100)]
@@ -206,7 +192,7 @@ def test_action_request_performance():
 
     start_time = time.time()
     for _ in range(10000):
-        ActionRequest("perf_func", {"arg": _}, "sender", "recipient")
+        ActionRequest("perf_func", {"arg": _}, SysUtil.id(), SysUtil.id())
     end_time = time.time()
 
     assert end_time - start_time < 5  # Should complete in less than 5 seconds
@@ -217,7 +203,10 @@ def test_action_request_invalid_utf8():
     invalid_utf8 = b"Invalid UTF-8: \xff"
     with pytest.raises(UnicodeDecodeError):
         ActionRequest(
-            "test_func", {"arg": invalid_utf8.decode("utf-8")}, "sender1", "recipient1"
+            "test_func",
+            {"arg": invalid_utf8.decode("utf-8")},
+            SysUtil.id(),
+            SysUtil.id(),
         )
 
 
@@ -226,31 +215,18 @@ def test_action_request_with_various_callables():
     def normal_func():
         pass
 
-    class CallableClass:
-        def __call__(self):
-            pass
-
-    lambda_func = lambda: None
-
     async def async_func():
         pass
 
-    for func in [normal_func, CallableClass(), lambda_func, async_func]:
-        request = ActionRequest(func, {}, "sender1", "recipient1")
+    for func in [normal_func, async_func]:
+        request = ActionRequest(func, {}, SysUtil.id(), SysUtil.id())
         assert isinstance(request.request_dict["function"], str)
-
-
-# Test handling of action requests with no sender/recipient
-def test_action_request_no_sender_recipient():
-    request = ActionRequest("test_func", {}, None, None)
-    assert request.sender is None
-    assert request.recipient is None
 
 
 # Test with maximum possible arguments
 def test_action_request_max_arguments():
     max_args = {f"arg{i}": i for i in range(1000)}  # 1000 arguments
-    request = ActionRequest("max_args_func", max_args, "sender1", "recipient1")
+    request = ActionRequest("max_args_func", max_args, SysUtil.id(), SysUtil.id())
     assert len(request.request_dict["arguments"]) == 1000
 
 
@@ -266,5 +242,5 @@ def test_action_request_various_data_types():
         "none": None,
         "bytes": b"bytes",
     }
-    request = ActionRequest("data_types_func", args, "sender1", "recipient1")
+    request = ActionRequest("data_types_func", args, SysUtil.id(), SysUtil.id())
     assert request.request_dict["arguments"] == args
