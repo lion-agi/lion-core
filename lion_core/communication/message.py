@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from __future__ import annotations
-
 import inspect
 from enum import Enum
 from typing import Any, override
@@ -97,7 +95,7 @@ class RoledMessage(Relational, Component, BaseMail):
             content = str(self.content.to_dict())
         return {"role": self.role.value, "content": content}
 
-    def clone(self) -> RoledMessage:
+    def clone(self) -> "RoledMessage":
         """Creates a copy of the current System object."""
 
         cls = self.__class__
@@ -114,7 +112,7 @@ class RoledMessage(Relational, Component, BaseMail):
 
     @override
     @classmethod
-    def from_dict(cls, data: dict, **kwargs) -> RoledMessage:
+    def from_dict(cls, data: dict, **kwargs) -> "RoledMessage":
         data = SysUtil.copy(data)
         if "lion_class" in data:
             cls = get_class(data.pop("lion_class"))

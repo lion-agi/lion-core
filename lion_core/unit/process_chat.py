@@ -50,7 +50,7 @@ async def process_chat(
     strict_validation: bool = False,
     use_annotation: bool = True,
     return_branch: bool = False,
-    costs=(0,0),
+    costs=(0, 0),
     **kwargs: Any,
 ) -> tuple["Branch", Any] | Any:
     """

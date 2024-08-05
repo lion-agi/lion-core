@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import Any, Callable, override
 
 from lion_core.libs import to_dict, to_str, fuzzy_parse_json
