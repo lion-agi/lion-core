@@ -14,189 +14,161 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from functools import singledispatchmethod
-from typing import Any, Type, override
+from typing import Type
 from pydantic import Field
-from collections import deque
 
+from lion_core.exceptions import LionValueError
 from lion_core.setting import LN_UNDEFINED
-from lion_core.abc import ImmutableRecord, MutableRecord
-from lion_core.libs import to_dict
-from lion_core.generic.pile import Pile, pile
-from lion_core.generic.component import Component
-from lion_core.exceptions import LionTypeError, LionValueError
+from lion_core.generic.form import Form
+from lion_core.generic.pile import Pile
+from lion_core.task.base import BaseTask
+from lion_core.task.static_task import StaticTask
 
 
-from lion_core.task.utils import get_input_output_fields
-from lion_core.task.base import Form
+class Report(Form):
+    template_name: str = "default_report"
 
-
-class Report(Component, ImmutableRecord):
-
-    forms: Pile[Form] = Field(
-        LN_UNDEFINED,
-        description="A pile of forms related to the report.",
+    final_output_fields: list[str] = Field(
+        default_factory=list,
+        description="A list for objective fields"
     )
 
-    form_assignments: list = Field(
-        [],
-        description="assignment for the report",
-        examples=[["a, b -> c", "a -> e", "b -> f", "c -> g", "e, f, g -> h"]],
+    completed_tasks: Pile[BaseTask] = Field(
+        default_factory=lambda: Pile(item_type={BaseTask}),
+        description="A pile of tasks completed",
     )
 
-    form_template: Type[Form] = Field(
-        Form, description="The template for the forms in the report."
+    completed_task_assignments: dict[str, str] = Field(
+        default_factory=dict,
+        description="assignments completed for the report"
     )
-
-    @override
-    def __init__(self, **kwargs: Any) -> None:
-        """Initialize the Report with forms based on provided assignments.
-
-        Creates forms dynamically from provided assignments and synchronizes
-        fields between the report and its forms.
-
-        Args:
-            **kwargs: Arbitrary keyword arguments for the parent class.
-        """
-        super().__init__(**kwargs)
-        self.input_fields, self.requested_fields = get_input_output_fields(
-            self.assignment
-        )
-
-        # if assignments is not provided, set it to report assignment
-        if self.form_assignments == []:
-            self.form_assignments.append(self.assignment)
-
-        # create forms
-        self.forms = pile(
-            [self.form_template(assignment=i) for i in self.form_assignments],
-            MutableRecord,
-        )
-
-        # Add undeclared fields to report with None values
-        for v in self.forms:
-            for _field in v.work_fields.keys():
-                if _field not in self.all_fields:
-                    field_obj = v.all_fields[_field]
-                    self.add_field(_field, value=LN_UNDEFINED, field_obj=field_obj)
-
-        # Synchronize fields between report and forms
-        for k, v in self.all_fields.items():
-            if getattr(self, k, LN_UNDEFINED) not in [LN_UNDEFINED, None]:
-                for _form in self.forms:
-                    if k in _form.work_fields:
-                        _form.fill({k: getattr(self, k)}, strict=False, update=True)
 
     @property
-    def work_fields(self) -> dict[str, Any]:
-        all_fields = {}
-        for form in self.forms:
-            for k, v in form.work_fields.items():
-                if k not in all_fields:
-                    all_fields[k] = v
-        return all_fields
-
-    @singledispatchmethod
-    def fill(self, input_: Any, strict=False, str_type="json", parser=None, **kwargs):
-        raise LionTypeError("Fill method not implemented for the provided type.")
-
-    @fill.register(dict)
-    def _(self, input_: dict, strict=False, **kwargs):
-        if strict and (
-            self.is_filled or any(i not in self.work_fields for i in input_.keys())
-        ):
-            raise LionValueError("Form is already filled, cannot be worked on again")
-
-        fields = {**input_, **kwargs}
-
-        for k, v in fields.items():
-            if k in self.work_fields and getattr(self, k, LN_UNDEFINED) is LN_UNDEFINED:
-                setattr(self, k, v)
-
-        for form in self.forms:
-            for k, v in form.work_fields.items():
-                _kwargs = {}
-                if (
-                    v in [None, LN_UNDEFINED]
-                    and (a := getattr(self, k, LN_UNDEFINED)) is not LN_UNDEFINED
-                ):
-                    _kwargs[k] = a
-                form.fill(_kwargs, strict=strict, update=False)
-
-    @fill.register(MutableRecord)
-    def _(self, input_: MutableRecord, strict=False, **kwargs):
-        return self.fill(input_.work_fields, strict=strict, **kwargs)
-
-    @fill.register(str)
-    def _(self, input_: str, strict=False, str_type="json", parser=None, **kwargs):
-        return self.fill(
-            to_dict(input_, str_type=str_type, parser=parser), strict=strict, **kwargs
-        )
-
-    @fill.register(deque)
-    @fill.register(set)
-    @fill.register(tuple)
-    @fill.register(Pile)
-    @fill.register(list)
-    def _(self, input_, *, strict=False, update=True, **kwargs):
-        input_ = list(input_) if not isinstance(input_, list) else input_
-        for i in input_:
-            self.fill(i, strict=strict, update=update, **kwargs)
+    def final_output(self):
+        result = {}
+        for i in self.final_output_fields:
+            if i not in self.all_fields:
+                raise ValueError(f"Failed to find objective output field {i}")
+            result[i] = getattr(self, i, LN_UNDEFINED)
+        return result
 
     @property
-    def is_workable(self):
+    def work_fields(self):
+        base_report_fields = Report.model_fields.keys()
+        return {k: getattr(self, k) for k in self.all_fields if k not in base_report_fields}
+
+    def get_incomplete_fields(self, none_as_valid_value=False):
+        base_report_fields = Report.model_fields.keys()
+
+        result = []
+        for i in self.all_fields:
+            if i in base_report_fields:
+                continue
+            if none_as_valid_value:
+                if getattr(self, i) is LN_UNDEFINED:
+                    result.append(i)
+            else:
+                if getattr(self, i) in [None, LN_UNDEFINED]:
+                    result.append(i)
+        return result
+
+    def parse_assignment(self, input_fields: list[str], request_fields: list[str]):
+        if not isinstance(input_fields, list) or not isinstance(request_fields, list):
+            raise ValueError("Invalid input_fields or request_fields type. Should be a list of str")
+        for i in input_fields + request_fields:
+            if i not in self.all_fields:
+                raise ValueError(f"Invalid field {i}. Failed to find it in all_fields")
+
+        input_assignment = ", ".join(input_fields)
+        output_assignment = ", ".join(request_fields)
+        return " -> ".join([input_assignment, output_assignment])
+
+    def create_task(self,
+                    assignment: str = None,
+                    input_fields: list[str] = None,
+                    request_fields: list[str] = None,
+                    task_description: str = None,
+                    fill_inputs: bool = True,
+                    none_as_valid_value: bool = False):
+        if all(i is None for i in [assignment, input_fields, request_fields]):
+            raise ValueError("Please provide an assignment or input/request fields to create a task.")
+        if assignment is not None and (input_fields is not None or request_fields is not None):
+            raise ValueError("Please provide an assignment only or input/request fields only, not both.")
+        if assignment is None and (input_fields is None or request_fields is None):
+            raise ValueError("Please provide input_fields list and request_fields list together.")
+
+        if not assignment:
+            assignment = self.parse_assignment(input_fields, request_fields)
+        task = StaticTask.from_form(assignment=assignment,
+                                    form=self,
+                                    task_description=task_description,
+                                    fill_inputs=fill_inputs,
+                                    none_as_valid_value=none_as_valid_value)
+        return task
+
+    def save_completed_task(self, task: StaticTask, update_results=False):
         try:
-            self.check_is_workable()
-            return True
-        except LionValueError:
-            return False
+            task.check_is_completed(handle_how="raise")
+        except Exception as e:
+            raise ValueError(f"Failed to add completed task. Error: {e}")
 
-    def check_is_workable(self):
-        if self.is_filled:
-            raise LionValueError("Form is already filled, cannot be worked on again")
+        report_fields = self.all_fields.keys()
+        for i in task.work_fields.keys():
+            if i not in report_fields:
+                raise LionValueError(f"Tha task does not match the report. "
+                                     f"Field {i} in the task assignment is not found in the report.")
 
-        for i in self.input_fields:
-            if getattr(self, i, LN_UNDEFINED) is LN_UNDEFINED:
-                raise LionValueError(f"Required field {i} is not provided")
+        self.completed_tasks.include(task)
+        self.completed_task_assignments[task.ln_id] = task.assignment
 
-        # this is the required fields from report's own assignment
-        fields = self.input_fields + self.requested_fields
+        if update_results:
+            for i in task.request_fields:
+                field_result = getattr(task, i)
+                setattr(self, i, field_result)
 
-        # if the report's own assignment is not in the forms, return False
-        for f in fields:
-            if f not in self.work_fields:
-                raise LionValueError(f"Field {f} is not in the forms")
+    @classmethod
+    def from_form_template(cls, template_class: Type[Form], **input_kwargs):
+        if not issubclass(template_class, Form):
+            raise LionValueError(
+                "Invalid form template. The template class must be a subclass of Form."
+            )
+        report_template_name = "report_for_" + template_class.model_fields["template_name"].default
+        report_obj = cls(template_name=report_template_name)
 
-        # get all the output fields from all the forms
-        outs = []
-        for form in self.forms:
-            outs.extend(form.requested_fields)
+        base_report_fields = Report.model_fields.keys()
 
-        # all output fields should be unique, not a single output field should be
-        # calculated by more than one form
-        if len(outs) != len(set(outs)):
-            raise LionValueError("Output fields are not unique")
+        for field, field_info in template_class.model_fields.items():
+            if field in base_report_fields:
+                continue
+            if field not in report_obj.all_fields:
+                report_obj.add_field(field, field_obj=field_info)
+            if field in input_kwargs:
+                value = input_kwargs.get(field)
+                setattr(report_obj, field, value)
 
-        return True
+        return report_obj
 
-    def next_forms(self) -> Pile:
-        """Get workable forms from a report.
+    @classmethod
+    def from_form(cls, form: Form, fill_inputs: bool = True):
+        if not isinstance(form, Form):
+            raise LionValueError(
+                "Invalid form instance. The form must be an instance of a subclass of Form."
+            )
+        report_template_name = "report_for_" + form.template_name
+        report_obj = cls(template_name=report_template_name)
 
-        Args:
-            report: The report to check.
+        base_report_fields = Report.model_fields.keys()
 
-        Returns:
-            Pile of workable forms or None if no forms are workable.
-        """
-        a = [i for i in self.forms if i.is_workable]
-        return pile(a) if len(a) > 0 else pile()
+        for field, field_info in form.all_fields.items():
+            if field in base_report_fields:
+                continue
+            if field not in report_obj.all_fields:
+                report_obj.add_field(field, field_obj=field_info)
+            if fill_inputs:
+                value = getattr(form, field)
+                setattr(report_obj, field, value)
 
-    @property
-    def is_filled(self):
-        return all(
-            getattr(self, field, LN_UNDEFINED) not in [None, LN_UNDEFINED]
-            for field in self.work_fields
-        )
+        return report_obj
 
 
 # File lion_core/form/report.py
