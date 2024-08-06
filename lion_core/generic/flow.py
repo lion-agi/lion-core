@@ -9,7 +9,6 @@ import contextlib
 
 from lion_core.exceptions import ItemNotFoundError, LionTypeError, LionValueError
 from lion_core.generic.element import Element
-from lion_core.generic.note import Note
 from lion_core.abc import Collective
 
 
@@ -23,7 +22,7 @@ class Flow(Element):
         default_factory=lambda: pile({}, Progression)
     )
 
-    registry: Note = Field(default_factory=Note)
+    registry: dict = Field(default_factory=dict)
     default_name: str = Field(None)
 
     def __init__(self, progressions=None, default_name=None):
@@ -52,7 +51,6 @@ class Flow(Element):
                     self.register(seq, a)
                 else:
                     self.register(seq, seq.ln_id)
-            return self
 
         for seq in progressions:
             if not isinstance(seq, Progression):
@@ -64,14 +62,16 @@ class Flow(Element):
 
     def _validate_progressions(self, value):
         try:
-            return pile(value, Progression)
+            if isinstance(value, Collective):
+                value = list(value)
+            return pile(value)
         except Exception as e:
             raise LionValueError(f"Invalid progressions: {e}")
 
     def all_orders(self) -> list[list[str]]:
         return [list(seq) for seq in self.progressions]
 
-    def all_unique_items(self) -> Tuple[str]:
+    def unique(self) -> Tuple[str]:
         return list({item for seq in self.progressions for item in seq})
 
     def keys(self):
@@ -98,9 +98,7 @@ class Flow(Element):
 
     def __contains__(self, item):
         return (
-            item in self.registry
-            or item in self.progressions
-            or item in self.all_unique_items()
+            item in self.registry or item in self.progressions or item in self.unique()
         )
 
     def shape(self):

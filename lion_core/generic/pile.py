@@ -19,6 +19,7 @@ from typing import Any, TypeVar, Type, Iterable, override, Generic, AsyncIterato
 
 from pydantic import Field, field_serializer
 
+from lion_core.libs import to_list
 from lion_core.abc._characteristic import Observable
 from lion_core.abc._space import Collective
 from lion_core.sys_utils import SysUtil
@@ -194,6 +195,8 @@ class Pile(Element, Collective, Generic[T]):
                 raise ValueError(f"Failed to set pile. Error: {e}")
         else:
             key = to_list_type(key)
+            if isinstance(key[0], list):
+                key = to_list(key, flatten=True, dropna=True)
             if len(key) != len(item_order):
                 raise KeyError(f"Invalid key {key}. Key and item does not match.")
             for k in key:

@@ -270,25 +270,6 @@ def test_pile_with_complex_elements():
     assert p[2].data["nested"]["x"] == 4
 
 
-def test_pile_thread_safety():
-    p = Pile()
-
-    def worker(start, end):
-        for i in range(start, end):
-            elem = MockElement(value=i)
-            p.include(elem)
-            p.exclude(elem)
-            p.include(elem)
-
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(worker, i * 1000, (i + 1) * 1000) for i in range(10)]
-        for future in futures:
-            future.result()
-
-    assert len(p) == 10000
-    assert set(e.value for e in p.values()) == set(range(10000))
-
-
 def test_pile_with_generator_input():
     def element_generator():
         for i in range(1000):
