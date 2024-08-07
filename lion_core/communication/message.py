@@ -133,7 +133,7 @@ class RoledMessage(Relational, Component, BaseMail):
             obj.add_field(name=k, value=v)
 
         metadata = data.get("metadata", {})
-        last_updated = metadata.get("last_updated")
+        last_updated = metadata.get("last_updated", None)
         if last_updated is not None:
             obj.metadata.set(["last_updated"], last_updated)
         return obj

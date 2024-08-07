@@ -108,8 +108,8 @@ class Validator(BaseExecutor, Temporal, Observable):
             ValueError: If the response format is invalid.
         """
         if isinstance(response, str):
-            if len(form.requested_fields) == 1:
-                response = {form.requested_fields[0]: response}
+            if len(form.request_fields) == 1:
+                response = {form.request_fields[0]: response}
             else:
                 raise ValueError(
                     "Response is a string, but form has multiple fields to be filled"
@@ -117,7 +117,7 @@ class Validator(BaseExecutor, Temporal, Observable):
 
         dict_ = {}
         for k, v in response.items():
-            if k in form.requested_fields:
+            if k in form.request_fields:
                 kwargs = form.validation_kwargs.get(k, {})
                 _annotation = form._field_annotations[k]
                 if (keys := form._get_field_attr(k, "choices", None)) is not None:
