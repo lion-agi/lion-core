@@ -10,7 +10,7 @@ class BaseTask(Component, MutableRecord):
 
     assignment: str | None = Field(
         None,
-        description="The objective of the form.",
+        description="The objective of the task.",
         examples=["input1, input2 -> output"],
     )
 
@@ -28,8 +28,8 @@ class BaseTask(Component, MutableRecord):
         description="The work to be done by the form, including custom instructions.",
     )
 
-    task_description: str = Field(
-        str,
+    task_description: str | None = Field(
+        default_factory=str,
         description="Description of the task",
     )
 
@@ -74,7 +74,7 @@ class BaseTask(Component, MutableRecord):
     @property
     def work_fields(self) -> dict[str, Any]:
         result = {}
-        for i in self.request_fields + self.request_fields:
+        for i in self.input_fields + self.request_fields:
             result[i] = getattr(self, i)
         return result
 
@@ -113,22 +113,22 @@ class BaseTask(Component, MutableRecord):
                 "The task has been processed, and cannot be worked on again."
             )
 
-        non_complete_request = []
+        missing_inputs = []
         if self.none_as_valid_value:
             for i in self.input_fields:
                 if getattr(self, i) is LN_UNDEFINED:
-                    non_complete_request.append(i)
+                    missing_inputs.append(i)
         else:
             for i in self.input_fields:
                 if getattr(self, i) in [LN_UNDEFINED, None]:
-                    non_complete_request.append(i)
-        if non_complete_request:
+                    missing_inputs.append(i)
+        if missing_inputs:
             if handle_how == "raise":
                 raise ValueError(
-                    f"Input fields {non_complete_request} are not provided."
+                    f"Input fields {missing_inputs} are not provided."
                 )
             elif handle_how == "return_missing":
-                return non_complete_request
+                return missing_inputs
 
     @property
     def instruction_dict(self) -> dict:
