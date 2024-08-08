@@ -412,7 +412,7 @@ Please follow prompts to complete the task:
         return obj
 
     @validate_call
-    def append_to_output(self, name: NAMED_FIELD, value: Any):
+    def append_to_output(self, name: NAMED_FIELD, value: Any, /):
         if self.strict:
             raise ERR_MAP["strict_assignment"]
         if "," in name:
@@ -425,9 +425,11 @@ Please follow prompts to complete the task:
             if i not in self.all_fields:
                 self.add_field(i, value=value)
             outs.append(i)
+            
+        self.output_fields.extend(outs)
 
     @validate_call
-    def append_to_request(self, name: NAMED_FIELD, value: Any = LN_UNDEFINED) -> None:
+    def append_to_request(self, name: NAMED_FIELD, value: Any = LN_UNDEFINED, /) -> None:
         if self.strict:
             raise ERR_MAP["strict_assignment"]
 
@@ -443,12 +445,10 @@ Please follow prompts to complete the task:
 
             if i not in self.request_fields:
                 self.request_fields.append(i)
-                self.validation_kwargs[i] = getattr(
-                    self.all_fields[i], "validation_kwargs", {}
-                )
+
 
     @validate_call
-    def append_to_input(self, name: NAMED_FIELD, value: Any = LN_UNDEFINED) -> None:
+    def append_to_input(self, name: NAMED_FIELD, value: Any = LN_UNDEFINED, /) -> None:
         if self.strict:
             raise ERR_MAP["strict_assignment"]
 
@@ -464,9 +464,6 @@ Please follow prompts to complete the task:
 
             if i not in self.request_fields:
                 self.input_fields.append(i)
-                self.validation_kwargs[i] = getattr(
-                    self.all_fields[i], "validation_kwargs", {}
-                )
 
 
 __all__ = ["Form"]
