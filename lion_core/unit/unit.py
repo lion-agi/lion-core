@@ -8,7 +8,7 @@ and validation processing.
 
 from typing import Type, TYPE_CHECKING
 from lion_core.abc import BaseProcessor
-from lion_core.generic.form import Form
+from lion_core.form.task_form import BaseForm
 from lion_core.unit.unit_form import UnitForm
 from lion_core.unit.process_act import process_act
 from lion_core.unit.process_action_request import process_action_request
@@ -32,7 +32,7 @@ class UnitProcessor(BaseProcessor):
         branch (Branch): The branch associated with this processor.
     """
 
-    default_form: Type[Form] = UnitForm
+    default_form: Type[BaseForm] = UnitForm
 
     def __init__(self, branch: "Branch"):
         """
@@ -44,7 +44,7 @@ class UnitProcessor(BaseProcessor):
         self.branch = branch
 
     async def process_act(
-        self, form: Form, actions: dict = None, return_branch: bool = False
+        self, form: BaseForm, actions: dict = None, return_branch: bool = False
     ):
         """
         Process an act within the branch context.

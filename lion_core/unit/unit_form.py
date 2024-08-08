@@ -1,40 +1,23 @@
-"""
-Module for defining and creating Unit Forms in the Lion framework.
-
-This module provides the UnitForm class, which represents a base form for
-units with fields for confidence scoring and reasoning, and a function to
-create instances of UnitForm.
-"""
-
 from enum import Enum
 from typing import Any, TYPE_CHECKING
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from lion_core.libs import to_dict
-from lion_core.generic.form import Form
-from lion_core.task.appending_task import Task
+from lion_core.form.task_form import BaseForm
+from lion_core.form.report import Report
 
 if TYPE_CHECKING:
     from lion_core.session.branch import Branch
 
 
-class UnitForm(Task):
-    """
-    A base form class for units that includes fields for confidence scoring
-    and reasoning.
+class UnitForm(BaseForm):
+    
+    template_name: str = "UnitProcess"
+    
+    assignment: str = Field("task -> answer")
 
-    Attributes:
-        template_name (str): The name of the template.
-        confidence_score (float): A numeric confidence score between 0 and 1
-            with precision to 2 decimal places.
-        reason (str | None): A field for providing concise reasoning for the
-            process.
-    """
-
-    template_name: str = "UnitDirective"
-
-    confidence_score: float = Field(
+    confidence: float | None = Field(
         None,
         description=(
             "Provide a numeric confidence score on how likely you successfully "
@@ -49,16 +32,16 @@ class UnitForm(Task):
             "precision": 2,
         },
     )
-
-    reason: str | None = Field(
+    
+    reason: str | None = Field(             # Reason
         None,
         description=(
             "Explain yourself, provide concise reasoning for the process. "
             "Must start with: Let's think step by step, "
         ),
     )
-
-    actions: dict | None = Field(
+    
+    actions: dict | None = Field(           # Actions
         None,
         description=(
             "Actions to take based on the context and instruction. "
@@ -100,7 +83,7 @@ class UnitForm(Task):
         examples=[True, False],
     )
 
-    prediction: None | str = Field(
+    prediction: str | None = Field(
         None,
         description="Provide the likely prediction based on context and instruction.",
     )
@@ -155,9 +138,23 @@ class UnitForm(Task):
         None, description="The list of tools available for using."
     )
 
-    assignment: str = Field("task -> answer")
+    # flag, should not be passed into LLM
+    _action_performed: bool | None = PrivateAttr(None)
+    _is_extension: bool = PrivateAttr(False)
 
-    is_extension: bool = Field(False)
+
+    def __init__(
+        self,
+        
+        
+    )
+
+
+
+
+
+
+
 
     def __init__(
         self,
@@ -182,31 +179,20 @@ class UnitForm(Task):
         predict_num_sentences=None,
         **kwargs,
     ):
-        """
-        Initialize the UnitForm with various parameters and settings.
+        
 
-        Args:
-            instruction (str|None): Additional instruction.
-            context (str|None): Additional context.
-            reason (bool): Flag to include reasoning.
-            predict (bool): Flag to include prediction.
-            score (bool): Flag to include score.
-            select (Enum|str|list|None): Selection choices.
-            plan (dict|str|None): Step-by-step plan.
-            brainstorm (bool): Flag to include brainstorming next steps.
-            reflect (bool): Flag to include self-reflection.
-            tool_schema (list|dict|None): Schema of available tools.
-            allow_action (bool): Allow actions to be added.
-            allow_extension (bool): Allow extension for more steps.
-            max_extension (int|None): Maximum number of extensions allowed.
-            confidence (bool|None): Flag to include confidence score.
-            score_num_digits (int|None): Number of decimal places for the score.
-            score_range (list|None): Range for the score.
-            select_choices (list|None): Choices for selection.
-            plan_num_step (int|None): Number of steps in the plan.
-            predict_num_sentences (int|None): Number of sentences for prediction.
-            **kwargs: Additional keyword arguments.
-        """
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         super().__init__(**kwargs)
 
         self.task = (
@@ -330,7 +316,7 @@ class UnitForm(Task):
 
 def create_unit_form(
     branch: Branch,
-    form: Form | None,
+    form: BaseForm | None,
     instruction: str | None = None,
     context: dict[str, Any] | None = None,
     tools: dict[str, Any] | None = None,

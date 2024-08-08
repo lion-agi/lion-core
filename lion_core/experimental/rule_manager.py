@@ -22,8 +22,8 @@ from lion_core.sys_utils import SysUtil
 from lion_core.rule.base import Rule
 from lion_core.rule.default_rules import DEFAULT_RULES
 from lion_core.experimental.rulebook import RuleBook
-from lion_core.task.base import Form
-from lion_core.task.report import Report
+from lion_core.form.form import BaseForm
+from lion_core.form.report import Report
 
 _DEFAULT_RULEORDER = [
     "choice",
@@ -109,7 +109,7 @@ class RuleManager(BaseManager):
         """
         self.enable_rule(rule_name, enable=False)
 
-    def log_validation_attempt(self, form: Form, result: dict):
+    def log_validation_attempt(self, form: BaseForm, result: dict):
         """
         Log a validation attempt.
 

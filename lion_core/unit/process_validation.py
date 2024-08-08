@@ -1,18 +1,18 @@
 from typing import Any
 
-from lion_core.generic.form import Form
+from lion_core.form.task_form import BaseForm
 from lion_core.rule.validator import Validator
 
 
 async def process_validation(
-    form: Form,
+    form: BaseForm,
     validator: Validator,
     response_: dict | str,
     rulebook: Any = None,
     strict: bool = False,
     use_annotation: bool = True,
     template_name: str | None = None,
-) -> Form:
+) -> BaseForm:
     """
     Process form validation.
 

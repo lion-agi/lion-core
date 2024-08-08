@@ -10,7 +10,7 @@ from functools import partial
 from typing import Any, Tuple
 
 from lion_core.session.session import Session
-from lion_core.generic.form import Form
+from lion_core.form.task_form import BaseForm
 from lion_core.session.branch import Branch
 from lion_core.generic.pile import pile, Pile
 from lion_core.libs import to_list
@@ -23,7 +23,7 @@ async def process_parallel_direct(
     session: Session,
     *,
     branches: Pile[Branch] = None,
-    form: Form | None = None,
+    form: BaseForm | None = None,
     instruction: str | None = None,
     context: dict[str, Any] | None = None,
     tools: Any | None = None,

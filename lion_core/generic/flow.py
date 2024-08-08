@@ -12,8 +12,8 @@ from lion_core.generic.element import Element
 from lion_core.abc import Collective
 
 
-from .pile import Pile, pile
-from .progression import Progression, prog
+from lion_core.generic.pile import Pile, pile
+from lion_core.generic.progression import Progression, prog
 
 
 class Flow(Element):
@@ -41,30 +41,31 @@ class Flow(Element):
 
         # if mapping we assume a dictionary of in {name: data} format
         if isinstance(progressions, (Mapping, Collective)):
-            for name, seq in progressions.items():
-                if not isinstance(seq, Progression):
+            for name, prog_ in progressions.items():
+                if not isinstance(prog_, Progression):
                     try:
-                        seq = prog(seq, name)
+                        prog_ = prog(prog_, name)
                     except Exception as e:
                         raise e
-                if (a := name or seq.name) is not None:
-                    self.register(seq, a)
+                if (a := name or prog_.name) is not None:
+                    self.register(prog_, a)
                 else:
-                    self.register(seq, seq.ln_id)
+                    self.register(prog_, prog_.ln_id)
+            return
 
-        for seq in progressions:
-            if not isinstance(seq, Progression):
+        for prog_ in progressions:
+            if not isinstance(prog_, Progression):
                 try:
-                    seq = prog(seq)
+                    prog_ = prog(prog_)
                 except Exception as e:
                     raise e
-            self.register(seq)
+            self.register(prog_)
 
     def _validate_progressions(self, value):
         try:
             if isinstance(value, Collective):
                 value = list(value)
-            return pile(value)
+            return pile(value, {Progression})
         except Exception as e:
             raise LionValueError(f"Invalid progressions: {e}")
 
@@ -277,8 +278,5 @@ class Flow(Element):
         return cls(progressions, data["default_name"])
 
 
-def flow(progressions=None, default_name=None, /):
-    if progressions is None:
-        return Flow()
-
+def flow(progressions=None, default_name=None):
     return Flow(progressions, default_name)
