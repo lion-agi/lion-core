@@ -417,6 +417,8 @@ Please follow prompts to complete the task:
 
     @validate_call
     def append_to_output(self, name: NAMED_FIELD, value: Any):
+        if self.strict:
+            raise ERR_MAP["strict_assignment"]
         if "," in name:
             name = name.split(",")
         if not isinstance(name, list):
