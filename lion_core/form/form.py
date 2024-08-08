@@ -68,15 +68,11 @@ class Form(BaseForm):
         exclude=True,
     )
 
+    @override
     @property
     def work_fields(self) -> list[str]:
         """Return a list of all fields involved in the task."""
         return self.input_fields + self.request_fields
-
-    @property
-    def work_dict(self) -> dict[str, Any]:
-        """Return a dictionary of all work fields and their values."""
-        return {i: getattr(self, i) for i in self.work_fields}
 
     @override
     @property
@@ -87,7 +83,7 @@ class Form(BaseForm):
     @property
     def validation_kwargs(self):
         return {
-            i: self._field_getattr(i, "validation_kwargs", {}) for i in self.work_fields
+            i: self.field_getattr(i, "validation_kwargs", {}) for i in self.work_fields
         }
 
     @property

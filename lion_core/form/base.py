@@ -50,6 +50,11 @@ class BaseForm(Component, MutableRecord):
         return self.output_fields
 
     @property
+    def work_dict(self) -> dict[str, Any]:
+        """Return a dictionary of all work fields and their values."""
+        return {i: getattr(self, i) for i in self.work_fields}
+
+    @property
     def required_fields(self) -> list[str]:
         """Return the list of required fields for the form."""
         return self.output_fields
