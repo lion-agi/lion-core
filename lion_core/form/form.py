@@ -1,10 +1,24 @@
+"""
+Copyright 2024 HaiyangLi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 """Form class extending BaseTaskForm with additional functionality."""
 
 from functools import singledispatchmethod
 import inspect
 
 from typing import Any, Literal, Type, override
-from typing_extensions import Annotated
 
 from pydantic import Field, model_validator
 from pydantic.fields import FieldInfo
@@ -17,11 +31,6 @@ from lion_core.generic.note import Note
 from lion_core.form.base import BaseForm
 from lion_core.form.utils import get_input_output_fields, ERR_MAP, RESTRICTED_FIELDS
 
-
-NAMED_FIELD = Annotated[
-    str,
-    Field(..., alias="field", examples=["a, b", "c", ["a", "b", "c"]]),
-]
 
 _f = lambda name: [i.strip() for i in name.split(",") if i]
 

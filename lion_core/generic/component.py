@@ -399,6 +399,7 @@ class Component(Element):
             else:
                 self.model_fields[name].json_schema_extra[attr] = value
 
+    @validate_call
     def field_hasattr(self, name: str, attr: str, /) -> bool:
         """Check if a field has a specific attribute."""
         if not (field := self.all_fields.get(name, None)):
@@ -416,6 +417,7 @@ class Component(Element):
                 return False
         return True
 
+    @validate_call
     def field_getattr(
         self, name: NAMED_FIELD, attr: str, default: Any = LN_UNDEFINED, /
     ) -> Any:
