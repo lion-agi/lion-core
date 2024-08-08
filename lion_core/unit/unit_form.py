@@ -4,7 +4,7 @@ from typing import Any, TYPE_CHECKING
 from pydantic import Field, PrivateAttr
 
 from lion_core.libs import to_dict
-from lion_core.form.task_form import BaseForm
+from lion_core.form.base import BaseForm
 from lion_core.form.report import Report
 
 if TYPE_CHECKING:
@@ -12,9 +12,9 @@ if TYPE_CHECKING:
 
 
 class UnitForm(BaseForm):
-    
+
     template_name: str = "UnitProcess"
-    
+
     assignment: str = Field("task -> answer")
 
     confidence: float | None = Field(
@@ -32,16 +32,16 @@ class UnitForm(BaseForm):
             "precision": 2,
         },
     )
-    
-    reason: str | None = Field(             # Reason
+
+    reason: str | None = Field(  # Reason
         None,
         description=(
             "Explain yourself, provide concise reasoning for the process. "
             "Must start with: Let's think step by step, "
         ),
     )
-    
-    actions: dict | None = Field(           # Actions
+
+    actions: dict | None = Field(  # Actions
         None,
         description=(
             "Actions to take based on the context and instruction. "
@@ -142,19 +142,9 @@ class UnitForm(BaseForm):
     _action_performed: bool | None = PrivateAttr(None)
     _is_extension: bool = PrivateAttr(False)
 
-
     def __init__(
         self,
-        
-        
-    )
-
-
-
-
-
-
-
+    ): ...
 
     def __init__(
         self,
@@ -179,20 +169,7 @@ class UnitForm(BaseForm):
         predict_num_sentences=None,
         **kwargs,
     ):
-        
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         super().__init__(**kwargs)
 
         self.task = (
