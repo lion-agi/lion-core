@@ -207,7 +207,7 @@ class Instruction(RoledMessage):
         Returns:
             The created Instruction instance.
         """
-        
+
         if inspect.isclass(form) and issubclass(form, BaseForm):
             form = form(
                 strict=strict,
@@ -217,10 +217,10 @@ class Instruction(RoledMessage):
                 none_as_valid_value=none_as_valid_value,
                 **(input_value_kwargs or {}),
             )
-        
+
         elif isinstance(form, BaseForm) and not isinstance(form, Form):
             form = Form.from_form(
-                form, 
+                form,
                 assignment=assignment or form.assignment,
                 strict=strict,
                 task_description=task_description,
@@ -228,7 +228,7 @@ class Instruction(RoledMessage):
                 none_as_valid_value=none_as_valid_value,
                 **(input_value_kwargs or {}),
             )
-        
+
         if isinstance(form, Form):
             self = cls(
                 **form.instruction_dict,
@@ -239,8 +239,10 @@ class Instruction(RoledMessage):
             )
             self.metadata.set(["original_form"], form.ln_id)
             return self
-        
-        raise ValueError("Invalid form. The form must be a subclass or an instance of BaseForm.")
+
+        raise ValueError(
+            "Invalid form. The form must be a subclass or an instance of BaseForm."
+        )
 
 
 __all__ = ["Instruction"]

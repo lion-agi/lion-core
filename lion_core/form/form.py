@@ -1,15 +1,16 @@
 """Form class extending BaseTaskForm with additional functionality."""
 
+from functools import singledispatchmethod
 import inspect
 
-from typing import Any, Literal, Type, Union, override
+from typing import Any, Literal, Type, override
 from typing_extensions import Annotated
 
-from pydantic import Field, model_validator, validate_call
+from pydantic import Field, model_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
-from lion_core.setting import LN_UNDEFINED
+from lion_core.setting import LN_UNDEFINED, LionUndefined
 from lion_core.sys_utils import SysUtil
 from lion_core.exceptions import LionValueError
 from lion_core.generic.note import Note
@@ -18,9 +19,11 @@ from lion_core.form.utils import get_input_output_fields, ERR_MAP, RESTRICTED_FI
 
 
 NAMED_FIELD = Annotated[
-    Union[str, list[str]],
+    str,
     Field(..., alias="field", examples=["a, b", "c", ["a", "b", "c"]]),
 ]
+
+_f = lambda name: [i.strip() for i in name.split(",") if i]
 
 
 class Form(BaseForm):
@@ -411,59 +414,110 @@ Please follow prompts to complete the task:
 
         return obj
 
-    @validate_call
-    def append_to_output(self, name: NAMED_FIELD, value: Any, /):
+    @singledispatchmethod
+    def _append_to(
+        self, name: Any, value: Any, field_type: str, mapping: dict, update_value: bool
+    ):
+        raise NotImplementedError
+
+    @_append_to.register(str)
+    def _(
+        self, name: str, value: Any, field_type: str, mapping: dict, update_value: bool
+    ):
+        if value is not LN_UNDEFINED:
+            if len(_f(name)) > 1:
+                raise LionValueError("Cannot fill value for multiple fields.")
+            if len(_f(name)) == 1:
+                self._append_to_one(self, field_type, name, self.strict, value)
+        else:
+            if mapping and isinstance(mapping, dict):
+                raise LionValueError("Cannot use mapping with name or value.")
+
+        if mapping and isinstance(mapping, dict):
+            for k, v in mapping.items():
+                self._append_to_one(field_type, k, v, update_value)
+
+    @_append_to.register(None)
+    @_append_to.register(LionUndefined)
+    def _(self, name, value: Any, field_type: str, mapping: dict, update_value: bool):
+        if value or not (mapping or isinstance(mapping, dict)):
+            raise LionValueError("Cannot fill value for multiple fields.")
+        for k, v in mapping.items():
+            self._append_to_one(field_type, k, v, update_value)
+
+    def _append_to_one(
+        self,
+        field_type: Literal["input", "output", "request"],
+        name: str,
+        value: Any = LN_UNDEFINED,
+        update_value: bool = False,
+    ):
+
         if self.strict:
-            raise ERR_MAP["strict_assignment"]
-        if "," in name:
-            name = name.split(",")
-        if not isinstance(name, list):
-            name = [name]
+            raise LionValueError("Cannot append to a strict form.")
 
-        outs = []
-        for i in name:
-            if i not in self.all_fields:
-                self.add_field(i, value=value)
-            outs.append(i)
-            
-        self.output_fields.extend(outs)
+        match field_type:
+            case "input":
+                if name not in self.input_fields:
+                    self.input_fields.append(name)
 
-    @validate_call
-    def append_to_request(self, name: NAMED_FIELD, value: Any = LN_UNDEFINED, /) -> None:
-        if self.strict:
-            raise ERR_MAP["strict_assignment"]
+            case "request":
+                if name not in self.request_fields:
+                    self.request_fields.append(name)
 
-        if "," in name:
-            name = name.split(",")
-        if not isinstance(name, list):
-            name = [name]
+            case "output":
+                if name not in self.output_fields:
+                    self.input_fields.append(name)
 
-        for i in name:
-            i = i.strip()
-            if i not in self.all_fields:
-                self.add_field(i, value=value)
+            case _:
+                raise LionValueError(f"Invalid field type {field_type}")
 
-            if i not in self.request_fields:
-                self.request_fields.append(i)
+        if update_value:
+            self.update_field(name, value=value)
+        elif name not in self.all_fields:
+            self.add_field(name, value=value)
 
+    def append_to_input(
+        self,
+        name: Any = LN_UNDEFINED,
+        value: Any = LN_UNDEFINED,
+        mapping: dict = LN_UNDEFINED,
+        update_value: bool = False,
+        /,
+    ) -> None:
 
-    @validate_call
-    def append_to_input(self, name: NAMED_FIELD, value: Any = LN_UNDEFINED, /) -> None:
-        if self.strict:
-            raise ERR_MAP["strict_assignment"]
+        try:
+            self._append_to(name, value, "input", mapping, update_value)
+        except Exception as e:
+            raise LionValueError(f"Failed to append {name} to input fields.") from e
 
-        if "," in name:
-            name = name.split(",")
-        if not isinstance(name, list):
-            name = [name]
+    def append_to_output(
+        self,
+        name: Any = LN_UNDEFINED,
+        value: Any = LN_UNDEFINED,
+        mapping: dict = LN_UNDEFINED,
+        update_value: bool = False,
+        /,
+    ) -> None:
 
-        for i in name:
-            i = i.strip()
-            if i not in self.all_fields:
-                self.add_field(i, value=value)
+        try:
+            self._append_to(name, value, "output", mapping, update_value)
+        except Exception as e:
+            raise LionValueError(f"Failed to append {name} to output fields.") from e
 
-            if i not in self.request_fields:
-                self.input_fields.append(i)
+    def append_to_request(
+        self,
+        name: Any = LN_UNDEFINED,
+        value: Any = LN_UNDEFINED,
+        mapping: dict = LN_UNDEFINED,
+        update_value: bool = False,
+        /,
+    ) -> None:
+
+        try:
+            self._append_to(name, value, "request", mapping, update_value)
+        except Exception as e:
+            raise LionValueError(f"Failed to append {name} to request fields.") from e
 
 
 __all__ = ["Form"]

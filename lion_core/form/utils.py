@@ -52,6 +52,7 @@ ERR_MAP = {
         f"Invalid_assignment. Field {x} is not found in the form"
     ),
     "missing_field": lambda x: LionValueError(f"Field {x} is missing in the form."),
+    "appending_error": lambda x: LionValueError(f"Failed to append task. {x}"),
 }
 
 

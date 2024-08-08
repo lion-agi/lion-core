@@ -1,4 +1,5 @@
 """Base form class for the lion-core library."""
+
 from typing import Any
 
 from pydantic import Field
