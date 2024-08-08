@@ -2,12 +2,14 @@ from typing import Any, Literal, override
 
 from lion_core.setting import LN_UNDEFINED
 from lion_core.generic.note import Note, note
-from lion_core.generic.form import Form
+from lion_core.form.task_form import BaseForm
 from lion_core.communication.message import (
     RoledMessage,
     MessageRole,
     MessageFlag,
 )
+from lion_core.form.form import Form
+from lion_core.form.static_task import StaticTask
 
 
 def prepare_request_response_format(request_fields: dict) -> str:
@@ -180,7 +182,37 @@ class Instruction(RoledMessage):
     @classmethod
     def from_form(
         cls,
-        form: "Form",
+        form: BaseForm,
+        assignment: str = None,
+        task_description: str = None,
+        fill_inputs: bool = True,
+        none_as_valid_value: bool = False,
+        input_value_kwargs: dict = None,
+        sender: str | None = None,
+        recipient: Any = None,
+        images: str | None = None,
+        image_detail: str | None = None,
+    ):
+        task = StaticTask.from_form(
+            assignment=assignment or getattr(form, "assignment", None),
+            form=form,
+            task_description=task_description,
+            fill_inputs=fill_inputs,
+            none_as_valid_value=none_as_valid_value,
+            **(input_value_kwargs or {}),
+        )
+        return cls.from_task(
+            task=task,
+            sender=sender,
+            recipient=recipient,
+            images=images,
+            image_detail=image_detail,
+        )
+
+    @classmethod
+    def from_task(
+        cls,
+        task: Form,
         sender: str | None = None,
         recipient: Any = None,
         images: str | None = None,
@@ -199,13 +231,13 @@ class Instruction(RoledMessage):
             The created Instruction instance.
         """
         self = cls(
-            **form.instruction_dict,
+            **task.instruction_dict,
             images=images,
             sender=sender,
             recipient=recipient,
             image_detail=image_detail,
         )
-        self.metadata.set(["original_form"], form.ln_id)
+        self.metadata.set(["original_form"], task.ln_id)
 
 
 __all__ = ["Instruction"]

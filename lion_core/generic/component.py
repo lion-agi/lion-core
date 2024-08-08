@@ -16,13 +16,14 @@ limitations under the License.
 
 from collections import deque
 from functools import singledispatchmethod
-
 from typing import Any, TypeVar, ClassVar, Type, override
+from typing_extensions import Annotated
 
-from pydantic import Field, field_serializer, field_validator
+from pydantic import Field, field_serializer, field_validator, validate_call
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
+from lion_core.libs import strip_lower
 from lion_core.sys_utils import SysUtil
 from lion_core.setting import LN_UNDEFINED
 from lion_core.exceptions import LionValueError
@@ -41,6 +42,9 @@ DEFAULT_SERIALIZATION_INCLUDE: set[str] = {
     "timestamp",
     "embedding",
 }
+
+
+NAMED_FIELD = Annotated[str, Field(..., alias="field")]
 
 
 class Component(Element):
@@ -92,9 +96,10 @@ class Component(Element):
         """
         return {**self.model_fields, **self.extra_fields}
 
+    @validate_call
     def add_field(
         self,
-        name: str,
+        name: NAMED_FIELD,
         value: Any = LN_UNDEFINED,
         annotation: Any = LN_UNDEFINED,
         field_obj: FieldInfo = LN_UNDEFINED,
@@ -123,9 +128,10 @@ class Component(Element):
     # when updating field, we do not check the validity of annotation
     # meaning current value will not get validated, and can lead to errors when storing and loading
     # if you change annotation to a type that is not compatible with the current value
+    @validate_call
     def update_field(
         self,
-        name: str,
+        name: NAMED_FIELD,
         value: Any = LN_UNDEFINED,
         annotation: Any = LN_UNDEFINED,
         field_obj: FieldInfo | Any = LN_UNDEFINED,
@@ -192,7 +198,7 @@ class Component(Element):
         setattr(self, name, value)
         self._add_last_update(name)
 
-    def _add_last_update(self, name: str) -> None:
+    def _add_last_update(self, name: NAMED_FIELD) -> None:
         current_time = SysUtil.time()
         self.metadata.set(["last_updated", name], current_time)
 
@@ -353,6 +359,7 @@ class Component(Element):
         repr_str += f"extra_fields={truncate_dict(extra_fields)})"
         return repr_str
 
+    # converter methods
     @classmethod
     def get_converter_registry(cls) -> ComponentConverterRegistry:
         """Get the converter registry for the class."""
@@ -375,31 +382,100 @@ class Component(Element):
         """Register a new converter. Can be used for both a class and/or an instance."""
         cls.get_converter_registry().register(key, converter)
 
+    # field management methods
+    def field_setattr(self, name: str, attr: Any, value: Any, /):
+        if not name in self.all_fields:
+            raise KeyError(f"Field {name} not found in object all fields.")
+
+        if name in self.model_fields:
+            if hasattr(self.model_fields[name], attr):
+                self.model_fields[name].__setattr__(attr, value)
+            else:
+                self.model_fields[name].json_schema_extra[attr] = value
+
+        elif name in self.extra_fields:
+            if hasattr(self.extra_fields[name], attr):
+                self.extra_fields[name].__setattr__(attr, value)
+            else:
+                self.model_fields[name].json_schema_extra[attr] = value
+
+    def field_hasattr(self, name: str, attr: str, /) -> bool:
+        """Check if a field has a specific attribute."""
+        if not (field := self.all_fields.get(name, None)):
+            raise KeyError(f"Field {name} not found in model fields.")
+
+        if attr not in str(field):
+            try:
+                a = (
+                    attr in self.all_fields[name].json_schema_extra
+                    and self.all_fields[name].json_schema_extra[attr]
+                    is not LN_UNDEFINED
+                )
+                return a if isinstance(a, bool) else False
+            except Exception:
+                return False
+        return True
+
+    def field_getattr(
+        self, name: NAMED_FIELD, attr: str, default: Any = LN_UNDEFINED, /
+    ) -> Any:
+        """Get the value of a field attribute."""
+
+        if strip_lower(attr, chars="s") == "annotation":
+            return self._field_annotation(name)
+
+        if not name in self.all_fields:
+            raise KeyError(f"Field {name} not found in object all fields.")
+
+        if not self.field_hasattr(name, attr):
+            raise AttributeError(f"field {name} has no attribute {attr}")
+
+        field = self.all_fields[name]
+        if (a := getattr(field, attr, LN_UNDEFINED)) is LN_UNDEFINED:
+            if (
+                b := field.json_schema_extra.get(attr, LN_UNDEFINED)
+            ) is not LN_UNDEFINED:
+                return b
+            if default is not LN_UNDEFINED:
+                return default
+            raise AttributeError(f"field {name} has no attribute {attr}")
+
+        else:
+            return a
+
     @singledispatchmethod
-    def _get_field_annotation(self, field: Any) -> dict[str, Any]:
+    def _field_annotation(self, name: Any, /) -> dict[str, Any]:
+        """
+        Get field annotation for a given field.
+
+        Args:
+            field: The field to get annotation for.
+
+        Returns:
+            A dictionary containing the field annotation.
+        """
         return {}
 
-    # use list comprehension
-    @_get_field_annotation.register(str)
-    def _(self, field: str) -> dict[str, Any]:
-        dict_ = {field: self.all_fields[field].annotation}
-        for k, v in dict_.items():
-            if "|" in str(v):
-                v = str(v)
-                v = v.split("|")
-                dict_[k] = [str(i).lower().strip() for i in v]
+    @_field_annotation.register(str)
+    def _(self, name: str, /) -> dict[str, Any]:
+        dict_ = {name: self.all_fields[name].annotation}
+        for _f, _anno in dict_.items():
+            if "|" in str(_anno):
+                _anno = str(_anno)
+                _anno = _anno.split("|")
+                dict_[_f] = [str(i).lower().strip() for i in _anno]
             else:
-                dict_[k] = [v.__name__] if v else None
+                dict_[_f] = [_anno.__name__] if _anno else None
         return dict_
 
-    @_get_field_annotation.register(deque)
-    @_get_field_annotation.register(set)
-    @_get_field_annotation.register(list)
-    @_get_field_annotation.register(tuple)
-    def _(self, field: list | tuple) -> dict[str, Any]:
+    @_field_annotation.register(deque)
+    @_field_annotation.register(set)
+    @_field_annotation.register(list)
+    @_field_annotation.register(tuple)
+    def _(self, name: list | tuple, /) -> dict[str, Any]:
         dict_ = {}
-        for f in field:
-            dict_.update(self._get_field_annotation(f))
+        for f in name:
+            dict_.update(self._field_annotation(f))
         return dict_
 
 
