@@ -18,7 +18,6 @@ limitations under the License.
 
 import inspect
 
-import re
 from typing import Any, Literal, Type, override
 
 from pydantic import Field, model_validator, ConfigDict
@@ -248,7 +247,7 @@ Please follow prompts to complete the task:
         Raises:
             ValueError: If input fields are missing and handle_how is "raise".
         """
-        if self.has_processed:
+        if self.strict and self.has_processed:
             raise ERR_MAP["task_already_processed"]
 
         missing_inputs = []
@@ -412,6 +411,8 @@ Please follow prompts to complete the task:
         task_description: str | None = None,
         fill_inputs: bool | None = True,
         none_as_valid_value: bool | None = False,
+        output_fields: list[str] | None = None,
+        same_form_output_fields: bool | None = False,
         **input_value_kwargs,
     ):
 
@@ -424,6 +425,13 @@ Please follow prompts to complete the task:
                 raise ERR_MAP["not_form_instance"]
             form_fields = form.all_fields
 
+        if same_form_output_fields:
+            if output_fields:
+                raise LionValueError(
+                    "Cannot provide output_fields and same_form_output_fields at the same time."
+                )
+            output_fields = form.output_fields
+            
         obj = cls(
             guidance=guidance or getattr(form, "guidance", None),
             assignment=assignment or form.assignment,
@@ -432,7 +440,7 @@ Please follow prompts to complete the task:
             strict=(
                 strict if isinstance(strict, bool) else getattr(form, "strict", False)
             ),
-            output_fields=form.output_fields,
+            output_fields=output_fields,
         )
 
         for i in obj.work_dict.keys():

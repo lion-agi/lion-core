@@ -18,10 +18,11 @@ limitations under the License.
 
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_core import PydanticUndefined
 
 from lion_core.abc import MutableRecord
+from lion_core.exceptions import LionValueError
 from lion_core.generic.component import Component
 from lion_core.setting import LN_UNDEFINED
 from lion_core.form.utils import ERR_MAP
@@ -59,6 +60,16 @@ class BaseForm(Component, MutableRecord):
     none_as_valid_value: bool = Field(
         default=False, description="Indicate whether to treat None as a valid value."
     )
+
+    @field_validator("output_fields", mode="before")
+    def _validate_output(cls, value):
+        if isinstance(value, str):
+            return [value]
+        if isinstance(value, list) and all([i for i in value if isinstance(i, str)]):
+            return value
+        if not value:
+            return []
+        raise LionValueError("Invalid output fields.")
 
     @property
     def work_fields(self) -> list[str]:
