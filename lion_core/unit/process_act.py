@@ -1,8 +1,24 @@
+"""
+Copyright 2024 HaiyangLi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from typing import Literal, TYPE_CHECKING
 from lion_core.libs import validate_mapping
 
 from lion_core.session.branch import Branch
-from lion_core.generic.form import Form
+from lion_core.form.task_form import BaseForm
 from lion_core.generic.note import note
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.action_response import ActionResponse
@@ -15,11 +31,11 @@ if TYPE_CHECKING:
 
 async def process_act(
     branch: Branch,
-    form: Form,
+    form: BaseForm,
     actions: dict,
     handle_unmatched: Literal["ignore", "raise", "remove", "force"] = "force",
     return_branch: bool = False,
-) -> Form | tuple[Branch, Form]:
+) -> BaseForm | tuple[Branch, BaseForm]:
     """
     Process actions for a given branch and form.
 

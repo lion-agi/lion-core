@@ -24,7 +24,7 @@ from lion_core.sys_utils import SysUtil
 from lion_core.libs import ucall
 from lion_core.generic.note import Note
 from lion_core.generic.log import BaseLog
-from lion_core.generic.form import Form
+from lion_core.form.task_form import BaseForm
 
 
 class Rule(Condition, Action, Observable, Temporal):
@@ -77,7 +77,7 @@ class Rule(Condition, Action, Observable, Temporal):
         self,
         field: str,
         value: Any,
-        form: Form,
+        form: BaseForm,
         *args,
         apply_fields: list[str] = None,
         exclude_fields: list[str] = None,
@@ -179,7 +179,7 @@ class Rule(Condition, Action, Observable, Temporal):
 
     # must only return True or False
     async def rule_condition(
-        self, field: str, value: Any, form: Form, *args, **kwargs
+        self, field: str, value: Any, form: BaseForm, *args, **kwargs
     ) -> bool:
         """
         Default rule condition method.

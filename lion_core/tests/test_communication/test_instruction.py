@@ -9,12 +9,12 @@ from lion_core.communication.instruction import (
 )
 from lion_core.communication.message import MessageRole, MessageFlag
 from lion_core.generic.note import Note
-from lion_core.task.base import BaseTask
+from lion_core.form.form import Form
 from lion_core.setting import LN_UNDEFINED
 
 
 # Helper function to create a mock BaseTask
-class MockBaseTask(BaseTask):
+class MockBaseTask(Form):
     def __init__(self, instruction_dict):
         super().__init__()
         self.instruction_dict = instruction_dict

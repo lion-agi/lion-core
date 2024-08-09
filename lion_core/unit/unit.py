@@ -1,4 +1,20 @@
 """
+Copyright 2024 HaiyangLi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
+"""
 Module for the UnitProcessor class in the Lion framework.
 
 This module provides the UnitProcessor class, which encapsulates various
@@ -8,7 +24,7 @@ and validation processing.
 
 from typing import Type, TYPE_CHECKING
 from lion_core.abc import BaseProcessor
-from lion_core.generic.form import Form
+from lion_core.form.task_form import BaseForm
 from lion_core.unit.unit_form import UnitForm
 from lion_core.unit.process_act import process_act
 from lion_core.unit.process_action_request import process_action_request
@@ -32,7 +48,7 @@ class UnitProcessor(BaseProcessor):
         branch (Branch): The branch associated with this processor.
     """
 
-    default_form: Type[Form] = UnitForm
+    default_form: Type[BaseForm] = UnitForm
 
     def __init__(self, branch: "Branch"):
         """
@@ -44,7 +60,7 @@ class UnitProcessor(BaseProcessor):
         self.branch = branch
 
     async def process_act(
-        self, form: Form, actions: dict = None, return_branch: bool = False
+        self, form: BaseForm, actions: dict = None, return_branch: bool = False
     ):
         """
         Process an act within the branch context.

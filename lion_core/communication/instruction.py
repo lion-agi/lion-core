@@ -1,13 +1,32 @@
-from typing import Any, Literal, override
+"""
+Copyright 2024 HaiyangLi
 
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
+import inspect
+from typing import Any, Literal, override, Type
+
+from lion_core.exceptions import LionTypeError
 from lion_core.setting import LN_UNDEFINED
 from lion_core.generic.note import Note, note
-from lion_core.generic.form import Form
+from lion_core.form.base import BaseForm
 from lion_core.communication.message import (
     RoledMessage,
     MessageRole,
     MessageFlag,
 )
+from lion_core.form.form import Form
 
 
 def prepare_request_response_format(request_fields: dict) -> str:
@@ -40,13 +59,17 @@ def format_image_content(
 
 
 def prepare_instruction_content(
+    guidance: str | None = None,
     instruction: str | None = None,
     context: str | dict | list | None = None,
     request_fields: dict | None = None,
     images: str | list | None = None,  # list of base64 encoded images
     image_detail: Literal["low", "high", "auto"] | None = None,
 ) -> Note:
+
     out_ = {}
+    if guidance:
+        out_["guidance"] = guidance
 
     out_["instruction"] = instruction or "N/A"
     if context:
@@ -88,6 +111,7 @@ class Instruction(RoledMessage):
     def __init__(
         self,
         instruction: Any | MessageFlag,
+        guidance: Any | MessageFlag = None,
         context: Any | MessageFlag = None,
         images: list | MessageFlag = None,
         sender: Any | MessageFlag = None,
@@ -110,6 +134,7 @@ class Instruction(RoledMessage):
         """
         message_flags = [
             instruction,
+            guidance,
             context,
             images,
             sender,
@@ -129,6 +154,7 @@ class Instruction(RoledMessage):
         super().__init__(
             role=MessageRole.USER,
             content=prepare_instruction_content(
+                guidance=guidance,
                 instruction=instruction,
                 context=context,
                 images=images,
@@ -180,11 +206,18 @@ class Instruction(RoledMessage):
     @classmethod
     def from_form(
         cls,
-        form: "Form",
+        *,
+        form: BaseForm | Type[Form],
         sender: str | None = None,
         recipient: Any = None,
         images: str | None = None,
         image_detail: str | None = None,
+        strict: bool = None,
+        assignment: str = None,
+        task_description: str = None,
+        fill_inputs: bool = True,
+        none_as_valid_value: bool = False,
+        input_value_kwargs: dict = None,
     ) -> "Instruction":
         """
         Creates an Instruction instance from a form.
@@ -198,14 +231,43 @@ class Instruction(RoledMessage):
         Returns:
             The created Instruction instance.
         """
-        self = cls(
-            **form.instruction_dict,
-            images=images,
-            sender=sender,
-            recipient=recipient,
-            image_detail=image_detail,
-        )
-        self.metadata.set(["original_form"], form.ln_id)
+        try:
+            if inspect.isclass(form) and issubclass(form, Form):
+                form = form(
+                    strict=strict,
+                    assignment=assignment,
+                    task_description=task_description,
+                    fill_inputs=fill_inputs,
+                    none_as_valid_value=none_as_valid_value,
+                    **(input_value_kwargs or {}),
+                )
+
+            elif isinstance(form, BaseForm) and not isinstance(form, Form):
+                form = Form.from_form(
+                    form=form,
+                    assignment=assignment or form.assignment,
+                    strict=strict,
+                    task_description=task_description,
+                    fill_inputs=fill_inputs,
+                    none_as_valid_value=none_as_valid_value,
+                    **(input_value_kwargs or {}),
+                )
+
+            if isinstance(form, Form):
+                self = cls(
+                    guidance=form.guidance,
+                    images=images,
+                    sender=sender,
+                    recipient=recipient,
+                    image_detail=image_detail,
+                    **form.instruction_dict,
+                )
+                self.metadata.set(["original_form"], form.ln_id)
+                return self
+        except Exception as e:
+            raise LionTypeError(
+                "Invalid form. The form must be a subclass or an instance of BaseForm."
+            ) from e
 
 
 __all__ = ["Instruction"]
