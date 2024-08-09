@@ -107,7 +107,9 @@ class BaseForm(Component, MutableRecord):
             ValueError: If a required field is missing and suppress is False.
         """
         result = {}
-        for i in self.output_fields:
+        out_fields = self.output_fields or getattr(self, "request_fields", [])
+        
+        for i in out_fields:
             if i not in self.all_fields:
                 if not suppress:
                     raise ERR_MAP["missing_field"](i)
