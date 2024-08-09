@@ -18,7 +18,8 @@ from typing import Literal, TYPE_CHECKING
 from lion_core.libs import validate_mapping
 
 from lion_core.session.branch import Branch
-from lion_core.form.task_form import BaseForm
+from lion_core.form.base import BaseForm
+from lion_core.form.form import Form
 from lion_core.generic.note import note
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.action_response import ActionResponse

@@ -24,12 +24,11 @@ including handling of system messages, instructions, and model configurations.
 from typing import Any, Literal, TYPE_CHECKING
 
 from lion_core.abc import Observable
-from lion_core.form.task_form import BaseForm
+from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.message import MessageFlag
 from lion_core.communication.instruction import Instruction
-from lion_core.form.static_task import StaticTask
 
 if TYPE_CHECKING:
     from lion_core.session.branch import Branch
@@ -46,6 +45,9 @@ def process_chat_config(
     recipient: Observable | str | None = None,
     request_fields: dict | MessageFlag | None = None,
     system: Any = None,
+    guidance: Any = None,
+    strict_form: bool = False,
+    output_fields: dict | None = None,
     action_request: ActionRequest | None = None,
     images: list | MessageFlag | None = None,
     image_detail: Literal["low", "high", "auto"] | MessageFlag | None = None,
@@ -60,37 +62,10 @@ def process_chat_config(
     fill_inputs: bool = True,
     none_as_valid_value: bool = False,
     input_fields_value_kwargs: dict = None,
+    same_form_output_fields=None,
     **kwargs: Any,  # additional model parameters
 ) -> dict:
-    """
-    Process chat configuration for a Branch object.
 
-    This function handles the configuration of various chat-related settings,
-    including system messages, instructions, and model parameters.
-
-    Args:
-        branch: The Branch object to configure.
-        task: An optional BaseTask object.
-        sender: The sender of the message.
-        recipient: The recipient of the message.
-        instruction: The instruction for the chat.
-        context: Additional context for the chat.
-        request_fields: Fields to request in the response.
-        system: System message configuration.
-        action_request: An optional ActionRequest object.
-        images: List of images or MessageFlag.
-        image_detail: Detail level for images.
-        system_datetime: Datetime for the system message.
-        metadata: Additional metadata.
-        delete_previous_system: Whether to delete the previous system message.
-        tools: Boolean flag for tools configuration.
-        system_metadata: Metadata for the system message.
-        model_config: Additional model configuration.
-        **kwargs: Additional keyword arguments for model parameters.
-
-    Returns:
-        A dictionary containing the processed chat configuration.
-    """
     message_kwargs = {
         "context": context,
         "sender": sender,
@@ -108,13 +83,17 @@ def process_chat_config(
     else:
         if not task:
             if form:
-                task = StaticTask.from_form(
-                    assignment=assignment or getattr(form, "assignment", None),
+                task = Form.from_form(
                     form=form,
+                    guidance=guidance,
+                    assignment=assignment,
+                    strict=strict_form,
                     task_description=task_description,
                     fill_inputs=fill_inputs,
                     none_as_valid_value=none_as_valid_value,
-                    input_value_kwargs=input_fields_value_kwargs or {},
+                    output_fields=output_fields,
+                    input_value_kwargs=input_fields_value_kwargs,
+                    same_form_output_fields=same_form_output_fields,
                 )
 
         if task and isinstance(task, Form):

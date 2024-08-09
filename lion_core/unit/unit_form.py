@@ -21,7 +21,7 @@ from pydantic import Field, PrivateAttr
 
 from lion_core.libs import to_dict
 from lion_core.form.form import Form
-from lion_core.form.report import Report
+from lion_core.unit.unit_rulebook import UnitRuleBook
 
 if TYPE_CHECKING:
     from lion_core.session.branch import Branch
@@ -29,9 +29,19 @@ if TYPE_CHECKING:
 
 class UnitForm(Form):
 
-    assignment: str = Field("task -> answer")
+    rulebook: UnitRuleBook | None = Field(
+        None,
+        description="The rulebook for the form.",
+        exlcude=True,
+    )
 
-    template_name: str = Field("UnitProcess")
+    assignment: str = Field(
+        "task -> answer",
+    )
+
+    template_name: str = Field(
+        "UnitProcess",
+    )
 
     confidence: float | None = Field(
         None,
@@ -160,11 +170,8 @@ class UnitForm(Form):
 
     def __init__(
         self,
-    ): ...
-
-    def __init__(
-        self,
         instruction=None,
+        *,
         context=None,
         reason: bool = True,
         predict: bool = False,
@@ -241,7 +248,7 @@ class UnitForm(Form):
             )
 
         if confidence:
-            self.append_to_request("confidence_score")
+            self.append_to_request("confidence")
 
         if score:
             self.append_to_request("score")
@@ -264,14 +271,15 @@ class UnitForm(Form):
         if reflect:
             self.append_to_request("reflection")
 
-    def display(self):
+    @property
+    def display_dict(self):
         """
         Display the current form fields and values in a user-friendly format.
         """
-        fields = self.work_fields.copy()
+        fields = self.required_dict
 
-        if "task" in fields and len(str(fields["task"])) > 2000:
-            fields["task"] = fields["task"][:2000] + "..."
+        if "task" in fields and len(str(fields["task"])) > 1000:
+            fields["task"] = str(fields["task"])[:1000].strip() + "..."
 
         if "tool_schema" in fields:
             tools = to_dict(fields["tool_schema"])["tools"]
@@ -304,12 +312,18 @@ class UnitForm(Form):
                 idx += 1
             fields["action_response"] = a[:-2]
 
-        super().display(fields=fields)
+        # change the order of answer to the end
+        if "answer" in fields:
+            answer = fields.pop("answer")
+            fields["answer"] = answer
+
+        return fields
 
 
 def create_unit_form(
     branch: Branch,
-    form: None,
+    *,
+    form: UnitForm | None = None,
     instruction: str | None = None,
     context: dict[str, Any] | None = None,
     tools: dict[str, Any] | None = None,
@@ -332,40 +346,9 @@ def create_unit_form(
     predict_num_sentences: int | None = None,
     clear_messages: bool = False,
     return_branch: bool = False,
+    **kwargs,
 ) -> tuple[Branch, UnitForm] | UnitForm:
-    """
-    Create a UnitForm instance based on the given parameters.
 
-    Args:
-        branch: The Branch instance to associate with the form.
-        form: An existing Form instance to use as a base (optional).
-        instruction: Additional instruction for the form.
-        context: Additional context for the form.
-        tools: Tools configuration for the form.
-        reason: Flag to include reasoning in the form.
-        predict: Flag to include prediction in the form.
-        score: Flag to include scoring in the form.
-        select: Selection parameter for the form.
-        plan: Planning parameter for the form.
-        brainstorm: Flag to include brainstorming in the form.
-        reflect: Flag to include reflection in the form.
-        tool_schema: Schema of available tools.
-        allow_action: Flag to allow actions in the form.
-        allow_extension: Flag to allow extensions in the form.
-        max_extension: Maximum number of extensions allowed.
-        confidence: Confidence parameter for the form.
-        score_num_digits: Number of digits for scoring.
-        score_range: Range for scoring.
-        select_choices: Choices for selection.
-        plan_num_step: Number of steps in the plan.
-        predict_num_sentences: Number of sentences for prediction.
-        clear_messages: Flag to clear existing messages.
-        return_branch: Flag to return the branch along with the form.
-
-    Returns:
-        A tuple of (Branch, UnitForm) if return_branch is True, otherwise just
-        the UnitForm.
-    """
     if clear_messages:
         branch.clear()
 
@@ -394,11 +377,10 @@ def create_unit_form(
             brainstorm=brainstorm,
             reflect=reflect,
             tool_schema=tool_schema,
+            **kwargs,
         )
 
-    elif form and "tool_schema" not in form.all_fields:
+    elif form and tool_schema:
         form.append_to_input("tool_schema", tool_schema)
-    else:
-        form.tool_schema = tool_schema
 
     return branch, form if return_branch else form
