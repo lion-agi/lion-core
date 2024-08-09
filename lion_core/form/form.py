@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 """Form class extending BaseTaskForm with additional functionality."""
 
 from functools import singledispatchmethod
@@ -483,7 +484,7 @@ Please follow prompts to complete the task:
 
         if update_value:
             self.update_field(name, value=value)
-        elif name not in self.all_fields:
+        if name not in self.all_fields:
             self.add_field(name, value=value)
 
     def append_to_input(
