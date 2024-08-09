@@ -58,13 +58,17 @@ def format_image_content(
 
 
 def prepare_instruction_content(
+    guidance: str | None = None,
     instruction: str | None = None,
     context: str | dict | list | None = None,
     request_fields: dict | None = None,
     images: str | list | None = None,  # list of base64 encoded images
     image_detail: Literal["low", "high", "auto"] | None = None,
 ) -> Note:
+
     out_ = {}
+    if guidance:
+        out_["guidance"] = guidance
 
     out_["instruction"] = instruction or "N/A"
     if context:
@@ -106,6 +110,7 @@ class Instruction(RoledMessage):
     def __init__(
         self,
         instruction: Any | MessageFlag,
+        guidance: Any | MessageFlag = None,
         context: Any | MessageFlag = None,
         images: list | MessageFlag = None,
         sender: Any | MessageFlag = None,
@@ -128,6 +133,7 @@ class Instruction(RoledMessage):
         """
         message_flags = [
             instruction,
+            guidance,
             context,
             images,
             sender,
@@ -147,6 +153,7 @@ class Instruction(RoledMessage):
         super().__init__(
             role=MessageRole.USER,
             content=prepare_instruction_content(
+                guidance=guidance,
                 instruction=instruction,
                 context=context,
                 images=images,
@@ -224,7 +231,7 @@ class Instruction(RoledMessage):
             The created Instruction instance.
         """
 
-        if inspect.isclass(form) and issubclass(form, BaseForm):
+        if inspect.isclass(form) and issubclass(form, Form):
             form = form(
                 strict=strict,
                 assignment=assignment,
@@ -236,7 +243,7 @@ class Instruction(RoledMessage):
 
         elif isinstance(form, BaseForm) and not isinstance(form, Form):
             form = Form.from_form(
-                form,
+                form=form,
                 assignment=assignment or form.assignment,
                 strict=strict,
                 task_description=task_description,

@@ -20,18 +20,18 @@ from typing import Any, TYPE_CHECKING
 from pydantic import Field, PrivateAttr
 
 from lion_core.libs import to_dict
-from lion_core.form.base import BaseForm
+from lion_core.form.form import Form
 from lion_core.form.report import Report
 
 if TYPE_CHECKING:
     from lion_core.session.branch import Branch
 
 
-class UnitForm(BaseForm):
-
-    template_name: str = "UnitProcess"
+class UnitForm(Form):
 
     assignment: str = Field("task -> answer")
+
+    template_name: str = Field("UnitProcess")
 
     confidence: float | None = Field(
         None,
@@ -309,7 +309,7 @@ class UnitForm(BaseForm):
 
 def create_unit_form(
     branch: Branch,
-    form: BaseForm | None,
+    form: None,
     instruction: str | None = None,
     context: dict[str, Any] | None = None,
     tools: dict[str, Any] | None = None,

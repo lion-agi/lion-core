@@ -19,7 +19,7 @@ from typing import Any, Union
 from lion_core.abc import BaseExecutor, Temporal, Observable
 from lion_core.sys_utils import SysUtil
 
-from lion_core.form.task_form import BaseForm
+from lion_core.form.form import Form
 from lion_core.rule.base import Rule
 from lion_core.rule.default_rules._default import DEFAULT_RULES, DEFAULT_RULEORDER
 from lion_core.rule.rulebook import RuleBook
@@ -51,7 +51,7 @@ class Validator(BaseExecutor, Temporal, Observable):
         self,
         field: str,
         value: Any,
-        form: BaseForm,
+        form: Form,
         *args,
         annotation=None,
         strict=True,
@@ -103,11 +103,11 @@ class Validator(BaseExecutor, Temporal, Observable):
 
     async def validate_response(
         self,
-        form: BaseForm,
+        form: Form,
         response: Union[dict, str],
         strict: bool = True,
         use_annotation: bool = True,
-    ) -> BaseForm:
+    ) -> Form:
         """
         Validate a response for a given form.
 

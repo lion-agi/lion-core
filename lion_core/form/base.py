@@ -103,6 +103,8 @@ class BaseForm(Component, MutableRecord):
             else:
                 result[i] = getattr(self, i, LN_UNDEFINED)
 
+        # add a validator for output fields
+
         if valid_only:
             invalid_values = [LN_UNDEFINED, PydanticUndefined]
             if not self.none_as_valid_value:

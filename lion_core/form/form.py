@@ -16,7 +16,6 @@ limitations under the License.
 
 """Form class extending BaseTaskForm with additional functionality."""
 
-from functools import singledispatchmethod
 import inspect
 
 from typing import Any, Literal, Type, override
@@ -25,7 +24,7 @@ from pydantic import Field, model_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
-from lion_core.setting import LN_UNDEFINED, LionUndefined
+from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 from lion_core.exceptions import LionValueError
 from lion_core.generic.note import Note
@@ -50,6 +49,7 @@ class Form(BaseForm):
     strict: bool = Field(
         default=False,
         description="If True, form fields and assignment are immutable.",
+        frozen=True,
     )
     guidance: str | dict[str, Any] | None = Field(
         default=None,
@@ -141,7 +141,7 @@ Please follow prompts to complete the task:
     @override
     def update_field(
         self,
-        name: str,
+        field_name: str,
         value: Any = LN_UNDEFINED,
         annotation: Any = LN_UNDEFINED,
         field_obj: FieldInfo | Any = LN_UNDEFINED,
@@ -154,27 +154,31 @@ Please follow prompts to complete the task:
         the init_input_kwargs dictionary.
         """
         super().update_field(
-            name=name, value=value, annotation=annotation, field_obj=field_obj, **kwargs
+            field_name=field_name,
+            value=value,
+            annotation=annotation,
+            field_obj=field_obj,
+            **kwargs,
         )
-        self._fill_init_input_kwargs(name)
+        self._fill_init_input_kwargs(field_name)
 
     @override
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, field_name: str, value: Any) -> None:
         """
         Set an attribute of the form.
 
         Extends the base __setattr__ method to enforce strictness
         and update the init_input_kwargs dictionary.
         """
-        if self.strict and name in RESTRICTED_FIELDS:
-            raise AttributeError(f"{name} should not be modified after init")
+        if self.strict and field_name in RESTRICTED_FIELDS:
+            raise AttributeError(f"{field_name} should not be modified after init")
 
-        super().__setattr__(name, value)
-        self._fill_init_input_kwargs(name)
+        super().__setattr__(field_name, value)
+        self._fill_init_input_kwargs(field_name)
 
-    def _fill_init_input_kwargs(self, name):
-        if name in self.input_fields:
-            self.init_input_kwargs[name] = getattr(self, name)
+    def _fill_init_input_kwargs(self, field_name):
+        if field_name in self.input_fields:
+            self.init_input_kwargs[field_name] = getattr(self, field_name)
 
     def check_is_completed(
         self, handle_how: Literal["raise", "return_missing"] = "raise"
@@ -193,7 +197,7 @@ Please follow prompts to complete the task:
             ValueError: If required fields are incomplete and handle_how
                 is "raise".
         """
-        if self.has_processed:
+        if self.strict and self.has_processed:
             return
 
         non_complete_request = []
@@ -380,6 +384,7 @@ Please follow prompts to complete the task:
     def from_form(
         cls,
         form: BaseForm | Type[BaseForm],
+        guidance: str | dict[str, Any] | None = None,
         assignment: str | None = None,
         strict: bool = None,
         task_description: str | None = None,
@@ -398,6 +403,7 @@ Please follow prompts to complete the task:
             form_fields = form.all_fields
 
         obj = cls(
+            guidance=guidance or getattr(form, "guidance", None),
             assignment=assignment or form.assignment,
             task_description=task_description,
             none_as_valid_value=none_as_valid_value,
@@ -421,111 +427,123 @@ Please follow prompts to complete the task:
 
         return obj
 
-    @singledispatchmethod
-    def _append_to(
-        self, name: Any, value: Any, field_type: str, mapping: dict, update_value: bool
-    ):
-        raise NotImplementedError
-
-    @_append_to.register(str)
-    def _(
-        self, name: str, value: Any, field_type: str, mapping: dict, update_value: bool
-    ):
-        _f = lambda x: [i.strip() for i in x.split(",") if i]
-        if value is not LN_UNDEFINED:
-            if len(_f(name)) > 1:
-                raise LionValueError("Cannot fill value for multiple fields.")
-            if len(_f(name)) == 1:
-                self._append_to_one(self, field_type, name, self.strict, value)
-        else:
-            if mapping:
-                raise LionValueError("Cannot use mapping with name or value.")
-
-        if mapping and isinstance(mapping, dict):
-            for k, v in mapping.items():
-                self._append_to_one(field_type, k, v, update_value)
-
-    @_append_to.register(type(None))
-    @_append_to.register(LionUndefined)
-    def _(self, name, value: Any, field_type: str, mapping: dict, update_value: bool):
-        if value or not (mapping or isinstance(mapping, dict)):
-            raise LionValueError("Error in appending to form fields.")
-        for k, v in mapping.items():
-            self._append_to_one(field_type, k, v, update_value)
+    def remove_request_from_output(self):
+        for i in self.request_fields:
+            if i in self.output_fields:
+                self.output_fields.remove(i)
 
     def _append_to_one(
         self,
+        field_name: Any,
         field_type: Literal["input", "output", "request"],
-        name: str,
         value: Any = LN_UNDEFINED,
-        update_value: bool = False,
+        annotation: Any = LN_UNDEFINED,
+        field_obj: FieldInfo | Any = LN_UNDEFINED,
+        **kwargs,
     ):
+        _f = lambda x: [i.strip() for i in x.split(",") if i]
+        if not (a := _f(field_name)) or len(a) > 1:
+            raise LionValueError(
+                "Cannot append more than one field at a time, a field's name cannot contain commas."
+            )
+
+        config = {
+            "field_name": field_name,
+            "field_type": field_type,
+            "value": value,
+            "annotation": annotation,
+            "field_obj": field_obj,
+            **kwargs,
+        }
 
         if self.strict:
-            raise LionValueError("Cannot append to a strict form.")
+            raise LionValueError("Cannot modify a strict form.")
 
         match field_type:
             case "input":
-                if name not in self.input_fields:
-                    self.input_fields.append(name)
+                if field_name not in self.input_fields:
+                    self.input_fields.append(field_name)
 
             case "request":
-                if name not in self.request_fields:
-                    self.request_fields.append(name)
+                if field_name not in self.request_fields:
+                    self.request_fields.append(field_name)
+                    config.pop("value")
 
             case "output":
-                if name not in self.output_fields:
-                    self.input_fields.append(name)
+                if field_name not in self.output_fields:
+                    self.input_fields.append(field_name)
 
             case _:
                 raise LionValueError(f"Invalid field type {field_type}")
 
-        if update_value:
-            self.update_field(name, value=value)
-        if name not in self.all_fields:
-            self.add_field(name, value=value)
+        self.update_field(**config)
 
     def append_to_input(
         self,
-        name: Any = LN_UNDEFINED,
+        field_name: str,
         value: Any = LN_UNDEFINED,
-        mapping: dict = LN_UNDEFINED,
-        update_value: bool = False,
-        /,
+        annotation: Any = LN_UNDEFINED,
+        field_obj: FieldInfo | Any = LN_UNDEFINED,
+        **kwargs,
     ) -> None:
-
         try:
-            self._append_to(name, value, "input", mapping, update_value)
+            self._append_to_one(
+                field_name=field_name,
+                field_type="input",
+                value=value,
+                annotation=annotation,
+                field_obj=field_obj,
+                **kwargs,
+            )
         except Exception as e:
-            raise LionValueError(f"Failed to append {name} to input fields.") from e
+            raise LionValueError(
+                f"Failed to append {field_name} to input fields."
+            ) from e
 
     def append_to_output(
         self,
-        name: Any = LN_UNDEFINED,
+        field_name: str,
         value: Any = LN_UNDEFINED,
-        mapping: dict = LN_UNDEFINED,
-        update_value: bool = False,
-        /,
+        annotation: Any = LN_UNDEFINED,
+        field_obj: FieldInfo | Any = LN_UNDEFINED,
+        **kwargs,
     ) -> None:
 
         try:
-            self._append_to(name, value, "output", mapping, update_value)
+            self._append_to_one(
+                field_name=field_name,
+                field_type="output",
+                value=value,
+                annotation=annotation,
+                field_obj=field_obj,
+                **kwargs,
+            )
         except Exception as e:
-            raise LionValueError(f"Failed to append {name} to output fields.") from e
+            raise LionValueError(
+                f"Failed to append {field_name} to output fields."
+            ) from e
 
     def append_to_request(
         self,
-        name: Any = LN_UNDEFINED,
-        value: Any = LN_UNDEFINED,
-        mapping: dict = LN_UNDEFINED,
-        update_value: bool = False,
-        /,
+        field_name: str,
+        annotation: Any = LN_UNDEFINED,
+        field_obj: FieldInfo | Any = LN_UNDEFINED,
+        **kwargs,
     ) -> None:
-
+        if "value" in kwargs:
+            raise LionValueError("Cannot provide value to request fields.")
         try:
-            self._append_to(name, value, "request", mapping, update_value)
+            self._append_to_one(
+                field_name=field_name,
+                field_type="request",
+                annotation=annotation,
+                field_obj=field_obj,
+                **kwargs,
+            )
         except Exception as e:
-            raise LionValueError(f"Failed to append {name} to request fields.") from e
+            raise LionValueError(
+                f"Failed to append {field_name} to request fields."
+            ) from e
 
 
 __all__ = ["Form"]
