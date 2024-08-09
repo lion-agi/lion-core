@@ -25,7 +25,6 @@ from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
 from lion_core.setting import LN_UNDEFINED
-from lion_core.libs import as_readable_json
 from lion_core.sys_utils import SysUtil
 from lion_core.exceptions import LionValueError
 from lion_core.generic.note import Note

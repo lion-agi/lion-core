@@ -37,9 +37,8 @@ if TYPE_CHECKING:
 def process_chat_config(
     branch: "Branch",
     *,
-    instruction: Any = None,  # first priority
+    instruction: Any = None,
     context: Any = None,
-    task: Form | str | None = None,  # second priority
     form: BaseForm | None = None,
     sender: Observable | str | None = None,
     recipient: Observable | str | None = None,
@@ -74,30 +73,40 @@ def process_chat_config(
         "image_detail": image_detail,
         "metadata": metadata,
         "action_request": action_request,
+        "guidance": guidance,
+        "same_form_output_fields": same_form_output_fields,
     }
 
     if instruction:
         message_kwargs["instruction"] = instruction
         message_kwargs["request_fields"] = request_fields
 
-    else:
-        if not task:
-            if form:
-                task = Form.from_form(
-                    form=form,
-                    guidance=guidance,
-                    assignment=assignment,
-                    strict=strict_form,
-                    task_description=task_description,
-                    fill_inputs=fill_inputs,
-                    none_as_valid_value=none_as_valid_value,
-                    output_fields=output_fields,
-                    input_value_kwargs=input_fields_value_kwargs,
-                    same_form_output_fields=same_form_output_fields,
-                )
+    if not form:
+        form = Form.from_form(
+            form=form,
+            guidance=guidance,
+            assignment=assignment,
+            strict=strict_form,
+            task_description=task_description,
+            fill_inputs=fill_inputs,
+            none_as_valid_value=none_as_valid_value,
+            output_fields=output_fields,
+            input_value_kwargs=input_fields_value_kwargs,
+            same_form_output_fields=same_form_output_fields,
+        )
 
-        if task and isinstance(task, Form):
-            message_kwargs["instruction"] = Instruction.from_task(task)
+    if isinstance(form, Form):
+        message_kwargs["instruction"] = Instruction.from_form(
+            form=form,
+            sender=sender,
+            recipient=recipient,
+            images=images,
+            image_detail=image_detail,
+            strict=strict_form,
+            assignment=assignment,
+            task_description=task_description,
+            fill_inputs=fill_inputs,
+        )
 
     if system:
         branch.add_message(

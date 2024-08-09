@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from abc import abstractmethod
 from lion_core.abc import BaseiModel
 from lion_core.generic.element import Element
 
@@ -32,6 +33,9 @@ class iModel(Element, BaseiModel):
             None
         """
         pass
+
+    @abstractmethod
+    async def chat(self, input_, endpoint="chat/completions", **kwargs): ...
 
 
 __all__ = ["iModel"]

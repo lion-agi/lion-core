@@ -18,13 +18,12 @@ from typing import Literal, TYPE_CHECKING
 from lion_core.libs import validate_mapping
 
 from lion_core.session.branch import Branch
-from lion_core.form.base import BaseForm
-from lion_core.form.form import Form
+from lion_core.form.report import Report
 from lion_core.generic.note import note
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.action_response import ActionResponse
 from lion_core.unit.process_action_request import process_action_request
-
+from lion_core.unit.unit_form import UnitForm
 
 if TYPE_CHECKING:
     from lion_core.session.branch import Branch
@@ -32,11 +31,12 @@ if TYPE_CHECKING:
 
 async def process_act(
     branch: Branch,
-    form: BaseForm,
+    form: UnitForm,
+    report: Report,
     actions: dict,
     handle_unmatched: Literal["ignore", "raise", "remove", "force"] = "force",
     return_branch: bool = False,
-) -> BaseForm | tuple[Branch, BaseForm]:
+) -> UnitForm | tuple[Branch, UnitForm]:
     """
     Process actions for a given branch and form.
 
@@ -54,6 +54,9 @@ async def process_act(
         ValueError: If no requests are found when processing actions.
     """
     if "action_performed" in form.all_fields and form.action_performed:
+        if form.is_completed() and form not in report.completed_tasks:
+            report.completed_tasks.include(form)
+            report.completed_task_assignments[form.ln_id] = form.assignment
         return form
 
     action_keys = [f"action_{i+1}" for i in range(len(actions))]
@@ -104,5 +107,9 @@ async def process_act(
 
         if len(form.action_response) > len1:
             form.append_to_request("action_performed", True)
+
+    if form.is_completed() and form not in report.completed_tasks:
+        report.completed_tasks.include(form)
+        report.completed_task_assignments[form.ln_id] = form.assignment
 
     return (branch, form) if return_branch else form

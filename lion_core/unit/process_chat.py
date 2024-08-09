@@ -80,7 +80,7 @@ async def process_chat(
     )
 
     imodel = imodel or branch.imodel
-    payload, completion = await imodel.chat(branch.to_chat_messages(), **config)
+    payload, completion = await imodel.call(branch.to_chat_messages(), **config)
 
     _msg = await parse_chatcompletion(
         branch=branch,

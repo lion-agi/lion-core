@@ -21,7 +21,6 @@ from typing import Any
 from pydantic import Field, field_validator
 from pydantic_core import PydanticUndefined
 
-from lion_core.libs import as_readable_json
 from lion_core.abc import MutableRecord
 from lion_core.exceptions import LionValueError
 from lion_core.generic.component import Component
@@ -129,7 +128,6 @@ class BaseForm(Component, MutableRecord):
     @property
     def display_dict(self) -> dict[str, Any]:
         return self.required_dict
-
 
 
 __all__ = ["BaseForm", "BaseTaskForm"]
