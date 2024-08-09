@@ -410,7 +410,7 @@ Please follow prompts to complete the task:
         strict: bool = None,
         task_description: str | None = None,
         fill_inputs: bool | None = True,
-        none_as_valid_value: bool | None = False,
+        none_as_valid_value: bool | None = None,
         output_fields: list[str] | None = None,
         same_form_output_fields: bool | None = False,
         **input_value_kwargs,
@@ -436,7 +436,9 @@ Please follow prompts to complete the task:
             guidance=guidance or getattr(form, "guidance", None),
             assignment=assignment or form.assignment,
             task_description=task_description,
-            none_as_valid_value=none_as_valid_value,
+            none_as_valid_value=(
+                none_as_valid_value if isinstance(none_as_valid_value, bool) else getattr(form, "strict", False)
+            ),
             strict=(
                 strict if isinstance(strict, bool) else getattr(form, "strict", False)
             ),
