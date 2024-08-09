@@ -19,7 +19,7 @@ from functools import singledispatchmethod
 from typing import Any, TypeVar, ClassVar, Type, override
 from typing_extensions import Annotated
 
-from pydantic import Field, field_serializer, field_validator, validate_call
+from pydantic import Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
@@ -96,10 +96,9 @@ class Component(Element):
         """
         return {**self.model_fields, **self.extra_fields}
 
-    @validate_call
     def add_field(
         self,
-        name: NAMED_FIELD,
+        field_name: NAMED_FIELD,
         value: Any = LN_UNDEFINED,
         annotation: Any = LN_UNDEFINED,
         field_obj: FieldInfo = LN_UNDEFINED,
@@ -118,11 +117,11 @@ class Component(Element):
         Raises:
             LionValueError: If the field already exists.
         """
-        if name in self.all_fields:
-            raise LionValueError(f"Field '{name}' already exists")
+        if field_name in self.all_fields:
+            raise LionValueError(f"Field '{field_name}' already exists")
 
         self.update_field(
-            field_name=name,
+            field_name=field_name,
             value=value,
             annotation=annotation,
             field_obj=field_obj,
@@ -132,7 +131,6 @@ class Component(Element):
     # when updating field, we do not check the validity of annotation
     # meaning current value will not get validated, and can lead to errors when storing and loading
     # if you change annotation to a type that is not compatible with the current value
-    @validate_call
     def update_field(
         self,
         field_name: NAMED_FIELD,
@@ -249,7 +247,7 @@ class Component(Element):
                 extra_fields[k] = data.pop(k)
         obj = cls.model_validate(data, **kwargs)
         for k, v in extra_fields.items():
-            obj.add_field(name=k, value=v)
+            obj.add_field(field_name=k, value=v)
 
         metadata = data.get("metadata", {})
         last_updated = metadata.get("last_updated", None)
@@ -403,10 +401,10 @@ class Component(Element):
             else:
                 self.model_fields[field_name].json_schema_extra[attr] = value
 
-    @validate_call
     def field_hasattr(self, field_name: str, attr: str, /) -> bool:
         """Check if a field has a specific attribute."""
-        if not (field := self.all_fields.get(field_name, None)):
+
+        if (field := self.all_fields.get(field_name, None)) is None:
             raise KeyError(f"Field {field_name} not found in model fields.")
 
         if attr not in str(field):
@@ -421,33 +419,39 @@ class Component(Element):
                 return False
         return True
 
-    @validate_call
     def field_getattr(
-        self, field_name: NAMED_FIELD, attr: str, default: Any = LN_UNDEFINED, /
+        self, field_name: str, attr: str, default: Any = LN_UNDEFINED, /
     ) -> Any:
         """Get the value of a field attribute."""
 
         if strip_lower(attr, chars="s") == "annotation":
             return self._field_annotation(field_name)
 
-        if not field_name in self.all_fields:
-            raise KeyError(f"Field {field_name} not found in object all fields.")
+        try:
+            if not field_name in self.all_fields:
+                raise KeyError(f"Field {field_name} not found in object all fields.")
 
-        if not self.field_hasattr(field_name, attr):
-            raise AttributeError(f"field {field_name} has no attribute {attr}")
+            if not self.field_hasattr(field_name, attr):
+                raise AttributeError(f"field {field_name} has no attribute {attr}")
 
-        field = self.all_fields[field_name]
-        if (a := getattr(field, attr, LN_UNDEFINED)) is LN_UNDEFINED:
-            if (
-                b := field.json_schema_extra.get(attr, LN_UNDEFINED)
-            ) is not LN_UNDEFINED:
-                return b
+            field = self.all_fields[field_name]
+
+            if (a := getattr(field, attr, LN_UNDEFINED)) is LN_UNDEFINED:
+                if (
+                    b := field.json_schema_extra.get(attr, LN_UNDEFINED)
+                ) is not LN_UNDEFINED:
+                    return b
+            else:
+                return a
+
             if default is not LN_UNDEFINED:
                 return default
             raise AttributeError(f"field {field_name} has no attribute {attr}")
 
-        else:
-            return a
+        except Exception as e:
+            if default is not LN_UNDEFINED:
+                return default
+            raise AttributeError(f"field {field_name} has no attribute {attr}") from e
 
     @singledispatchmethod
     def _field_annotation(self, field_name: Any, /) -> dict[str, Any]:
@@ -478,7 +482,7 @@ class Component(Element):
     @_field_annotation.register(set)
     @_field_annotation.register(list)
     @_field_annotation.register(tuple)
-    def _(self, field_name: list | tuple, /) -> dict[str, Any]:
+    def _(self, field_name, /) -> dict[str, Any]:
         dict_ = {}
         for f in field_name:
             dict_.update(self._field_annotation(f))

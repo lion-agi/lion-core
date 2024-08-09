@@ -58,7 +58,6 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         arbitrary_types_allowed=True,
         use_enum_values=True,
         populate_by_name=True,
-        # protected_namespaces=("_", "__", "model_"),
     )
 
     @classmethod

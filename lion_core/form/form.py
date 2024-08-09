@@ -18,9 +18,10 @@ limitations under the License.
 
 import inspect
 
+import re
 from typing import Any, Literal, Type, override
 
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, ConfigDict
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
@@ -77,6 +78,20 @@ class Form(BaseForm):
         description="Indicates if the task has been processed.",
         exclude=True,
     )
+    model_config = ConfigDict(
+        extra="allow",
+        arbitrary_types_allowed=True,
+        use_enum_values=True,
+        populate_by_name=True,
+    )
+
+    def to_dict(self, *, valid_only=False):
+        _dict = super().to_dict()
+        if not valid_only:
+            return _dict
+
+        disallow_values = [LN_UNDEFINED, PydanticUndefined, None]
+        return {k: v for k, v in _dict.items() if v not in disallow_values}
 
     @override
     @property
@@ -251,6 +266,13 @@ Please follow prompts to complete the task:
             elif handle_how == "return_missing":
                 return missing_inputs
 
+    @classmethod
+    def from_dict(cls, data: dict):
+        for i in ["input_fields", "request_fields", "task"]:
+            if i in data:
+                data.pop(i)
+        return cls(**data)
+
     @model_validator(mode="before")
     @classmethod
     def check_input_output_list_omitted(cls, data: Any) -> dict[str, Any]:
@@ -295,11 +317,11 @@ Please follow prompts to complete the task:
         data["init_input_kwargs"] = {}
         data["strict_assignment"] = data.get("strict_assignment", False)
 
-        for in_ in data[data["input_fields"]]:
+        for in_ in data["input_fields"]:
             data["init_input_kwargs"][in_] = (
                 data.pop(in_, LN_UNDEFINED)
                 if in_ not in cls.model_fields
-                else data.get(in_, LN_UNDEFINED)
+                else data.get(in_, None)
             )
         return data
 
@@ -316,12 +338,12 @@ Please follow prompts to complete the task:
                 self.init_input_kwargs[i] = getattr(self, i)
             else:
                 self.add_field(
-                    name=i, value=self.init_input_kwargs.get(i, LN_UNDEFINED)
+                    field_name=i, value=self.init_input_kwargs.get(i, LN_UNDEFINED)
                 )
 
         for i in self.request_fields:
             if i not in self.all_fields:
-                self.add_field(name=i)
+                self.add_field(field_name=i)
 
         return self
 
@@ -410,6 +432,7 @@ Please follow prompts to complete the task:
             strict=(
                 strict if isinstance(strict, bool) else getattr(form, "strict", False)
             ),
+            output_fields=form.output_fields,
         )
 
         for i in obj.work_dict.keys():
@@ -449,7 +472,6 @@ Please follow prompts to complete the task:
 
         config = {
             "field_name": field_name,
-            "field_type": field_type,
             "value": value,
             "annotation": annotation,
             "field_obj": field_obj,
@@ -463,15 +485,19 @@ Please follow prompts to complete the task:
             case "input":
                 if field_name not in self.input_fields:
                     self.input_fields.append(field_name)
+                if field_name not in self.assignment:
+                    self.assignment = f"{field_name}, " + self.assignment
 
             case "request":
                 if field_name not in self.request_fields:
                     self.request_fields.append(field_name)
                     config.pop("value")
+                if field_name not in self.assignment:
+                    self.assignment += f", {field_name}"
 
             case "output":
                 if field_name not in self.output_fields:
-                    self.input_fields.append(field_name)
+                    self.output_fields.append(field_name)
 
             case _:
                 raise LionValueError(f"Invalid field type {field_type}")

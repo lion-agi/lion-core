@@ -33,7 +33,7 @@ ERR_MAP = {
         "Example assignment: 'input1, input2 -> output'."
     ),
     "task_already_processed": LionValueError(
-        "The task has been processed, and cannot be worked on again."
+        "The form has been processed, and cannot be worked on again."
     ),
     "incomplete_request": lambda x: ValueError(
         f"Request fields {x} are not completed."

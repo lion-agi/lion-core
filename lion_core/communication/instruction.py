@@ -17,6 +17,7 @@ limitations under the License.
 import inspect
 from typing import Any, Literal, override, Type
 
+from lion_core.exceptions import LionTypeError
 from lion_core.setting import LN_UNDEFINED
 from lion_core.generic.note import Note, note
 from lion_core.form.base import BaseForm
@@ -230,42 +231,43 @@ class Instruction(RoledMessage):
         Returns:
             The created Instruction instance.
         """
+        try:
+            if inspect.isclass(form) and issubclass(form, Form):
+                form = form(
+                    strict=strict,
+                    assignment=assignment,
+                    task_description=task_description,
+                    fill_inputs=fill_inputs,
+                    none_as_valid_value=none_as_valid_value,
+                    **(input_value_kwargs or {}),
+                )
 
-        if inspect.isclass(form) and issubclass(form, Form):
-            form = form(
-                strict=strict,
-                assignment=assignment,
-                task_description=task_description,
-                fill_inputs=fill_inputs,
-                none_as_valid_value=none_as_valid_value,
-                **(input_value_kwargs or {}),
-            )
+            elif isinstance(form, BaseForm) and not isinstance(form, Form):
+                form = Form.from_form(
+                    form=form,
+                    assignment=assignment or form.assignment,
+                    strict=strict,
+                    task_description=task_description,
+                    fill_inputs=fill_inputs,
+                    none_as_valid_value=none_as_valid_value,
+                    **(input_value_kwargs or {}),
+                )
 
-        elif isinstance(form, BaseForm) and not isinstance(form, Form):
-            form = Form.from_form(
-                form=form,
-                assignment=assignment or form.assignment,
-                strict=strict,
-                task_description=task_description,
-                fill_inputs=fill_inputs,
-                none_as_valid_value=none_as_valid_value,
-                **(input_value_kwargs or {}),
-            )
-
-        if isinstance(form, Form):
-            self = cls(
-                **form.instruction_dict,
-                images=images,
-                sender=sender,
-                recipient=recipient,
-                image_detail=image_detail,
-            )
-            self.metadata.set(["original_form"], form.ln_id)
-            return self
-
-        raise ValueError(
-            "Invalid form. The form must be a subclass or an instance of BaseForm."
-        )
+            if isinstance(form, Form):
+                self = cls(
+                    guidance=form.guidance,
+                    images=images,
+                    sender=sender,
+                    recipient=recipient,
+                    image_detail=image_detail,
+                    **form.instruction_dict,
+                )
+                self.metadata.set(["original_form"], form.ln_id)
+                return self
+        except Exception as e:
+            raise LionTypeError(
+                "Invalid form. The form must be a subclass or an instance of BaseForm."
+            ) from e
 
 
 __all__ = ["Instruction"]
