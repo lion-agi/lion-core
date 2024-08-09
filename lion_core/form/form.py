@@ -33,9 +33,6 @@ from lion_core.form.base import BaseForm
 from lion_core.form.utils import get_input_output_fields, ERR_MAP, RESTRICTED_FIELDS
 
 
-_f = lambda name: [i.strip() for i in name.split(",") if i]
-
-
 class Form(BaseForm):
     """
     Base task form class extending BaseForm with task-specific functionality.
@@ -434,24 +431,25 @@ Please follow prompts to complete the task:
     def _(
         self, name: str, value: Any, field_type: str, mapping: dict, update_value: bool
     ):
+        _f = lambda x: [i.strip() for i in x.split(",") if i]
         if value is not LN_UNDEFINED:
             if len(_f(name)) > 1:
                 raise LionValueError("Cannot fill value for multiple fields.")
             if len(_f(name)) == 1:
                 self._append_to_one(self, field_type, name, self.strict, value)
         else:
-            if mapping and isinstance(mapping, dict):
+            if mapping:
                 raise LionValueError("Cannot use mapping with name or value.")
 
         if mapping and isinstance(mapping, dict):
             for k, v in mapping.items():
                 self._append_to_one(field_type, k, v, update_value)
 
-    @_append_to.register(None)
+    @_append_to.register(type(None))
     @_append_to.register(LionUndefined)
     def _(self, name, value: Any, field_type: str, mapping: dict, update_value: bool):
         if value or not (mapping or isinstance(mapping, dict)):
-            raise LionValueError("Cannot fill value for multiple fields.")
+            raise LionValueError("Error in appending to form fields.")
         for k, v in mapping.items():
             self._append_to_one(field_type, k, v, update_value)
 
