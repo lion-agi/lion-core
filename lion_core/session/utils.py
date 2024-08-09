@@ -37,18 +37,6 @@ DEFAULT_SYSTEM = "You are a helpful AI assistant. Let's think step by step."
 
 @singledispatch
 def validate_message(messages: Any) -> list[RoledMessage] | RoledMessage:
-    """
-    Validate and convert input messages to RoledMessage objects.
-
-    Args:
-        messages: Input messages of various types.
-
-    Returns:
-        A single RoledMessage or a list of RoledMessages.
-
-    Raises:
-        NotImplementedError: If the input type is not supported.
-    """
     raise NotImplementedError(f"Invalid messages type: {type(messages)}")
 
 
@@ -129,19 +117,6 @@ def _(messages: Pile, strict=False):
 def validate_system(
     system: Any = None, sender=None, recipient=None, system_datetime=None
 ) -> System:
-    """
-    Validate and create a System message.
-
-    Args:
-        system: The system message content.
-        sender: The sender of the system message.
-        recipient: The recipient of the system message.
-        system_datetime: The datetime for the system message.
-
-    Returns:
-        A validated System message.
-    """
-
     config = {
         "sender": sender,
         "recipient": recipient,
@@ -175,37 +150,9 @@ def create_message(
     func: str | Callable | MessageFlag = None,
     arguments: dict | MessageFlag = None,
     func_output: Any | MessageFlag = None,
+    guidance=None,
+    same_form_output_fields=None,
 ):
-    """
-    Create a message based on the provided parameters.
-
-    This function creates different types of messages (System, Instruction,
-    AssistantResponse, ActionRequest, ActionResponse) based on the input.
-
-    Args:
-        sender: The sender of the message.
-        recipient: The recipient of the message.
-        instruction: The instruction content.
-        context: Additional context for the message.
-        request_fields: Fields requested in the response.
-        system: System message content.
-        assistant_response: Assistant's response content.
-        action_request: An ActionRequest object.
-        action_response: An ActionResponse object.
-        images: List of images related to the message.
-        image_detail: Level of detail for image processing.
-        system_datetime: Datetime for system messages.
-        func: Function name or callable for action requests.
-        arguments: Arguments for action requests.
-        func_output: Function output for action responses.
-
-    Returns:
-        A message object of the appropriate type.
-
-    Raises:
-        ValueError: If the input parameters are invalid or inconsistent.
-    """
-
     out_ = _handle_action_message(
         sender=sender,
         recipient=recipient,
@@ -261,6 +208,8 @@ def create_message(
             request_fields=request_fields,
             images=images,
             image_detail=image_detail,
+            guidance=guidance,
+            same_form_output_fields=same_form_output_fields,
         )
 
 

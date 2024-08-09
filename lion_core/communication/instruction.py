@@ -38,6 +38,17 @@ MUST RETURN JSON-PARSEABLE RESPONSE ENCLOSED BY JSON CODE BLOCKS. ---
 """.strip()
 
 
+_f = lambda idx, x: (
+    {
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:image/jpeg;base64,{idx}",
+            "detail": x,
+        },
+    }
+)
+
+
 def format_image_content(
     text_content: str,
     images: list,
@@ -46,15 +57,7 @@ def format_image_content(
     content = [{"type": "text", "text": text_content}]
 
     for i in images:
-        content.append(
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/jpeg;base64,{i}",
-                    "detail": image_detail,
-                },
-            }
-        )
+        content.append(_f(i, image_detail))
     return content
 
 
@@ -111,8 +114,8 @@ class Instruction(RoledMessage):
     def __init__(
         self,
         instruction: Any | MessageFlag,
-        guidance: Any | MessageFlag = None,
         context: Any | MessageFlag = None,
+        guidance: Any | MessageFlag = None,
         images: list | MessageFlag = None,
         sender: Any | MessageFlag = None,
         recipient: Any | MessageFlag = None,
@@ -166,7 +169,12 @@ class Instruction(RoledMessage):
         )
 
     @property
-    def instruct(self):
+    def guidance(self):
+        """Returns the guidance content."""
+        return self.content.get(["guidance"], None)
+
+    @property
+    def instruction(self):
         """Returns the main instruction content."""
         return self.content.get(["instruction"], None)
 

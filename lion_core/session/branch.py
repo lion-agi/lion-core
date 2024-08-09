@@ -154,6 +154,8 @@ class Branch(BaseSession):
         func_output: Any | MessageFlag = None,
         metadata: Any = None,
         delete_previous_system: bool = False,
+        guidance=None,
+        same_form_output_fields=None,
     ) -> bool:
         """
         Add a message to the branch.
@@ -183,6 +185,8 @@ class Branch(BaseSession):
             func=func,
             arguments=arguments,
             func_output=func_output,
+            guidance=guidance,
+            same_form_output_fields=same_form_output_fields,
         )
 
         if isinstance(_msg, System):
