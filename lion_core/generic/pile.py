@@ -466,7 +466,9 @@ class Pile(Element, Collective, Generic[T]):
         for i in value:
             if not issubclass(i, Observable):
                 raise LionTypeError(
-                    "Item type must be a subclass of Observable.", Observable, type(i)
+                    message="Item type must be a subclass of Observable.",
+                    expected_type=Observable,
+                    actual_type=type(i),
                 )
 
         if len(value) != len(set(value)):

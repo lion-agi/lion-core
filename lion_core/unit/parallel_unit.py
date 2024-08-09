@@ -1,6 +1,6 @@
 from typing import Type, TYPE_CHECKING
 from lion_core.abc import BaseProcessor
-from lion_core.generic.form import Form
+from lion_core.form.task_form import BaseForm
 
 from lion_core.session.session import Session
 from lion_core.unit.unit_form import UnitForm
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 class ParallelUnit(BaseProcessor):
 
-    default_form: Type[Form] = UnitForm
+    default_form: Type[BaseForm] = UnitForm
 
     def __init__(self, session: Session):
         self.session = session

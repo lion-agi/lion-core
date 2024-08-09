@@ -1,7 +1,23 @@
+"""
+Copyright 2024 HaiyangLi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from typing import Any, TYPE_CHECKING
 
 from lion_core.libs import nmerge, validate_mapping
-from lion_core.generic.form import Form
+from lion_core.form.task_form import BaseForm
 from lion_core.unit.unit_form import create_unit_form
 from lion_core.unit.process_chat import process_chat
 from lion_core.unit.process_act import process_act
@@ -10,7 +26,7 @@ if TYPE_CHECKING:
     from lion_core.session.branch import Branch
 
 
-async def prepare_output(form: Form, verbose_direct: bool) -> Form:
+async def prepare_output(form: BaseForm, verbose_direct: bool) -> BaseForm:
     """
     Prepare the output form based on the action responses.
 
@@ -55,7 +71,7 @@ async def prepare_output(form: Form, verbose_direct: bool) -> Form:
 
 async def process_direct(
     branch: Branch,
-    form: Form | None,
+    form: BaseForm | None,
     instruction: str | None = None,
     context: dict[str, Any] | None = None,
     tools: Any | None = None,
@@ -82,7 +98,7 @@ async def process_direct(
     image_path: str | None = None,
     return_branch: bool = False,
     **kwargs: Any,
-) -> tuple[Branch, Form] | Form:
+) -> tuple[Branch, BaseForm] | BaseForm:
     """
     Process a direct interaction with the model.
 

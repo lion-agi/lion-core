@@ -416,14 +416,14 @@ class Branch(BaseSession):
             print("tools deletion failed")
         return False
 
-    def to_chat_messages(self) -> list[dict[str, Any]]:
+    def to_chat_messages(self, progress=None) -> list[dict[str, Any]]:
         """
         Convert messages to a list of chat message dictionaries.
 
         Returns:
             list[dict[str, Any]]: A list of chat message dictionaries.
         """
-        return [self.messages[i].chat_msg for i in self.progress]
+        return [self.messages[i].chat_msg for i in (progress or self.progress)]
 
     def _is_invoked(self) -> bool:
         """Check if the last message is an ActionResponse."""
