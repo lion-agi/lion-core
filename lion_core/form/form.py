@@ -91,7 +91,7 @@ class Form(BaseForm):
             return _dict
 
         disallow_values = [LN_UNDEFINED, PydanticUndefined]
-        if self.none_as_valid_value:
+        if not self.none_as_valid_value:
             disallow_values.append(None)
         return {k: v for k, v in _dict.items() if v not in disallow_values}
 

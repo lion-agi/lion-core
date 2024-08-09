@@ -89,7 +89,7 @@ class BaseForm(Component, MutableRecord):
     @property
     def required_dict(self) -> dict[str, Any]:
         """Return a dictionary of all work fields and their values."""
-        return {i: getattr(self, i) for i in self.required_fields}
+        return {i: getattr(self, i, LN_UNDEFINED) for i in self.required_fields}
 
     def get_results(
         self, suppress: bool = False, valid_only: bool = False
