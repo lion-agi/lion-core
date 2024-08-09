@@ -25,6 +25,7 @@ from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
 from lion_core.setting import LN_UNDEFINED
+from lion_core.libs import as_readable_json
 from lion_core.sys_utils import SysUtil
 from lion_core.exceptions import LionValueError
 from lion_core.generic.note import Note
@@ -89,7 +90,9 @@ class Form(BaseForm):
         if not valid_only:
             return _dict
 
-        disallow_values = [LN_UNDEFINED, PydanticUndefined, None]
+        disallow_values = [LN_UNDEFINED, PydanticUndefined]
+        if self.none_as_valid_value:
+            disallow_values.append(None)
         return {k: v for k, v in _dict.items() if v not in disallow_values}
 
     @override
@@ -125,9 +128,9 @@ class Form(BaseForm):
         return "".join(
             f"""
 ## input: {i}:
-- description: {getattr(self.all_fields[i], "description", "N/A")}
-- value: {str(getattr(self, self.request_fields[idx]))}
-- examples: {getattr(self.all_fields[i], "examples", "N/A")}
+- description: {getattr(self.all_fields[i], "description", "N/A")}.
+- value: {str(getattr(self, self.request_fields[idx]))}.
+- examples: {getattr(self.all_fields[i], "examples", "N/A")}.
 """
             for idx, i in enumerate(self.request_fields)
         )
@@ -138,9 +141,9 @@ class Form(BaseForm):
         return f"""
 ## Task Instructions
 Please follow prompts to complete the task:
-1. Your task is: {self.task}
-2. The provided input fields are: {', '.join(self.request_fields)}
-3. The requested output fields are: {', '.join(self.request_fields)}
+1. Your task is: {self.task}.
+2. The provided input fields are: {', '.join(self.request_fields)}.
+3. The requested output fields are: {', '.join(self.request_fields)}.
 4. Provide your response in the specified JSON format.
 """
 
@@ -431,13 +434,15 @@ Please follow prompts to complete the task:
                     "Cannot provide output_fields and same_form_output_fields at the same time."
                 )
             output_fields = form.output_fields
-            
+
         obj = cls(
             guidance=guidance or getattr(form, "guidance", None),
             assignment=assignment or form.assignment,
             task_description=task_description,
             none_as_valid_value=(
-                none_as_valid_value if isinstance(none_as_valid_value, bool) else getattr(form, "strict", False)
+                none_as_valid_value
+                if isinstance(none_as_valid_value, bool)
+                else getattr(form, "strict", False)
             ),
             strict=(
                 strict if isinstance(strict, bool) else getattr(form, "strict", False)

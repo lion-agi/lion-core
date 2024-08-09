@@ -21,6 +21,7 @@ from typing import Any
 from pydantic import Field, field_validator
 from pydantic_core import PydanticUndefined
 
+from lion_core.libs import as_readable_json
 from lion_core.abc import MutableRecord
 from lion_core.exceptions import LionValueError
 from lion_core.generic.component import Component
@@ -86,9 +87,9 @@ class BaseForm(Component, MutableRecord):
         return self.output_fields
 
     @property
-    def work_dict(self) -> dict[str, Any]:
+    def required_dict(self) -> dict[str, Any]:
         """Return a dictionary of all work fields and their values."""
-        return {i: getattr(self, i) for i in self.work_fields}
+        return {i: getattr(self, i) for i in self.required_fields}
 
     def get_results(
         self, suppress: bool = False, valid_only: bool = False
@@ -108,7 +109,7 @@ class BaseForm(Component, MutableRecord):
         """
         result = {}
         out_fields = self.output_fields or getattr(self, "request_fields", [])
-        
+
         for i in out_fields:
             if i not in self.all_fields:
                 if not suppress:
@@ -124,6 +125,28 @@ class BaseForm(Component, MutableRecord):
                 invalid_values.append(None)
             result = {k: v for k, v in result.items() if v not in invalid_values}
         return result
+
+    def display(
+        self,
+        fields=None,
+    ):
+        """
+        Displays the form fields using IPython display.
+
+        Args:
+            fields (optional): Specific fields to display. Defaults to None.
+        """
+        from IPython.display import display, Markdown
+
+        fields = fields or self.required_dict
+
+        for k, v in fields.items():
+            if isinstance(v, dict):
+                v = as_readable_json(v)
+            if len(str(v)) > 50:
+                display(Markdown(f"**{k}**: \n {v}"))
+            else:
+                display(Markdown(f"**{k}**: {v}"))
 
 
 __all__ = ["BaseForm", "BaseTaskForm"]
