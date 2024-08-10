@@ -57,7 +57,7 @@ async def process_act(
         if form.is_completed() and form not in report.completed_tasks:
             report.completed_tasks.include(form)
             report.completed_task_assignments[form.ln_id] = form.assignment
-        return form
+        return (branch, form) if return_branch else form
 
     action_keys = [f"action_{i+1}" for i in range(len(actions))]
     validated_actions = note(

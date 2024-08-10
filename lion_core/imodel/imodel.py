@@ -21,21 +21,15 @@ from lion_core.generic.element import Element
 
 class iModel(Element, BaseiModel):
 
-    async def update_status(self, *args, **kwargs) -> None:
-        """
-        Update the status of the iModel.
-
-        Args:
-            status (str): The status of the iModel.
-            state (str): The state of the iModel.
-
-        Returns:
-            None
-        """
-        pass
+    @abstractmethod
+    async def update_status(self, *args, **kwargs): ...
 
     @abstractmethod
-    async def chat(self, input_, endpoint="chat/completions", **kwargs): ...
+    async def chat(self, messages, **kwargs): ...
+
+    async def structure(self, *args, **kwargs):
+        """raise error, or return structured output"""
+        ...
 
 
 __all__ = ["iModel"]
