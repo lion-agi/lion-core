@@ -86,7 +86,9 @@ def prepare_instruction_content(
             request_fields
         )
 
-    return note(**{k: v for k, v in out_.items() if v not in [None, LN_UNDEFINED]})
+    return note(
+        **{k: v for k, v in out_.items() if v not in [None, LN_UNDEFINED]},
+    )
 
 
 class Instruction(RoledMessage):
@@ -178,10 +180,31 @@ class Instruction(RoledMessage):
         """Returns the main instruction content."""
         return self.content.get(["instruction"], None)
 
+    def update_images(
+        self,
+        images: list | str,
+        image_detail: Literal["low", "high", "auto"] = None,
+    ):
+        images = images if isinstance(images, list) else [images]
+        _ima: list = self.content.get(["images"], [])
+        _ima.extend(images)
+        self.content["images"] = _ima
+
+        if image_detail:
+            self.content["image_detail"] = image_detail
+
+    def update_guidance(self, guidance: str):
+        if guidance and isinstance(guidance, str):
+            self.content["guidance"] = guidance
+            return
+        raise LionTypeError(
+            "Invalid guidance. Guidance must be a string.",
+        )
+
     def update_request_fields(self, request_fields: dict):
         self.content["request_fields"].update(request_fields)
         self.content["request_response_format"] = prepare_request_response_format(
-            self.content["request_fields"]
+            request_fields=self.content["request_fields"],
         )
 
     def update_context(self, *args, **kwargs):
