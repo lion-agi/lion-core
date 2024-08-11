@@ -28,6 +28,7 @@ async def process_validation(
     strict: bool = False,
     use_annotation: bool = True,
     template_name: str | None = None,
+    fallback_structure_imodel: Any = None,
 ) -> BaseForm:
     """
     Process form validation.
@@ -50,6 +51,7 @@ async def process_validation(
         response=response_,
         strict=strict,
         use_annotation=use_annotation,
+        fallback_structure_imodel=fallback_structure_imodel,
     )
     if template_name:
         form.template_name = template_name

@@ -23,7 +23,7 @@ from lion_core.sys_utils import SysUtil
 from lion_core._class_registry import get_class
 from lion_core.generic.note import Note
 from lion_core.generic.component import Component
-from lion_core.communication.mail import BaseMail
+from lion_core.communication.base_mail import BaseMail
 
 
 class MessageField(str, Enum):

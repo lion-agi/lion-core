@@ -5,7 +5,7 @@ from lion_core.abc import BaseRecord
 from lion_core.rule.base import Rule
 from lion_core.generic.progression import prog, Progression
 from lion_core.generic.note import Note
-from lion_core.graph.node import Node
+from lion_core.generic.node import Node
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.note import Note, note
 from lion_core.rule.utils import validate_rules_info

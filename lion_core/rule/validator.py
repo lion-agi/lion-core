@@ -20,6 +20,7 @@ from lion_core.abc import BaseExecutor, Temporal, Observable
 from lion_core.sys_utils import SysUtil
 
 from lion_core.form.form import Form
+from lion_core.imodel.imodel import iModel
 from lion_core.rule.base import Rule
 from lion_core.rule.default_rules._default import DEFAULT_RULES, DEFAULT_RULEORDER
 from lion_core.rule.rulebook import RuleBook
@@ -35,6 +36,8 @@ class Validator(BaseExecutor, Temporal, Observable):
         order: list[str] = None,
         init_config: dict[str, dict] = None,
         active_rules: dict[str, Rule] = None,
+        fallback_structure_imodel: iModel = None,
+        strict: bool = True,
     ):
 
         self.ln_id: str = SysUtil.id()
@@ -46,6 +49,10 @@ class Validator(BaseExecutor, Temporal, Observable):
         )
         self.active_rules: dict[str, Rule] = active_rules or self._initiate_rules()
         self.validation_log = []
+        self.fallback_structure_imodel = fallback_structure_imodel
+        self.strict = strict
+
+    def create_json_structure(self, *args, **kwargs): ...
 
     async def validate_field(
         self,
@@ -54,7 +61,7 @@ class Validator(BaseExecutor, Temporal, Observable):
         form: Form,
         *args,
         annotation=None,
-        strict=True,
+        strict=None,
         use_annotation=True,
         **kwargs,
     ) -> Any:
@@ -77,9 +84,10 @@ class Validator(BaseExecutor, Temporal, Observable):
         Raises:
             LionFieldError: If validation fails.
         """
+        strict = strict if isinstance(strict, bool) else self.strict
         for rule in self.active_rules.values():
             try:
-                if await rule.applies(
+                if await rule.apply(
                     field,
                     value,
                     form,
@@ -90,7 +98,6 @@ class Validator(BaseExecutor, Temporal, Observable):
                 ):
                     return await rule.invoke(field, value, form)
             except Exception as e:
-                self.log_validation_error(field, value, str(e))
                 raise ValueError(f"Failed to validate {field}") from e
 
         if strict:
@@ -98,7 +105,6 @@ class Validator(BaseExecutor, Temporal, Observable):
                 f"Failed to validate {field} because no rule applied. To return the "
                 f"original value directly when no rule applies, set strict=False."
             )
-            self.log_validation_error(field, value, error_message)
             raise ValueError(error_message)
 
     async def validate_response(
@@ -107,6 +113,7 @@ class Validator(BaseExecutor, Temporal, Observable):
         response: Union[dict, str],
         strict: bool = True,
         use_annotation: bool = True,
+        fallback_structure_imodel: iModel = None,
     ) -> Form:
         """
         Validate a response for a given form.
@@ -127,9 +134,12 @@ class Validator(BaseExecutor, Temporal, Observable):
             if len(form.request_fields) == 1:
                 response = {form.request_fields[0]: response}
             else:
-                raise ValueError(
-                    "Response is a string, but form has multiple fields to be filled"
-                )
+                try:
+                    response = await fallback_structure_imodel.structure(response)
+                except Exception as e:
+                    raise ValueError(
+                        "Response is a string, but form has multiple fields to be filled"
+                    ) from e
 
         dict_ = {}
         for k, v in response.items():

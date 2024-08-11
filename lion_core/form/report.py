@@ -46,7 +46,10 @@ class Report(BaseForm):
         base_report_fields = self.__class__.model_fields.keys()
         return [i for i in self.all_fields.keys() if i not in base_report_fields]
 
-    def get_incomplete_fields(self, none_as_valid_value: bool = False):
+    def get_incomplete_fields(
+        self,
+        none_as_valid_value: bool = False,
+    ):
         base_report_fields = self.__class__.model_fields.keys()
 
         result = []
@@ -61,7 +64,11 @@ class Report(BaseForm):
                     result.append(i)
         return result
 
-    def parse_assignment(self, input_fields: list[str], request_fields: list[str]):
+    def parse_assignment(
+        self,
+        input_fields: list[str],
+        request_fields: list[str],
+    ):
         if not isinstance(input_fields, list) or not isinstance(request_fields, list):
             raise ValueError(
                 "Invalid input_fields or request_fields type. Should be a list of str"
@@ -98,7 +105,8 @@ class Report(BaseForm):
 
         if not assignment:
             assignment = self.parse_assignment(
-                input_fields=input_fields, request_fields=request_fields
+                input_fields=input_fields,
+                request_fields=request_fields,
             )
 
         f_ = self.default_form_template.from_form(
@@ -111,7 +119,11 @@ class Report(BaseForm):
         )
         return f_
 
-    def save_completed_task(self, form: Form, update_results=False):
+    def save_completed_task(
+        self,
+        form: Form,
+        update_results=False,
+    ):
         try:
             form.check_is_completed(handle_how="raise")
         except Exception as e:
@@ -134,7 +146,11 @@ class Report(BaseForm):
                 setattr(self, i, field_result)
 
     @classmethod
-    def from_form_template(cls, template_class: Type[BaseForm] = None, **input_kwargs):
+    def from_form_template(
+        cls,
+        template_class: Type[BaseForm],
+        **input_kwargs,
+    ):
         if not issubclass(template_class, BaseForm):
             raise LionValueError(
                 "Invalid form template. The template class must be a subclass of Form."
@@ -159,7 +175,11 @@ class Report(BaseForm):
         return report_obj
 
     @classmethod
-    def from_form(cls, form: BaseForm, fill_inputs: bool = True):
+    def from_form(
+        cls,
+        form: BaseForm,
+        fill_inputs: bool = True,
+    ):
         if not isinstance(form, BaseForm):
             raise LionValueError(
                 "Invalid form instance. The form must be an instance of a subclass of Form."

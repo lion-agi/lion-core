@@ -32,7 +32,11 @@ class ActionResponse(RoledMessage):
         func_output: Any | MessageFlag,
         protected_init_params: dict | None = None,
     ):
-        message_flags = [action_request, sender, func_output]
+        message_flags = [
+            action_request,
+            sender,
+            func_output,
+        ]
 
         if all(x == MessageFlag.MESSAGE_LOAD for x in message_flags):
             super().__init__(**protected_init_params)
@@ -47,11 +51,14 @@ class ActionResponse(RoledMessage):
             sender=sender or "N/A",  # sender is the actionable component
             recipient=action_request.sender,
             content=prepare_action_response_content(
-                action_request,
-                func_output,
+                action_request=action_request,
+                func_output=func_output,
             ),
         )
-        action_request.content["action_response_id"] = self.ln_id
+        self.update_request(
+            action_request=action_request,
+            func_output=func_output,
+        )
 
     @property
     def func_output(self) -> Any:
@@ -66,13 +73,13 @@ class ActionResponse(RoledMessage):
     @property
     def action_request_id(self) -> str | None:
         """Get the ID of the corresponding action request."""
-        return self.content.get("action_request_id")
+        return self.content.get("action_request_id", None)
 
     def update_request(self, action_request: ActionRequest, func_output):
         """Update the action response with new request and output."""
         self.content = prepare_action_response_content(
-            action_request,
-            func_output,
+            action_request=action_request,
+            func_output=func_output,
         )
         action_request.content.set(["action_response_id"], self.ln_id)
 

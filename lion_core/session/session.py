@@ -54,124 +54,21 @@ class Session(BaseSession):
     conversations: Flow | None = Field(None)
     branch_type: Type[Branch] = PrivateAttr(Branch)
 
-    def __init__(
-        self,
-        branch_type: Type[Branch] = Branch,
-        session_system: Any = None,
-        session_system_sender: Any = None,
-        session_system_datetime: Any = None,
-        session_name: str | None = None,
-        session_user: str | None = None,
-        session_imodel: iModel | None = None,
-        mail_transfer: Exchange | None = None,
-        branches: Pile[Branch] | None = None,
-        default_branch: Branch | None = None,
-        conversations: Flow | None = None,
-        branch_system: Any = None,
-        branch_system_sender: str | None = None,
-        branch_system_datetime: Any = None,
-        branch_name: str | None = None,
-        branch_user: str | None = None,
-        branch_imodel: iModel | None = None,
-        branch_messages: Pile | None = None,
-        branch_mailbox: Exchange | None = None,
-        branch_progress: Progression | None = None,
-        tool_manager: ToolManager | None = None,
-        tools: Any = None,
-    ):
-        """
-        Initialize a Session instance.
-
-        Args:
-            session_system: System message for the session.
-            session_system_sender: Sender of the session system message.
-            session_system_datetime: Datetime for session system message.
-            session_name: Name of the session.
-            session_user: User identifier for the session.
-            session_imodel: iModel for the session.
-            mail_transfer: Mail transfer system.
-            branches: Existing branches to include.
-            default_branch: Default branch for the session.
-            conversations: Existing conversation flow.
-            branch_*: Parameters for creating a new branch if needed.
-            tool_manager: Tool manager for the branch.
-            tools: Tools to be registered.
-        """
-        super().__init__(
-            system=session_system,
-            system_sender=session_system_sender,
-            system_datetime=session_system_datetime,
-            name=session_name,
-            user=session_user,
-            imodel=session_imodel or branch_imodel,
-        )
-        if branch_type:
-            self.branch_type = branch_type
-
-        if not branches and not default_branch:
-            self.default_branch = branch_type(
-                system=branch_system,
-                system_sender=branch_system_sender
-                or self.ln_id,  # the system of branch is the session
-                system_datetime=branch_system_datetime,
-                user=branch_user or session_user,
-                messages=branch_messages,
-                progress=branch_progress,
-                tool_manager=tool_manager,
-                tools=tools,
-                imodel=branch_imodel or session_imodel,
-                name=branch_name,
-                mailbox=branch_mailbox,
-            )
-            self.branches = pile(self.default_branch, branch_type, strict=False)
-
-        elif branches and not default_branch:
-            self.branches = branches
-            self.default_branch = branches[0]
-
-        elif not branches and default_branch:
-            self.default_branch = default_branch
-            self.branches = pile(default_branch, branch_type, strict=False)
-
-        self.mail_transfer = mail_transfer
-        self.mail_manager = MailManager([self.mail_transfer])
-        if not conversations:
-            conversations = flow(
-                progressions=[branch.progress for branch in self.branches],
-                default_name=self.default_branch.name,
-            )
-        self.conversations = conversations
-
     async def new_branch(
         self,
         system: Any = None,
         system_sender: str | None = None,
         system_datetime: Any = None,
-        name: str | None = None,
         user: str | None = None,
+        name: str | None = None,
         imodel: iModel | None = None,
         messages: Pile | None = None,
-        tool_manager: ToolManager | None = None,
-        mailbox: Exchange | None = None,
         progress: Progression | None = None,
+        tool_manager: ToolManager | None = None,
         tools: Any = None,
+        **kwargs,       # additional branch parameters
     ) -> Branch:
-        """
-        Create a new branch in the session.
 
-        Args:
-            system: System message for the branch.
-            system_sender: Sender of the branch system message.
-            system_datetime: Datetime for branch system message.
-            name: Name of the branch.
-            user: User identifier for the branch.
-            imodel: iModel for the branch.
-            messages: Initial messages for the branch.
-            tool_manager: Tool manager for the branch.
-            mailbox: Mailbox for the branch.
-            progress: Progress tracker for the branch.
-            tools: Tools to be registered in the branch.
-        """
         if system in [None, LN_UNDEFINED]:
             system = self.system.clone()
             system.sender = self.ln_id
@@ -187,35 +84,30 @@ class Session(BaseSession):
             messages=messages,
             progress=progress,
             tool_manager=tool_manager,
-            mailbox=mailbox,
             tools=tools,
+            **kwargs,
         )
+        
+        self.conversations.register(branch.progress, name=name)
         self.branches.include(branch)
         self.mail_manager.add_sources(branch)
         if self.default_branch is None:
             self.default_branch = branch
         return branch
 
+
     def remove_branch(
         self,
         branch: Branch | str,
         delete: bool = False,
     ):
-        """
-        Remove a branch from the session.
-
-        Args:
-            branch: The branch to remove or its identifier.
-            delete: If True, delete the branch from memory.
-
-        Raises:
-            ItemNotFoundError: If the branch does not exist.
-        """
+        branch = SysUtil.get_id(branch)
+        
         if branch not in self.branches:
+            _s = str(branch) if len(str(branch)) < 10 else str(branch)[:10] + "..."
             raise ItemNotFoundError(
-                f"Branch {branch.name or branch.ln_id[:8]}.. does not exist."
+                f"Branch {_s}.. does not exist."
             )
-
         branch: Branch = self.branches[branch]
 
         self.conversations.exclude(prog=branch.progress)

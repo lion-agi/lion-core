@@ -39,7 +39,6 @@ if TYPE_CHECKING:
 
 async def process_chat(
     branch: "Branch",
-    *,
     form=None,
     sender=None,
     recipient=None,

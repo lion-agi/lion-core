@@ -18,10 +18,11 @@ limitations under the License.
 
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_core import PydanticUndefined
 
 from lion_core.abc import MutableRecord
+from lion_core.exceptions import LionValueError
 from lion_core.generic.component import Component
 from lion_core.setting import LN_UNDEFINED
 from lion_core.form.utils import ERR_MAP
@@ -60,6 +61,16 @@ class BaseForm(Component, MutableRecord):
         default=False, description="Indicate whether to treat None as a valid value."
     )
 
+    @field_validator("output_fields", mode="before")
+    def _validate_output(cls, value):
+        if isinstance(value, str):
+            return [value]
+        if isinstance(value, list) and all([i for i in value if isinstance(i, str)]):
+            return value
+        if not value:
+            return []
+        raise LionValueError("Invalid output fields.")
+
     @property
     def work_fields(self) -> list[str]:
         return self.output_fields
@@ -75,9 +86,9 @@ class BaseForm(Component, MutableRecord):
         return self.output_fields
 
     @property
-    def work_dict(self) -> dict[str, Any]:
+    def required_dict(self) -> dict[str, Any]:
         """Return a dictionary of all work fields and their values."""
-        return {i: getattr(self, i) for i in self.work_fields}
+        return {i: getattr(self, i, LN_UNDEFINED) for i in self.required_fields}
 
     def get_results(
         self, suppress: bool = False, valid_only: bool = False
@@ -96,7 +107,9 @@ class BaseForm(Component, MutableRecord):
             ValueError: If a required field is missing and suppress is False.
         """
         result = {}
-        for i in self.output_fields:
+        out_fields = self.output_fields or getattr(self, "request_fields", [])
+
+        for i in out_fields:
             if i not in self.all_fields:
                 if not suppress:
                     raise ERR_MAP["missing_field"](i)
@@ -111,6 +124,10 @@ class BaseForm(Component, MutableRecord):
                 invalid_values.append(None)
             result = {k: v for k, v in result.items() if v not in invalid_values}
         return result
+
+    @property
+    def display_dict(self) -> dict[str, Any]:
+        return self.required_dict
 
 
 __all__ = ["BaseForm", "BaseTaskForm"]

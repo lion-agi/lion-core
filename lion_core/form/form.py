@@ -18,7 +18,6 @@ limitations under the License.
 
 import inspect
 
-import re
 from typing import Any, Literal, Type, override
 
 from pydantic import Field, model_validator, ConfigDict
@@ -90,7 +89,9 @@ class Form(BaseForm):
         if not valid_only:
             return _dict
 
-        disallow_values = [LN_UNDEFINED, PydanticUndefined, None]
+        disallow_values = [LN_UNDEFINED, PydanticUndefined]
+        if not self.none_as_valid_value:
+            disallow_values.append(None)
         return {k: v for k, v in _dict.items() if v not in disallow_values}
 
     @override
@@ -126,9 +127,9 @@ class Form(BaseForm):
         return "".join(
             f"""
 ## input: {i}:
-- description: {getattr(self.all_fields[i], "description", "N/A")}
-- value: {str(getattr(self, self.request_fields[idx]))}
-- examples: {getattr(self.all_fields[i], "examples", "N/A")}
+- description: {getattr(self.all_fields[i], "description", "N/A")}.
+- value: {str(getattr(self, self.request_fields[idx]))}.
+- examples: {getattr(self.all_fields[i], "examples", "N/A")}.
 """
             for idx, i in enumerate(self.request_fields)
         )
@@ -139,9 +140,9 @@ class Form(BaseForm):
         return f"""
 ## Task Instructions
 Please follow prompts to complete the task:
-1. Your task is: {self.task}
-2. The provided input fields are: {', '.join(self.request_fields)}
-3. The requested output fields are: {', '.join(self.request_fields)}
+1. Your task is: {self.task}.
+2. The provided input fields are: {', '.join(self.request_fields)}.
+3. The requested output fields are: {', '.join(self.request_fields)}.
 4. Provide your response in the specified JSON format.
 """
 
@@ -248,7 +249,7 @@ Please follow prompts to complete the task:
         Raises:
             ValueError: If input fields are missing and handle_how is "raise".
         """
-        if self.has_processed:
+        if self.strict and self.has_processed:
             raise ERR_MAP["task_already_processed"]
 
         missing_inputs = []
@@ -411,7 +412,9 @@ Please follow prompts to complete the task:
         strict: bool = None,
         task_description: str | None = None,
         fill_inputs: bool | None = True,
-        none_as_valid_value: bool | None = False,
+        none_as_valid_value: bool | None = None,
+        output_fields: list[str] | None = None,
+        same_form_output_fields: bool | None = False,
         **input_value_kwargs,
     ):
 
@@ -424,15 +427,26 @@ Please follow prompts to complete the task:
                 raise ERR_MAP["not_form_instance"]
             form_fields = form.all_fields
 
+        if same_form_output_fields:
+            if output_fields:
+                raise LionValueError(
+                    "Cannot provide output_fields and same_form_output_fields at the same time."
+                )
+            output_fields = form.output_fields
+
         obj = cls(
             guidance=guidance or getattr(form, "guidance", None),
             assignment=assignment or form.assignment,
             task_description=task_description,
-            none_as_valid_value=none_as_valid_value,
+            none_as_valid_value=(
+                none_as_valid_value
+                if isinstance(none_as_valid_value, bool)
+                else getattr(form, "strict", False)
+            ),
             strict=(
                 strict if isinstance(strict, bool) else getattr(form, "strict", False)
             ),
-            output_fields=form.output_fields,
+            output_fields=output_fields,
         )
 
         for i in obj.work_dict.keys():

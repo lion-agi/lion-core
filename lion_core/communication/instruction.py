@@ -38,6 +38,17 @@ MUST RETURN JSON-PARSEABLE RESPONSE ENCLOSED BY JSON CODE BLOCKS. ---
 """.strip()
 
 
+_f = lambda idx, x: (
+    {
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:image/jpeg;base64,{idx}",
+            "detail": x,
+        },
+    }
+)
+
+
 def format_image_content(
     text_content: str,
     images: list,
@@ -46,15 +57,7 @@ def format_image_content(
     content = [{"type": "text", "text": text_content}]
 
     for i in images:
-        content.append(
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/jpeg;base64,{i}",
-                    "detail": image_detail,
-                },
-            }
-        )
+        content.append(_f(i, image_detail))
     return content
 
 
@@ -83,7 +86,9 @@ def prepare_instruction_content(
             request_fields
         )
 
-    return note(**{k: v for k, v in out_.items() if v not in [None, LN_UNDEFINED]})
+    return note(
+        **{k: v for k, v in out_.items() if v not in [None, LN_UNDEFINED]},
+    )
 
 
 class Instruction(RoledMessage):
@@ -111,8 +116,8 @@ class Instruction(RoledMessage):
     def __init__(
         self,
         instruction: Any | MessageFlag,
-        guidance: Any | MessageFlag = None,
         context: Any | MessageFlag = None,
+        guidance: Any | MessageFlag = None,
         images: list | MessageFlag = None,
         sender: Any | MessageFlag = None,
         recipient: Any | MessageFlag = None,
@@ -134,7 +139,6 @@ class Instruction(RoledMessage):
         """
         message_flags = [
             instruction,
-            guidance,
             context,
             images,
             sender,
@@ -166,14 +170,40 @@ class Instruction(RoledMessage):
         )
 
     @property
-    def instruct(self):
+    def guidance(self):
+        """Returns the guidance content."""
+        return self.content.get(["guidance"], None)
+
+    @property
+    def instruction(self):
         """Returns the main instruction content."""
         return self.content.get(["instruction"], None)
+
+    def update_images(
+        self,
+        images: list | str,
+        image_detail: Literal["low", "high", "auto"] = None,
+    ):
+        images = images if isinstance(images, list) else [images]
+        _ima: list = self.content.get(["images"], [])
+        _ima.extend(images)
+        self.content["images"] = _ima
+
+        if image_detail:
+            self.content["image_detail"] = image_detail
+
+    def update_guidance(self, guidance: str):
+        if guidance and isinstance(guidance, str):
+            self.content["guidance"] = guidance
+            return
+        raise LionTypeError(
+            "Invalid guidance. Guidance must be a string.",
+        )
 
     def update_request_fields(self, request_fields: dict):
         self.content["request_fields"].update(request_fields)
         self.content["request_response_format"] = prepare_request_response_format(
-            self.content["request_fields"]
+            request_fields=self.content["request_fields"],
         )
 
     def update_context(self, *args, **kwargs):

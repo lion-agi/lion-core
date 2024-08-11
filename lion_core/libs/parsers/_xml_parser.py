@@ -18,7 +18,7 @@ import re
 from typing import Any, Union
 
 
-def xml_to_dict(xml_string: str) -> dict[str, Any]:
+def xml_to_dict(xml_string: str, surpress=False) -> dict[str, Any]:
     """
     Parse an XML string into a nested dictionary structure.
 
@@ -37,10 +37,14 @@ def xml_to_dict(xml_string: str) -> dict[str, Any]:
     Raises:
         ValueError: If the XML is malformed or parsing fails.
     """
-    a = XMLParser(xml_string).parse()
-    if "root" in a:
-        return a["root"]
-    return a
+    try:
+        a = XMLParser(xml_string).parse()
+        if "root" in a:
+            return a["root"]
+        return a
+    except ValueError as e:
+        if not surpress:
+            raise e
 
 
 class XMLParser:
