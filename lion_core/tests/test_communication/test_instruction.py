@@ -60,7 +60,7 @@ def test_instruction_init():
     assert instruction.role == MessageRole.USER
     assert instruction.sender == "user"
     assert instruction.recipient == "N/A"
-    assert instruction.instruct == "Test instruction"
+    assert instruction.instruction == "Test instruction"
 
 
 def test_instruction_init_with_all_params():
@@ -91,10 +91,11 @@ def test_instruction_init_with_message_load():
         recipient=MessageFlag.MESSAGE_LOAD,
         request_fields=MessageFlag.MESSAGE_LOAD,
         image_detail=MessageFlag.MESSAGE_LOAD,
+        guidance=MessageFlag.MESSAGE_LOAD,
         protected_init_params=protected_params,
     )
     assert instruction.role == MessageRole.USER
-    assert instruction.instruct == "Test"
+    assert instruction.instruction == "Test"
 
 
 def test_instruction_init_with_message_clone():
@@ -105,6 +106,7 @@ def test_instruction_init_with_message_clone():
         sender=MessageFlag.MESSAGE_CLONE,
         recipient=MessageFlag.MESSAGE_CLONE,
         request_fields=MessageFlag.MESSAGE_CLONE,
+        guidance=MessageFlag.MESSAGE_LOAD,
         image_detail=MessageFlag.MESSAGE_CLONE,
     )
     assert instruction.role == MessageRole.USER
@@ -136,7 +138,7 @@ def test_instruction_format_content():
 # Edge cases and additional tests
 def test_instruction_empty_init():
     instruction = Instruction(None)
-    assert instruction.instruct == "N/A"
+    assert instruction.instruction == "N/A"
 
 
 def test_instruction_with_large_context():
@@ -166,20 +168,20 @@ def test_instruction_format_content_no_images():
 
 def test_instruction_with_unicode():
     instruction = Instruction("Test 你好", context="Context こんにちは")
-    assert "你好" in instruction.instruct
+    assert "你好" in instruction.instruction
     assert "こんにちは" in instruction.content["context"][0]
 
 
 def test_instruction_with_special_characters():
     special_chars = "!@#$%^&*()_+{}[]|\\:;\"'<>,.?/~`"
     instruction = Instruction(special_chars)
-    assert instruction.instruct == special_chars
+    assert instruction.instruction == special_chars
 
 
 def test_instruction_with_very_long_instruction():
     long_instruction = "a" * 10000
     instruction = Instruction(long_instruction)
-    assert len(instruction.instruct) == 10000
+    assert len(instruction.instruction) == 10000
 
 
 def test_instruction_update_request_fields_multiple_times():
@@ -289,7 +291,7 @@ def test_instruction_update_context_various_types():
 def test_instruction_clone():
     original = Instruction("Test", context="Original context")
     cloned = original.clone()
-    assert original.instruct == cloned.instruct
+    assert original.instruction == cloned.instruction
 
 
 # Test for potential memory leaks

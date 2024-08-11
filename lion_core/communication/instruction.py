@@ -139,7 +139,6 @@ class Instruction(RoledMessage):
         """
         message_flags = [
             instruction,
-            guidance,
             context,
             images,
             sender,
