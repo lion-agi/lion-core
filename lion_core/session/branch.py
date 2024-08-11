@@ -14,20 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from __future__ import annotations
+from typing import Any, Callable, ClassVar, override, Literal
 
-from typing import Any, Callable, ClassVar, override, Literal, Type
+from pydantic import Field, model_validator
 
-from pydantic import Field, PrivateAttr
-
-from lion_core.abc import BaseiModel, Observable
+from lion_core.abc import BaseiModel
 from lion_core.libs import is_same_dtype
 from lion_core.converter import ConverterRegistry
 from lion_core.generic.pile import Pile
+from lion_core.generic.note import Note
 from lion_core.generic.progression import prog, Progression
 from lion_core.generic.exchange import Exchange
 
-from lion_core.imodel.imodel import iModel
 from lion_core.action import Tool, ToolManager
 from lion_core.communication.message import RoledMessage
 from lion_core.communication.system import System
@@ -39,7 +37,7 @@ from lion_core.communication.message import RoledMessage, MessageFlag
 from lion_core.communication.package import Package
 from lion_core.communication.mail import Mail
 from lion_core.session.base import BaseSession
-from lion_core.session.utils import validate_message, create_message
+from lion_core.session.msg_handlers import validate_message, create_message
 
 
 class BranchConverterRegistry(ConverterRegistry):
@@ -60,64 +58,39 @@ class Branch(BaseSession):
     tool_manager: ToolManager | None = Field(None)
     mailbox: Exchange | None = Field(None)
     progress: Progression | None = Field(None)
-    pile_type: Type[Pile] = PrivateAttr(Pile)
 
     _converter_registry: ClassVar = BranchConverterRegistry
 
-    def __init__(
-        self,
-        system: Any = None,
-        system_sender: str | None = None,
-        system_datetime: Any = None,
-        name: str | None = None,
-        user: str | None = None,
-        imodel: iModel | None = None,
-        messages: Pile | None = None,
-        tool_manager: ToolManager | None = None,
-        mailbox: Exchange | None = None,
-        progress: Progression | None = None,
-        tools: Any = None,
-    ):
-        """
-        Initialize a Branch instance.
+    @model_validator(mode="before")
+    def _validate_input(cls, data: dict) -> dict:
 
-        Args:
-            system: System message for the branch.
-            system_sender: Sender of the system message.
-            system_datetime: Datetime for the system message.
-            name: Name of the branch.
-            user: User identifier for the branch.
-            imodel: iModel for the branch.
-            messages: Initial messages for the branch.
-            tool_manager: Tool manager for the branch.
-            mailbox: Mailbox for the branch.
-            progress: Progress tracker for the branch.
-            tools: Tools to be registered in the branch.
-        """
-
-        super().__init__(
-            system=system,
-            system_sender=system_sender,
-            system_datetime=system_datetime,
-            name=name,
-            user=user,
-            imodel=imodel,
+        messages = data.pop("messages", None)
+        data["messages"] = cls.pile_type(
+            validate_message(messages),
+            {RoledMessage},
+            strict=False,
         )
-        self.messages = self.pile_type(
-            validate_message(messages), {RoledMessage}, strict=False
+        data["progress"] = prog(
+            data.pop(list(data["messages"]), []),
         )
+        data["tool_manager"] = data.pop(
+            data["tool_manager"],
+            ToolManager(),
+        )
+        data["mailbox"] = data.pop(
+            data["mailbox"],
+            Exchange(),
+        )
+        if "tools" in data:
+            data["tool_manager"].register_tools(data.pop("tools"))
+        return cls.validate_system(data)
 
-        self.progress = progress or prog(list(self.messages), name=self.name)
-
+    @model_validator(mode="after")
+    def _check_system(self):
         if self.system not in self.messages:
             self.messages.include(self.system)
             self.progress.insert(0, self.system)
-
-        self.tool_manager = tool_manager or ToolManager()
-        self.mailbox = mailbox or Exchange()
-
-        if tools:
-            self.tool_manager.register_tools(tools)
+        return self
 
     def set_system(self, system: System) -> None:
         """
@@ -137,61 +110,51 @@ class Branch(BaseSession):
     def add_message(
         self,
         *,
-        sender: Observable | str | None = None,
-        recipient: Observable | str | None = None,
-        instruction: Any = None,
-        context: Any = None,
+        sender: Any | MessageFlag = None,
+        recipient: Any | MessageFlag = None,
+        instruction: Any | MessageFlag = None,
+        context: Any | MessageFlag = None,
+        guidance: Any | MessageFlag = None,
         request_fields: dict | MessageFlag = None,
         system: Any = None,
-        assistant_response: Any = None,
-        action_request: ActionRequest | None = None,
-        action_response: ActionResponse | None = None,
+        system_datetime: bool | str | None | MessageFlag = None,
         images: list | MessageFlag = None,
         image_detail: Literal["low", "high", "auto"] | MessageFlag = None,
-        system_datetime: bool | str | None | MessageFlag = None,
+        assistant_response: str | dict | None | MessageFlag = None,
+        action_request: ActionRequest | None = None,
+        action_response: ActionResponse | None = None,
         func: str | Callable | MessageFlag = None,
         arguments: dict | MessageFlag = None,
         func_output: Any | MessageFlag = None,
-        metadata: Any = None,
-        delete_previous_system: bool = False,
-        guidance=None,
-        same_form_output_fields=None,
+        metadata: Note | dict = None,  # additional branch parameters
+        delete_previous_system: bool = None,
     ) -> bool:
-        """
-        Add a message to the branch.
-
-        Args:
-            Various parameters for different types of messages and metadata.
-
-        Returns:
-            bool: True if the message was successfully added.
-        """
-        if assistant_response:
-            sender = self.ln_id
 
         _msg = create_message(
             sender=sender,
             recipient=recipient,
             instruction=instruction,
             context=context,
+            guidance=guidance,
             request_fields=request_fields,
             system=system,
+            system_datetime=system_datetime,
+            images=images,
+            image_detail=image_detail,
             assistant_response=assistant_response,
             action_request=action_request,
             action_response=action_response,
-            images=images,
-            image_detail=image_detail,
-            system_datetime=system_datetime,
             func=func,
             arguments=arguments,
             func_output=func_output,
-            guidance=guidance,
-            same_form_output_fields=same_form_output_fields,
         )
 
         if isinstance(_msg, System):
             _msg.recipient = self.ln_id  # the branch itself, system is to the branch
-            self._change_system(_msg, delete_previous_system)
+            self._change_system(
+                system=_msg,
+                delete_previous_system=delete_previous_system,
+            )
 
         if isinstance(_msg, Instruction):
             _msg.sender = sender or self.user
@@ -221,7 +184,11 @@ class Branch(BaseSession):
         self.messages.include(self.system)
         self.progress.insert(0, self.system)
 
-    def _change_system(self, system: System, delete_previous_system: bool = False):
+    def _change_system(
+        self,
+        system: System,
+        delete_previous_system: bool = False,
+    ):
         """
         Change the system message.
 
@@ -231,13 +198,17 @@ class Branch(BaseSession):
         """
         old_system = self.system
         self.system = system
-        self.messages[0] = self.system  # system must be in first message position
+        self.messages.insert(0, self.system)
 
         if delete_previous_system:
-            del old_system
+            self.messages.exclude(old_system)
 
     def send(
-        self, recipient: str, category: str, package: Any, request_source: str
+        self,
+        recipient: str,
+        category: str,
+        package: Any,
+        request_source: str,
     ) -> None:
         """
         Send a mail to a recipient.
@@ -249,7 +220,9 @@ class Branch(BaseSession):
             request_source: The source of the request.
         """
         package = Package(
-            category=category, package=package, request_source=request_source
+            category=category,
+            package=package,
+            request_source=request_source,
         )
 
         mail = Mail(
@@ -323,7 +296,7 @@ class Branch(BaseSession):
 
     @override
     @classmethod
-    def convert_from(cls, obj: Any, key: str = "DataFrame", **kwargs) -> Branch:
+    def convert_from(cls, obj: Any, key: str = "DataFrame", **kwargs) -> "Branch":
         p = cls.get_converter_registry().convert_from(obj, key=key, **kwargs)
         return cls(messages=p, **kwargs)
 
