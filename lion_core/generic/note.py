@@ -51,6 +51,7 @@ class Note(BaseModel, Container):
     @field_serializer("content")
     def _serialize_content(self, value: Any) -> dict[str, Any]:
         from lion_core.communication.base_mail import BaseMail
+
         output_dict = SysUtil.copy(value, deep=True)
         origin_obj = output_dict.pop("clone_from", None)
 

@@ -26,7 +26,9 @@ def to_list_type(value: Any) -> list[Any]:
         return [value] if SysUtil.is_id(value) else []
     if isinstance(value, Element):
         return [value]
-    if isinstance(value, (Collective, Mapping)):
+    if isinstance(value, Collective):
+        return value.values()
+    if isinstance(value, Mapping):
         return list(value.values())
     if isinstance(value, (list, tuple, set, deque, Generator)):
         return list(value)

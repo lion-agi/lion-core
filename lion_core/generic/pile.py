@@ -715,6 +715,7 @@ def pile(
     item_type: Type[Observable] | set[Type[Observable]] | None = None,
     order: list[str] | None = None,
     strict: bool = False,
+    **kwargs,
 ) -> Pile:
     """
     Create a new Pile instance.
@@ -728,4 +729,10 @@ def pile(
         Pile: A new Pile instance.
     """
 
-    return Pile(items=items, item_type=item_type, order=order, strict=strict)
+    return Pile(
+        items=items,
+        item_type=item_type,
+        order=order,
+        strict=strict,
+        **kwargs,
+    )
