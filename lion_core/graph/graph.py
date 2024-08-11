@@ -23,7 +23,7 @@ from lion_core.generic.pile import Pile, pile
 from lion_core.generic.note import Note
 from lion_core.exceptions import LionRelationError, ItemExistsError
 from lion_core.graph.edge import Edge
-from lion_core.graph.node import Node
+from lion_core.generic.node import Node
 
 
 class Graph(Node):
