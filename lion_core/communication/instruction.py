@@ -15,7 +15,8 @@ limitations under the License.
 """
 
 import inspect
-from typing import Any, Literal, override, Type
+from typing import Any, Literal, Type
+from typing_extensions import override
 
 from lion_core.exceptions import LionTypeError
 from lion_core.setting import LN_UNDEFINED

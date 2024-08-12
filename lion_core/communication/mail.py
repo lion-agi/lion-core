@@ -1,6 +1,7 @@
 """Mail module for the Lion framework's communication system."""
 
-from typing import Any, override
+from typing import Any
+from typing_extensions import override
 from pydantic import Field, field_validator
 from lion_core.exceptions import LionValueError
 from lion_core.communication.base_mail import BaseMail

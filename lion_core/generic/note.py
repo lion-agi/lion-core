@@ -17,7 +17,8 @@ limitations under the License.
 from functools import singledispatchmethod
 from collections.abc import Mapping
 import contextlib
-from typing import Any, override, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
+from typing_extensions import override
 from pydantic import Field, BaseModel, ConfigDict, field_serializer
 from lion_core.abc import Container
 from lion_core.libs import nget, ninsert, nset, npop, flatten, to_dict, fuzzy_parse_json

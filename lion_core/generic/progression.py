@@ -15,7 +15,8 @@ limitations under the License.
 """
 
 import contextlib
-from typing import Any, Iterator, override
+from typing import Any, Iterator
+from typing_extensions import override
 
 from pydantic import Field, field_validator
 

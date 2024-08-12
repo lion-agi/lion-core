@@ -15,7 +15,8 @@ limitations under the License.
 """
 
 import asyncio
-from typing import Any, TypeVar, Type, Iterable, override, Generic, AsyncIterator
+from typing import Any, TypeVar, Type, Iterable, Generic, AsyncIterator
+from typing_extensions import override
 
 from pydantic import Field, field_serializer
 

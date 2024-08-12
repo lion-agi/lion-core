@@ -18,7 +18,8 @@ limitations under the License.
 
 import inspect
 
-from typing import Any, Literal, Type, override
+from typing import Any, Literal, Type
+from typing_extensions import override
 
 from pydantic import Field, model_validator, ConfigDict
 from pydantic.fields import FieldInfo

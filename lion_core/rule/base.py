@@ -15,7 +15,8 @@ limitations under the License.
 """
 
 from abc import abstractmethod
-from typing import Any, Callable, override
+from typing import Any, Callable
+from typing_extensions import override
 
 
 from lion_core.abc import Condition, Observable, Temporal, Action
@@ -24,7 +25,7 @@ from lion_core.sys_utils import SysUtil
 from lion_core.libs import ucall
 from lion_core.generic.note import Note
 from lion_core.generic.log import BaseLog
-from lion_core.form.task_form import BaseForm
+from lion_core.form.base import BaseForm
 
 
 class Rule(Condition, Action, Observable, Temporal):

@@ -1,4 +1,5 @@
-from typing import Any, override
+from typing import Any
+from typing_extensions import override
 
 from lion_core.sys_utils import SysUtil
 from lion_core.generic.note import Note
