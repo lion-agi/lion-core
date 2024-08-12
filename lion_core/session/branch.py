@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, Callable, ClassVar, override, Literal
+from typing import Any, Callable, ClassVar, Literal
+from typing_extensions import override
 
 from pydantic import Field, model_validator
 

@@ -16,8 +16,8 @@ limitations under the License.
 
 from collections import deque
 from functools import singledispatchmethod
-from typing import Any, TypeVar, ClassVar, Type, override
-from typing_extensions import Annotated
+from typing import Any, TypeVar, ClassVar, Type
+from typing_extensions import Annotated, override
 
 from pydantic import Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo

@@ -16,7 +16,8 @@ limitations under the License.
 
 import inspect
 from enum import Enum
-from typing import Any, override
+from typing import Any
+from typing_extensions import override
 from pydantic import Field, field_validator
 from lion_core.abc import Relational
 from lion_core.sys_utils import SysUtil

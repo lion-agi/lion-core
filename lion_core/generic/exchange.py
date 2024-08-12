@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import List, Literal, override
+from typing import List, Literal
+from typing_extensions import override
 from pydantic import Field
 
 from lion_core.abc._space import Container

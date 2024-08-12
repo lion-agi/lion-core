@@ -66,7 +66,7 @@ class Session(BaseSession):
         progress: Progression | None = None,
         tool_manager: ToolManager | None = None,
         tools: Any = None,
-        **kwargs,       # additional branch parameters
+        **kwargs,  # additional branch parameters
     ) -> Branch:
 
         if system in [None, LN_UNDEFINED]:
@@ -87,7 +87,7 @@ class Session(BaseSession):
             tools=tools,
             **kwargs,
         )
-        
+
         self.conversations.register(branch.progress, name=name)
         self.branches.include(branch)
         self.mail_manager.add_sources(branch)
@@ -95,19 +95,16 @@ class Session(BaseSession):
             self.default_branch = branch
         return branch
 
-
     def remove_branch(
         self,
         branch: Branch | str,
         delete: bool = False,
     ):
         branch = SysUtil.get_id(branch)
-        
+
         if branch not in self.branches:
             _s = str(branch) if len(str(branch)) < 10 else str(branch)[:10] + "..."
-            raise ItemNotFoundError(
-                f"Branch {_s}.. does not exist."
-            )
+            raise ItemNotFoundError(f"Branch {_s}.. does not exist.")
         branch: Branch = self.branches[branch]
 
         self.conversations.exclude(prog=branch.progress)

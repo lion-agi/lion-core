@@ -17,7 +17,8 @@ limitations under the License.
 from functools import singledispatchmethod
 from collections.abc import Mapping
 import contextlib
-from typing import Any, override, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
+from typing_extensions import override
 from pydantic import Field, BaseModel, ConfigDict, field_serializer
 from lion_core.abc import Container
 from lion_core.libs import nget, ninsert, nset, npop, flatten, to_dict, fuzzy_parse_json
@@ -51,6 +52,7 @@ class Note(BaseModel, Container):
     @field_serializer("content")
     def _serialize_content(self, value: Any) -> dict[str, Any]:
         from lion_core.communication.base_mail import BaseMail
+
         output_dict = SysUtil.copy(value, deep=True)
         origin_obj = output_dict.pop("clone_from", None)
 

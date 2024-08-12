@@ -1,6 +1,7 @@
 """Base module for logging in the Lion framework."""
 
-from typing import Any, override
+from typing import Any
+from typing_extensions import override
 
 from pydantic import Field
 from lion_core.abc import ImmutableRecord

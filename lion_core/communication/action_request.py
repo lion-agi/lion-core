@@ -1,4 +1,5 @@
-from typing import Any, Callable, override
+from typing import Any, Callable
+from typing_extensions import override
 
 from lion_core.libs import to_dict, to_str, fuzzy_parse_json
 from lion_core.generic.note import Note

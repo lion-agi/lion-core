@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, override
-
+from typing import Any
+from typing_extensions import override
 from lion_core.libs import ucall
 from lion_core.abc import Action
 

@@ -15,7 +15,8 @@ limitations under the License.
 """
 
 from datetime import datetime
-from typing import Any, TypeVar, override
+from typing import Any, TypeVar
+from typing_extensions import override
 
 from pydantic import (
     BaseModel,

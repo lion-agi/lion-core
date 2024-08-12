@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 import asyncio
-from typing import override
+from typing_extensions import override
 
 from lion_core.abc import Action, BaseProcessor
 from lion_core.action.status import ActionStatus
