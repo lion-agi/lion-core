@@ -46,14 +46,19 @@ class FunctionCalling(Action):
                 raise ValueError("Pre-processor must return a dictionary.")
 
         try:
-            result = await ucall(self.func_tool.function, **kwargs)
+            result = await ucall(
+                self.func_tool.function,
+                **kwargs,
+            )
         except Exception:
             raise
 
         if self.func_tool.post_processor:
             post_process_kwargs = self.func_tool.post_processor_kwargs or {}
             result = await ucall(
-                self.func_tool.post_processor, result, **post_process_kwargs
+                self.func_tool.post_processor,
+                result,
+                **post_process_kwargs,
             )
 
         return (
