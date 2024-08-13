@@ -1,4 +1,4 @@
-from typing import override, Any
+from typing import override
 from lion_core.libs import to_str
 from lion_core.rule.base import Rule
 
@@ -11,13 +11,6 @@ class StringRule(Rule):
         fields (list[str]): The list of fields to which the rule applies.
         apply_type (str): The type of data to which the rule applies.
     """
-
-    base_config = {
-        "use_model_dump": True,
-        "strip_lower": False,
-        "chars": None,
-        "apply_types": ["str"],
-    }
 
     @override
     async def validate(self, value):

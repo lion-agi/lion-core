@@ -1,4 +1,5 @@
-from typing import Any, override
+from typing import Any
+from typing_extensions import override
 from lion_core.libs import strip_lower
 from lion_core.rule.base import Rule
 from lion_core.exceptions import LionOperationError
@@ -11,10 +12,6 @@ class BooleanRule(Rule):
     Attributes:
         apply_type (str): The type of data to which the rule applies.
     """
-
-    base_config = {
-        "apply_types": ["bool"],
-    }
 
     @override
     async def validate(self, value: Any) -> bool:

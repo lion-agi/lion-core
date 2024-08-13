@@ -14,17 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from enum import Enum
-from typing import override
+from typing_extensions import override
 from lion_core.libs import fuzzy_parse_json, to_dict, to_list
 from lion_core.exceptions import LionOperationError
 
 from lion_core.rule.default_rules.mapping import MappingRule
-
-
-class ActionRequestKeys(Enum):
-    FUNCTION = "function"
-    ARGUMENTS = "arguments"
 
 
 class FunctionCallingRule(MappingRule):
@@ -38,15 +32,9 @@ class FunctionCallingRule(MappingRule):
         discard (bool): Indicates whether to discard invalid action requests.
     """
 
-    base_config = {
-        "apply_types": ["functioncalling"],
-        "keys": ["function", "arguments"],
-        "discard": True,
-    }
-
     @property
     def discard(self):
-        return self.rule_info.get("discard", True)
+        return self.info.get("discard", True)
 
     @override
     async def validate(self, value):

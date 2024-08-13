@@ -1,4 +1,4 @@
-from typing import override
+from typing_extensions import override
 from lion_core.libs import choose_most_similar
 from lion_core.rule.base import Rule
 
@@ -12,17 +12,13 @@ class ChoiceRule(Rule):
         keys (list): The list of valid choices.
     """
 
-    base_config = {
-        "apply_types": ["enum"],
-    }
-
     @override
     def __init__(self, *, keys: list[str] = None, **kwargs):
         super().__init__(keys=keys, **kwargs)
 
     @property
     def keys(self):
-        return self.rule_info.get(["keys"], [])
+        return self.info.get(["keys"], [])
 
     @override
     async def validate(self, value: str, *args, **kwargs) -> str:

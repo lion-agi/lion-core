@@ -15,7 +15,8 @@ limitations under the License.
 """
 
 import contextlib
-from typing import Any, override, Literal, Callable
+from typing import Any
+from typing_extensions import override
 from collections.abc import Mapping
 from lion_core.libs import to_dict, validate_mapping, fuzzy_parse_json
 from lion_core.exceptions import LionOperationError, LionValueError, LionTypeError
@@ -30,16 +31,6 @@ class MappingRule(ChoiceRule):
     Attributes:
         apply_type (str): The type of data to which the rule applies.
     """
-
-    base_config = {
-        "apply_types": ["dict"],
-        "score_func": None,
-        "fuzzy_match": True,
-        "fill_value": None,
-        "fill_mapping": None,
-        "strict": False,
-        "handle_unmatched": "force",
-    }
 
     @override
     async def validate(self, value: Any) -> Any:

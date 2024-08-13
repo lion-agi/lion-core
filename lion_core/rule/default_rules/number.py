@@ -1,19 +1,11 @@
-from typing import Any, override
+from typing import Any
+from typing_extensions import override
 from lion_core.libs import to_num
 from lion_core.exceptions import LionTypeError
 from lion_core.rule.base import Rule
 
 
 class NumberRule(Rule):
-
-    base_config = {
-        "apply_types": ["int", "float", "complex"],
-        "upper_bound": None,
-        "lower_bound": None,
-        "num_type": "float",
-        "precision": None,
-        "num_count": 1,
-    }
 
     @override
     async def validate(self, value: Any) -> Any:

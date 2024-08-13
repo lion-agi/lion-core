@@ -1,59 +1,90 @@
+import inspect
+from typing import Type
+
 from pydantic import Field
 
 from lion_core.abc import BaseRecord
+from lion_core.libs import to_dict
+from lion_core.sys_utils import SysUtil
+from lion_core.exceptions import LionTypeError, LionValueError
+from lion_core.generic.element import Element
+from lion_core.generic.note import Note, note
+from lion_core.generic.flow import Flow, flow
+from lion_core.generic.pile import Pile, pile
 
 from lion_core.rule.base import Rule
-from lion_core.generic.progression import prog, Progression
-from lion_core.generic.note import Note
-from lion_core.generic.node import Node
-from lion_core.generic.pile import Pile, pile
-from lion_core.generic.note import Note, note
-from lion_core.rule.utils import validate_rules_info
+from lion_core.rule.default_rules._default import DEFAULT_RULE_INFO, DEFAULT_RULEORDER
 
 
-class RuleBook(Node, BaseRecord):
+def validate_rules_info(rules_info):
+    out = note()
 
-    active_rules: Pile[Rule] = Field(default_factory=pile)
-    rules_info: Note = Field(default_factory=note)
-    rules_order: Progression = Field(default_factory=prog)
+    if isinstance(rules_info, Note):
+        rules_info = to_dict(rules_info)
+
+    if isinstance(rules_info, dict):
+        for k, v in rules_info.items():
+            v = to_dict(v)
+            k: Type[Rule] | None = k or v.get("rule", None)
+            if not issubclass(k, Rule):
+                raise LionTypeError(
+                    message="Item type must be a subclass of Rule.",
+                    expected_type=Rule,
+                    actual_type=type(k),
+                )
+
+            v["rule"] = k
+            out[k.__name__] = v
+
+    return out
+
+
+class RuleBook(Element, BaseRecord):
+
+    rules_info: Note = note()
+    active_rules: Pile[Rule] = Field(
+        default_factory=lambda: pile(
+            item_type=Rule,
+            strict=False,
+        ),
+        exclude=True,
+    )
+    default_rule_order: list = Field(default_factory=list)
+    rule_flow: Flow = Field(default_factory=lambda: flow({}, "main"))
 
     def __init__(
         self,
-        rules: dict[str, dict] | None = None,
-        rules_order: list[str] | None = None,
+        rules_info=DEFAULT_RULE_INFO,
+        default_rule_order=DEFAULT_RULEORDER,
     ):
-
         super().__init__()
-        self.rules_info = validate_rules_info(rules)
-        self.rule_order = rules_order
-        self.active_rules: Pile = pile({}, item_type={Rule}, strict=False)
+        self.rules_info = validate_rules_info(rules_info)
+        self.default_rule_order = default_rule_order or list(self.rules_info.keys())
+        self.rule_flow.default_name = "main"
 
-    def initiate_rule(self, rules: str | list[str] = "all"):
-        rules = [rules] if isinstance(rules, str) else rules
+    def init_rule(
+        self,
+        rule: str | Type[Rule],
+        info: dict | Note = None,
+        progress=None,
+        **kwargs,
+    ):
+        if inspect.isclass(rule):
+            rule = rule.__name__
 
-        if len(rules) == 1 and rules[0] == "all":
-            rules = list(self.rules_info.keys())
+        if isinstance(rule, str):
+            rule = self.rules_info.get([rule, "rule"], None)
 
-        _active = []
-        for _rule in rules:
-            if _rule not in self.rules_info:
-                raise ValueError(f"Invalid rule: {_rule}")
+        if rule:
+            _info = SysUtil.copy(self.rules_info[rule.__name__])
+            _info.pop("rule")
+            rule = rule(info=info or _info, **kwargs)
+            self._is_init = True
+            self.active_rules.include(rule)
+            self.rule_flow.append(rule, progress)
+            return rule
 
-            base_config = self.rules_info.get([_rule, "base_config"], {})
-            _r = self.rules_info.get([_rule, "rule"])
-
-            if not issubclass(_r, Rule):
-                raise ValueError(f"Invalid rule class for {_rule}")
-
-            _r.base_config = {**_r.base_config, **base_config}
-            _r = _r(**_r.base_config)
-            _r._is_init = True
-
-            _active.append({_rule: _r})
-
-        self.active_rules.include(_active)
-        if not self.rule_order:
-            self.rule_order = prog(list(self.active_rules.order))
+        raise LionValueError(f"Invalid rule: {rule}")
 
 
 __all__ = ["RuleBook"]

@@ -16,59 +16,118 @@ limitations under the License.
 
 from abc import abstractmethod
 from typing import Any, Callable
+from lionagi import Field
+from pydantic import PrivateAttr
 from typing_extensions import override
 
+from lion_core.abc import Condition, Action
+from lion_core.generic.element import Element
 
-from lion_core.abc import Condition, Observable, Temporal, Action
 from lion_core.exceptions import LionOperationError
-from lion_core.sys_utils import SysUtil
 from lion_core.libs import ucall
-from lion_core.generic.note import Note
+from lion_core.generic.note import Note, note
 from lion_core.form.base import BaseForm
 
 
-class Rule(Condition, Action, Observable, Temporal):
+RULE_SYS_FIELDS = [
+    "base_config",
+    "fix",
+    "apply_types",
+    "exclude_types",
+    "apply_fields",
+    "exclude_fields",
+    "validation_kwargs",
+    "accept_info_key",
+]
 
-    base_config = {}
+
+def prepare_info(info, base_config, accept_info_key, **kwargs):
+    d_ = {}
+    if info is not None:
+        if isinstance(info, dict):
+            d_ = info
+        if isinstance(info, Note):
+            d_ = info.to_dict()
+
+    config = {**base_config, **kwargs}
+    d_ = {**d_, **config}
+    _d = {}
+
+    for k, v in d_.items():
+        if k not in RULE_SYS_FIELDS + accept_info_key:
+            _d["validation_kwargs"] = _d.get("validation_kwargs", {})
+            _d["validation_kwargs"].update(v)
+        else:
+            _d[k] = v
+
+    return note(**_d)
+
+
+class Rule(Element, Condition, Action):
+
+    base_config: dict = {}
+    info: Note = Field(default_factory=Note)
+    _is_init: bool = PrivateAttr(False)
 
     def __init__(
         self,
-        fix: bool = False,
-        apply_types: list[str] | None = None,
-        exclude_types: list[str] | None = None,
-        apply_fields: list[str] = None,
-        exclude_fields: list[str] = None,
-        **kwargs,  # validation_kwargs
+        *,
+        info: Note = None,
+        accept_info_key=[],
+        **kwargs,
     ):
         super().__init__()
-        self.ln_id = SysUtil.id()
-        self.timestamp = SysUtil.time(type_="timestamp")
-        config = {**self.base_config, **kwargs}
-        self.rule_info = Note(
-            **{
-                "fix": fix,
-                "apply_types": apply_types or config.pop("apply_types", []),
-                "exclude_types": exclude_types or [],
-                "apply_fields": apply_fields or [],
-                "exclude_fields": exclude_fields or [],
-                **config,
-            }
+        self.info = prepare_info(
+            info=info,
+            base_config=self.base_config,
+            accept_info_key=accept_info_key
+            or self.base_config.get("accept_info_key", []),
+            **kwargs,
         )
 
     @property
+    def fix(self):
+        return self.info.get(["fix"], False)
+
+    @property
+    def apply_types(self):
+        return self.info.get(["apply_types"], [])
+
+    @apply_types.setter
+    def apply_types(self, value: list[str]):
+        self.info["apply_types"] = value
+
+    @property
+    def exclude_types(self):
+        return self.info.get(["exclude_types"], [])
+
+    @exclude_types.setter
+    def exclude_types(self, value: list[str]):
+        self.info["exclude_types"] = value
+
+    @property
+    def apply_fields(self):
+        return self.info.get(["apply_fields"], [])
+
+    @apply_fields.setter
+    def apply_fields(self, value: list[str]):
+        self.info["apply_fields"] = value
+
+    @property
+    def exclude_fields(self):
+        return self.info.get(["exclude_fields"], [])
+
+    @exclude_fields.setter
+    def exclude_fields(self, value: list[str]):
+        self.info["exclude_fields"] = value
+
+    @property
     def validation_kwargs(self) -> dict:
-        return {
-            k: v
-            for k, v in self.rule_info.to_dict().items()
-            if k
-            not in [
-                "fix",
-                "apply_types",
-                "exclude_types",
-                "apply_fields",
-                "exclude_fields",
-            ]
-        }
+        return self.info.get(["validation_kwargs"], {})
+
+    @validation_kwargs.setter
+    def validation_kwargs(self, value: dict):
+        self.info["validation_kwargs"] = value
 
     # must only return True or False
     @override
@@ -108,9 +167,13 @@ class Rule(Condition, Action, Observable, Temporal):
         if field not in form.work_fields:
             return False
 
-        apply_fields: list = apply_fields or self.rule_info.get(["apply_fields"], [])
-        exclude_fields: list = exclude_fields or self.rule_info.get(
-            ["exclude_fields"], []
+        apply_fields: list = apply_fields or self.info.get(
+            indices=["apply_fields"],
+            default=[],
+        )
+        exclude_fields: list = exclude_fields or self.info.get(
+            indices=["exclude_fields"],
+            default=[],
         )
 
         if exclude_fields and field in exclude_fields:
@@ -138,9 +201,9 @@ class Rule(Condition, Action, Observable, Temporal):
 
         if annotation and len(annotation) > 0:
             for i in annotation:
-                if i in self.rule_info.get(
-                    ["apply_types"], []
-                ) and i not in self.rule_info.get(["exclude_types"], []):
+                if i in self.info.get(["apply_types"], []) and i not in self.info.get(
+                    ["exclude_types"], []
+                ):
                     return True
             return False
 
@@ -215,24 +278,20 @@ class Rule(Condition, Action, Observable, Temporal):
     async def fix_field(
         self,
         value: Any,
+        /,
         *args,
         **kwargs,
     ):
         return value
 
-    # must return correct value as is or raise error
     @abstractmethod
     async def validate(
         self,
         value: Any,
+        /,
         *args,
         **kwargs,
-    ) -> Any:
-        """
-        either return a correct value, or raise error,
-        if raise error will attempt to fix it if fix is True
-        """
-        pass
+    ) -> Any: ...
 
 
 # File: lion_core/rule/base.py
