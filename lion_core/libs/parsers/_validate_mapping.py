@@ -83,16 +83,16 @@ def validate_mapping(
     out_ = d_
 
     if isinstance(out_, str):
-        out_ = fuzzy_parse_json(d_, surpress=True)
+        out_ = fuzzy_parse_json(d_, suppress=True)
         if not out_:
-            out_ = md_to_json(d_, surpress=True)
+            out_ = md_to_json(d_, suppress=True)
         if not out_:
             match = re.search(r"```json\n({.*?})\n```", d_, re.DOTALL)
             if match:
                 out_ = match.group(1)
-                out_ = fuzzy_parse_json(d_, surpress=True)
+                out_ = fuzzy_parse_json(d_, suppress=True)
         if not out_:
-            out_ = fuzzy_parse_json(d_.replace("'", '"'), surpress=True)
+            out_ = fuzzy_parse_json(d_.replace("'", '"'), suppress=True)
 
     if isinstance(out_, dict):
         try:
