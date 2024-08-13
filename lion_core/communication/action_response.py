@@ -82,7 +82,10 @@ class ActionResponse(RoledMessage):
             action_request=action_request,
             func_output=func_output,
         )
-        action_request.content.set(["action_response_id"], self.ln_id)
+        action_request.content.set(
+            ["action_response_id"],
+            self.ln_id,
+        )
 
 
 # File: lion_core/communication/action_response.py

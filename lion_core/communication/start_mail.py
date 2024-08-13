@@ -17,7 +17,12 @@ class StartMail(Element, Signal):
     )
 
     @override
-    def trigger(self, context: Any, structure_id: str, executable_id: str) -> None:
+    def trigger(
+        self,
+        context: Any,
+        structure_id: str,
+        executable_id: str,
+    ) -> None:
         """
         Triggers the start mail by including it in the mailbox.
 

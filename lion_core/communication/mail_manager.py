@@ -49,7 +49,11 @@ class MailManager(BaseManager):
 
     @staticmethod
     def create_mail(
-        sender: str, recipient: str, category: str, package: Any, request_source=None
+        sender: str,
+        recipient: str,
+        category: str,
+        package: Any,
+        request_source=None,
     ) -> Mail:
         """
         Create a new Mail object.
