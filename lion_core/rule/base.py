@@ -24,7 +24,6 @@ from lion_core.exceptions import LionOperationError
 from lion_core.sys_utils import SysUtil
 from lion_core.libs import ucall
 from lion_core.generic.note import Note
-from lion_core.generic.log import BaseLog
 from lion_core.form.base import BaseForm
 
 
@@ -41,7 +40,6 @@ class Rule(Condition, Action, Observable, Temporal):
         exclude_fields: list[str] = None,
         **kwargs,  # validation_kwargs
     ):
-
         super().__init__()
         self.ln_id = SysUtil.id()
         self.timestamp = SysUtil.time(type_="timestamp")
@@ -180,7 +178,12 @@ class Rule(Condition, Action, Observable, Temporal):
 
     # must only return True or False
     async def rule_condition(
-        self, field: str, value: Any, form: BaseForm, *args, **kwargs
+        self,
+        field: str,
+        value: Any,
+        form: BaseForm,
+        *args,
+        **kwargs,
     ) -> bool:
         """
         Default rule condition method.
@@ -193,22 +196,38 @@ class Rule(Condition, Action, Observable, Temporal):
         """
         return False
 
-    # can return corrected value, raise error, or return None (surpress)
-    async def perform_fix(self, value: Any, *args, surpress=False, **kwargs) -> Any:
+    # can return corrected value, raise error, or return None (suppress)
+    async def perform_fix(
+        self,
+        value: Any,
+        *args,
+        suppress=False,
+        **kwargs,
+    ) -> Any:
         try:
             return await self.fix_field(value, *args, **kwargs)
         except Exception as e:
-            if surpress:
+            if suppress:
                 return None
             raise LionOperationError("Failed to fix field") from e
 
     # must return corrected value or raise error
-    async def fix_field(self, value: Any, *args, **kwargs):
+    async def fix_field(
+        self,
+        value: Any,
+        *args,
+        **kwargs,
+    ):
         return value
 
     # must return correct value as is or raise error
     @abstractmethod
-    async def validate(self, value: Any, *args, **kwargs) -> Any:
+    async def validate(
+        self,
+        value: Any,
+        *args,
+        **kwargs,
+    ) -> Any:
         """
         either return a correct value, or raise error,
         if raise error will attempt to fix it if fix is True

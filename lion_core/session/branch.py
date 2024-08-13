@@ -297,13 +297,26 @@ class Branch(BaseSession):
 
     @override
     @classmethod
-    def convert_from(cls, obj: Any, key: str = "DataFrame", **kwargs) -> "Branch":
-        p = cls.get_converter_registry().convert_from(obj, key=key, **kwargs)
+    def convert_from(
+        cls,
+        obj: Any,
+        key: str = "DataFrame",
+        **kwargs,
+    ) -> "Branch":
+        p = cls.get_converter_registry().convert_from(
+            target_class=obj,
+            key=key,
+            **kwargs,
+        )
         return cls(messages=p, **kwargs)
 
     @override
     def convert_to(self, key: str, /, **kwargs: Any) -> Any:
-        return self.get_converter_registry().convert_to(self, key=key, **kwargs)
+        return self.get_converter_registry().convert_to(
+            obj=self,
+            key=key,
+            **kwargs,
+        )
 
     @property
     def last_response(self) -> AssistantResponse | None:
@@ -363,7 +376,11 @@ class Branch(BaseSession):
         """
         self.tool_manager.register_tools(tools=tools)
 
-    def delete_tools(self, tools: Any, verbose: bool = True) -> bool:
+    def delete_tools(
+        self,
+        tools: Any,
+        verbose: bool = True,
+    ) -> bool:
         """
         Delete specified tools from the tool manager.
 
@@ -376,14 +393,14 @@ class Branch(BaseSession):
         """
         if not isinstance(tools, list):
             tools = [tools]
-        if is_same_dtype(tools, str):
+        if is_same_dtype(input_=tools, dtype=str):
             for act_ in tools:
                 if act_ in self.tool_manager.registry:
                     self.tool_manager.registry.pop(act_)
             if verbose:
                 print("tools successfully deleted")
             return True
-        elif is_same_dtype(tools, Tool):
+        elif is_same_dtype(input_=tools, dtype=Tool):
             for act_ in tools:
                 if act_.function_name in self.tool_manager.registry:
                     self.tool_manager.registry.pop(act_.function_name)

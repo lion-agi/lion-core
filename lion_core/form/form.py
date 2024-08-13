@@ -188,7 +188,7 @@ Please follow prompts to complete the task:
         and update the init_input_kwargs dictionary.
         """
         if self.strict and field_name in RESTRICTED_FIELDS:
-            raise AttributeError(f"{field_name} should not be modified after init")
+            raise ERR_MAP["assignment", "strict"](field_name)
 
         super().__setattr__(field_name, value)
         self._fill_init_input_kwargs(field_name)
@@ -198,7 +198,8 @@ Please follow prompts to complete the task:
             self.init_input_kwargs[field_name] = getattr(self, field_name)
 
     def check_is_completed(
-        self, handle_how: Literal["raise", "return_missing"] = "raise"
+        self,
+        handle_how: Literal["raise", "return_missing"] = "raise",
     ) -> list[str] | None:
         """
         Check if all required fields are completed.
@@ -228,14 +229,15 @@ Please follow prompts to complete the task:
 
         if non_complete_request:
             if handle_how == "raise":
-                raise ERR_MAP["incomplete_request"](non_complete_request)
+                raise ERR_MAP["assignment", "incomplete_request"](non_complete_request)
             elif handle_how == "return_missing":
                 return non_complete_request
         else:
             self.has_processed = True
 
     def check_is_workable(
-        self, handle_how: Literal["raise", "return_missing"] = "raise"
+        self,
+        handle_how: Literal["raise", "return_missing"] = "raise",
     ) -> list[str] | None:
         """
         Check if all input fields are filled and the form is workable.
@@ -251,7 +253,7 @@ Please follow prompts to complete the task:
             ValueError: If input fields are missing and handle_how is "raise".
         """
         if self.strict and self.has_processed:
-            raise ERR_MAP["task_already_processed"]
+            raise ERR_MAP["assignment", "strict_processed"]
 
         missing_inputs = []
         invalid_values = [LN_UNDEFINED, PydanticUndefined]
@@ -264,7 +266,7 @@ Please follow prompts to complete the task:
 
         if missing_inputs:
             if handle_how == "raise":
-                raise ERR_MAP["incomplete_input"](missing_inputs)
+                raise ERR_MAP["assignment", "incomplete_input"](missing_inputs)
             elif handle_how == "return_missing":
                 return missing_inputs
 
@@ -295,23 +297,27 @@ Please follow prompts to complete the task:
             data = data.to_dict()
 
         if not isinstance(data, dict):
-            raise ERR_MAP["not_dict"]
+            raise ERR_MAP["type", "not_dict"](data)
 
         if not data.get("assignment", None):
-            raise ERR_MAP["no_assignment"]
+            raise ERR_MAP["assignment", "no_assignment"]
 
-        if "input_fields" in data or "request_fields" in data:
-            raise ERR_MAP["explicit_input_request"]
+        if "input_fields" in data:
+            raise ERR_MAP["assignment", "explcit_input"]
+
+        if "request_fields" in data:
+            raise ERR_MAP["assignment", "explcit_request"]
 
         if "task" in data:
-            raise ERR_MAP["explicit_task"]
+            raise ERR_MAP["assignment", "explicit_task"]
 
         input_fields, request_fields = get_input_output_fields(data.get("assignment"))
 
         if not input_fields or input_fields == [""]:
-            raise ERR_MAP["invalid_input"]
+            raise ERR_MAP["assignment", "missing_input"]
+
         elif not request_fields or request_fields == [""]:
-            raise ERR_MAP["missing_output"]
+            raise ERR_MAP["assignment", "missing_request"]
 
         data["input_fields"] = input_fields
         data["request_fields"] = request_fields
@@ -363,9 +369,14 @@ Please follow prompts to complete the task:
         except Exception:
             return False
 
-    def fill_input_fields(self, form: BaseForm | Any = None, **value_kwargs):
+    def fill_input_fields(
+        self,
+        form: BaseForm | Any = None,
+        **value_kwargs,
+    ):
         if form is not None and not isinstance(form, BaseForm):
-            raise LionValueError("Invalid form for fill. Should be a instance of Form.")
+            raise ERR_MAP["type", "not_form_instance"](form)
+
         for i in self.input_fields:
             if self.none_as_valid_value:
                 if getattr(self, i) is not LN_UNDEFINED:
@@ -383,9 +394,13 @@ Please follow prompts to complete the task:
                     if value not in [LN_UNDEFINED, None]:
                         setattr(self, i, value)
 
-    def fill_request_fields(self, form: BaseForm = None, **value_kwargs):
+    def fill_request_fields(
+        self,
+        form: BaseForm = None,
+        **value_kwargs,
+    ):
         if form is not None and not isinstance(form, BaseForm):
-            raise ERR_MAP["not_form_instance"]
+            raise ERR_MAP["type", "not_form_instance"](form)
 
         for i in self.request_fields:
             if self.none_as_valid_value:
@@ -421,17 +436,18 @@ Please follow prompts to complete the task:
 
         if inspect.isclass(form):
             if not issubclass(form, BaseForm):
-                raise ERR_MAP["not_form_class"]
+                raise ERR_MAP["type", "not_form_class"](form)
             form_fields = form.model_fields
         else:
             if not isinstance(form, BaseForm):
-                raise ERR_MAP["not_form_instance"]
+                raise ERR_MAP["type", "not_form_instance"](form)
             form_fields = form.all_fields
 
         if same_form_output_fields:
             if output_fields:
                 raise LionValueError(
-                    "Cannot provide output_fields and same_form_output_fields at the same time."
+                    "Cannot provide output_fields and "
+                    "same_form_output_fields at the same time."
                 )
             output_fields = form.output_fields
 
@@ -481,8 +497,9 @@ Please follow prompts to complete the task:
     ):
         _f = lambda x: [i.strip() for i in x.split(",") if i]
         if not (a := _f(field_name)) or len(a) > 1:
-            raise LionValueError(
-                "Cannot append more than one field at a time, a field's name cannot contain commas."
+            raise ERR_MAP["field", "error"](
+                "Cannot append more than one field at a time, "
+                "a field's name cannot contain commas."
             )
 
         config = {
@@ -494,7 +511,7 @@ Please follow prompts to complete the task:
         }
 
         if self.strict:
-            raise LionValueError("Cannot modify a strict form.")
+            raise ERR_MAP["assignment", "strict"](field_type)
 
         match field_type:
             case "input":
@@ -537,7 +554,7 @@ Please follow prompts to complete the task:
                 **kwargs,
             )
         except Exception as e:
-            raise LionValueError(
+            raise ERR_MAP["field", "error"](
                 f"Failed to append {field_name} to input fields."
             ) from e
 
@@ -560,7 +577,7 @@ Please follow prompts to complete the task:
                 **kwargs,
             )
         except Exception as e:
-            raise LionValueError(
+            raise ERR_MAP["field", "error"](
                 f"Failed to append {field_name} to output fields."
             ) from e
 
@@ -582,7 +599,7 @@ Please follow prompts to complete the task:
                 **kwargs,
             )
         except Exception as e:
-            raise LionValueError(
+            raise ERR_MAP["field", "error"](
                 f"Failed to append {field_name} to request fields."
             ) from e
 

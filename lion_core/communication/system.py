@@ -13,7 +13,8 @@ DEFAULT_SYSTEM = "You are a helpful AI assistant. Let's think step by step."
 
 
 def format_system_content(
-    system_datetime: bool | str | None, system_message: str
+    system_datetime: bool | str | None,
+    system_message: str,
 ) -> Note:
     """
     Format the system content with optional datetime.

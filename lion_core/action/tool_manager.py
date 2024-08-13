@@ -41,7 +41,11 @@ class ToolManager(BaseManager):
             return tool.__name__ in self.registry
         return False
 
-    def register_tool(self, tool: Tool | Callable[..., Any], update: bool = False):
+    def register_tool(
+        self,
+        tool: Tool | Callable[..., Any],
+        update: bool = False,
+    ):
         """
         Register a single tool.
 
@@ -66,7 +70,8 @@ class ToolManager(BaseManager):
         self.registry[tool.function_name] = tool
 
     def register_tools(
-        self, tools: list[Tool | Callable[..., Any]] | Tool | Callable[..., Any]
+        self,
+        tools: list[Tool | Callable[..., Any]] | Tool | Callable[..., Any],
     ):
         """
         Register multiple tools.
@@ -158,7 +163,11 @@ class ToolManager(BaseManager):
         """
         return [tool.schema_ for tool in self.registry.values()]
 
-    def get_tool_schema(self, tools: ToolType = False, **kwargs: Any) -> dict[str, Any]:
+    def get_tool_schema(
+        self,
+        tools: ToolType = False,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         """
         Retrieve the schema for specific tools or all tools.
 
@@ -182,7 +191,10 @@ class ToolManager(BaseManager):
             tool_kwarg = {"tools": self._get_tool_schema(tools)}
         return tool_kwarg | kwargs
 
-    def _get_tool_schema(self, tool: Any) -> dict[str, Any] | list[dict[str, Any]]:
+    def _get_tool_schema(
+        self,
+        tool: Any,
+    ) -> dict[str, Any] | list[dict[str, Any]]:
         if isinstance(tool, dict):
             return tool
         elif isinstance(tool, Tool) or isinstance(tool, str):

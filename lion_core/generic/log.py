@@ -1,9 +1,7 @@
 """Base module for logging in the Lion framework."""
 
-from typing import Any
-from typing_extensions import override
-
-from pydantic import Field
+from pydantic import Field, field_serializer, field_validator
+from lion_core.libs import to_dict
 from lion_core.abc import ImmutableRecord
 from lion_core.generic.note import Note
 from lion_core.generic.element import Element
@@ -25,40 +23,24 @@ class BaseLog(Element, ImmutableRecord):
         frozen=True,
     )
 
-    @override
-    def __init__(
-        self, *, content: dict | Note = None, loginfo: Note | dict = None, **data: Any
-    ) -> None:
-        super().__init__()
+    @field_validator(
+        "content",
+        "loginfo",
+        mode="before",
+    )
+    def _validate_note(cls, value):
+        if isinstance(value, Note):
+            return value
+        if isinstance(value, dict):
+            return Note.from_dict(value)
+        try:
+            return Note.from_dict(to_dict(value))
+        except Exception as e:
+            raise e
 
-        if content:
-            if isinstance(content, dict):
-                data = {**content, **data}
-            elif isinstance(content, Note):
-                data = {**content.to_dict(), **data}
-
-        self.content
-
-        content_ = Note(content=data)
-        loginfo_ = Note(**loginfo) if isinstance(loginfo, dict) else loginfo
-        super().__init__(content=content_, loginfo=loginfo_)
-
-    @override
-    def to_dict(self):
-        d = super().to_dict()
-        d["content"] = self.content.to_dict()
-        d["loginfo"] = self.loginfo.to_dict()
-        return d
-
-    @override
-    @classmethod
-    def from_dict(cls, dict_):
-        if "lion_class" in dict_ and dict_["lion_class"] == "BaseLog":
-            dict_.pop("lion_class")
-
-        content = Note.from_dict(dict_["content"])
-        loginfo = Note.from_dict(dict_["loginfo"])
-        return cls(content=content, loginfo=loginfo)
+    @field_serializer("content", "loginfo")
+    def _serialize_note(self, value):
+        return value.to_dict()
 
 
 # File: lion_core/log/base.py

@@ -18,7 +18,7 @@ import re
 from typing import Any, Union
 
 
-def xml_to_dict(xml_string: str, surpress=False) -> dict[str, Any]:
+def xml_to_dict(xml_string: str, suppress=False) -> dict[str, Any]:
     """
     Parse an XML string into a nested dictionary structure.
 
@@ -43,7 +43,7 @@ def xml_to_dict(xml_string: str, surpress=False) -> dict[str, Any]:
             return a["root"]
         return a
     except ValueError as e:
-        if not surpress:
+        if not suppress:
             raise e
 
 

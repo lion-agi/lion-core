@@ -10,7 +10,7 @@ def md_to_json(
     *,
     expected_keys: list[str] | None = None,
     parser: Callable[[str], Any] | None = None,
-    surpress: bool = False,
+    suppress: bool = False,
 ) -> dict[str, Any]:
     """
     Parse a JSON block from a Markdown string and validate its keys.
@@ -35,18 +35,18 @@ def md_to_json(
             object or if no JSON block is found.
     """
     json_obj = extract_json_block(
-        str_to_parse=str_to_parse, parser=parser or fuzzy_parse_json, surpress=surpress
+        str_to_parse=str_to_parse, parser=parser or fuzzy_parse_json, suppress=suppress
     )
 
     if not json_obj:
-        if surpress:
+        if suppress:
             return None
         raise ValueError("No JSON block found in the Markdown content.")
 
     if expected_keys:
         missing_keys = [key for key in expected_keys if key not in json_obj]
         if missing_keys:
-            if surpress:
+            if suppress:
                 return None
             raise ValueError(
                 f"Missing expected keys in JSON object: {', '.join(missing_keys)}"
@@ -90,7 +90,7 @@ def extract_json_block(
     regex_pattern: str | None = None,  # take priority over language
     *,
     parser: Callable[[str], Any] = None,
-    surpress: bool = False,
+    suppress: bool = False,
 ) -> dict[str, Any]:
     """
     Extract and parse a JSON block from Markdown content.
@@ -133,7 +133,7 @@ def extract_json_block(
         if str_to_parse.startswith("```json\n") and str_to_parse.endswith("\n```"):
             code_str = str_to_parse[8:-4].strip()
         else:
-            if surpress:
+            if suppress:
                 return None
             raise ValueError("No JSON code block found in the Markdown content.")
 

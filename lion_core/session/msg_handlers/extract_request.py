@@ -1,16 +1,5 @@
-import json
-import re
-import contextlib
 from lion_core.communication.action_request import ActionRequest
-from lion_core.generic.note import Note, note
-from lion_core.libs import (
-    to_dict,
-    strip_lower,
-    nget,
-    fuzzy_parse_json,
-    md_to_json,
-    extract_json_block,
-)
+from lion_core.libs import to_dict, nget, fuzzy_parse_json
 
 
 def extract_request_plain_function_calling(

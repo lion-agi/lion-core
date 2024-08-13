@@ -44,11 +44,15 @@ class ActionExecutor(BaseExecutor):
 
     @property
     def pending_action(self) -> Pile:
-        return pile([i for i in self.pile if i.status == ActionStatus.PENDING])
+        return pile(
+            [i for i in self.pile if i.status == ActionStatus.PENDING],
+        )
 
     @property
     def completed_action(self) -> Pile:
-        return pile([i for i in self.pile if i.status == ActionStatus.COMPLETED])
+        return pile(
+            [i for i in self.pile if i.status == ActionStatus.COMPLETED],
+        )
 
     def __contains__(self, action):
         return action in self.pile

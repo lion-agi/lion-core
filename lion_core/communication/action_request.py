@@ -10,7 +10,10 @@ from lion_core.communication.message import (
 )
 
 
-def prepare_action_request(func: str | Callable, arguments: dict) -> Note:
+def prepare_action_request(
+    func: str | Callable,
+    arguments: dict,
+) -> Note:
     def _prepare_arguments(_arg: Any) -> dict[str, Any]:
         """Prepare and validate the arguments for an action request."""
         if _arg is None:
@@ -32,7 +35,9 @@ def prepare_action_request(func: str | Callable, arguments: dict) -> Note:
         raise ValueError(f"Invalid arguments: {_arg}")
 
     arguments = _prepare_arguments(arguments)
-    return Note(**{"action_request": {"function": func, "arguments": arguments}})
+    return Note(
+        **{"action_request": {"function": func, "arguments": arguments}},
+    )
 
 
 class ActionRequest(RoledMessage):

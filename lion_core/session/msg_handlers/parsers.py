@@ -1,12 +1,7 @@
-import json
 import re
-import contextlib
-from lion_core.communication.action_request import ActionRequest
-from lion_core.generic.note import Note, note
+from lion_core.generic.note import note
 from lion_core.libs import (
     to_dict,
-    strip_lower,
-    nget,
     fuzzy_parse_json,
     md_to_json,
     extract_json_block,
@@ -43,14 +38,25 @@ def _force_parse_json(s_: str) -> tuple:
         action_block = match.group(1) if match else None
 
         if action_block is not None:
-            out = to_dict(s_, str_type="json", parser=md_to_json, surpress=True)
+            out = to_dict(
+                s_,
+                str_type="json",
+                parser=md_to_json,
+                suppress=True,
+            )
             if out is None:
                 out = to_dict(
-                    s_, str_type="json", parser=fuzzy_parse_json, surpress=True
+                    s_,
+                    str_type="json",
+                    parser=fuzzy_parse_json,
+                    suppress=True,
                 )
             if out is None:
                 out = to_dict(
-                    s_, str_type="json", parser=extract_json_block, surpress=True
+                    s_,
+                    str_type="json",
+                    parser=extract_json_block,
+                    suppress=True,
                 )
             if out is not None and isinstance(out, dict):
                 return idx, out
@@ -64,7 +70,11 @@ def _force_parse_xml(s_: str) -> tuple:
         match = re.search(patterns[*cp], s_, re.DOTALL)
         action_block = match.group(1) if match else None
         if action_block is not None:
-            out = to_dict(action_block, str_type="xml", surpress=True)
+            out = to_dict(
+                action_block,
+                str_type="xml",
+                suppress=True,
+            )
             if out is not None and isinstance(out, dict):
                 return idx, out
     return None, None
