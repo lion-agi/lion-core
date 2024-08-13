@@ -26,7 +26,7 @@ from lion_core.generic.pile import pile, Pile
 from lion_core.generic.progression import prog, Progression
 from lion_core.generic.utils import to_list_type
 from lion_core.generic.exchange import Exchange
-from lion_core.generic.flow import Flow, flow
+from lion_core.generic.flow import Flow
 from lion_core.communication.message import RoledMessage
 from lion_core.communication.mail_manager import MailManager
 from lion_core.action.tool_manager import ToolManager
@@ -48,9 +48,9 @@ class Session(BaseSession):
     """
 
     branches: Pile | None = Field(None)
-    default_branch: Branch | None = Field(None)
+    default_branch: Branch | None = Field(None, exclude=True)
     mail_transfer: Exchange | None = Field(None)
-    mail_manager: MailManager | None = Field(None)
+    mail_manager: MailManager | None = Field(None, exclude=True)
     conversations: Flow | None = Field(None)
     branch_type: Type[Branch] = PrivateAttr(Branch)
 
