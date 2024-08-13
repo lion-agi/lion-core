@@ -22,12 +22,13 @@ parsing, validation, and execution of associated functions.
 """
 
 import asyncio
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, Callable
 
+from lion_core.libs import ucall
 from lion_core.exceptions import ItemNotFoundError
 from lion_core.action.function_calling import FunctionCalling
 from lion_core.communication.action_request import ActionRequest
-from lion_core.session.utils import parse_action_request
+from lion_core.session.msg_handlers.create_request import create_action_request
 
 if TYPE_CHECKING:
     from lion_core.session.branch import Branch
@@ -53,7 +54,7 @@ async def process_action_request(
     Raises:
         ItemNotFoundError: If a requested tool is not found in the registry.
     """
-    action_requests: list[ActionRequest] = action_request or parse_action_request(_msg)
+    action_requests: list[ActionRequest] = action_request or create_action_request(_msg)
     if not action_requests:
         return _msg or False
 
@@ -71,7 +72,31 @@ async def process_action_request(
         func_call = FunctionCalling(tool, args)
         tasks.append(asyncio.create_task(func_call.invoke()))
 
-    results = await asyncio.gather(*tasks)
+    return await asyncio.gather(*tasks)
+
+
+async def process_action_response(
+    branch,
+    responses: list,
+    response_parser=None,
+    parser_kwargs=None,
+):
+    responses = [responses] if not isinstance(responses, list) else responses
+    
+    
+    
+    
+    
+    
+    out = []
+    if response_parser:
+        for i in result:
+            res = await ucall(
+                response_parser,
+                i,
+                **(parser_kwargs or {}),
+            )
+            out.append(res)
 
     for request, result in zip(action_requests, results):
         if result is not None:

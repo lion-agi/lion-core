@@ -128,18 +128,18 @@ def parse_model_response(
 
     if isinstance(out_, str):
         parsing_methods = [
-            lambda x: to_dict(x, str_type="json", parser=md_to_json, surpress=True),
+            lambda x: to_dict(x, str_type="json", parser=md_to_json, suppress=True),
             lambda x: to_dict(
-                x, str_type="json", parser=fuzzy_parse_json, surpress=True
+                x, str_type="json", parser=fuzzy_parse_json, suppress=True
             ),
             lambda x: to_dict(
-                x, str_type="json", parser=extract_json_block, surpress=True
+                x, str_type="json", parser=extract_json_block, suppress=True
             ),
             lambda x: to_dict(x, str_type="xml"),
             lambda x: (
                 fuzzy_parse_json(
                     re.search(r"```json\n({.*?})\n```", x, re.DOTALL).group(1),
-                    surpress=True,
+                    suppress=True,
                 )
                 if re.search(r"```json\n({.*?})\n```", x, re.DOTALL)
                 else None
@@ -152,7 +152,7 @@ def parse_model_response(
                 if re.search(r"```xml\n({.*?})\n```", x, re.DOTALL)
                 else None
             ),
-            lambda x: fuzzy_parse_json(x.replace("'", '"'), surpress=True),
+            lambda x: fuzzy_parse_json(x.replace("'", '"'), suppress=True),
         ]
 
         for method in parsing_methods:

@@ -29,7 +29,13 @@ T = TypeVar("T")
 LION_CLASS_REGISTRY: dict[str, Type[T]] = {}
 LION_CLASS_FILE_REGISTRY: dict[str, str] = {}
 
-pattern_list = ["lion_core/generic", "lion_core/communication", "lion_core/action"]
+pattern_list = [
+    "lion_core/generic",
+    "lion_core/communication",
+    "lion_core/action",
+    "lion_core/form",
+    "lion_core/session",
+]
 
 
 if not LION_CLASS_FILE_REGISTRY:
