@@ -92,7 +92,6 @@ def process_chat_config(
             none_as_valid_value=none_as_valid_value,
             output_fields=output_fields,
             input_value_kwargs=input_fields_value_kwargs,
-            same_form_output_fields=same_form_output_fields,
         )
 
     if isinstance(form, Form):

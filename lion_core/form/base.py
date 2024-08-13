@@ -137,4 +137,4 @@ class BaseForm(Component, MutableRecord):
         return self.required_dict
 
 
-__all__ = ["BaseForm", "BaseTaskForm"]
+__all__ = ["BaseForm"]

@@ -207,4 +207,6 @@ class Report(BaseForm):
         return report_obj
 
 
+__all__ = ["Report"]
+
 # File lion_core/form/report.py

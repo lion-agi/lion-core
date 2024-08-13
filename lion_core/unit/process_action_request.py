@@ -36,8 +36,7 @@ if TYPE_CHECKING:
 
 async def process_action_request(
     branch: "Branch",
-    *,
-    _msg: dict | None = None,
+    msg: dict | None = None,
     action_request: list[ActionRequest] | dict | str | None = None,
 ) -> Any:
     """
@@ -54,9 +53,9 @@ async def process_action_request(
     Raises:
         ItemNotFoundError: If a requested tool is not found in the registry.
     """
-    action_requests: list[ActionRequest] = action_request or create_action_request(_msg)
+    action_requests: list[ActionRequest] = action_request or create_action_request(msg)
     if not action_requests:
-        return _msg or False
+        return msg or False
 
     tasks = []
     for request in action_requests:
@@ -73,41 +72,6 @@ async def process_action_request(
         tasks.append(asyncio.create_task(func_call.invoke()))
 
     return await asyncio.gather(*tasks)
-
-
-async def process_action_response(
-    branch,
-    responses: list,
-    response_parser=None,
-    parser_kwargs=None,
-):
-    responses = [responses] if not isinstance(responses, list) else responses
-    
-    
-    
-    
-    
-    
-    out = []
-    if response_parser:
-        for i in result:
-            res = await ucall(
-                response_parser,
-                i,
-                **(parser_kwargs or {}),
-            )
-            out.append(res)
-
-    for request, result in zip(action_requests, results):
-        if result is not None:
-            branch.add_message(
-                action_request=request,
-                func_outputs=result,
-                sender=request.recipient,
-                recipient=request.sender,
-            )
-
-    return results
 
 
 __all__ = ["process_action_request"]

@@ -124,17 +124,6 @@ class UnitForm(Form):
         examples=["{step_1: {plan: '...', reason: '...'}}"],
     )
 
-    next_steps: dict | str | None = Field(
-        None,
-        description=(
-            "Brainstorm ideas on next actions to take. Format: {next_step_n: {plan: "
-            "..., reason: ...}}. Next_step is about anticipating future actions, "
-            "but it does not have to be in a sequential format. Set `extend_required` "
-            "to True if more steps are needed."
-        ),
-        examples=["{next_step_1: {plan: '...', reason: '...'}}"],
-    )
-
     score: float | None = Field(
         None,
         description=(
@@ -170,21 +159,20 @@ class UnitForm(Form):
 
     def __init__(
         self,
-        instruction=None,
         *,
-        context=None,
-        reason: bool = True,
-        predict: bool = False,
-        score=True,
-        select=None,
-        plan=None,
-        brainstorm=None,
-        reflect=None,
-        tool_schema=None,
-        allow_action: bool = False,
-        allow_extension: bool = False,
-        max_extension: int = None,
-        confidence=None,
+        instruction: Any,
+        context: Any,
+        reason: bool,
+        confidence: bool,
+        predict: bool,
+        score: bool,
+        select: bool,
+        plan: bool,
+        reflect: bool,
+        tool_schema: list,
+        allow_action: bool,
+        allow_extension: bool,
+        max_extension: int,
         score_num_digits=None,
         score_range=None,
         select_choices=None,
@@ -219,11 +207,6 @@ class UnitForm(Form):
         if tool_schema:
             self.append_to_input("tool_schema")
             self.tool_schema = tool_schema
-
-        if brainstorm:
-            self.append_to_request("next_steps")
-            self.append_to_request("extension_required")
-            self.task += "- Explore ideas on next actions to take.\n"
 
         if plan:
             plan_num_step = plan_num_step or 3
