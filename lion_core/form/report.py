@@ -18,6 +18,7 @@ from typing import Type
 from pydantic import Field
 
 from lion_core.exceptions import LionValueError
+from lion_core.form.utils import ERR_MAP
 from lion_core.setting import LN_UNDEFINED
 from lion_core.generic.pile import Pile
 from lion_core.form.base import BaseForm
@@ -69,13 +70,19 @@ class Report(BaseForm):
         input_fields: list[str],
         request_fields: list[str],
     ):
-        if not isinstance(input_fields, list) or not isinstance(request_fields, list):
-            raise ValueError(
-                "Invalid input_fields or request_fields type. Should be a list of str"
+        if not isinstance(input_fields, list):
+            raise ERR_MAP["type", "not_list"](
+                input_fields, "The input_fields must be a list of strings."
             )
+
+        if not isinstance(request_fields, list):
+            raise ERR_MAP["type", "not_list"](
+                request_fields, "The request_fields must be a list of strings."
+            )
+
         for i in input_fields + request_fields:
             if i not in self.all_fields:
-                raise ValueError(f"Invalid field {i}. Failed to find it in all_fields")
+                raise ERR_MAP["field", "missing"](i)
 
         input_assignment = ", ".join(input_fields)
         output_assignment = ", ".join(request_fields)
@@ -119,7 +126,7 @@ class Report(BaseForm):
         )
         return f_
 
-    def save_completed_task(
+    def save_completed_form(
         self,
         form: Form,
         update_results=False,
@@ -127,7 +134,7 @@ class Report(BaseForm):
         try:
             form.check_is_completed(handle_how="raise")
         except Exception as e:
-            raise ValueError(f"Failed to add completed task. Error: {e}")
+            raise ValueError(f"Failed to add completed form. Error: {e}")
 
         report_fields = self.all_fields.keys()
         for i in form.work_dict.keys():
@@ -181,9 +188,8 @@ class Report(BaseForm):
         fill_inputs: bool = True,
     ):
         if not isinstance(form, BaseForm):
-            raise LionValueError(
-                "Invalid form instance. The form must be an instance of a subclass of Form."
-            )
+            raise ERR_MAP["type", "not_form_instance"](form)
+
         report_template_name = "report_for_" + form.template_name
         report_obj = cls(template_name=report_template_name)
 

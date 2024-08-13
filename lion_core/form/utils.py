@@ -1,5 +1,6 @@
 from lion_core.libs import strip_lower
-from lion_core.exceptions import LionValueError, LionOperationError
+from lion_core.exceptions import LionValueError, LionOperationError, LionTypeError
+from lion_core.generic.note import note
 
 
 RESTRICTED_FIELDS = {
@@ -10,50 +11,78 @@ RESTRICTED_FIELDS = {
     "output_fields",
 }
 
-
-ERR_MAP = {
-    "not_dict": ValueError("Input should be a valid dictionary for init."),
-    "no_assignment": AttributeError(
-        "Please provide an assignment for this form. "
-        "Example assignment: 'input1, input2 -> output'."
-    ),
-    "explicit_input_request": LionValueError(
-        "Explicitly defining input_fields and request_fields list is not supported. "
-        "Please use assignment to indicate them."
-    ),
-    "explicit_task": LionValueError(
-        "Explicitly defining task is not supported. Please use task_description."
-    ),
-    "invalid_input": LionValueError(
-        "Inputs are missing in the assignment. "
-        "Example assignment: 'input1, input2 -> output'."
-    ),
-    "missing_output": LionValueError(
-        "Outputs are missing in the assignment. "
-        "Example assignment: 'input1, input2 -> output'."
-    ),
-    "task_already_processed": LionValueError(
-        "The strict form has been processed, and cannot be worked on again."
-    ),
-    "incomplete_request": lambda x: ValueError(
-        f"Request fields {x} are not completed."
-    ),
-    "incomplete_input": lambda x: ValueError(f"Input fields {x} are not completed."),
-    "strict_assignment": lambda x: LionOperationError(
-        f"The form is set to strict_assignment. {x} should not be modified after init."
-    ),
-    "not_form_instance": LionValueError(
-        "Invalid form for fill. Should be a instance of Form."
-    ),
-    "not_form_class": LionValueError(
-        "Invalid form class. The form must be a subclass of Form."
-    ),
-    "invalid_assignment": lambda x: LionValueError(
-        f"Invalid_assignment. Field {x} is not found in the form"
-    ),
-    "missing_field": lambda x: LionValueError(f"Field {x} is missing in the form."),
-    "appending_error": lambda x: LionValueError(f"Failed to append field. {x}"),
+_err_map = {
+    "type": {
+        "not_dict": lambda x: LionTypeError(
+            message="Input should be a valid dictionary for init.",
+            expected_type=dict,
+            actual_type=type(x),
+        ),
+        "not_form_instance": lambda x: LionTypeError(
+            message="Invalid form. Should be a instance of Form.",
+            expected_type="Form",
+            actual_type=type(x),
+        ),
+        "not_form_class": lambda x: LionTypeError(
+            message="Invalid form class, must be a subclass of Form.",
+            expected_type="Type[Form]",
+            actual_type=type(x),
+        ),
+        "not_list": lambda x, y: LionTypeError(
+            message=y,
+            expected_type="list[str]",
+            actual_type=type(x),
+        ),
+    },
+    "assignment": {
+        "no_assignment": LionValueError(
+            "Please provide a valid assignment for this form.",
+            "Example assignment: 'input1, input2 -> output'.",
+        ),
+        "explicit_task": LionValueError(
+            "Explicitly defining task is not supported. Please use task_description."
+        ),
+        "explcit_input": LionValueError(
+            message=(
+                "Explicitly defining input_fields is not supported. "
+                "Please use assignment to indicate them."
+            )
+        ),
+        "explcit_request": LionValueError(
+            message=(
+                "Explicitly defining request_fields is not supported. "
+                "Please use assignment to indicate them."
+            )
+        ),
+        "strict": lambda x: AttributeError(
+            message=(
+                f"The form is set to strict_assignment. {x} "
+                "should not be modified after init.",
+            )
+        ),
+        "strict_processed": LionOperationError(
+            "The strict form has been processed, and cannot be worked on again."
+        ),
+        "missing_input": LionValueError(
+            "Input fields are missing in the assignment.",
+        ),
+        "missing_request": LionValueError(
+            "Request fields are missing in the assignment.",
+        ),
+        "incomplete_input": lambda x: LionOperationError(
+            message=f"Input fields {x} are not completed.",
+        ),
+        "incomplete_request": lambda x: LionOperationError(
+            message=f"Request fields {x} are not completed.",
+        ),
+    },
+    "field": {
+        "missing": lambda x: LionValueError(f"Field {x} is missing in the form."),
+        "error": lambda x: LionOperationError(f"Field operation failed: {x}"),
+    },
 }
+
+ERR_MAP = note(**_err_map)
 
 
 def get_input_output_fields(str_: str) -> tuple[list[str], list[str]]:

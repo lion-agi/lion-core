@@ -65,7 +65,9 @@ class BaseForm(Component, MutableRecord):
     def _validate_output(cls, value):
         if isinstance(value, str):
             return [value]
-        if isinstance(value, list) and all([i for i in value if isinstance(i, str)]):
+        if isinstance(value, list) and all(
+            [i for i in value if isinstance(i, str)],
+        ):
             return value
         if not value:
             return []
@@ -91,7 +93,9 @@ class BaseForm(Component, MutableRecord):
         return {i: getattr(self, i, LN_UNDEFINED) for i in self.required_fields}
 
     def get_results(
-        self, suppress: bool = False, valid_only: bool = False
+        self,
+        suppress: bool = False,
+        valid_only: bool = False,
     ) -> dict[str, Any]:
         """
         Retrieve the results of the form.
@@ -112,14 +116,17 @@ class BaseForm(Component, MutableRecord):
         for i in out_fields:
             if i not in self.all_fields:
                 if not suppress:
-                    raise ERR_MAP["missing_field"](i)
+                    raise ERR_MAP["field", "missing"](i)
             else:
                 result[i] = getattr(self, i, LN_UNDEFINED)
 
         # add a validator for output fields
 
         if valid_only:
-            invalid_values = [LN_UNDEFINED, PydanticUndefined]
+            invalid_values = [
+                LN_UNDEFINED,
+                PydanticUndefined,
+            ]
             if not self.none_as_valid_value:
                 invalid_values.append(None)
             result = {k: v for k, v in result.items() if v not in invalid_values}
