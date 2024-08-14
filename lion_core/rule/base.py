@@ -15,6 +15,7 @@ limitations under the License.
 """
 
 from abc import abstractmethod
+import inspect
 from typing import Any, Callable
 from lionagi import Field
 from pydantic import PrivateAttr
@@ -24,7 +25,7 @@ from lion_core.abc import Condition, Action
 from lion_core.generic.element import Element
 
 from lion_core.exceptions import LionOperationError
-from lion_core.libs import ucall
+from lion_core.libs import ucall, to_list, to_dict
 from lion_core.generic.note import Note, note
 from lion_core.form.base import BaseForm
 
@@ -41,7 +42,12 @@ RULE_SYS_FIELDS = [
 ]
 
 
-def prepare_info(info, base_config, accept_info_key, **kwargs):
+def prepare_info(
+    info: dict | None,
+    base_config: dict,
+    accept_info_key: list,
+    **kwargs,
+):
     d_ = {}
     if info is not None:
         if isinstance(info, dict):
@@ -61,6 +67,23 @@ def prepare_info(info, base_config, accept_info_key, **kwargs):
             _d[k] = v
 
     return note(**_d)
+
+
+def validate_types(value):
+
+    apply_types = []
+    value = to_list(value, dropna=True, flatten=True)
+
+    for i in value:
+        if isinstance(i, str):
+            apply_types.append(i)
+        elif inspect.isclass(i):
+            apply_types.append(i.__name__)
+
+    if len(apply_types) != len(value):
+        raise LionOperationError("apply_types must be a list of str or type")
+
+    return apply_types
 
 
 class Rule(Element, Condition, Action):
@@ -89,13 +112,20 @@ class Rule(Element, Condition, Action):
     def fix(self):
         return self.info.get(["fix"], False)
 
+    @fix.setter
+    def fix(self, value: bool):
+        if not isinstance(value, bool):
+            raise LionOperationError("fix must be a boolean")
+        self.info["fix"] = value
+
     @property
     def apply_types(self):
         return self.info.get(["apply_types"], [])
 
     @apply_types.setter
     def apply_types(self, value: list[str]):
-        self.info["apply_types"] = value
+        apply_types = validate_types(value)
+        self.info["apply_types"] = apply_types
 
     @property
     def exclude_types(self):
@@ -103,7 +133,8 @@ class Rule(Element, Condition, Action):
 
     @exclude_types.setter
     def exclude_types(self, value: list[str]):
-        self.info["exclude_types"] = value
+        exclude_types = validate_types(value)
+        self.info["exclude_types"] = exclude_types
 
     @property
     def apply_fields(self):
@@ -111,6 +142,11 @@ class Rule(Element, Condition, Action):
 
     @apply_fields.setter
     def apply_fields(self, value: list[str]):
+        value = to_list(value, dropna=True, flatten=True)
+        for i in value:
+            if not isinstance(i, str):
+                raise LionOperationError("apply_fields must be a list of str")
+
         self.info["apply_fields"] = value
 
     @property
@@ -119,14 +155,21 @@ class Rule(Element, Condition, Action):
 
     @exclude_fields.setter
     def exclude_fields(self, value: list[str]):
+        value = to_list(value, dropna=True, flatten=True)
+        for i in value:
+            if not isinstance(i, str):
+                raise LionOperationError("exclude_fields must be a list of str")
+
         self.info["exclude_fields"] = value
 
     @property
     def validation_kwargs(self) -> dict:
+        """a dict for fix_value method"""
         return self.info.get(["validation_kwargs"], {})
 
     @validation_kwargs.setter
     def validation_kwargs(self, value: dict):
+        value = to_dict(value)
         self.info["validation_kwargs"] = value
 
     # must only return True or False
@@ -135,14 +178,9 @@ class Rule(Element, Condition, Action):
         self,
         field: str,
         value: Any,
+        /,
         form: BaseForm,
-        *args,
-        apply_fields: list[str] = None,
-        exclude_fields: list[str] = None,
-        annotation: list | str = None,
-        check_func: (
-            Callable | Any
-        ) = None,  # takes priority over annotation and self.rule_condition
+        check_func: Callable | Any = None,
         **kwargs,  # additional kwargs for custom check func or self.rule_condition
     ) -> bool:
         """
@@ -167,18 +205,10 @@ class Rule(Element, Condition, Action):
         if field not in form.work_fields:
             return False
 
-        apply_fields: list = apply_fields or self.info.get(
-            indices=["apply_fields"],
-            default=[],
-        )
-        exclude_fields: list = exclude_fields or self.info.get(
-            indices=["exclude_fields"],
-            default=[],
-        )
-
-        if exclude_fields and field in exclude_fields:
+        if field in self.exclude_fields:
             return False
-        if apply_fields and field in apply_fields:
+
+        if field in self.apply_fields:
             return True
 
         if self.rule_condition != Rule.rule_condition:
@@ -186,7 +216,7 @@ class Rule(Element, Condition, Action):
             if not isinstance(check_func, Callable):
                 raise LionOperationError("Invalid check function provided")
             try:
-                a = await ucall(check_func, field, value, form, *args, **kwargs)
+                a = await ucall(check_func, field, value, form=form, **kwargs)
                 if isinstance(a, bool):
                     return a
             except Exception:
@@ -194,58 +224,26 @@ class Rule(Element, Condition, Action):
 
         # if not in custom fields, nor using custom validation condition
         # we will resort to use field annotation
-        annotation = annotation or form._get_field_annotation(field)
+        annotation = annotation or form._field_annotation(field)
         if isinstance(annotation, dict) and field in annotation:
             annotation = annotation[field]
         annotation = [annotation] if isinstance(annotation, str) else annotation
 
         if annotation and len(annotation) > 0:
             for i in annotation:
-                if i in self.info.get(["apply_types"], []) and i not in self.info.get(
-                    ["exclude_types"], []
-                ):
+                if i in self.apply_types and i not in self.exclude_types:
                     return True
             return False
 
         return False
-
-    @override
-    async def invoke(self, value) -> Any:
-        """
-        Invoke the rule on a field value.
-
-        This method attempts to validate the value and fix it if necessary.
-
-        Args:
-            field: The field being processed.
-            value: The value to validate or fix.
-            form: The form containing the field.
-
-        Returns:
-            Any: The validated or fixed value.
-
-        Raises:
-            LionOperationError: If validation or fixing fails.
-        """
-        try:
-            return await self.validate(value, **self.validation_kwargs)
-
-        except Exception as e1:
-            if self["fix"]:
-                try:
-                    a = await self.perform_fix(value, **self.validation_kwargs)
-                    return a
-                except Exception as e2:
-                    raise LionOperationError("failed to fix field") from e2
-            raise LionOperationError("failed to validate field") from e1
 
     # must only return True or False
     async def rule_condition(
         self,
         field: str,
         value: Any,
+        /,
         form: BaseForm,
-        *args,
         **kwargs,
     ) -> bool:
         """
@@ -259,39 +257,50 @@ class Rule(Element, Condition, Action):
         """
         return False
 
-    # can return corrected value, raise error, or return None (suppress)
-    async def perform_fix(
-        self,
-        value: Any,
-        *args,
-        suppress=False,
-        **kwargs,
-    ) -> Any:
-        try:
-            return await self.fix_field(value, *args, **kwargs)
-        except Exception as e:
-            if suppress:
-                return None
-            raise LionOperationError("Failed to fix field") from e
+    @abstractmethod
+    async def check_value(self, value: Any, /):
+        """raise error if check failed"""
+        ...
 
-    # must return corrected value or raise error
-    async def fix_field(
-        self,
-        value: Any,
-        /,
-        *args,
-        **kwargs,
-    ):
+    async def fix_value(self, value: Any, /) -> Any:
         return value
 
     @abstractmethod
-    async def validate(
+    async def validate(self, value: Any, /) -> Any:
+
+        try:
+            await self.check_value(value)
+            return value
+
+        except Exception as e1:
+            if self.fix:
+                try:
+                    return await self.fix_value(value)
+                except Exception as e2:
+                    raise LionOperationError(
+                        f"Failed to validate field: {e2}",
+                    ) from e1
+        return value
+
+    @override
+    async def invoke(
         self,
+        field: str,
         value: Any,
         /,
-        *args,
-        **kwargs,
-    ) -> Any: ...
+        form: BaseForm,
+        check_func: Callable | Any = None,
+        **kwargs,  # additional kwargs for custom check func or self.rule_condition
+    ) -> Any:
+        if not await self.apply(
+            field,
+            value,
+            form=form,
+            check_func=check_func,
+            **kwargs,
+        ):
+            return value
+        return await self.validate(value)
 
 
 # File: lion_core/rule/base.py

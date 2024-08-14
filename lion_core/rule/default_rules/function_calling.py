@@ -34,7 +34,7 @@ class FunctionCallingRule(MappingRule):
 
     @property
     def discard(self):
-        return self.info.get("discard", True)
+        return self.info.get(["discard"], True)
 
     @override
     async def validate(self, value):
@@ -59,7 +59,7 @@ class FunctionCallingRule(MappingRule):
     # we do not attempt to fix the keys
     # because if the keys are wrong, action is not safe to operate, and is meaningless
     @override
-    async def fix_field(self, value):
+    async def fix_value(self, value):
         corrected = []
         if isinstance(value, str):
             value = fuzzy_parse_json(value)

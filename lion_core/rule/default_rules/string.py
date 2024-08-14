@@ -13,25 +13,12 @@ class StringRule(Rule):
     """
 
     @override
-    async def validate(self, value):
-        """
-        Validate that the value is a string.
-
-        Args:
-            value: The value to validate.
-
-        Returns:
-            str: The validated string value.
-
-        Raises:
-            ValueError: If the value is not a string or is an empty string.
-        """
-        if isinstance(value, str):
-            return value
-        raise ValueError(f"Invalid string field type.")
+    async def check_value(self, value):
+        if not isinstance(value, str):
+            raise ValueError(f"Invalid string field type.")
 
     @override
-    async def perform_fix(self, value):
+    async def fix_value(self, value):
         """
         Attempt to convert a value to a string.
 

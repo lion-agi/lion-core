@@ -10,7 +10,7 @@ from lion_core.rule.default_rules.function_calling import FunctionCallingRule
 base_boolean_config = {"apply_types": ["bool"], "rule": BooleanRule}
 
 base_choice_config = {
-    "apply_types": ["choice"],
+    "apply_types": ["enum"],
     "accept_info_key": {"keys"},
     "rule": ChoiceRule,
 }
@@ -29,7 +29,7 @@ base_mapping_config = {
 
 base_function_calling_config = {
     "apply_types": ["functioncalling"],
-    "accept_info_key": {"keys"},
+    "accept_info_key": {"keys", "discard"},
     "keys": ["function", "arguments"],
     "discard": True,
     "rule": FunctionCallingRule,

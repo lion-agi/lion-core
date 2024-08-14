@@ -8,7 +8,7 @@ from lion_core.rule.base import Rule
 class NumberRule(Rule):
 
     @override
-    async def validate(self, value: Any) -> Any:
+    async def check_value(self, value: Any) -> Any:
         """
         Validate that the value is a number.
 
@@ -26,7 +26,7 @@ class NumberRule(Rule):
         raise LionTypeError(f"Invalid number field type: {type(value)}")
 
     @override
-    async def fix_field(self, value: Any, *args, **kwargs) -> Any:
+    async def fix_value(self, value: Any) -> Any:
         """
         Attempt to fix the value by converting it to a number.
 
