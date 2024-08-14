@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import copy
 from collections.abc import Sequence
 import threading
 import asyncio
@@ -31,23 +30,21 @@ from typing import (
 )
 from typing_extensions import override
 
-from pydantic import Field, PrivateAttr, field_serializer
+from pydantic import Field, field_serializer
 
 from lion_core.libs import to_list
-from lion_core.abc._characteristic import Observable
-from lion_core.abc._space import Collective
+from lion_core.abc import Observable, Collective
 from lion_core.sys_utils import SysUtil
-from lion_core.generic.component import Element
 from lion_core.exceptions import (
     ItemNotFoundError,
     LionTypeError,
     LionValueError,
     ItemExistsError,
 )
+from lion_core.setting import LN_UNDEFINED
+from lion_core.generic.element import Element
 from lion_core.generic.progression import Progression, prog
 from lion_core.generic.utils import to_list_type, validate_order
-from lion_core.setting import LN_UNDEFINED
-
 T = TypeVar("T", bound=Observable)
 
 
@@ -61,7 +58,7 @@ def async_synchronized(func: Callable):
 
 
 class Pile(Element, Collective, Generic[T]):
-    """Thread-safe, async-compatible, ordered collection of Observable elements.
+    """async-compatible, ordered collection of Observable elements.
 
     Pile is a core container in the Lion framework for managing collections of
     Observable objects. It maintains item order and allows fast access by unique
