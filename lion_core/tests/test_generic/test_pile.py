@@ -5,14 +5,12 @@ import random
 import string
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
 
 from lion_core.generic.component import Component
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.element import Element
 from lion_core.exceptions import (
     ItemNotFoundError,
-    ItemExistsError,
     LionTypeError,
     LionValueError,
 )
@@ -533,5 +531,214 @@ def test_pile_with_abc():
     with pytest.raises(TypeError):
         Pile(items=[AbstractElement()])
 
+
+@pytest.fixture
+async def async_sample_pile():
+    return Pile(items=[Component(content=i) for i in range(5)])
+
+@pytest.mark.asyncio
+async def test_concurrent_operations():
+    p = Pile()
+
+    async def add_items():
+        for i in range(100):
+            await p.ainclude(Element())
+            await asyncio.sleep(0.001)
+
+    async def remove_items():
+        for _ in range(50):
+            if not p.is_empty():
+                await p.apop(0)
+            await asyncio.sleep(0.002)
+
+    await asyncio.gather(add_items(), remove_items())
+    assert 40 <= len(p) <= 60  # Allow for some variance due to timing
+
+@pytest.mark.asyncio
+async def test_async_setitem(async_sample_pile):
+    async_sample_ = await async_sample_pile
+    await async_sample_.asetitem(2, Component(content=10))
+    assert async_sample_[2].content == 10
+
+    with pytest.raises(ValueError):
+        await async_sample_.asetitem(10, Component(content=20))
+
+@pytest.mark.asyncio
+async def test_async_remove(async_sample_pile):
+    async_sample_ = await async_sample_pile
+    element = async_sample_[2]
+    await async_sample_.aremove(element)
+    assert len(async_sample_) == 4
+    assert element not in async_sample_
+
+    with pytest.raises(ItemNotFoundError):
+        await async_sample_.aremove(Component(content=100))
+
+@pytest.mark.asyncio
+async def test_async_include(async_sample_pile):
+    async_sample_ = await async_sample_pile
+    new_element = Component(content=100)
+    await async_sample_.ainclude(new_element)
+    assert len(async_sample_) == 6
+    assert new_element in async_sample_
+
+@pytest.mark.asyncio
+async def test_async_exclude(async_sample_pile):
+    async_sample_ = await async_sample_pile
+    element = async_sample_[2]
+    await async_sample_.aexclude(element)
+    assert len(async_sample_) == 4
+    assert element not in async_sample_
+
+    # Excluding non-existent element should not raise an error
+    await async_sample_.aexclude(Component(content=100))
+
+@pytest.mark.asyncio
+async def test_async_update(async_sample_pile):
+    async_sample_ = await async_sample_pile
+    new_elements = [Component(content=i) for i in range(5, 8)]
+    await async_sample_.aupdate(new_elements)
+    assert len(async_sample_) == 8
+
+
+@pytest.mark.asyncio
+async def test_async_get(async_sample_pile):
+    async_sample_ = await async_sample_pile
+    element = await async_sample_.aget(2)
+
+    default = object()
+    assert await async_sample_.aget(10, default=default) is default
+
+@pytest.mark.asyncio
+async def test_async_iter(async_sample_pile):
+    async_sample_ = await async_sample_pile
+    values = []
+    async for item in async_sample_:
+        values.append(item.content)
+    assert values == [0, 1, 2, 3, 4]
+
+@pytest.mark.asyncio
+async def test_async_next(async_sample_pile):
+    async_sample_ = await async_sample_pile
+    aiter = async_sample_.__aiter__()
+    assert (await aiter.__anext__()).content == 0
+    assert (await aiter.__anext__()).content == 1
+
+    # Exhaust the iterator
+    for _ in range(3):
+        await aiter.__anext__()
+    
+    with pytest.raises(StopAsyncIteration):
+        await aiter.__anext__()
+
+@pytest.mark.asyncio
+async def test_async_pile_as_queue():
+    p = Pile()
+
+    async def producer():
+        for i in range(100):
+            await p.ainclude(Component(content=i))
+            await asyncio.sleep(0.01)
+
+    async def consumer():
+        consumed = []
+        while len(consumed) < 100:
+            try:
+                item = await p.apop(0)
+                consumed.append(item)
+            except ItemNotFoundError:
+                await asyncio.sleep(0.01)
+        return consumed
+
+    producer_task = asyncio.create_task(producer())
+    consumer_task = asyncio.create_task(consumer())
+
+    consumed_items = await consumer_task
+    await producer_task
+
+    assert len(consumed_items) == 100
+    assert [item.content for item in consumed_items] == list(range(100))
+    assert len(p) == 0
+
+@pytest.mark.asyncio
+async def test_async_task_queue_simulation():
+    task_queue = Pile()
+
+    async def task_producer():
+        for i in range(100):
+            await task_queue.ainclude(Component(content=f"Task {i}"))
+            await asyncio.sleep(0.01)
+
+    async def task_consumer():
+        completed_tasks = []
+        while len(completed_tasks) < 100:
+            try:
+                task = await task_queue.apop(0)
+                # Simulate task execution
+                await asyncio.sleep(0.02)
+                completed_tasks.append(task)
+            except ItemNotFoundError:
+                await asyncio.sleep(0.01)
+        return completed_tasks
+
+    producer = asyncio.create_task(task_producer())
+    consumer = asyncio.create_task(task_consumer())
+
+    completed = await consumer
+    await producer
+
+    assert len(completed) == 100
+    assert all(isinstance(task, Component) for task in completed)
+
+@pytest.mark.asyncio
+async def test_async_error_recovery():
+    p = Pile()
+
+    async def faulty_operation():
+        await p.ainclude(Component(content="valid"))
+        raise ValueError("Simulated error")
+
+    try:
+        await faulty_operation()
+    except ValueError:
+        pass
+
+    assert len(p) == 1
+
+    await p.ainclude(Component(content="after_error"))
+    assert len(p) == 2
+
+@pytest.mark.asyncio
+async def test_async_type_checking():
+    p = Pile(item_type={Component})
+
+    await p.ainclude(Component(content=1))
+    
+    with pytest.raises(LionTypeError):
+        await p.ainclude("not an Component")
+
+    assert len(p) == 1
+
+@pytest.mark.asyncio
+async def test_async_performance():
+    p = Pile()
+    num_operations = 10000
+
+    start_time = time.time()
+    for i in range(num_operations):
+        await p.ainclude(Component(content=i))
+    end_time = time.time()
+
+    include_time = end_time - start_time
+
+    start_time = time.time()
+    for _ in range(num_operations):
+        await p.apop(0)
+    end_time = time.time()
+
+    pop_time = end_time - start_time
+
+    assert include_time < 1  # Adjust based on your performance requirements
+    assert pop_time < 1  # Adjust based on your performance requirements
 
 # File: tests/test_pile.py

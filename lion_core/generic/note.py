@@ -21,7 +21,15 @@ from typing import Any
 from typing_extensions import override
 from pydantic import Field, BaseModel, ConfigDict, field_serializer
 from lion_core.abc import Container
-from lion_core.libs import nget, ninsert, nset, npop, flatten, to_dict, fuzzy_parse_json
+from lion_core.libs import (
+    nget,
+    ninsert,
+    nset,
+    npop,
+    flatten,
+    to_dict,
+    fuzzy_parse_json,
+)
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
@@ -65,7 +73,7 @@ class Note(BaseModel, Container):
             output_dict.update(info_dict)
         return output_dict
 
-    def pop(self, indices: list[str] | str, default: Any = LN_UNDEFINED) -> Any:
+    def pop(self, indices: list[str] | str, default: Any = LN_UNDEFINED, /) -> Any:
         """
         Remove and return an item from the nested structure.
 
@@ -80,7 +88,7 @@ class Note(BaseModel, Container):
             indices = [indices]
         return npop(self.content, indices, default)
 
-    def insert(self, indices: list[str] | str, value: Any) -> None:
+    def insert(self, indices: list[str] | str, value: Any, /) -> None:
         """
         Insert a value into the nested structure at the specified indices.
 
@@ -92,7 +100,7 @@ class Note(BaseModel, Container):
             indices = [indices]
         ninsert(self.content, indices, value)
 
-    def set(self, indices: list[str] | str, value: Any) -> None:
+    def set(self, indices: list[str] | str, value: Any, /) -> None:
         """
         Set a value in the nested structure at the specified indices.
         If the path doesn't exist, it will be created.
@@ -109,7 +117,7 @@ class Note(BaseModel, Container):
         else:
             nset(self.content, indices, value)
 
-    def get(self, indices: list[str] | str, default: Any = LN_UNDEFINED) -> Any:
+    def get(self, indices: list[str] | str, default: Any = LN_UNDEFINED, /) -> Any:
         """
         Get a value from the nested structure at the specified indices.
 
@@ -124,7 +132,7 @@ class Note(BaseModel, Container):
             indices = [indices]
         return nget(self.content, indices, default)
 
-    def keys(self, flat: bool = False):
+    def keys(self, /, flat: bool = False) -> list:
         """
         Get the keys of the Note.
 
@@ -136,9 +144,9 @@ class Note(BaseModel, Container):
         """
         if flat:
             return flatten(self.content).keys()
-        return self.content.keys()
+        return list(self.content.keys())
 
-    def values(self, flat: bool = False):
+    def values(self, /, flat: bool = False):
         """
         Get the values of the Note.
 
@@ -152,7 +160,7 @@ class Note(BaseModel, Container):
             return flatten(self.content).values()
         return self.content.values()
 
-    def items(self, flat: bool = False):
+    def items(self, /, flat: bool = False):
         """
         Get the items of the Note.
 
@@ -187,9 +195,9 @@ class Note(BaseModel, Container):
         try:
             d_ = to_dict(items)
             if isinstance(d_, dict):
-                return self.update(d_, indices)
-            if isinstance(d_, list):
-                self.set(indices, d_)
+                self.update(d_, indices)
+            else:
+                self.set(indices, [d_] if not isinstance(d_, list) else d_)
         except Exception as e:
             raise TypeError(f"Invalid input type for update: {type(items)}") from e
 
@@ -218,15 +226,14 @@ class Note(BaseModel, Container):
 
         if not isinstance(items, dict):
             raise ValueError(f"Invalid input type for update: {type(items)}")
-
-        return self.update(items, indices)
+        self.update(items, indices)
 
     @update.register(Element)
     def _(self, items: Element, indices: list[str | int] = None, /):
-        return self.update(items.to_dict(), indices)
+        self.update(items.to_dict(), indices)
 
     def _update_with_note(self, items: "Note", indices: list[str | int] = None, /):
-        return self.update(items.content, indices)
+        self.update(items.content, indices)
 
     @classmethod
     def from_dict(cls, **kwargs) -> "Note":
