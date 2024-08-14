@@ -30,6 +30,7 @@ LION_ID_CONFIG = {
     "hyphen_start_index": 6,
     "hyphen_end_index": 24,
     "prefix": "ln",
+    "postfix": "",
 }
 
 
