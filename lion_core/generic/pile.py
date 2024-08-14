@@ -48,6 +48,15 @@ from lion_core.generic.utils import to_list_type, validate_order
 T = TypeVar("T", bound=Observable)
 
 
+
+def synchronized(func: Callable):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        with self.lock:
+            return func(self, *args, **kwargs)
+    return wrapper
+
+
 def async_synchronized(func: Callable):
     @wraps(func)
     async def wrapper(self, *args, **kwargs):
@@ -58,7 +67,7 @@ def async_synchronized(func: Callable):
 
 
 class Pile(Element, Collective, Generic[T]):
-    """async-compatible, ordered collection of Observable elements.
+    """thread-safe async-compatible, ordered collection of Observable elements.
 
     Pile is a core container in the Lion framework for managing collections of
     Observable objects. It maintains item order and allows fast access by unique
@@ -229,6 +238,7 @@ class Pile(Element, Collective, Generic[T]):
         """
         self._setitem(key, item)
 
+    @synchronized
     def pop(
         self, key: int | str | slice, default: Any = LN_UNDEFINED
     ) -> T | "Pile" | None:
@@ -281,6 +291,7 @@ class Pile(Element, Collective, Generic[T]):
         """
         self._exclude(item)
 
+    @synchronized
     def clear(self) -> None:
         """Remove all items from the Pile."""
         self._clear()
@@ -296,6 +307,7 @@ class Pile(Element, Collective, Generic[T]):
         """
         self._update(other)
 
+    @synchronized
     def insert(self, index: int, item: T) -> None:
         """Insert an item at a specific position in the Pile.
 
@@ -309,6 +321,7 @@ class Pile(Element, Collective, Generic[T]):
         """
         self._insert(index, item)
 
+    @synchronized
     def append(self, item: T) -> None:
         """Append an item to the end of the Pile.
 
@@ -322,12 +335,7 @@ class Pile(Element, Collective, Generic[T]):
         """
         self.update(item)
 
-    @overload
-    def get(self, key: int | str, default: Any = LN_UNDEFINED) -> T | None: ...
-
-    @overload
-    def get(self, key: slice, default: Any = LN_UNDEFINED) -> "Pile": ...
-
+    @synchronized
     def get(
         self, key: int | str | slice, default: Any = LN_UNDEFINED
     ) -> T | "Pile" | None:
@@ -725,6 +733,7 @@ class Pile(Element, Collective, Generic[T]):
     async def aupdate(self, other: Any) -> None:
         self._update(other)
 
+    @async_synchronized
     async def aget(self, key: Any, default=LN_UNDEFINED):
         return self._get(key, default)
 
