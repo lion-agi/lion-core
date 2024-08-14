@@ -15,16 +15,13 @@ limitations under the License.
 """
 
 from enum import Enum
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
 from pydantic import Field, PrivateAttr
 
 from lion_core.libs import to_dict
 from lion_core.form.form import Form
 from lion_core.unit.unit_rulebook import UnitRuleBook
-
-if TYPE_CHECKING:
-    from lion_core.session.branch import Branch
 
 
 class UnitForm(Form):
@@ -301,69 +298,3 @@ class UnitForm(Form):
             fields["answer"] = answer
 
         return fields
-
-
-def create_unit_form(
-    branch: Branch,
-    *,
-    form: UnitForm | None = None,
-    instruction: str | None = None,
-    context: dict[str, Any] | None = None,
-    tools: dict[str, Any] | None = None,
-    reason: bool = True,
-    predict: bool = False,
-    score: bool = True,
-    select: str | None = None,
-    plan: dict[str, str] | None = None,
-    brainstorm: str | None = None,
-    reflect: str | None = None,
-    tool_schema: dict[str, Any] | None = None,
-    allow_action: bool = False,
-    allow_extension: bool = False,
-    max_extension: int | None = None,
-    confidence: float | None = None,
-    score_num_digits: int | None = None,
-    score_range: tuple[float, float] | None = None,
-    select_choices: list[str] | None = None,
-    plan_num_step: int | None = None,
-    predict_num_sentences: int | None = None,
-    clear_messages: bool = False,
-    return_branch: bool = False,
-    **kwargs,
-) -> tuple[Branch, UnitForm] | UnitForm:
-
-    if clear_messages:
-        branch.clear()
-
-    tool_schema = branch.tool_manager.get_tool_schema(tools) if tools else None
-    if not form:
-        form = UnitForm(
-            instruction=instruction,
-            context=context,
-            reason=reason,
-            predict=predict,
-            score=score,
-            select=select,
-            plan=plan,
-            tool_schema=tool_schema,
-            allow_action=allow_action,
-            allow_extension=allow_extension,
-            max_extension=(
-                1 if (allow_extension and max_extension is None) else max_extension
-            ),
-            confidence=confidence,
-            score_num_digits=score_num_digits,
-            score_range=score_range,
-            select_choices=select_choices,
-            plan_num_step=plan_num_step,
-            predict_num_sentences=predict_num_sentences,
-            brainstorm=brainstorm,
-            reflect=reflect,
-            tool_schema=tool_schema,
-            **kwargs,
-        )
-
-    elif form and tool_schema:
-        form.append_to_input("tool_schema", tool_schema)
-
-    return branch, form if return_branch else form

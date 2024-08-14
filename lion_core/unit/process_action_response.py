@@ -1,25 +1,27 @@
 from typing import Callable
-from lion_core.libs import ucall
+from lion_core.libs import lcall
+from lion_core.communication.action_request import ActionRequest
+from lion_core.session.branch import Branch
 
 
 async def process_action_response(
-    branch,
-    action_requests,
+    branch: Branch,
+    action_requests: list[ActionRequest],
     responses: list,
     response_parser: Callable = None,
-    parser_kwargs=None,
-):
+    parser_kwargs: dict = None,
+) -> list:
     responses = [responses] if not isinstance(responses, list) else responses
 
     results = []
     if response_parser:
-        for i in result:
-            res = await ucall(
-                response_parser,
-                i,
-                **(parser_kwargs or {}),
-            )
-            results.append(res)
+        results = await lcall(
+            response_parser,
+            responses,
+            **(parser_kwargs or {}),
+        )
+
+    results = results or responses
 
     for request, result in zip(action_requests, results):
         if result is not None:
@@ -29,5 +31,3 @@ async def process_action_response(
                 sender=request.recipient,
                 recipient=request.sender,
             )
-
-    return results

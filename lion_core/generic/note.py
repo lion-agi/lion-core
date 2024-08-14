@@ -17,7 +17,7 @@ limitations under the License.
 from functools import singledispatchmethod
 from collections.abc import Mapping
 import contextlib
-from typing import Any, TYPE_CHECKING
+from typing import Any
 from typing_extensions import override
 from pydantic import Field, BaseModel, ConfigDict, field_serializer
 from lion_core.abc import Container
@@ -25,9 +25,6 @@ from lion_core.libs import nget, ninsert, nset, npop, flatten, to_dict, fuzzy_pa
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 from lion_core.generic.element import Element
-
-if TYPE_CHECKING:
-    from lion_core.communication.base_mail import BaseMail
 
 
 class Note(BaseModel, Container):

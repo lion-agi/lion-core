@@ -38,22 +38,7 @@ async def process_act(
     handle_unmatched: Literal["ignore", "raise", "remove", "force"] = "force",
     return_branch: bool = False,
 ) -> UnitForm | tuple[Branch, UnitForm]:
-    """
-    Process actions for a given branch and form.
 
-    Args:
-        branch: The branch to process actions for.
-        form: The form associated with the actions.
-        actions: A dictionary of actions to process.
-        handle_unmatched: Strategy for handling unmatched actions.
-        return_branch: Whether to return the branch along with the form.
-
-    Returns:
-        The updated form, or a tuple of (branch, form) if return_branch is True.
-
-    Raises:
-        ValueError: If no requests are found when processing actions.
-    """
     if "action_performed" in form.all_fields and form.action_performed:
         if form.is_completed() and form not in report.completed_tasks:
             report.completed_tasks.include(form)
@@ -83,7 +68,7 @@ async def process_act(
 
     if requests:
         out = await process_action_request(
-            branch=branch, msg=None, invoke_tool=True, action_request=requests
+            branch=branch, response=None, invoke_tool=True, action_request=requests
         )
 
         if out is False:

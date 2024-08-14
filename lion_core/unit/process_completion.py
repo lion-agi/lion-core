@@ -22,7 +22,7 @@ responses, including handling of various JSON and XML formats.
 """
 
 import re
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
 from lion_core.libs import (
     to_dict,
@@ -32,13 +32,11 @@ from lion_core.libs import (
     extract_json_block,
 )
 from lion_core.imodel.imodel import iModel
-
-if TYPE_CHECKING:
-    from lion_core.session.branch import Branch
+from lion_core.session.branch import Branch
 
 
-async def parse_chatcompletion(
-    branch: "Branch",
+async def process_chatcompletion(
+    branch: Branch,
     imodel: iModel | None,
     payload: dict,
     completion: dict,
@@ -59,7 +57,7 @@ async def parse_chatcompletion(
     Returns:
         The processed message or None.
     """
-    msg_ = None
+    message = None
     imodel = imodel or branch.imodel
 
     if "choices" in completion:
@@ -79,9 +77,13 @@ async def parse_chatcompletion(
                     metadata=_completion,
                     sender=sender,
                 )
-            a = branch.messages[-1].metadata.get(["extra", "usage", "prompt_tokens"], 0)
+            a = branch.messages[-1].metadata.get(
+                ["extra", "usage", "prompt_tokens"],
+                0,
+            )
             b = branch.messages[-1].metadata.get(
-                ["extra", "usage", "completion_tokens"], 0
+                ["extra", "usage", "completion_tokens"],
+                0,
             )
             m = completion.get("model")
             if m and price:
@@ -94,21 +96,22 @@ async def parse_chatcompletion(
 
         if _choices and isinstance(_choices, list):
             for _choice in _choices:
-                msg_ = process_completion_choice(_choice, price=costs)
+                message = process_completion_choice(_choice, price=costs)
 
         await imodel.update_status("chat/completions", "succeeded")
     else:
         await imodel.update_status("chat/completions", "failed")
 
-    return msg_
+    return message
 
 
-def parse_model_response(
+def process_model_response(
     content_: dict | str,
     request_fields: dict,
     fill_value: Any = None,
     fill_mapping: dict[str, Any] | None = None,
     strict: bool = False,
+    handle_unmatched="ignore",
 ) -> dict | str:
     """
     Parse the response from the AI model into dictionary format if possible.
@@ -128,41 +131,56 @@ def parse_model_response(
 
     if isinstance(out_, str):
         parsing_methods = [
-            lambda x: to_dict(x, str_type="json", parser=md_to_json, suppress=True),
             lambda x: to_dict(
-                x, str_type="json", parser=fuzzy_parse_json, suppress=True
+                x,
+                str_type="json",
+                parser=md_to_json,
+                suppress=True,
             ),
             lambda x: to_dict(
-                x, str_type="json", parser=extract_json_block, suppress=True
+                x,
+                str_type="json",
+                parser=fuzzy_parse_json,
+                suppress=True,
             ),
-            lambda x: to_dict(x, str_type="xml"),
-            lambda x: (
-                fuzzy_parse_json(
-                    re.search(r"```json\n({.*?})\n```", x, re.DOTALL).group(1),
-                    suppress=True,
-                )
-                if re.search(r"```json\n({.*?})\n```", x, re.DOTALL)
-                else None
+            lambda x: to_dict(
+                x,
+                str_type="json",
+                parser=extract_json_block,
+                suppress=True,
             ),
-            lambda x: (
-                to_dict(
-                    re.search(r"```xml\n({.*?})\n```", x, re.DOTALL).group(1),
-                    str_type="xml",
-                )
-                if re.search(r"```xml\n({.*?})\n```", x, re.DOTALL)
-                else None
+            lambda x: to_dict(
+                x,
+                str_type="xml",
+                suppress=True,
             ),
-            lambda x: fuzzy_parse_json(x.replace("'", '"'), suppress=True),
+            lambda x: fuzzy_parse_json(
+                str_to_parse=re.search(
+                    pattern=r"```json\n({.*?})\n```",
+                    string=x,
+                    flags=re.DOTALL,
+                ).group(1),
+                suppress=True,
+            ),
+            lambda x: to_dict(
+                re.search(
+                    pattern=r"```xml\n({.*?})\n```",
+                    string=x,
+                    flags=re.DOTALL,
+                ).group(1),
+                str_type="xml",
+                suppress=True,
+            ),
+            lambda x: fuzzy_parse_json(
+                str_to_parse=x.replace("'", '"'),
+                suppress=True,
+            ),
         ]
 
         for method in parsing_methods:
-            try:
-                a_ = method(out_)
-                if a_ is not None:
-                    out_ = a_
-                    break
-            except Exception:
-                continue
+            if a_ := method(out_):
+                out_ = a_
+                break
 
     if isinstance(out_, dict) and request_fields:
         return validate_mapping(
@@ -170,7 +188,7 @@ def parse_model_response(
             request_fields,
             score_func=None,
             fuzzy_match=True,
-            handle_unmatched="force",
+            handle_unmatched=handle_unmatched,
             fill_value=fill_value,
             fill_mapping=fill_mapping,
             strict=strict,
@@ -179,6 +197,6 @@ def parse_model_response(
     return out_
 
 
-__all__ = ["parse_chatcompletion", "parse_model_response"]
+__all__ = ["process_chatcompletion", "process_model_response"]
 
 # File: lion_core/chat/parsing.py

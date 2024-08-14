@@ -17,12 +17,12 @@ limitations under the License.
 from typing import Any
 
 from lion_core.form.task_form import BaseForm
-from lion_core.rule.validator import Validator
+from lion_core.rule.validator import RuleProcessor
 
 
 async def process_validation(
     form: BaseForm,
-    validator: Validator,
+    validator: RuleProcessor,
     response_: dict | str,
     rulebook: Any = None,
     strict: bool = False,
@@ -45,8 +45,8 @@ async def process_validation(
     Returns:
         The validated form.
     """
-    validator = Validator(rulebook=rulebook) if rulebook else validator
-    form = await validator.validate_response(
+    validator = RuleProcessor(rulebook=rulebook) if rulebook else validator
+    form = await validator.process_response(
         form=form,
         response=response_,
         strict=strict,

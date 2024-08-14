@@ -28,7 +28,7 @@ def create_message(
     arguments: dict | MessageFlag,
     func_output: Any | MessageFlag,
 ):
-    a = handle_action(
+    response = handle_action(
         sender=sender,
         recipient=recipient,
         action_request=action_request,
@@ -37,29 +37,34 @@ def create_message(
         arguments=arguments,
         func_output=func_output,
     )
-    if a is not None:
-        return a
+    if response is not None:
+        return response
 
-    if len({k: v for k, v in a.items() if v is not [None]}) != 1:
+    if (
+        len(
+            [i for i in [instruction, system, assistant_response] if i is not None],
+        )
+        != 1
+    ):
         raise ValueError("Error: Message can only have one role")
 
-    a = handle_system(
+    response = handle_system(
         system=system,
         sender=sender,
         recipient=recipient,
         system_datetime=system_datetime,
     )
-    if a is not None:
-        return a
+    if response is not None:
+        return response
 
-    a = handle_assistant(
+    response = handle_assistant(
         sender=sender,
         recipient=recipient,
         assistant_response=assistant_response,
     )
 
-    if a is not None:
-        return a
+    if response is not None:
+        return response
 
     return handle_instruction(
         sender=sender,

@@ -55,11 +55,11 @@ base_string_config = {
 
 DEFAULT_RULE_INFO = note(
     **{
-        "BooleanRule": base_boolean_config,
         "ChoiceRule": base_choice_config,
         "MappingRule": base_mapping_config,
         "FunctionCallingRule": base_function_calling_config,
         "NumberRule": base_number_config,
+        "BooleanRule": base_boolean_config,
         "StringRule": base_string_config,
     }
 )

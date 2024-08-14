@@ -26,35 +26,26 @@ from lion_core.rule.default_rules._default import DEFAULT_RULES, DEFAULT_RULEORD
 from lion_core.rule.rulebook import RuleBook
 
 
-class Validator(BaseExecutor, Temporal, Observable):
+class RuleProcessor(BaseExecutor, Temporal, Observable):
 
     def __init__(
         self,
         *,
         rulebook: RuleBook = None,
-        rules: dict[str, Rule] = None,
-        order: list[str] = None,
-        init_config: dict[str, dict] = None,
-        active_rules: dict[str, Rule] = None,
         fallback_structure_imodel: iModel = None,
         strict: bool = True,
     ):
 
         self.ln_id: str = SysUtil.id()
         self.timestamp: str = SysUtil.time(type_="timestamp")
-        self.rulebook = rulebook or RuleBook(
-            rules=rules or DEFAULT_RULES,
-            ruleorder=order or DEFAULT_RULEORDER,
-            rule_config=init_config,
-        )
-        self.active_rules: dict[str, Rule] = active_rules or self._initiate_rules()
-        self.validation_log = []
+        self.rulebook = rulebook or RuleBook()
+        self.logs = []
         self.fallback_structure_imodel = fallback_structure_imodel
         self.strict = strict
 
     def create_json_structure(self, *args, **kwargs): ...
 
-    async def validate_field(
+    async def process_field(
         self,
         field: str,
         value: Any,
@@ -107,7 +98,7 @@ class Validator(BaseExecutor, Temporal, Observable):
             )
             raise ValueError(error_message)
 
-    async def validate_response(
+    async def process_response(
         self,
         form: Form,
         response: Union[dict, str],
@@ -147,7 +138,7 @@ class Validator(BaseExecutor, Temporal, Observable):
                 kwargs = form.validation_kwargs.get(k, {})
                 _annotation = form._field_annotations[k]
                 if (keys := form._get_field_attr(k, "choices", None)) is not None:
-                    v = await self.validate_field(
+                    v = await self.process_field(
                         field=k,
                         value=v,
                         form=form,
@@ -160,7 +151,7 @@ class Validator(BaseExecutor, Temporal, Observable):
 
                 elif (_keys := form._get_field_attr(k, "keys", None)) is not None:
 
-                    v = await self.validate_field(
+                    v = await self.process_field(
                         field=k,
                         value=v,
                         form=form,
@@ -172,7 +163,7 @@ class Validator(BaseExecutor, Temporal, Observable):
                     )
 
                 else:
-                    v = await self.validate_field(
+                    v = await self.process_field(
                         field=k,
                         value=v,
                         form=form,

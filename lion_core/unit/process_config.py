@@ -124,7 +124,9 @@ def process_chat_config(
         config.pop("tool_parsed")
         config["tools"] = tools
     elif tools and branch.has_tools:
-        config.update(branch.tool_manager.get_tool_schema(tools=tools))
+        config.update(
+            branch.tool_manager.get_tool_schema(tools=tools),
+        )
 
     if sender is not None:
         config["sender"] = sender

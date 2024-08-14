@@ -79,7 +79,7 @@ class RuleBook(Element, BaseRecord):
             _info = SysUtil.copy(self.rules_info[rule.__name__])
             _info.pop("rule")
             rule = rule(info=info or _info, **kwargs)
-            self._is_init = True
+            rule._is_init = True
             self.active_rules.include(rule)
             self.rule_flow.append(rule, progress)
             return rule

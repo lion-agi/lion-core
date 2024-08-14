@@ -16,7 +16,6 @@ limitations under the License.
 
 from collections.abc import Mapping
 from collections import deque
-from typing import Tuple
 from pydantic import Field
 from pydantic_core import PydanticUndefined
 from lion_core.setting import LN_UNDEFINED
@@ -88,7 +87,7 @@ class Flow(Element):
     def all_orders(self) -> list[list[str]]:
         return [list(seq) for seq in self.progressions]
 
-    def unique(self) -> Tuple[str]:
+    def unique(self) -> list[str]:
         return list({item for seq in self.progressions for item in seq})
 
     def keys(self):
