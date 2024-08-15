@@ -14,16 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, Literal
+from typing import Any, Literal, TYPE_CHECKING
 
 from pydantic import Field, field_serializer
 
 from lion_core.sys_utils import SysUtil
-from lion_core.generic.pile import Pile, pile
+from lion_core.generic.pile import pile
 from lion_core.generic.note import Note
 from lion_core.exceptions import LionRelationError, ItemExistsError
 from lion_core.graph.edge import Edge
 from lion_core.generic.node import Node
+
+if TYPE_CHECKING:
+    from lion_core.generic.pile import Pile
 
 
 class Graph(Node):
@@ -164,7 +167,7 @@ class Graph(Node):
             for edge_id in self.node_edge_mapping[_id, "out"].keys():
                 result.append(self.internal_edges[edge_id])
 
-        return Pile(items=result, item_type={Edge})
+        return self.internal_nodes.__class__(items=result, item_type={Edge})
 
     def get_heads(self) -> Pile:
         """
@@ -179,7 +182,7 @@ class Graph(Node):
             if self.node_edge_mapping[node_id, "in"] == {}:
                 result.append(self.internal_nodes[node_id])
 
-        return Pile(items=result, item_type={Node})
+        return self.internal_nodes.__class__(items=result, item_type={Node})
 
     def get_predecessors(self, node: Node):
         edges = self.find_node_edge(node, direction="in")
@@ -187,7 +190,7 @@ class Graph(Node):
         for edge in edges:
             node_id = edge.head
             result.append(self.internal_nodes[node_id])
-        return Pile(items=result, item_type={Node})
+        return self.internal_nodes.__class__(items=result, item_type={Node})
 
     def get_successor(self, node: Node):
         edges = self.find_node_edge(node, direction="out")
@@ -195,7 +198,7 @@ class Graph(Node):
         for edge in edges:
             node_id = edge.tail
             result.append(self.internal_nodes[node_id])
-        return Pile(items=result, item_type={Node})
+        return self.internal_nodes.__class__(items=result, item_type={Node})
 
 
 __all__ = ["Graph"]

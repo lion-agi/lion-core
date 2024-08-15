@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 from collections.abc import Sequence
 import threading
 import asyncio
@@ -45,8 +46,8 @@ from lion_core.setting import LN_UNDEFINED
 from lion_core.generic.element import Element
 from lion_core.generic.progression import Progression, prog
 from lion_core.generic.utils import to_list_type, validate_order
-T = TypeVar("T", bound=Observable)
 
+T = TypeVar("T", bound=Observable)
 
 
 def synchronized(func: Callable):
@@ -54,6 +55,7 @@ def synchronized(func: Callable):
     def wrapper(self, *args, **kwargs):
         with self.lock:
             return func(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -162,7 +164,7 @@ class Pile(Element, Collective, Generic[T]):
         default=False,
         description="Specify if enforce a strict type check if item_type is defined",
     )
-    
+
     def __pydantic_extra__(self):
         return {
             "_lock": Field(default_factory=threading.Lock),
@@ -431,7 +433,7 @@ class Pile(Element, Collective, Generic[T]):
             return next(iter(self))
         except StopIteration:
             raise StopIteration("End of pile")
-        
+
     def __getitem__(self, key: int | str | slice):
         """Get item(s) from the Pile by index, ID, or slice.
 
@@ -590,8 +592,8 @@ class Pile(Element, Collective, Generic[T]):
     def __getstate__(self):
         """Prepare the Pile instance for pickling."""
         state = self.__dict__.copy()
-        state['_lock'] = None
-        state['_async_lock'] = None
+        state["_lock"] = None
+        state["_async_lock"] = None
         return state
 
     def __setstate__(self, state):
@@ -603,17 +605,17 @@ class Pile(Element, Collective, Generic[T]):
     @property
     def lock(self):
         """Ensure the lock is always available, even during unpickling."""
-        if not hasattr(self, '_lock') or self._lock is None:
+        if not hasattr(self, "_lock") or self._lock is None:
             self._lock = threading.Lock()
         return self._lock
 
     @property
     def async_lock(self):
         """Ensure the async lock is always available, even during unpickling."""
-        if not hasattr(self, '_async_lock') or self._async_lock is None:
+        if not hasattr(self, "_async_lock") or self._async_lock is None:
             self._async_lock = asyncio.Lock()
         return self._async_lock
-        
+
     ## Async Interface methods
 
     @overload
@@ -647,14 +649,10 @@ class Pile(Element, Collective, Generic[T]):
 
     @overload
     @async_synchronized
-    async def apop(
-        self, key: slice, default: Any = LN_UNDEFINED
-    ): ...
+    async def apop(self, key: slice, default: Any = LN_UNDEFINED): ...
 
     @async_synchronized
-    async def apop(
-        self, key: int | str | slice, default: Any = LN_UNDEFINED
-    ):
+    async def apop(self, key: int | str | slice, default: Any = LN_UNDEFINED):
         """Asynchronously remove and return an item or items from the Pile.
 
         Args:

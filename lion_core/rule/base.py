@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from abc import abstractmethod
 import inspect
-from typing import Any, Callable
-from lionagi import Field
-from pydantic import PrivateAttr
+
+from abc import abstractmethod
+from typing import Any, Callable, TYPE_CHECKING
+from pydantic import PrivateAttr, Field
 from typing_extensions import override
 
 from lion_core.abc import Condition, Action
@@ -26,8 +26,12 @@ from lion_core.generic.element import Element
 
 from lion_core.exceptions import LionOperationError
 from lion_core.libs import ucall, to_list, to_dict
-from lion_core.generic.note import Note, note
-from lion_core.form.base import BaseForm
+from lion_core.generic.note import note
+
+
+if TYPE_CHECKING:
+    from lion_core.generic.note import Note
+    from lion_core.form.base import BaseForm
 
 
 RULE_SYS_FIELDS = [
@@ -42,54 +46,10 @@ RULE_SYS_FIELDS = [
 ]
 
 
-def prepare_info(
-    info: dict | None,
-    base_config: dict,
-    accept_info_key: list,
-    **kwargs,
-):
-    d_ = {}
-    if info is not None:
-        if isinstance(info, dict):
-            d_ = info
-        if isinstance(info, Note):
-            d_ = info.to_dict()
-
-    config = {**base_config, **kwargs}
-    d_ = {**d_, **config}
-    _d = {}
-
-    for k, v in d_.items():
-        if k not in RULE_SYS_FIELDS + accept_info_key:
-            _d["validation_kwargs"] = _d.get("validation_kwargs", {})
-            _d["validation_kwargs"].update(v)
-        else:
-            _d[k] = v
-
-    return note(**_d)
-
-
-def validate_types(value):
-
-    apply_types = []
-    value = to_list(value, dropna=True, flatten=True)
-
-    for i in value:
-        if isinstance(i, str):
-            apply_types.append(i)
-        elif inspect.isclass(i):
-            apply_types.append(i.__name__)
-
-    if len(apply_types) != len(value):
-        raise LionOperationError("apply_types must be a list of str or type")
-
-    return apply_types
-
-
 class Rule(Element, Condition, Action):
 
     base_config: dict = {}
-    info: Note = Field(default_factory=Note)
+    info: Note = Field(default_factory=note)
     _is_init: bool = PrivateAttr(False)
 
     def __init__(
@@ -301,6 +261,50 @@ class Rule(Element, Condition, Action):
         ):
             return value
         return await self.validate(value)
+
+
+def prepare_info(
+    info: dict | None,
+    base_config: dict,
+    accept_info_key: list,
+    **kwargs,
+):
+    d_ = {}
+    if info is not None:
+        if isinstance(info, dict):
+            d_ = info
+        if isinstance(info, Note):
+            d_ = info.to_dict()
+
+    config = {**base_config, **kwargs}
+    d_ = {**d_, **config}
+    _d = {}
+
+    for k, v in d_.items():
+        if k not in RULE_SYS_FIELDS + accept_info_key:
+            _d["validation_kwargs"] = _d.get("validation_kwargs", {})
+            _d["validation_kwargs"].update(v)
+        else:
+            _d[k] = v
+
+    return note(**_d)
+
+
+def validate_types(value):
+
+    apply_types = []
+    value = to_list(value, dropna=True, flatten=True)
+
+    for i in value:
+        if isinstance(i, str):
+            apply_types.append(i)
+        elif inspect.isclass(i):
+            apply_types.append(i.__name__)
+
+    if len(apply_types) != len(value):
+        raise LionOperationError("apply_types must be a list of str or type")
+
+    return apply_types
 
 
 # File: lion_core/rule/base.py

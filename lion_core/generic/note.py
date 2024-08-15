@@ -16,7 +16,6 @@ limitations under the License.
 
 from functools import singledispatchmethod
 from collections.abc import Mapping
-import contextlib
 from typing import Any
 from typing_extensions import override
 from pydantic import Field, BaseModel, ConfigDict, field_serializer
@@ -217,16 +216,22 @@ class Note(BaseModel, Container):
     @update.register(str)
     def _(self, items: str, indices: list[str | int] = None, /):
 
-        with contextlib.suppress(ValueError):
-            items = to_dict(items, str_type="json", parser=fuzzy_parse_json)
+        item_: dict | None = to_dict(
+            items,
+            str_type="json",
+            parser=fuzzy_parse_json,
+            suppress=True,
+        )
+        if item_ is None:
+            item_ = to_dict(
+                items,
+                str_type="xml",
+                suppress=True,
+            )
 
-            if isinstance(items, str):
-                with contextlib.suppress(ValueError):
-                    items = to_dict(items, str_type="xml")
-
-        if not isinstance(items, dict):
+        if not isinstance(item_, dict):
             raise ValueError(f"Invalid input type for update: {type(items)}")
-        self.update(items, indices)
+        self.update(item_, indices)
 
     @update.register(Element)
     def _(self, items: Element, indices: list[str | int] = None, /):
