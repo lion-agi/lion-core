@@ -57,8 +57,8 @@ _err_map = {
             )
         ),
         "strict": lambda x: AttributeError(
-                f"The form is set to strict_assignment. {x} "
-                "should not be modified after init.",
+            f"The form is set to strict_assignment. {x} "
+            "should not be modified after init.",
         ),
         "strict_processed": LionOperationError(
             "The strict form has been processed, and cannot be worked on again."
@@ -81,10 +81,11 @@ _err_map = {
         "error": lambda x: LionOperationError(f"Field operation failed: {x}"),
         "modify_input_request_list": LionValueError(
             f"input_fields/request_fields list should not be modified directly. "
-            f"Please use append_to_input/append_to_request"),
+            f"Please use append_to_input/append_to_request"
+        ),
         "modify_restricted": lambda x: LionValueError(
             f"{x} should not be modified directly."
-        )
+        ),
     },
 }
 
