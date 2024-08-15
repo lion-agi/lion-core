@@ -6,7 +6,6 @@ from lion_core.generic.note import note
 RESTRICTED_FIELDS = {
     "input_fields",
     "request_fields",
-    "assignment",
     "init_input_kwargs",
     "output_fields",
 }
@@ -39,6 +38,9 @@ _err_map = {
             "Please provide a valid assignment for this form.",
             "Example assignment: 'input1, input2 -> output'.",
         ),
+        "invalid_assignment": lambda x: LionValueError(
+            f"Invalid assignment. Field {x} is not found in the form."
+        ),
         "explicit_task": LionValueError(
             "Explicitly defining task is not supported. Please use task_description."
         ),
@@ -55,10 +57,8 @@ _err_map = {
             )
         ),
         "strict": lambda x: AttributeError(
-            message=(
                 f"The form is set to strict_assignment. {x} "
                 "should not be modified after init.",
-            )
         ),
         "strict_processed": LionOperationError(
             "The strict form has been processed, and cannot be worked on again."
@@ -79,6 +79,12 @@ _err_map = {
     "field": {
         "missing": lambda x: LionValueError(f"Field {x} is missing in the form."),
         "error": lambda x: LionOperationError(f"Field operation failed: {x}"),
+        "modify_input_request_list": LionValueError(
+            f"input_fields/request_fields list should not be modified directly. "
+            f"Please use append_to_input/append_to_request"),
+        "modify_restricted": lambda x: LionValueError(
+            f"{x} should not be modified directly."
+        )
     },
 }
 

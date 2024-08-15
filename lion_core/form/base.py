@@ -62,6 +62,7 @@ class BaseForm(Component, MutableRecord):
     )
 
     @field_validator("output_fields", mode="before")
+    @classmethod
     def _validate_output(cls, value):
         if isinstance(value, str):
             return [value]
@@ -80,7 +81,7 @@ class BaseForm(Component, MutableRecord):
     @property
     def work_dict(self) -> dict[str, Any]:
         """Return a dictionary of all work fields and their values."""
-        return {i: getattr(self, i) for i in self.work_fields}
+        return {i: getattr(self, i, LN_UNDEFINED) for i in self.work_fields}
 
     @property
     def required_fields(self) -> list[str]:
