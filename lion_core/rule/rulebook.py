@@ -68,6 +68,9 @@ class RuleBook(Element, BaseRecord):
 
         raise LionValueError(f"Invalid rule: {rule}")
 
+    def get_rule_progress(self, progress):
+        return self.rule_flow._find_prog(progress, None)
+
 
 def validate_rules_info(rules_info):
     out = note()

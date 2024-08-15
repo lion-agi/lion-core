@@ -139,7 +139,7 @@ class Rule(Element, Condition, Action):
         field: str,
         value: Any,
         /,
-        form: BaseForm,
+        annotation: Any = None,
         check_func: Callable | Any = None,
         **kwargs,  # additional kwargs for custom check func or self.rule_condition
     ) -> bool:
@@ -162,8 +162,6 @@ class Rule(Element, Condition, Action):
         Raises:
             LionOperationError: If an invalid check function is provided.
         """
-        if field not in form.work_fields:
-            return False
 
         if field in self.exclude_fields:
             return False
@@ -176,7 +174,7 @@ class Rule(Element, Condition, Action):
             if not isinstance(check_func, Callable):
                 raise LionOperationError("Invalid check function provided")
             try:
-                a = await ucall(check_func, field, value, form=form, **kwargs)
+                a = await ucall(check_func, field, value, **kwargs)
                 if isinstance(a, bool):
                     return a
             except Exception:
@@ -184,7 +182,9 @@ class Rule(Element, Condition, Action):
 
         # if not in custom fields, nor using custom validation condition
         # we will resort to use field annotation
-        annotation = annotation or form._field_annotation(field)
+        if not annotation:
+            return False
+
         if isinstance(annotation, dict) and field in annotation:
             annotation = annotation[field]
         annotation = [annotation] if isinstance(annotation, str) else annotation
@@ -225,7 +225,6 @@ class Rule(Element, Condition, Action):
     async def fix_value(self, value: Any, /) -> Any:
         return value
 
-    @abstractmethod
     async def validate(self, value: Any, /) -> Any:
 
         try:
