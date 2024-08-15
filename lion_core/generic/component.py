@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+import inspect
 from collections import deque
 from functools import singledispatchmethod
 from typing import Any, TypeVar, ClassVar, Type
@@ -108,7 +108,7 @@ class Component(Element):
         Add a new field to the component's extra fields.
 
         Args:
-            name: The name of the field to add.
+            field_name: The name of the field to add.
             value: The value of the field. Defaults to `LN_UNDEFINED`.
             annotation: Type annotation for the field. Defaults to `LN_UNDEFINED`.
             field_obj: A pre-configured FieldInfo object. Defaults to `LN_UNDEFINED`.
@@ -143,7 +143,7 @@ class Component(Element):
         Update an existing field or create a new one if it doesn't exist.
 
         Args:
-            name: The name of the field to update or create.
+            field_name: The name of the field to update or create.
             value: The new value for the field. Defaults to LN_UNDEFINED.
             annotation: Type annotation for the field. Defaults to LN_UNDEFINED.
             field_obj: A pre-configured FieldInfo object. Defaults to LN_UNDEFINED.
@@ -157,45 +157,45 @@ class Component(Element):
         if "default" in kwargs and "default_factory" in kwargs:
             raise ValueError("Cannot provide both 'default' and 'default_factory'")
 
-        # if passing kwargs
-        if field_obj is LN_UNDEFINED:
-            # check if field exists
-            field_obj = self.all_fields.get(field_name, LN_UNDEFINED)
-
-            if field_obj:  # existing field
-                for k, v in kwargs.items():
-                    setattr(field_obj, k, v)
-            else:
-                field_obj = Field(**kwargs)
-
-        else:  # passing field_obj directly
+        # handle field_obj
+        if field_obj is not LN_UNDEFINED:
             if not isinstance(field_obj, FieldInfo):
                 raise ValueError(
                     "Invalid field_obj. It should be a pydantic FieldInfo object."
                 )
+            self.extra_fields[field_name] = field_obj
 
+        # handle kwargs
+        if kwargs:
+            if field_name in self.all_fields:  # existing field
+                for k, v in kwargs.items():
+                    self.field_setattr(field_name, k, v)
+            else:
+                self.extra_fields[field_name] = Field(**kwargs)
+
+        # handle no explicit defined field
+        if field_obj is LN_UNDEFINED and not kwargs:
+            if field_name not in self.all_fields:
+                self.extra_fields[field_name] = Field()
+
+        field_obj = self.all_fields[field_name]
+
+        # handle annotation
         if annotation is not LN_UNDEFINED:
             field_obj.annotation = annotation
         if not field_obj.annotation:
             field_obj.annotation = Any
 
-        self.extra_fields[field_name] = field_obj
-
-        if value is not LN_UNDEFINED:
-            value = SysUtil.copy(value)
-
-        else:
+        # handle value
+        if value is LN_UNDEFINED:
             if getattr(self, field_name, LN_UNDEFINED) is not LN_UNDEFINED:
                 value = getattr(self, field_name)
 
             elif getattr(field_obj, "default") is not PydanticUndefined:
-                value = SysUtil.copy(field_obj.default)
+                value = field_obj.default
 
             elif getattr(field_obj, "default_factory"):
                 value = field_obj.default_factory()
-
-            else:
-                value = LN_UNDEFINED
 
         setattr(self, field_name, value)
         self._add_last_update(field_name)
@@ -235,24 +235,26 @@ class Component(Element):
         Returns:
             T: An instance of the Component class or its subclass.
         """
-        data = SysUtil.copy(data)
-        if "lion_class" in data:
-            cls = get_class(data.pop("lion_class"))
+        input_data = SysUtil.copy(data)
+        if "lion_class" in input_data:
+            cls = get_class(input_data.pop("lion_class"))
         if cls.from_dict.__func__ != Component.from_dict.__func__:
-            return cls.from_dict(data, **kwargs)
+            return cls.from_dict(input_data, **kwargs)
 
         extra_fields = {}
-        for k, v in list(data.items()):
+        for k, v in list(input_data.items()):
             if k not in cls.model_fields:
-                extra_fields[k] = data.pop(k)
-        obj = cls.model_validate(data, **kwargs)
+                extra_fields[k] = input_data.pop(k)
+        obj = cls.model_validate(input_data, **kwargs)
         for k, v in extra_fields.items():
-            obj.add_field(field_name=k, value=v)
+            obj.update_field(field_name=k, value=v)
 
-        metadata = data.get("metadata", {})
+        metadata = SysUtil.copy(data.get("metadata", {}))
         last_updated = metadata.get("last_updated", None)
         if last_updated is not None:
             obj.metadata.set(["last_updated"], last_updated)
+        else:
+            obj.metadata.pop(["last_updated"], None)
         return obj
 
     @override
@@ -386,72 +388,57 @@ class Component(Element):
 
     # field management methods
     def field_setattr(self, field_name: str, attr: Any, value: Any, /):
-        if not field_name in self.all_fields:
+        """Set the value of a field attribute."""
+        all_fields = self.all_fields
+        if field_name not in all_fields:
             raise KeyError(f"Field {field_name} not found in object all fields.")
-
-        if field_name in self.model_fields:
-            if hasattr(self.model_fields[field_name], attr):
-                self.model_fields[field_name].__setattr__(attr, value)
-            else:
-                self.model_fields[field_name].json_schema_extra[attr] = value
-
-        elif field_name in self.extra_fields:
-            if hasattr(self.extra_fields[field_name], attr):
-                self.extra_fields[field_name].__setattr__(attr, value)
-            else:
-                self.model_fields[field_name].json_schema_extra[attr] = value
+        field_obj = all_fields[field_name]
+        if hasattr(field_obj, attr):
+            setattr(field_obj, attr, value)
+        else:
+            if not isinstance(field_obj.json_schema_extra, dict):
+                field_obj.json_schema_extra = {}
+            field_obj.json_schema_extra[attr] = value
 
     def field_hasattr(self, field_name: str, attr: str, /) -> bool:
         """Check if a field has a specific attribute."""
-
-        if (field := self.all_fields.get(field_name, None)) is None:
-            raise KeyError(f"Field {field_name} not found in model fields.")
-
-        if attr not in str(field):
-            try:
-                a = (
-                    attr in self.all_fields[field_name].json_schema_extra
-                    and self.all_fields[field_name].json_schema_extra[attr]
-                    is not LN_UNDEFINED
-                )
-                return a if isinstance(a, bool) else False
-            except Exception:
-                return False
-        return True
+        all_fields = self.all_fields
+        if field_name not in all_fields:
+            raise KeyError(f"Field {field_name} not found in object all fields.")
+        field_obj = all_fields[field_name]
+        if hasattr(field_obj, attr):
+            return True
+        elif isinstance(field_obj.json_schema_extra, dict):
+            if field_name in field_obj.json_schema_extra:
+                return True
+        else:
+            return False
 
     def field_getattr(
         self, field_name: str, attr: str, default: Any = LN_UNDEFINED, /
     ) -> Any:
         """Get the value of a field attribute."""
-
         if strip_lower(attr, chars="s") == "annotation":
             return self._field_annotation(field_name)
 
-        try:
-            if not field_name in self.all_fields:
-                raise KeyError(f"Field {field_name} not found in object all fields.")
+        all_fields = self.all_fields
+        if field_name not in all_fields:
+            raise KeyError(f"Field {field_name} not found in object all fields.")
+        field_obj = all_fields[field_name]
 
-            if not self.field_hasattr(field_name, attr):
-                raise AttributeError(f"field {field_name} has no attribute {attr}")
+        # check fieldinfo attr
+        if (value := getattr(field_obj, attr, LN_UNDEFINED)) is not LN_UNDEFINED:
+            return value
+        else:
+            if isinstance(field_obj.json_schema_extra, dict):
+                if (value := field_obj.json_schema_extra.get(attr, LN_UNDEFINED)) is not LN_UNDEFINED:
+                    return value
 
-            field = self.all_fields[field_name]
-
-            if (a := getattr(field, attr, LN_UNDEFINED)) is LN_UNDEFINED:
-                if (
-                    b := field.json_schema_extra.get(attr, LN_UNDEFINED)
-                ) is not LN_UNDEFINED:
-                    return b
-            else:
-                return a
-
-            if default is not LN_UNDEFINED:
-                return default
+        # undefined attr
+        if default is not LN_UNDEFINED:
+            return default
+        else:
             raise AttributeError(f"field {field_name} has no attribute {attr}")
-
-        except Exception as e:
-            if default is not LN_UNDEFINED:
-                return default
-            raise AttributeError(f"field {field_name} has no attribute {attr}") from e
 
     @singledispatchmethod
     def _field_annotation(self, field_name: Any, /) -> dict[str, Any]:
