@@ -14,23 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from enum import Enum
 from typing import Any
 
 from pydantic import Field, PrivateAttr
 
+from lion_core.communication import action_response
 from lion_core.libs import to_dict
 from lion_core.form.form import Form
-from lion_core.unit.unit_rulebook import UnitRuleBook
+from lion_core.setting import LN_UNDEFINED
 
 
 class UnitForm(Form):
-
-    rulebook: UnitRuleBook | None = Field(
-        None,
-        description="The rulebook for the form.",
-        exlcude=True,
-    )
 
     assignment: str = Field(
         "task -> answer",
@@ -106,11 +100,6 @@ class UnitForm(Form):
         examples=[True, False],
     )
 
-    prediction: str | None = Field(
-        None,
-        description="Provide the likely prediction based on context and instruction.",
-    )
-
     plan: dict | str | None = Field(
         None,
         description=(
@@ -142,45 +131,57 @@ class UnitForm(Form):
         ),
     )
 
-    selection: Enum | str | list | None = Field(
-        None, description="a single item from the choices."
-    )
-
     tool_schema: list | dict | None = Field(
         None, description="The list of tools available for using."
     )
 
+    action_response: list = Field(default_factory=list)
+    extension_forms: list = Field(default_factory=list)
+
     # flag, should not be passed into LLM
     _action_performed: bool | None = PrivateAttr(None)
     _is_extension: bool = PrivateAttr(False)
+    _invoke_tool: bool = PrivateAttr(True)
 
     def __init__(
         self,
         *,
-        instruction: Any,
-        context: Any,
-        reason: bool,
-        confidence: bool,
-        predict: bool,
-        score: bool,
-        select: bool,
-        plan: bool,
-        reflect: bool,
-        tool_schema: list,
-        allow_action: bool,
-        allow_extension: bool,
-        max_extension: int,
+        instruction: str | str = None,
+        context: Any = None,
+        guidance: str = LN_UNDEFINED,
+        reason: bool = False,
+        confidence: bool = False,
+        score: bool = False,
+        plan: bool = False,
+        reflect: bool = False,
+        tool_schema: list = None,
+        invoke_tool: bool = None,
+        allow_action: bool = False,
+        allow_extension: bool = False,
+        max_extension: int = None,
         score_num_digits=None,
-        score_range=None,
-        select_choices=None,
-        plan_num_step=None,
-        predict_num_sentences=None,
-        **kwargs,
+        score_range: tuple[int] | list[int] = None,
+        plan_num_step: int = None,
+        strict=LN_UNDEFINED,
+        task_description=LN_UNDEFINED,
+        **kwargs,  # additional input for form
     ):
+
+        a = {
+            "guidance": guidance,
+            "strict": strict,
+            "task_description": task_description,
+        }
+
+        for k, v in a.items():
+            if v is not LN_UNDEFINED:
+                kwargs[k] = v
 
         super().__init__(**kwargs)
 
         self.task = (
+            "A high level guidance from user for the given task: "
+            f"{guidance or ''}"
             f"Follow the prompt and provide the necessary output.\n"
             f"- Additional instruction: {str(instruction or 'N/A')}\n"
             f"- Additional context: {str(context or 'N/A')}\n"
@@ -190,6 +191,7 @@ class UnitForm(Form):
             self.append_to_request("reason")
 
         if allow_action:
+            self._invoke_tool = invoke_tool or self._invoke_tool
             self.append_to_request("actions")
             self.append_to_request("action_required")
             self.append_to_request("reason")
@@ -206,25 +208,13 @@ class UnitForm(Form):
             self.tool_schema = tool_schema
 
         if plan:
-            plan_num_step = plan_num_step or 3
+            plan_num_step = plan_num_step or 2
             max_extension = max_extension or plan_num_step
             allow_extension = True
             self.append_to_request("plan")
             self.append_to_request("extension_required")
             self.task += (
                 f"- Generate a {plan_num_step}-step plan based on the context.\n"
-            )
-
-        if predict:
-            self.append_to_request("prediction")
-            self.task += (
-                f"- Predict the next {predict_num_sentences or 1} sentence(s).\n"
-            )
-
-        if select:
-            self.append_to_request("selection")
-            self.task += (
-                f"- Select 1 item from the provided choices: {select_choices}.\n"
             )
 
         if confidence:

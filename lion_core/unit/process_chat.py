@@ -21,78 +21,76 @@ This module provides the main function for handling chat processing,
 including configuration, completion, action requests, and validation.
 """
 
-from typing import Any, Literal, TYPE_CHECKING
+from typing import Any, Callable, Literal, TYPE_CHECKING
 
 from lionagi import iModel
 
-from lion_core.abc import BaseProcessor
 from lion_core.generic.progression import Progression
 
 
 from lion_core.communication.action_request import ActionRequest
+from lion_core.rule.rulebook import RuleBook
+from lion_core.rule.rule_processor import RuleProcessor
 from lion_core.unit.process_config import process_chat_config
 from lion_core.unit.process_completion import (
     process_chatcompletion,
     process_model_response,
 )
 from lion_core.unit.process_action_request import process_action_request
-from lion_core.unit.process_validation import process_validation
+from lion_core.unit.process_rule import process_rule
 
 if TYPE_CHECKING:
     from lion_core.session.branch import Branch
 
 from lion_core.abc import Observable
 from lion_core.form.base import BaseForm
-from lion_core.form.form import Form
-from lion_core.generic.note import note, Note
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.message import MessageFlag
-from lion_core.communication.instruction import Instruction
 from lion_core.unit.process_action_response import process_action_response
 
 
 async def process_chat(
     branch: Branch,
     *,
-    instruction=None,
-    context=None,
-    form: BaseForm = None,
-    sender=None,
-    recipient=None,
-    request_fields: dict = None,
-    system=None,
-    guidance: str = None,
+    instruction: Any = None,  # priority 2
+    context: Any = None,
+    form: BaseForm | None = None,  # priority 1
+    sender: Observable | str | None = None,
+    system_sender=None,
+    recipient: Observable | str | None = None,
+    request_fields: dict | MessageFlag | None = None,
+    system: Any = None,
+    guidance: Any = None,
     strict_form: bool = False,
-    output_fields: list[str] = None,
-    action_request: ActionRequest | list[ActionRequest] = None,
-    images: list = None,
-    image_detail: Literal["low", "high", "auto"] = None,
-    system_datetime: bool | str = None,
-    metadata=None,
+    action_request: ActionRequest | None = None,
+    images: list | MessageFlag | None = None,
+    image_detail: Literal["low", "high", "auto"] | MessageFlag | None = None,
+    system_datetime: bool | str | MessageFlag | None = None,
+    metadata: Any = None,
     delete_previous_system: bool = False,
-    tools=None,
-    system_metadata: dict | Note = None,
-    model_config: dict = None,
+    tools: bool | None = None,
+    system_metadata: Any = None,
+    model_config: dict | None = None,
     assignment: str = None,  # if use form, must provide assignment
     task_description: str = None,
     fill_inputs: bool = True,
     none_as_valid_value: bool = False,
     input_fields_value_kwargs: dict = None,
-    same_form_output_fields: bool = None,
     clear_messages: bool = False,
     imodel: iModel = None,
     progress: Progression = None,
     costs=(0, 0),
-    fill_value=None,
+    fill_value: Any = None,
     fill_mapping: dict = None,
-    response_parser=None,
-    response_parser_kwargs=None,
+    response_parser: Callable = None,
+    response_parser_kwargs: dict = None,
     handle_unmatched="ignore",
-    validator=None,
-    rulebook=None,
+    rule_processor: RuleProcessor = None,
+    rulebook: RuleBook = None,
     strict_validation=None,
-    use_annotation=None,
-    return_branch=None,
+    return_branch: bool = False,
+    structure_str: bool = False,
+    fallback_structure: Callable = None,
     **kwargs: Any,  # additional model parameters
 ):
 
@@ -100,6 +98,7 @@ async def process_chat(
         branch.clear_messages()
 
     config = process_chat_config(
+        system_sender=system_sender,
         branch=branch,
         instruction=instruction,
         context=context,
@@ -110,7 +109,6 @@ async def process_chat(
         system=system,
         guidance=guidance,
         strict_form=strict_form,
-        output_fields=output_fields,
         action_request=action_request,
         images=images,
         image_detail=image_detail,
@@ -125,10 +123,9 @@ async def process_chat(
         fill_inputs=fill_inputs,
         none_as_valid_value=none_as_valid_value,
         input_fields_value_kwargs=input_fields_value_kwargs,
-        same_form_output_fields=same_form_output_fields,
         **kwargs,
     )
-    imodel = imodel or branch.imodel
+    imodel: iModel = imodel or branch.imodel
     payload, completion = await imodel.chat(
         branch.to_chat_messages(progress=progress),
         **config,
@@ -170,15 +167,16 @@ async def process_chat(
     )
 
     if form:
-        form = await process_validation(
+        form = await process_rule(
             form=form,
-            validator=validator,
+            rule_processor=rule_processor,
             response_=response,
             rulebook=rulebook,
             strict=strict_validation,
-            use_annotation=use_annotation,
+            structure_str=structure_str,
+            fallback_structure=fallback_structure,
         )
-        return branch, form if return_branch else form.work_fields
+        return branch, form if return_branch else form
 
     return branch, response if return_branch else response
 

@@ -35,27 +35,25 @@ async def process_action_request(
     branch: Branch,
     response: dict | None = None,
     action_request: list[ActionRequest] | dict | str | None = None,
-):
+    invoke_action: bool = True,
+) -> list[Any] | dict | bool:
     """
     Process action requests for a given branch.
 
     Args:
         branch: The Branch object to process action requests for.
-        _msg: Optional message dictionary to parse for action requests.
+        response: Optional message dictionary to parse for action requests.
         action_request: Pre-parsed action requests or raw data to parse.
+        invoke_action: Whether to invoke the action or not.
 
     Returns:
-        The results of the action requests or False if no requests were found.
+        The results of the action requests, the response, or False if no
+        requests were found.
 
     Raises:
         ItemNotFoundError: If a requested tool is not found in the registry.
     """
-    action_requests: list[ActionRequest] = action_request or create_action_request(
-        response
-    )
-    if not action_requests:
-        return response or False
-
+    action_requests = action_request or create_action_request(response)
     tasks = []
     for request in action_requests:
         func_name = request.content.get(["action_request", "function"], "")
@@ -72,11 +70,15 @@ async def process_action_request(
         )
 
         args = request.content["action_request", "arguments"]
-        func_call = FunctionCalling(tool, args)
-        tasks.append(asyncio.create_task(func_call.invoke()))
 
-    return action_requests, await asyncio.gather(*tasks)
+        if invoke_action:
+            func_call = FunctionCalling(tool, args)
+            tasks.append(asyncio.create_task(func_call.invoke()))
 
+    if tasks:
+        return action_requests, await asyncio.gather(*tasks)
+    
+    return [], response
 
 __all__ = ["process_action_request"]
 

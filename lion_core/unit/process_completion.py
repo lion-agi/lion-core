@@ -197,6 +197,27 @@ def process_model_response(
     return out_
 
 
+async def fallback_structure_model_response(
+    content_: dict | str,
+    request_fields: dict,
+    imodel: iModel,
+    fill_value: Any = None,
+    fill_mapping: dict[str, Any] | None = None,
+    strict: bool = False,
+    handle_unmatched="ignore",
+    **kwargs,
+):
+    structured = await imodel.structure(content_, **kwargs)
+    return process_model_response(
+        content_=structured,
+        request_fields=request_fields,
+        fill_value=fill_value,
+        fill_mapping=fill_mapping,
+        strict=strict,
+        handle_unmatched=handle_unmatched,
+    )
+
+
 __all__ = ["process_chatcompletion", "process_model_response"]
 
 # File: lion_core/chat/parsing.py

@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Literal, TYPE_CHECKING
+from typing import Literal, TYPE_CHECKING, Callable
 from lion_core.libs import validate_mapping
 
 from lion_core.session.branch import Branch
-from lion_core.form.report import Report
 from lion_core.generic.note import note
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.action_response import ActionResponse
@@ -30,19 +29,18 @@ if TYPE_CHECKING:
     from lion_core.session.branch import Branch
 
 
-async def process_act(
+async def process_action(
     branch: Branch,
     form: UnitForm,
-    report: Report,
     actions: dict,
     handle_unmatched: Literal["ignore", "raise", "remove", "force"] = "force",
     return_branch: bool = False,
+    invoke_action: bool = True,
+    action_response_parser: Callable = None,
+    action_parser_kwargs: dict = None,
 ) -> UnitForm | tuple[Branch, UnitForm]:
 
-    if "action_performed" in form.all_fields and form.action_performed:
-        if form.is_completed() and form not in report.completed_tasks:
-            report.completed_tasks.include(form)
-            report.completed_task_assignments[form.ln_id] = form.assignment
+    if form._action_performed:
         return (branch, form) if return_branch else form
 
     action_keys = [f"action_{i+1}" for i in range(len(actions))]
@@ -53,12 +51,11 @@ async def process_act(
             handle_unmatched=handle_unmatched,
         )
     )
-
     requests = []
     for k in action_keys:
         _func = validated_actions.get([k, "function"], "").replace("functions.", "")
         msg = ActionRequest(
-            function=_func,
+            func=_func,
             arguments=validated_actions[k, "arguments"],
             sender=branch.ln_id,
             recipient=branch.tool_manager.registry[_func].ln_id,
@@ -68,11 +65,18 @@ async def process_act(
 
     if requests:
         out = await process_action_request(
-            branch=branch, response=None, invoke_tool=True, action_request=requests
+            branch=branch,
+            action_request=requests,
+            invoke_action=invoke_action,
         )
 
-        if out is False:
-            raise ValueError("No requests found.")
+        await process_action_response(
+            branch=branch,
+            action_requests=requests,
+            responses=out,
+            response_parser=action_response_parser,
+            parser_kwargs=action_parser_kwargs,
+        )
 
         len_actions = len(validated_actions)
         action_responses = [
@@ -80,22 +84,18 @@ async def process_act(
         ]
 
         _res = note()
+
+        len1 = len(form.action_response)
         for idx, item in enumerate(action_responses):
             _res.insert(["action", idx], item.to_dict())
 
-        len1 = len(form.action_response)
-
-        if getattr(form, "action_response", None) is None:
-            acts_ = _res.get(["action"], [])
-            form.append_to_request("action_response", [i for i in acts_])
-        else:
-            form.action_response.extend([i for i in _res.get(["action"], [])])
+        acts_ = _res.get(["action"], [])
+        action_responses.extend(acts_)
+        form.action_response.extend(
+            [i for i in action_responses if i not in form.action_response]
+        )
 
         if len(form.action_response) > len1:
-            form.append_to_request("action_performed", True)
-
-    if form.is_completed() and form not in report.completed_tasks:
-        report.completed_tasks.include(form)
-        report.completed_task_assignments[form.ln_id] = form.assignment
+            form._action_performed = True
 
     return (branch, form) if return_branch else form

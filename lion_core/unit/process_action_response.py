@@ -7,17 +7,21 @@ from lion_core.session.branch import Branch
 async def process_action_response(
     branch: Branch,
     action_requests: list[ActionRequest],
-    responses: list,
+    responses: list | bool,
     response_parser: Callable = None,
     parser_kwargs: dict = None,
 ) -> list:
+    if responses == False: 
+        return
+    
     responses = [responses] if not isinstance(responses, list) else responses
 
     results = []
     if response_parser:
         results = await lcall(
-            response_parser,
-            responses,
+            func=response_parser,
+            input_=responses,
+            default=None,
             **(parser_kwargs or {}),
         )
 

@@ -1,31 +1,9 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
-"""
-Module for processing chat configuration in the Lion framework.
-
-This module provides functionality to configure chat settings for a Branch object,
-including handling of system messages, instructions, and model configurations.
-"""
+"""Module for processing chat configurations in the Lion framework."""
 
 from typing import Any, Literal, TYPE_CHECKING
 
 from lion_core.abc import Observable
 from lion_core.form.base import BaseForm
-from lion_core.form.form import Form
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.message import MessageFlag
 from lion_core.communication.instruction import Instruction
@@ -37,16 +15,16 @@ if TYPE_CHECKING:
 def process_chat_config(
     branch: "Branch",
     *,
-    instruction: Any = None,
+    instruction: Any = None,  # priority 2
     context: Any = None,
-    form: BaseForm | None = None,
+    form: BaseForm | None = None,  # priority 1
     sender: Observable | str | None = None,
+    system_sender=None,
     recipient: Observable | str | None = None,
     request_fields: dict | MessageFlag | None = None,
     system: Any = None,
     guidance: Any = None,
     strict_form: bool = False,
-    output_fields: dict | None = None,
     action_request: ActionRequest | None = None,
     images: list | MessageFlag | None = None,
     image_detail: Literal["low", "high", "auto"] | MessageFlag | None = None,
@@ -61,10 +39,42 @@ def process_chat_config(
     fill_inputs: bool = True,
     none_as_valid_value: bool = False,
     input_fields_value_kwargs: dict = None,
-    same_form_output_fields=None,
     **kwargs: Any,  # additional model parameters
 ) -> dict:
+    """
+    Process chat configuration for a branch in the Lion framework.
 
+    Args:
+        branch: The Branch instance to process the configuration for.
+        instruction: The instruction for the chat (priority 2).
+        context: Additional context for the chat.
+        form: The BaseForm instance to use (priority 1).
+        sender: The sender of the message.
+        system_sender: The system sender.
+        recipient: The recipient of the message.
+        request_fields: Fields requested in the response.
+        system: System message content.
+        guidance: Guidance for the chat.
+        strict_form: Whether to use strict form validation.
+        action_request: An ActionRequest object.
+        images: List of images related to the message.
+        image_detail: Level of detail for image processing.
+        system_datetime: Datetime for system messages.
+        metadata: Additional metadata for the message.
+        delete_previous_system: Whether to delete the previous system message.
+        tools: Whether to include tools in the configuration.
+        system_metadata: Metadata for the system message.
+        model_config: Configuration for the model.
+        assignment: Assignment string for the form.
+        task_description: Description of the task.
+        fill_inputs: Whether to fill input fields.
+        none_as_valid_value: Whether to treat None as a valid value.
+        input_fields_value_kwargs: Keyword arguments for input field values.
+        **kwargs: Additional keyword arguments for model parameters.
+
+    Returns:
+        A dictionary containing the processed chat configuration.
+    """
     message_kwargs = {
         "context": context,
         "sender": sender,
@@ -74,27 +84,10 @@ def process_chat_config(
         "metadata": metadata,
         "action_request": action_request,
         "guidance": guidance,
-        "same_form_output_fields": same_form_output_fields,
+        "request_fields": request_fields,
     }
 
-    if instruction:
-        message_kwargs["instruction"] = instruction
-        message_kwargs["request_fields"] = request_fields
-
-    if not form:
-        form = Form.from_form(
-            form=form,
-            guidance=guidance,
-            assignment=assignment,
-            strict=strict_form,
-            task_description=task_description,
-            fill_inputs=fill_inputs,
-            none_as_valid_value=none_as_valid_value,
-            output_fields=output_fields,
-            input_value_kwargs=input_fields_value_kwargs,
-        )
-
-    if isinstance(form, Form):
+    if form:
         message_kwargs["instruction"] = Instruction.from_form(
             form=form,
             sender=sender,
@@ -105,14 +98,20 @@ def process_chat_config(
             assignment=assignment,
             task_description=task_description,
             fill_inputs=fill_inputs,
+            input_value_kwargs=input_fields_value_kwargs,
+            none_as_valid_value=none_as_valid_value,
         )
+
+    else:
+        message_kwargs["instruction"] = instruction
 
     if system:
         branch.add_message(
             system=system,
             system_datetime=system_datetime,
-            metadata=system_metadata,
             delete_previous_system=delete_previous_system,
+            system_sender=system_sender,
+            metadata=system_metadata,
         )
 
     branch.add_message(**message_kwargs)
