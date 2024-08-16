@@ -74,11 +74,14 @@ class Form(BaseForm):
         description="Detailed description of the task",
     )
     init_input_kwargs: dict[str, Any] = Field(default_factory=dict, exclude=True)
-    has_processed: bool = Field(
-        default=False,
-        description="Indicates if the task has been processed.",
-        exclude=True,
-    )
+
+    def check_is_completed(
+        self,
+        handle_how: Literal["return_missing", "raise"] = "raise",
+    ) -> list[str] | None:
+        if self.strict and self.has_processed:
+            return
+        return super().check_is_completed(handle_how)
 
     @model_validator(mode="before")
     @classmethod
@@ -283,44 +286,6 @@ class Form(BaseForm):
     def _fill_init_input_kwargs(self, field_name):
         if field_name in self.input_fields:
             self.init_input_kwargs[field_name] = getattr(self, field_name)
-
-    def check_is_completed(
-        self,
-        handle_how: Literal["raise", "return_missing"] = "raise",
-    ) -> list[str] | None:
-        """
-        Check if all required fields are completed.
-
-        Args:
-            handle_how: How to handle incomplete fields.
-
-        Returns:
-            List of incomplete fields if handle_how is "return_missing",
-            None otherwise.
-
-        Raises:
-            ValueError: If required fields are incomplete and handle_how
-                is "raise".
-        """
-        if self.strict and self.has_processed:
-            return
-
-        non_complete_request = []
-        invalid_values = [LN_UNDEFINED, PydanticUndefined]
-        if not self.none_as_valid_value:
-            invalid_values.append(None)
-
-        for i in self.required_fields:
-            if getattr(self, i) in invalid_values:
-                non_complete_request.append(i)
-
-        if non_complete_request:
-            if handle_how == "raise":
-                raise ERR_MAP["assignment", "incomplete_request"](non_complete_request)
-            elif handle_how == "return_missing":
-                return non_complete_request
-        else:
-            self.has_processed = True
 
     def check_is_workable(
         self,
