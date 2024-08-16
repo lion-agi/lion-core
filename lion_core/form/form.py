@@ -21,7 +21,7 @@ import inspect
 from typing import Any, Literal, Type
 from typing_extensions import override
 
-from pydantic import Field, model_validator, ConfigDict
+from pydantic import Field, model_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
@@ -513,7 +513,7 @@ Please follow prompts to complete the task:
         field_obj: FieldInfo | Any = LN_UNDEFINED,
         **kwargs,
     ):
-        if self.strict:
+        if self.strict and field_type in {"input", "request"}:
             raise ERR_MAP["assignment", "strict"](field_type)
 
         config = {
@@ -550,8 +550,9 @@ Please follow prompts to complete the task:
             annotation is not LN_UNDEFINED,
             field_obj is not LN_UNDEFINED,
             bool(kwargs)
-        ]):
+        ]) or field_name not in self.all_fields:
             self.update_field(**config)
+
 
     def append_to_input(
         self,
