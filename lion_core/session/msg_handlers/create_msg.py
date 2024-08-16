@@ -1,13 +1,14 @@
-from typing import Any, Callable, Literal
-
-from lion_core.communication.action_request import ActionRequest
-from lion_core.communication.action_response import ActionResponse
-from lion_core.communication.message import MessageFlag
+from typing import Any, Callable, Literal, TYPE_CHECKING
 
 from lion_core.session.msg_handlers.action_msg import handle_action
 from lion_core.session.msg_handlers.instruction_msg import handle_instruction
 from lion_core.session.msg_handlers.assistant_msg import handle_assistant
 from lion_core.session.msg_handlers.system_msg import handle_system
+
+if TYPE_CHECKING:
+    from lion_core.communication.action_request import ActionRequest
+    from lion_core.communication.action_response import ActionResponse
+    from lion_core.communication.message import MessageFlag
 
 
 def create_message(
@@ -18,6 +19,7 @@ def create_message(
     guidance: Any | MessageFlag,
     request_fields: dict | MessageFlag,
     system: Any,
+    system_sender: str,
     system_datetime: bool | str | None | MessageFlag,
     images: list | MessageFlag,
     image_detail: Literal["low", "high", "auto"] | MessageFlag,
@@ -50,7 +52,7 @@ def create_message(
 
     response = handle_system(
         system=system,
-        sender=sender,
+        sender=system_sender or sender,
         recipient=recipient,
         system_datetime=system_datetime,
     )
