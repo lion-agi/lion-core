@@ -19,6 +19,7 @@ from typing import Any, Callable
 from lion_core.abc import BaseExecutor, Temporal, Observable
 from lion_core.sys_utils import SysUtil
 from lion_core.exceptions import LionTypeError, LionValueError
+from lion_core.libs import ucall
 
 from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
@@ -34,13 +35,13 @@ class RuleProcessor(BaseExecutor, Temporal, Observable):
         *,
         strict: bool = True,
         rulebook: RuleBook = None,
-        structure_imodel: iModel = None,
+        fallback_structure: Callable = None,
     ):
         self.ln_id = SysUtil.id()
         self.timestamp = SysUtil.time()
         self.strict = strict
         self.rulebook = rulebook or RuleBook()
-        self.structure_imodel = structure_imodel
+        self.fallback_structure = fallback_structure
 
     def init_rule(
         self,
@@ -94,29 +95,47 @@ class RuleProcessor(BaseExecutor, Temporal, Observable):
 
         return value
 
+    async def process(
+        self,
+        form: Form,
+        response: dict | str,
+        progress=None,
+        structure_str: bool = False,
+        fallback_structure: Callable | None = None,
+        **kwargs,  # additional kwargs for fallback_structure
+    ):
+        return await self.process_form(
+            form,
+            response,
+            progress=progress,
+            structure_str=structure_str,
+            fallback_structure=fallback_structure,
+            **kwargs,
+        )
+
     async def process_form(
         self,
         form: Form,
         response: dict | str,
         progress=None,
         structure_str: bool = False,
-        structure_imodel: iModel | None = None,
+        fallback_structure: Callable | None = None,
+        **kwargs,  # additional kwargs for fallback_structure
     ):
         if isinstance(response, str):
             if len(form.request_fields) == 1:
                 response = {form.request_fields[0]: response}
             else:
                 if structure_str:
-                    structure_imodel: iModel | None = (
-                        structure_imodel or self.structure_imodel
-                    )
-                    if not structure_imodel:
+                    fallback_structure = fallback_structure or self.fallback_structure
+
+                    if fallback_structure is None:
                         raise ValueError(
                             "Response is a string, you asked to structure the string"
                             "but no structure imodel was provided"
                         )
                     try:
-                        response = await structure_imodel.structure(response)
+                        response = await ucall(fallback_structure, response, **kwargs)
                     except Exception as e:
                         raise ValueError(
                             "Failed to structure the response string"
