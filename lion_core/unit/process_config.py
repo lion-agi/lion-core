@@ -1,6 +1,6 @@
 """Module for processing chat configurations in the Lion framework."""
 
-from typing import Any, Literal, TYPE_CHECKING
+from typing import Any, Literal
 
 from lion_core.abc import Observable
 from lion_core.form.base import BaseForm
@@ -8,8 +8,7 @@ from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.message import MessageFlag
 from lion_core.communication.instruction import Instruction
 
-if TYPE_CHECKING:
-    from lion_core.session.branch import Branch
+from lion_core.session.branch import Branch
 
 
 def process_chat_config(

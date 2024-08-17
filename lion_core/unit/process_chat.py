@@ -21,7 +21,7 @@ This module provides the main function for handling chat processing,
 including configuration, completion, action requests, and validation.
 """
 
-from typing import Any, Callable, Literal, TYPE_CHECKING
+from typing import Any, Callable, Literal
 
 from lionagi import iModel
 
@@ -38,9 +38,7 @@ from lion_core.unit.process_completion import (
 )
 from lion_core.unit.process_action_request import process_action_request
 from lion_core.unit.process_rule import process_rule
-
-if TYPE_CHECKING:
-    from lion_core.session.branch import Branch
+from lion_core.session.branch import Branch
 
 from lion_core.abc import Observable
 from lion_core.form.base import BaseForm

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Literal, TYPE_CHECKING, Callable
+from typing import Literal, Callable
 from lion_core.libs import validate_mapping
 
 from lion_core.session.branch import Branch
@@ -24,9 +24,6 @@ from lion_core.communication.action_response import ActionResponse
 from lion_core.unit.process_action_request import process_action_request
 from lion_core.unit.process_action_response import process_action_response
 from lion_core.unit.unit_form import UnitForm
-
-if TYPE_CHECKING:
-    from lion_core.session.branch import Branch
 
 
 async def process_action(

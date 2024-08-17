@@ -1,4 +1,3 @@
-
 from pydantic import Field, field_serializer
 
 from lion_core.abc import Relational

@@ -1,5 +1,5 @@
 import inspect
-from typing import Type, TYPE_CHECKING
+from typing import Type
 
 from pydantic import Field
 
@@ -8,17 +8,11 @@ from lion_core.libs import to_dict
 from lion_core.sys_utils import SysUtil
 from lion_core.exceptions import LionTypeError, LionValueError
 from lion_core.generic.element import Element
-from lion_core.generic.note import note
-from lion_core.generic.flow import flow
-from lion_core.generic.pile import pile
+from lion_core.generic.note import note, Note
+from lion_core.generic.flow import flow, Flow
+from lion_core.generic.pile import pile, Pile
 from lion_core.rule.default_rules._default import DEFAULT_RULE_INFO, DEFAULT_RULEORDER
-
-
-if TYPE_CHECKING:
-    from lion_core.generic.note import Note
-    from lion_core.generic.flow import Flow
-    from lion_core.generic.pile import Pile
-    from lion_core.rule.base import Rule
+from lion_core.rule.base import Rule
 
 
 class RuleBook(Element, BaseRecord):

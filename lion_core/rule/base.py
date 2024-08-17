@@ -17,7 +17,7 @@ limitations under the License.
 import inspect
 
 from abc import abstractmethod
-from typing import Any, Callable, TYPE_CHECKING
+from typing import Any, Callable
 from pydantic import PrivateAttr, Field
 from typing_extensions import override
 
@@ -26,12 +26,8 @@ from lion_core.generic.element import Element
 
 from lion_core.exceptions import LionOperationError
 from lion_core.libs import ucall, to_list, to_dict
-from lion_core.generic.note import note
-
-
-if TYPE_CHECKING:
-    from lion_core.generic.note import Note
-    from lion_core.form.base import BaseForm
+from lion_core.generic.note import note, Note
+from lion_core.form.base import BaseForm
 
 
 RULE_SYS_FIELDS = [

@@ -23,7 +23,7 @@ and validation processing.
 """
 
 from functools import partial
-from typing import TYPE_CHECKING, Callable, Any, Literal
+from typing import Callable, Any, Literal
 from lion_core.abc import BaseProcessor
 from lion_core.imodel.imodel import iModel
 from lion_core.generic.progression import Progression
@@ -39,15 +39,10 @@ from lion_core.unit.process_direct import process_direct
 from lion_core.unit.process_rule import process_rule
 from lion_core.unit.process_completion import fallback_structure_model_response
 
-
 from lion_core.libs import rcall
-
 from lion_core.setting import LN_UNDEFINED
-
-
-if TYPE_CHECKING:
-    from lion_core.session.branch import Branch
-    from lion_core.rule.rulebook import RuleBook
+from lion_core.session.branch import Branch
+from lion_core.rule.rulebook import RuleBook
 
 
 class Unit(BaseProcessor):
