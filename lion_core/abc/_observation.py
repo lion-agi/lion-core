@@ -16,6 +16,7 @@ limitations under the License.
 
 from abc import abstractmethod
 from lion_core.abc._concept import AbstractObservation
+from lion_core.abc._characteristic import Observable
 
 
 class Event(AbstractObservation):
@@ -81,7 +82,10 @@ class Action(Event):
         pass
 
 
-__all__ = ["Event", "Condition", "Signal", "Action"]
+class ObservableAction(Action, Observable):
+    ...
+
+__all__ = ["Event", "Condition", "Signal", "Action", "ObservableAction"]
 
 
 # File: lion_core/abc/observation.py

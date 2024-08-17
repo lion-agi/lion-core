@@ -17,12 +17,12 @@ limitations under the License.
 from typing import Any
 from typing_extensions import override
 from lion_core.libs import ucall
-from lion_core.abc import Action, Observable
+from lion_core.abc import ObservableAction
 
 from lion_core.action.tool import Tool
 
 
-class FunctionCalling(Action, Observable):
+class FunctionCalling(ObservableAction):
     """Represents a callable function with its arguments."""
 
     def __init__(

@@ -14,15 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from lion_core.abc import Action, BaseExecutor, Observable
+from lion_core.abc import BaseExecutor, ObservableAction
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import prog, Progression
 
 from lion_core.action.status import ActionStatus
 
 
-class ObservableAction(Action, Observable):
-    ...
+
     
 
 class ActionExecutor(BaseExecutor):
