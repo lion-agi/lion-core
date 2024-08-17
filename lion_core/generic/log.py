@@ -13,14 +13,12 @@ class BaseLog(Element, ImmutableRecord):
         default_factory=Note,
         title="Log Content",
         description="The content of the log entry.",
-        frozen=True,
     )
 
     loginfo: Note = Field(
         default_factory=Note,
         title="Log Info",
         description="Metadata about the log entry.",
-        frozen=True,
     )
 
     def __init__(self, content: Note, loginfo: Note, **kwargs):
@@ -36,6 +34,8 @@ class BaseLog(Element, ImmutableRecord):
         )
 
     def _validate_note(cls, value):
+        if not value:
+            return Note()
         if isinstance(value, Note):
             return value
         if isinstance(value, dict):
