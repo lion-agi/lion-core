@@ -14,27 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Type
-
 from lion_core.abc import Action, BaseExecutor
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import prog, Progression
 
-from lion_core.action.action_processor import ActionProcessor
 from lion_core.action.status import ActionStatus
 
 
 class ActionExecutor(BaseExecutor):
 
-    def __init__(
-        self,
-        capacity: int,
-        refresh_time: int,
-        processor_class: Type[ActionProcessor] = ActionProcessor,
-        **kwargs
-    ) -> None:
-        self.processor_config = {"args": [capacity, refresh_time], "kwargs": kwargs}
-        self.processor_class = processor_class
+    def __init__(self, **kwargs) -> None:
+        self.processor_config = kwargs
         self.pile: Pile = pile({}, Action)
         self.pending: Progression = prog()
 

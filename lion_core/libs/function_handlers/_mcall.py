@@ -18,7 +18,7 @@ import asyncio
 from typing import Any, Callable, Sequence, TypeVar
 
 from lion_core.libs.data_handlers import to_list
-from lion_core.libs.function_handlers._lcall import lcall
+from lion_core.libs.function_handlers._lcall import alcall
 from lion_core.libs.function_handlers._rcall import rcall
 from lion_core.setting import LN_UNDEFINED
 
@@ -82,7 +82,7 @@ async def mcall(
 
     if explode:
         tasks = [
-            lcall(
+            alcall(
                 f,
                 input_,
                 retries=retries,

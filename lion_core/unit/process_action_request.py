@@ -77,8 +77,9 @@ async def process_action_request(
 
     if tasks:
         return action_requests, await asyncio.gather(*tasks)
-    
+
     return [], response
+
 
 __all__ = ["process_action_request"]
 

@@ -23,11 +23,18 @@ class BaseLog(Element, ImmutableRecord):
         frozen=True,
     )
 
-    @field_validator(
-        "content",
-        "loginfo",
-        mode="before",
-    )
+    def __init__(self, content: Note, loginfo: Note, **kwargs):
+        super().__init__(**kwargs)
+        self.content = self._validate_note(content)
+        self.loginfo = self._validate_note(loginfo)
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        return cls(
+            content=cls._validate_note(data.get("content", {})),
+            loginfo=cls._validate_note(data.get("loginfo", {})),
+        )
+
     def _validate_note(cls, value):
         if isinstance(value, Note):
             return value
@@ -41,6 +48,12 @@ class BaseLog(Element, ImmutableRecord):
     @field_serializer("content", "loginfo")
     def _serialize_note(self, value):
         return value.to_dict()
+
+    def to_dict(self):
+        return {
+            "content": self.content.to_dict(),
+            "loginfo": self.loginfo.to_dict(),
+        }
 
 
 # File: lion_core/log/base.py

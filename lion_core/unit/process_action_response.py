@@ -1,5 +1,5 @@
 from typing import Callable
-from lion_core.libs import lcall
+from lion_core.libs import alcall
 from lion_core.communication.action_request import ActionRequest
 from lion_core.session.branch import Branch
 
@@ -11,14 +11,14 @@ async def process_action_response(
     response_parser: Callable = None,
     parser_kwargs: dict = None,
 ) -> list:
-    if responses == False: 
+    if responses == False:
         return
-    
+
     responses = [responses] if not isinstance(responses, list) else responses
 
     results = []
     if response_parser:
-        results = await lcall(
+        results = await alcall(
             func=response_parser,
             input_=responses,
             default=None,
