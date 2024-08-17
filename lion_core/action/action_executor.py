@@ -14,21 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from lion_core.abc import Action, BaseExecutor
+from lion_core.abc import Action, BaseExecutor, Observable
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import prog, Progression
 
 from lion_core.action.status import ActionStatus
 
 
+class ObservableAction(Action, Observable):
+    ...
+    
+
 class ActionExecutor(BaseExecutor):
 
     def __init__(self, **kwargs) -> None:
         self.processor_config = kwargs
-        self.pile: Pile = pile({}, Action)
+        self.pile: Pile = pile(item_type=ObservableAction)
         self.pending: Progression = prog()
 
-    async def append(self, action: Action):
+    async def append(self, action: ObservableAction):
         self.pile.append(action)
         self.pending.append(action)
 
