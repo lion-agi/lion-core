@@ -81,3 +81,8 @@ class ActionProcessor(BaseProcessor):
             await self.process()
             await asyncio.sleep(self.refresh_time)
         self.execution_mode = False
+
+    @classmethod
+    async def create(cls, **kwargs) -> "ActionProcessor":
+        processor = cls(**kwargs)
+        return processor

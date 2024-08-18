@@ -55,5 +55,8 @@ class BaseLog(Element, ImmutableRecord):
             "loginfo": self.loginfo.to_dict(),
         }
 
+    def to_note(self):
+        return Note(**self.to_dict())
+
 
 # File: lion_core/log/base.py

@@ -224,6 +224,9 @@ class Component(Element):
         dict_ = {**dict_, **extra_fields, "lion_class": self.class_name()}
         return dict_
 
+    def to_note(self, **kwargs):
+        return Note(**self.to_dict(**kwargs))
+
     @override
     @classmethod
     def from_dict(cls, data: dict, **kwargs) -> T:

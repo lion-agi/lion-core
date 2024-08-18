@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import Type
+
 from lion_core.abc import BaseExecutor, ObservableAction
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import prog, Progression
@@ -24,15 +26,13 @@ from lion_core.action.action_processor import ActionProcessor
 
 class ActionExecutor(BaseExecutor):
 
+    processor_class: Type[ActionProcessor] = ActionProcessor
+
     def __init__(self, **kwargs) -> None:
         self.processor_config = kwargs
         self.pile: Pile = pile(item_type={ObservableAction})
         self.pending: Progression = prog()
         self.processor: ActionProcessor = None
-
-    async def append(self, action: ObservableAction):
-        self.pile.append(action)
-        self.pending.append(action)
 
     @property
     def pending_action(self) -> Pile:
@@ -45,6 +45,26 @@ class ActionExecutor(BaseExecutor):
         return pile(
             [i for i in self.pile if i.status == ActionStatus.COMPLETED],
         )
+
+    async def append(self, action: ObservableAction):
+        self.pile.append(action)
+        self.pending.append(action)
+
+    async def create_processor(self):
+        self.processor = await self.processor_class.create(**self.processor_config)
+
+    async def stop(self):
+        if self.processor:
+            await self.processor.stop()
+
+    async def forward(self):
+        while len(self.pending) > 0:
+            action = self.pile[self.pending.popleft()]
+            await self.processor.enqueue(action)
+
+    async def process(self):
+        await self.forward()
+        await self.processor.process()
 
     def __contains__(self, action):
         return action in self.pile
