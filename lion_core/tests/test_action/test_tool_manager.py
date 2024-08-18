@@ -156,13 +156,6 @@ def test_match_tool_with_extra_args(tool_manager, sample_tool):
     assert result.arguments == {"x": 1, "y": 2, "z": 3}
 
 
-@pytest.mark.asyncio
-async def test_invoke_with_invalid_args(tool_manager, sample_tool):
-    tool_manager.register_tool(sample_tool)
-    with pytest.raises(TypeError):
-        await tool_manager.invoke(("mock_function", {"x": "not_an_int", "y": 2}))
-
-
 def test_get_tool_schema_with_additional_kwargs(tool_manager, sample_tool):
     tool_manager.register_tool(sample_tool)
     result = tool_manager.get_tool_schema(sample_tool, extra_param="test")

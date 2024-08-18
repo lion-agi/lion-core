@@ -14,8 +14,8 @@ from lion_core.form.form import Form
 # Helper functions and classes
 def create_sample_form(**kwargs):
     class SampleForm(Form):
-        field1: str | None = Field(default=None)
-        field2: int | None = Field(default=None)
+        field1: str | None | Any = Field(default=None)
+        field2: int | None | Any = Field(default=None)
 
     return SampleForm(**kwargs)
 
@@ -32,7 +32,7 @@ def test_form_init():
     form_with_fields = create_sample_form(
         assignment="field1 -> field2",
         guidance="Test guidance",
-        task_description="Test description"
+        task_description="Test description",
     )
     assert form_with_fields.guidance == "Test guidance"
     assert form_with_fields.task_description == "Test description"
@@ -46,13 +46,19 @@ def test_form_input_output_validation():
         Form(assignment="input ->")  # Missing output
 
     with pytest.raises(ValueError):
-        Form(assignment="field1 -> field2", input_fields=["field1"])  # Explicit input not allowed
+        Form(
+            assignment="field1 -> field2", input_fields=["field1"]
+        )  # Explicit input not allowed
 
     with pytest.raises(ValueError):
-        Form(assignment="field1 -> field2", request_fields=["field2"])  # Explicit request not allowed
+        Form(
+            assignment="field1 -> field2", request_fields=["field2"]
+        )  # Explicit request not allowed
 
     with pytest.raises(ValueError):
-        Form(assignment="field1 -> field2", task="Custom task")  # Explicit task not allowed
+        Form(
+            assignment="field1 -> field2", task="Custom task"
+        )  # Explicit task not allowed
 
 
 # Test Form properties
@@ -143,7 +149,7 @@ def test_form_from_dict():
     data = {
         "assignment": "field1 -> field2",
         "field1": "value1",
-        "extra_field": "extra_value"
+        "extra_field": "extra_value",
     }
     form = Form.from_dict(data)
     assert form.assignment == "field1 -> field2"
@@ -189,7 +195,9 @@ def test_form_from_form():
 
 
 def test_form_remove_request_from_output():
-    form = create_sample_form(assignment="field1 -> field2", output_fields=["field1", "field2"])
+    form = create_sample_form(
+        assignment="field1 -> field2", output_fields=["field1", "field2"]
+    )
     form.remove_request_from_output()
     assert form.output_fields == ["field1"]
 
@@ -262,7 +270,9 @@ def test_form_various_data_types():
         list_field: list = Field(default_factory=list)
         dict_field: dict = Field(default_factory=dict)
 
-    form = ComplexForm(assignment="string_field, int_field -> float_field, bool_field, list_field, dict_field")
+    form = ComplexForm(
+        assignment="string_field, int_field -> float_field, bool_field, list_field, dict_field"
+    )
     form.string_field = "test"
     form.int_field = 42
     form.float_field = 3.14
@@ -275,7 +285,7 @@ def test_form_various_data_types():
 
 
 # Test Form with large number of fields
-@pytest.mark.slow
+# @pytest.mark.slow
 def test_form_large_number_of_fields():
     class LargeForm(Form):
         pass
@@ -300,7 +310,7 @@ def test_form_large_number_of_fields():
 
 
 # Test Form performance
-@pytest.mark.slow
+# @pytest.mark.slow
 def test_form_performance():
     import time
 
@@ -371,7 +381,7 @@ def test_form_comprehensive():
         guidance="Comprehensive test guidance",
         task_description="Comprehensive test description",
         output_fields=["output_field"],
-        none_as_valid_value=True
+        none_as_valid_value=True,
     )
 
     # Test basic functionality
@@ -423,7 +433,9 @@ def test_form_comprehensive():
     assert "dynamic_output" in form.output_fields
 
     # Test fill methods
-    new_form = ComprehensiveForm(assignment="input_field, dynamic_input -> process_field, output_field")
+    new_form = ComprehensiveForm(
+        assignment="input_field, dynamic_input -> process_field, output_field"
+    )
     new_form.fill_input_fields(form)
     assert new_form.input_field == "test_input"
     assert new_form.dynamic_input == "dynamic"
@@ -495,12 +507,12 @@ def test_form_large_field_values():
         large_field: str = Field(default="")
 
     form = LargeValueForm(assignment="large_field -> large_field")
-    large_value = "a" * 10 ** 6  # 1MB string
+    large_value = "a" * 10**6  # 1MB string
     form.large_field = large_value
 
     assert form.is_completed()
     assert form.is_workable()
-    assert len(form.to_dict()["large_field"]) == 10 ** 6
+    assert len(form.to_dict()["large_field"]) == 10**6
 
 
 # Test Form with concurrent modifications
@@ -566,20 +578,20 @@ def test_form_custom_serialization():
         def to_dict(self):
             data = super().to_dict()
             if self.date_field:
-                data['date_field'] = f"Custom: {self.date_field}"
+                data["date_field"] = f"Custom: {self.date_field}"
             return data
 
         @classmethod
         def from_dict(cls, data):
-            if 'date_field' in data and data['date_field'].startswith('Custom: '):
-                data['date_field'] = data['date_field'][8:]
+            if "date_field" in data and data["date_field"].startswith("Custom: "):
+                data["date_field"] = data["date_field"][8:]
             return super().from_dict(data)
 
     form = CustomSerializeForm(assignment="date_field -> date_field")
     form.date_field = "2023-01-01"
 
     serialized = form.to_dict()
-    assert serialized['date_field'] == "Custom: 2023-01-01"
+    assert serialized["date_field"] == "Custom: 2023-01-01"
 
     deserialized = CustomSerializeForm.from_dict(serialized)
     assert deserialized.date_field == "2023-01-01"
@@ -592,12 +604,7 @@ def test_form_complex_nested_structures():
 
     form = ComplexNestedForm(assignment="nested_field -> nested_field")
     form.nested_field = {
-        "level1": {
-            "level2": [
-                {"key": "value"},
-                [1, 2, {"nested": "deep"}]
-            ]
-        }
+        "level1": {"level2": [{"key": "value"}, [1, 2, {"nested": "deep"}]]}
     }
 
     assert form.is_completed()

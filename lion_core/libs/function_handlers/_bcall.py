@@ -77,8 +77,8 @@ async def bcall(
     for i in range(0, len(input_), batch_size):
         batch = input_[i : i + batch_size]
         batch_results = await alcall(
-            func,
-            batch,
+            func=func,
+            input_=batch,
             retries=retries,
             initial_delay=initial_delay,
             delay=delay,

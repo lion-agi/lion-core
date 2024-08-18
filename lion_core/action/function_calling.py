@@ -16,19 +16,25 @@ limitations under the License.
 
 from typing import Any
 from typing_extensions import override
-from lion_core.libs import ucall, CallDecorator as cd
+from lion_core.libs import CallDecorator as cd, rcall
 from lion_core.action.base import ObservableAction
-
+from lion_core.action.status import ActionStatus
 from lion_core.action.tool import Tool
 
 
 class FunctionCalling(ObservableAction):
     """Represents a callable function with its arguments."""
 
+    func_tool: Tool | None = None
+    arguments: dict[str, Any] | None = None
+
     def __init__(
-        self, func_tool: Tool, arguments: dict[str, Any] | None = None
-    ) -> None:
-        super().__init__()
+        self,
+        func_tool: Tool,
+        arguments: dict[str, Any],
+        retry_config: dict[str, Any] | None = None,
+    ):
+        super().__init__(retry_config=retry_config)
         self.func_tool: Tool = func_tool
         self.arguments: dict[str, Any] = arguments or {}
 
@@ -42,12 +48,23 @@ class FunctionCalling(ObservableAction):
             postprocess_kwargs=self.func_tool.post_processor_kwargs,
         )
         async def _inner(**kwargs):
-            return await ucall(self.func_tool.function, **kwargs)
+            config = {**self.retry_config, **kwargs}
+            config["timing"] = True
+            return await rcall(self.func_tool.function, **config)
 
-        result = await _inner(**self.arguments)
-        if self.func_tool.parser is not None:
-            return self.func_tool.parser(result)
-        return result
+        try:
+            result, elp = await _inner(**self.arguments)
+            self.response = result
+            self.execution_time = elp
+            self.status = ActionStatus.COMPLETED
+
+            if self.func_tool.parser is not None:
+                return self.func_tool.parser(result)
+            return result
+
+        except Exception as e:
+            self.status = ActionStatus.FAILED
+            self.error = str(e)
 
     def __str__(self) -> str:
         return f"{self.func_tool.function_name}({self.arguments})"
