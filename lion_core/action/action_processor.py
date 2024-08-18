@@ -17,7 +17,7 @@ limitations under the License.
 import asyncio
 from typing_extensions import override
 
-from lion_core.abc import Action, BaseProcessor
+from lion_core.abc import BaseProcessor
 from lion_core.action.status import ActionStatus
 from lion_core.action.base import ObservableAction
 
@@ -69,18 +69,18 @@ class ActionProcessor(BaseProcessor):
         prev, next = None, None
 
         while self.available_capacity > 0 and self.queue.qsize() > 0:
-            if prev and prev.status == ActionStatus.PROCESSING:
+            if prev and prev.status == ActionStatus.PENDING:
                 next = prev
                 await asyncio.sleep(self.refresh_time)
             else:
                 next = await self.dequeue()
-                next.status = ActionStatus.PROCESSING
 
             if await self.request_permission(**next.request):
+                next.status = ActionStatus.PROCESSING
                 task = asyncio.create_task(next.invoke())
                 tasks.add(task)
             prev = next
-
+            
         if tasks:
             await asyncio.wait(tasks)
             self.available_capacity = self.capacity
