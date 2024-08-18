@@ -82,10 +82,7 @@ class Action(Event):
         pass
 
 
-class ObservableAction(Action, Observable): ...
-
-
-__all__ = ["Event", "Condition", "Signal", "Action", "ObservableAction"]
+__all__ = ["Event", "Condition", "Signal", "Action"]
 
 
 # File: lion_core/abc/observation.py
