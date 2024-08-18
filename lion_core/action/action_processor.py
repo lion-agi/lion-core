@@ -66,12 +66,20 @@ class ActionProcessor(BaseProcessor):
     async def process(self) -> None:
         """Process the work items in the queue."""
         tasks = set()
+        prev, next = None, None
+
         while self.available_capacity > 0 and self.queue.qsize() > 0:
-            next: ObservableAction = await self.dequeue()
-            next.status = ActionStatus.PROCESSING
-            task = asyncio.create_task(next.invoke())
-            tasks.add(task)
-            self.available_capacity -= 1
+            if prev and prev.status == ActionStatus.PROCESSING:
+                next = prev
+                await asyncio.sleep(self.refresh_time)
+            else:
+                next = await self.dequeue()
+                next.status = ActionStatus.PROCESSING
+
+            if await self.request_permission(**next.request):
+                task = asyncio.create_task(next.invoke())
+                tasks.add(task)
+            prev = next
 
         if tasks:
             await asyncio.wait(tasks)
@@ -93,25 +101,3 @@ class ActionProcessor(BaseProcessor):
 
     async def request_permission(self, **kwargs) -> bool:
         return True
-
-    async def process(self):
-
-        tasks = set()
-        prev, next = None, None
-
-        while self.available_capacity > 0 and self.queue.qsize() > 0:
-            if prev and prev.status == ActionStatus.PROCESSING:
-                next = prev
-                await asyncio.sleep(self.refresh_time)
-            else:
-                next = await self.dequeue()
-                next.status = ActionStatus.PROCESSING
-
-            if await self.request_permission(**next.request):
-                task = asyncio.create_task(next.invoke())
-                tasks.add(task)
-            prev = next
-
-        if tasks:
-            await asyncio.wait(tasks)
-            self.available_capacity = self.capacity
