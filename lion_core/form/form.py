@@ -501,7 +501,7 @@ class Form(BaseForm):
         field_obj: FieldInfo | Any = LN_UNDEFINED,
         **kwargs,
     ):
-        if self.strict:
+        if self.strict and field_type in {"input", "request"}:
             raise ERR_MAP["assignment", "strict"](field_type)
 
         config = {
@@ -533,15 +533,14 @@ class Form(BaseForm):
             case _:
                 raise LionValueError(f"Invalid field type {field_type}")
 
-        if any(
-            [
-                value is not LN_UNDEFINED,
-                annotation is not LN_UNDEFINED,
-                field_obj is not LN_UNDEFINED,
-                bool(kwargs),
-            ]
-        ):
+        if any([
+            value is not LN_UNDEFINED,
+            annotation is not LN_UNDEFINED,
+            field_obj is not LN_UNDEFINED,
+            bool(kwargs)
+        ]) or field_name not in self.all_fields:
             self.update_field(**config)
+
 
     def append_to_input(
         self,
