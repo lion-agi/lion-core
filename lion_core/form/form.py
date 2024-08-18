@@ -74,11 +74,14 @@ class Form(BaseForm):
         description="Detailed description of the task",
     )
     init_input_kwargs: dict[str, Any] = Field(default_factory=dict, exclude=True)
-    has_processed: bool = Field(
-        default=False,
-        description="Indicates if the task has been processed.",
-        exclude=True,
-    )
+
+    def check_is_completed(
+        self,
+        handle_how: Literal["return_missing", "raise"] = "raise",
+    ) -> list[str] | None:
+        if self.strict and self.has_processed:
+            return
+        return super().check_is_completed(handle_how)
 
     @model_validator(mode="before")
     @classmethod
@@ -189,35 +192,48 @@ class Form(BaseForm):
     @property
     def instruction_context(self) -> str:
         """Generate a description of the form's input fields."""
-        return "".join(
-            f"""
-## input: {i}:
-- description: {getattr(self.all_fields[i], "description", "N/A")}.
-- value: {str(getattr(self, self.request_fields[idx]))}.
-- examples: {getattr(self.all_fields[i], "examples", "N/A")}.
-"""
-            for idx, i in enumerate(self.request_fields)
-        )
+
+        a = self.all_fields
+
+        context = f"### Input Fields:\n"
+        for idx, i in enumerate(self.input_fields):
+            context += f"Input No.{idx+1}: {i}\n"
+            if getattr(a[i], "description", None):
+                context += f"  - description: {a[i].description}.\n"
+            context += f"  - value: {getattr(self, i)}.\n"
+        return context
 
     @property
     def instruction_prompt(self) -> str:
         """Generate a task instruction prompt for the form."""
-        return f"""
-## Task Instructions
-Please follow prompts to complete the task:
-1. Your task is: {self.task}.
-2. The provided input fields are: {', '.join(self.request_fields)}.
-3. The requested output fields are: {', '.join(self.request_fields)}.
-4. Provide your response in the specified JSON format.
-"""
+
+        a = self.all_fields
+        prompt = ""
+        if "guidance" in a:
+            prompt += f"### Overall Guidance:\n{getattr(self, "guidance")}.\n"
+
+        prompt += "### Task Instructions:\n"
+        prompt += f"1. Provided Input Fields: {', '.join(self.input_fields)}.\n"
+        prompt += f"2. Requested Output Fields: {', '.join(self.request_fields)}.\n"
+        prompt += f"3. Your task:\n{self.task}.\n"
+
+        return prompt
 
     @property
     def instruction_request_fields(self) -> dict[str, str]:
         """Get descriptions of the form's requested fields."""
-        return {
-            field: self.all_fields[field].description or "N/A"
-            for field in self.request_fields
-        }
+
+        a = self.all_fields
+
+        context = f"### Output Fields:\n"
+        for idx, i in enumerate(self.request_fields):
+            context += f"Input No.{idx+1}: {i}\n"
+            if getattr(a[i], "description", None):
+                context += f"  - description: {a[i].description}.\n"
+            if getattr(a[i], "examples", None):
+                context += f"  - examples: {a[i].examples}.\n"
+
+        return context
 
     @override
     def update_field(
@@ -251,7 +267,11 @@ Please follow prompts to complete the task:
         Extends the base __setattr__ method to enforce strictness
         and update the init_input_kwargs dictionary.
         """
-        if self.strict and field_name in {"assignment", "input_fields", "request_fields"}:
+        if self.strict and field_name in {
+            "assignment",
+            "input_fields",
+            "request_fields",
+        }:
             raise ERR_MAP["assignment", "strict"](field_name)
 
         if field_name in {"input_fields", "request_fields"}:
@@ -266,44 +286,6 @@ Please follow prompts to complete the task:
     def _fill_init_input_kwargs(self, field_name):
         if field_name in self.input_fields:
             self.init_input_kwargs[field_name] = getattr(self, field_name)
-
-    def check_is_completed(
-        self,
-        handle_how: Literal["raise", "return_missing"] = "raise",
-    ) -> list[str] | None:
-        """
-        Check if all required fields are completed.
-
-        Args:
-            handle_how: How to handle incomplete fields.
-
-        Returns:
-            List of incomplete fields if handle_how is "return_missing",
-            None otherwise.
-
-        Raises:
-            ValueError: If required fields are incomplete and handle_how
-                is "raise".
-        """
-        if self.strict and self.has_processed:
-            return
-
-        non_complete_request = []
-        invalid_values = [LN_UNDEFINED, PydanticUndefined]
-        if not self.none_as_valid_value:
-            invalid_values.append(None)
-
-        for i in self.required_fields:
-            if getattr(self, i) in invalid_values:
-                non_complete_request.append(i)
-
-        if non_complete_request:
-            if handle_how == "raise":
-                raise ERR_MAP["assignment", "incomplete_request"](non_complete_request)
-            elif handle_how == "return_missing":
-                return non_complete_request
-        else:
-            self.has_processed = True
 
     def check_is_workable(
         self,
@@ -480,10 +462,16 @@ Please follow prompts to complete the task:
         obj = cls(
             guidance=guidance or getattr(form, "guidance", None),
             assignment=assignment,
-            task_description=task_description or getattr(form, "task_description", ""),
-            none_as_valid_value=none_as_valid_value or getattr(form, "none_as_valid_value", False),
+            task_description=task_description
+            or getattr(
+                form,
+                "task_description",
+                "",
+            ),
+            none_as_valid_value=none_as_valid_value
+            or getattr(form, "none_as_valid_value", False),
             strict=strict or getattr(form, "strict", False),
-            output_fields=output_fields
+            output_fields=output_fields,
         )
 
         for i in obj.work_fields:

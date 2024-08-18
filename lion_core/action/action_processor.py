@@ -17,8 +17,9 @@ limitations under the License.
 import asyncio
 from typing_extensions import override
 
-from lion_core.abc import Action, BaseProcessor
+from lion_core.abc import BaseProcessor
 from lion_core.action.status import ActionStatus
+from lion_core.action.base import ObservableAction
 
 
 class ActionProcessor(BaseProcessor):
@@ -37,11 +38,11 @@ class ActionProcessor(BaseProcessor):
         self.execution_mode: bool = False
         self.refresh_time = refresh_time
 
-    async def enqueue(self, action: Action) -> None:
+    async def enqueue(self, action: ObservableAction) -> None:
         """Enqueue a work item."""
         await self.queue.put(action)
 
-    async def dequeue(self) -> Action:
+    async def dequeue(self) -> ObservableAction:
         """Dequeue a work item."""
         return await self.queue.get()
 
@@ -53,6 +54,9 @@ class ActionProcessor(BaseProcessor):
         """Signal the queue to stop processing."""
         self._stop_event.set()
 
+    async def start(self) -> None:
+        self._stop_event.clear()
+
     @property
     def stopped(self) -> bool:
         """Return whether the queue has been stopped."""
@@ -62,22 +66,38 @@ class ActionProcessor(BaseProcessor):
     async def process(self) -> None:
         """Process the work items in the queue."""
         tasks = set()
-        while self.available_capacity > 0 and self.queue.qsize() > 0:
-            next: Action = await self.dequeue()
-            next.status = ActionStatus.PROCESSING
-            task = asyncio.create_task(next.invoke())
-            tasks.add(task)
-            self.available_capacity -= 1
+        prev, next = None, None
 
+        while self.available_capacity > 0 and self.queue.qsize() > 0:
+            if prev and prev.status == ActionStatus.PENDING:
+                next = prev
+                await asyncio.sleep(self.refresh_time)
+            else:
+                next = await self.dequeue()
+
+            if await self.request_permission(**next.request):
+                next.status = ActionStatus.PROCESSING
+                task = asyncio.create_task(next.invoke())
+                tasks.add(task)
+            prev = next
+            
         if tasks:
             await asyncio.wait(tasks)
             self.available_capacity = self.capacity
 
     async def execute(self):
         self.execution_mode = True
-        self._stop_event.clear()
+        await self.start()
 
         while not self.stopped:
             await self.process()
             await asyncio.sleep(self.refresh_time)
         self.execution_mode = False
+
+    @classmethod
+    async def create(cls, **kwargs) -> "ActionProcessor":
+        processor = cls(**kwargs)
+        return processor
+
+    async def request_permission(self, **kwargs) -> bool:
+        return True

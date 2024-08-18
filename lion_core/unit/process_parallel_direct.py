@@ -30,7 +30,7 @@ from lion_core.form.task_form import BaseForm
 from lion_core.session.branch import Branch
 from lion_core.generic.pile import pile, Pile
 from lion_core.libs import to_list
-from lion_core.unit.unit import UnitProcessor
+from lion_core.unit.unit import Unit
 
 as_nice_list = partial(to_list, flatten=True, dropna=True)
 
@@ -123,7 +123,7 @@ async def process_parallel_direct(
                 tools=tools,
             )
 
-        unit_ = UnitProcessor(branch=branch_)
+        unit_ = Unit(branch=branch_)
         resp_ = await unit_.process_direct(
             instruction=instruct_,
             context=context_,

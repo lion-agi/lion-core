@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import inspect
+
 from collections import deque
 from functools import singledispatchmethod
 from typing import Any, TypeVar, ClassVar, Type
@@ -155,13 +155,15 @@ class Component(Element):
 
         # pydanitc Field object cannot have both default and default_factory
         if "default" in kwargs and "default_factory" in kwargs:
-            raise ValueError("Cannot provide both 'default' and 'default_factory'")
+            raise ValueError(
+                "Cannot provide both 'default' and 'default_factory'",
+            )
 
         # handle field_obj
         if field_obj is not LN_UNDEFINED:
             if not isinstance(field_obj, FieldInfo):
                 raise ValueError(
-                    "Invalid field_obj. It should be a pydantic FieldInfo object."
+                    "Invalid field_obj. It should be a pydantic FieldInfo object.",
                 )
             self.extra_fields[field_name] = field_obj
 
@@ -221,6 +223,9 @@ class Component(Element):
         extra_fields = dict_.pop("extra_fields", {})
         dict_ = {**dict_, **extra_fields, "lion_class": self.class_name()}
         return dict_
+
+    def to_note(self, **kwargs):
+        return Note(**self.to_dict(**kwargs))
 
     @override
     @classmethod
@@ -382,12 +387,22 @@ class Component(Element):
         return cls.from_dict(data, **kwargs)
 
     @classmethod
-    def register_converter(cls, key: str, converter: Type[Converter]) -> None:
+    def register_converter(
+        cls,
+        key: str,
+        converter: Type[Converter],
+    ) -> None:
         """Register a new converter. Can be used for both a class and/or an instance."""
         cls.get_converter_registry().register(key, converter)
 
     # field management methods
-    def field_setattr(self, field_name: str, attr: Any, value: Any, /):
+    def field_setattr(
+        self,
+        field_name: str,
+        attr: Any,
+        value: Any,
+        /,
+    ):
         """Set the value of a field attribute."""
         all_fields = self.all_fields
         if field_name not in all_fields:
@@ -400,7 +415,12 @@ class Component(Element):
                 field_obj.json_schema_extra = {}
             field_obj.json_schema_extra[attr] = value
 
-    def field_hasattr(self, field_name: str, attr: str, /) -> bool:
+    def field_hasattr(
+        self,
+        field_name: str,
+        attr: str,
+        /,
+    ) -> bool:
         """Check if a field has a specific attribute."""
         all_fields = self.all_fields
         if field_name not in all_fields:
@@ -415,7 +435,11 @@ class Component(Element):
             return False
 
     def field_getattr(
-        self, field_name: str, attr: str, default: Any = LN_UNDEFINED, /
+        self,
+        field_name: str,
+        attr: str,
+        default: Any = LN_UNDEFINED,
+        /,
     ) -> Any:
         """Get the value of a field attribute."""
         if strip_lower(attr, chars="s") == "annotation":
@@ -431,14 +455,18 @@ class Component(Element):
             return value
         else:
             if isinstance(field_obj.json_schema_extra, dict):
-                if (value := field_obj.json_schema_extra.get(attr, LN_UNDEFINED)) is not LN_UNDEFINED:
+                if (
+                    value := field_obj.json_schema_extra.get(attr, LN_UNDEFINED)
+                ) is not LN_UNDEFINED:
                     return value
 
         # undefined attr
         if default is not LN_UNDEFINED:
             return default
         else:
-            raise AttributeError(f"field {field_name} has no attribute {attr}")
+            raise AttributeError(
+                f"field {field_name} has no attribute {attr}",
+            )
 
     @singledispatchmethod
     def _field_annotation(self, field_name: Any, /) -> dict[str, Any]:

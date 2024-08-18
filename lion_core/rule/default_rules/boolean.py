@@ -1,5 +1,5 @@
-from typing import Any, override
-from lion_core.libs import strip_lower
+from typing_extensions import override
+from lion_core.libs import validate_boolean
 from lion_core.rule.base import Rule
 from lion_core.exceptions import LionOperationError
 
@@ -12,35 +12,15 @@ class BooleanRule(Rule):
         apply_type (str): The type of data to which the rule applies.
     """
 
-    base_config = {
-        "apply_types": ["bool"],
-    }
-
     @override
-    async def validate(self, value: Any) -> bool:
-        """
-        Validate that the value is a boolean.
-
-        Args:
-            value (Any): The value to validate.
-
-        Returns:
-            bool: The validated value.
-
-        Raises:
-            ValueError: If the value is not a valid boolean.
-        """
+    async def check_value(self, value, /) -> bool:
         if isinstance(value, bool):
             return value
-        raise LionOperationError(f"Invalid boolean value.")
+        raise ValueError(f"Invalid boolean value.")
 
     @override
-    async def fix_field(self, value) -> bool:
-        value = strip_lower(value)
-        if value in ["true", "1", "correct", "yes"]:
-            return True
-
-        elif value in ["false", "0", "incorrect", "no", "none", "n/a"]:
-            return False
-
-        raise LionOperationError(f"Failed to convert {value} into a boolean value")
+    async def fix_value(self, value) -> bool:
+        try:
+            return validate_boolean(value)
+        except ValueError as e:
+            raise LionOperationError(f"Failed to validate field: ") from e

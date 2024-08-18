@@ -16,7 +16,7 @@ limitations under the License.
 
 """Base form class for the lion-core library."""
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import Field, field_validator
 from pydantic_core import PydanticUndefined
@@ -60,6 +60,55 @@ class BaseForm(Component, MutableRecord):
     none_as_valid_value: bool = Field(
         default=False, description="Indicate whether to treat None as a valid value."
     )
+
+    has_processed: bool = Field(
+        default=False,
+        description="Indicates if the task has been processed.",
+        exclude=True,
+    )
+
+    def check_is_completed(
+        self,
+        handle_how: Literal["raise", "return_missing"] = "raise",
+    ) -> list[str] | None:
+        """
+        Check if all required fields are completed.
+
+        Args:
+            handle_how: How to handle incomplete fields.
+
+        Returns:
+            List of incomplete fields if handle_how is "return_missing",
+            None otherwise.
+
+        Raises:
+            ValueError: If required fields are incomplete and handle_how
+                is "raise".
+        """
+
+        non_complete_request = []
+        invalid_values = [LN_UNDEFINED, PydanticUndefined]
+        if not self.none_as_valid_value:
+            invalid_values.append(None)
+
+        for i in self.required_fields:
+            if getattr(self, i) in invalid_values:
+                non_complete_request.append(i)
+
+        if non_complete_request:
+            if handle_how == "raise":
+                raise ERR_MAP["assignment", "incomplete_request"](non_complete_request)
+            elif handle_how == "return_missing":
+                return non_complete_request
+        else:
+            self.has_processed = True
+
+    def is_completed(self) -> bool:
+        try:
+            self.check_is_completed(handle_how="raise")
+            return True
+        except Exception:
+            return False
 
     @field_validator("output_fields", mode="before")
     @classmethod

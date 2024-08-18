@@ -14,22 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from abc import abstractmethod
 from lion_core.abc import BaseiModel
 from lion_core.generic.element import Element
 
 
 class iModel(Element, BaseiModel):
 
-    @abstractmethod
-    async def update_status(self, *args, **kwargs): ...
+    async def update_config(self, *args, **kwargs):
+        raise NotImplementedError
 
-    @abstractmethod
-    async def chat(self, messages, **kwargs): ...
+    async def update_status(self, *args, **kwargs):
+        raise NotImplementedError
+
+    async def chat(self, messages, **kwargs):
+        raise NotImplementedError
 
     async def structure(self, *args, **kwargs):
         """raise error, or return structured output"""
-        ...
+        raise NotImplementedError
 
 
 __all__ = ["iModel"]

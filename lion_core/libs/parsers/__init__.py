@@ -18,7 +18,6 @@ __all__ = [
     "choose_most_similar",
     "extract_docstring_details",
     "extract_code_block",
-    "extract_json_block",
     "md_to_json",
     "as_readable_json",
     "fuzzy_parse_json",

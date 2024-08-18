@@ -22,42 +22,38 @@ parsing, validation, and execution of associated functions.
 """
 
 import asyncio
-from typing import Any, TYPE_CHECKING, Callable
+from typing import Any
 
-from lion_core.libs import ucall
 from lion_core.exceptions import ItemNotFoundError
 from lion_core.action.function_calling import FunctionCalling
 from lion_core.communication.action_request import ActionRequest
 from lion_core.session.msg_handlers.create_request import create_action_request
-
-if TYPE_CHECKING:
-    from lion_core.session.branch import Branch
+from lion_core.session.branch import Branch
 
 
 async def process_action_request(
-    branch: "Branch",
-    *,
-    _msg: dict | None = None,
+    branch: Branch,
+    response: dict | None = None,
     action_request: list[ActionRequest] | dict | str | None = None,
-) -> Any:
+    invoke_action: bool = True,
+) -> list[Any] | dict | bool:
     """
     Process action requests for a given branch.
 
     Args:
         branch: The Branch object to process action requests for.
-        _msg: Optional message dictionary to parse for action requests.
+        response: Optional message dictionary to parse for action requests.
         action_request: Pre-parsed action requests or raw data to parse.
+        invoke_action: Whether to invoke the action or not.
 
     Returns:
-        The results of the action requests or False if no requests were found.
+        The results of the action requests, the response, or False if no
+        requests were found.
 
     Raises:
         ItemNotFoundError: If a requested tool is not found in the registry.
     """
-    action_requests: list[ActionRequest] = action_request or create_action_request(_msg)
-    if not action_requests:
-        return _msg or False
-
+    action_requests = action_request or create_action_request(response)
     tasks = []
     for request in action_requests:
         func_name = request.content.get(["action_request", "function"], "")
@@ -65,49 +61,24 @@ async def process_action_request(
             tool = branch.tool_manager.registry[func_name]
             request.recipient = tool.ln_id
         else:
-            raise ItemNotFoundError(f"Tool {func_name} not found in registry")
-        branch.add_message(action_request=request, recipient=request.recipient)
+            raise ItemNotFoundError(
+                f"Tool {func_name} not found in tool registry",
+            )
+        branch.add_message(
+            action_request=request,
+            recipient=request.recipient,
+        )
 
         args = request.content["action_request", "arguments"]
-        func_call = FunctionCalling(tool, args)
-        tasks.append(asyncio.create_task(func_call.invoke()))
 
-    return await asyncio.gather(*tasks)
+        if invoke_action:
+            func_call = FunctionCalling(tool, args)
+            tasks.append(asyncio.create_task(func_call.invoke()))
 
+    if tasks:
+        return action_requests, await asyncio.gather(*tasks)
 
-async def process_action_response(
-    branch,
-    responses: list,
-    response_parser=None,
-    parser_kwargs=None,
-):
-    responses = [responses] if not isinstance(responses, list) else responses
-    
-    
-    
-    
-    
-    
-    out = []
-    if response_parser:
-        for i in result:
-            res = await ucall(
-                response_parser,
-                i,
-                **(parser_kwargs or {}),
-            )
-            out.append(res)
-
-    for request, result in zip(action_requests, results):
-        if result is not None:
-            branch.add_message(
-                action_request=request,
-                func_outputs=result,
-                sender=request.recipient,
-                recipient=request.sender,
-            )
-
-    return results
+    return [], response
 
 
 __all__ = ["process_action_request"]

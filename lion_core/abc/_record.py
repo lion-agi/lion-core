@@ -40,4 +40,10 @@ class ImmutableRecord(BaseRecord):
     """
 
 
+__all__ = [
+    "BaseRecord",
+    "MutableRecord",
+    "ImmutableRecord",
+]
+
 # File: lion_core/abc/record.py

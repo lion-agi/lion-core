@@ -1,26 +1,3 @@
-"""
-Utility module for class registration and retrieval in the Lion framework.
-
-This module provides a global class registry and utility functions for
-managing and retrieving classes dynamically. It's designed to support
-the extensible nature of the Lion framework by allowing runtime class
-lookups and registrations.
-
-The main components are:
-- LION_CLASS_REGISTRY: A global dictionary storing class references.
-- get_class: A function to retrieve classes by name, using the registry
-             or dynamic import mechanisms.
-
-Usage:
-    from lion_core.util.class_registry_util import get_class, LION_CLASS_REGISTRY
-
-    # Retrieve a class
-    MyClass = get_class("MyClassName", BaseClass)
-
-    # Register a class manually (if needed)
-    LION_CLASS_REGISTRY["MyClassName"] = MyClass
-"""
-
 from typing import Type, TypeVar
 from lion_core.libs._helper import get_class_file_registry, get_class_objects
 import os

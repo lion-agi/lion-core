@@ -16,13 +16,13 @@ limitations under the License.
 
 from typing import Any
 from typing_extensions import override
-from lion_core.libs import ucall
-from lion_core.abc import Action
+from lion_core.libs import ucall, CallDecorator as cd
+from lion_core.action.base import ObservableAction
 
 from lion_core.action.tool import Tool
 
 
-class FunctionCalling(Action):
+class FunctionCalling(ObservableAction):
     """Represents a callable function with its arguments."""
 
     def __init__(
@@ -33,37 +33,21 @@ class FunctionCalling(Action):
         self.arguments: dict[str, Any] = arguments or {}
 
     @override
-    async def invoke(self) -> Any:
-        """Asynchronously invoke the stored function with the arguments."""
-        kwargs = self.arguments
-        if self.func_tool.pre_processor:
-            kwargs = await ucall(
-                self.func_tool.pre_processor,
-                self.arguments,
-                **self.func_tool.pre_processor_kwargs,
-            )
-            if not isinstance(kwargs, dict):
-                raise ValueError("Pre-processor must return a dictionary.")
+    async def invoke(self):
 
-        try:
-            result = await ucall(
-                self.func_tool.function,
-                **kwargs,
-            )
-        except Exception:
-            raise
-
-        if self.func_tool.post_processor:
-            post_process_kwargs = self.func_tool.post_processor_kwargs or {}
-            result = await ucall(
-                self.func_tool.post_processor,
-                result,
-                **post_process_kwargs,
-            )
-
-        return (
-            result if self.func_tool.parser is None else self.func_tool.parser(result)
+        @cd.pre_post_process(
+            preprocess=self.func_tool.pre_processor,
+            postprocess=self.func_tool.post_processor,
+            preprocess_kwargs=self.func_tool.pre_processor_kwargs,
+            postprocess_kwargs=self.func_tool.post_processor_kwargs,
         )
+        async def _inner(**kwargs):
+            return await ucall(self.func_tool.function, **kwargs)
+
+        result = await _inner(**self.arguments)
+        if self.func_tool.parser is not None:
+            return self.func_tool.parser(result)
+        return result
 
     def __str__(self) -> str:
         return f"{self.func_tool.function_name}({self.arguments})"

@@ -23,17 +23,16 @@ concurrently across different branches of a session.
 
 import asyncio
 from functools import partial
-from typing import Any, Literal, TYPE_CHECKING
+from typing import Any, Literal
 
 from lion_core.abc import BaseProcessor
 from lion_core.libs import to_list
 from lion_core.generic.pile import pile, Pile
 from lion_core.communication.action_request import ActionRequest
 from lion_core.session.branch import Branch
-from lion_core.unit.unit import UnitProcessor
+from lion_core.unit.unit import Unit
 
-if TYPE_CHECKING:
-    from lion_core.session.session import Session
+from lion_core.session.session import Session
 
 as_nice_list = partial(to_list, flatten=True, dropna=True)
 
@@ -116,7 +115,7 @@ async def process_parallel_chat(
                 tools=tools,
             )
 
-        unit_ = UnitProcessor(branch=branch_)
+        unit_ = Unit(branch=branch_)
         resp_ = await unit_.process_chat(
             form=form,
             sender=sender,

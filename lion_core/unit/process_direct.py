@@ -14,19 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, Callable
 
-from lion_core.libs import nmerge, validate_mapping
-from lion_core.form.task_form import BaseForm
-from lion_core.unit.unit_form import create_unit_form
+from lion_core.setting import LN_UNDEFINED
+from lion_core.libs import validate_mapping
+from lion_core.form.base import BaseForm
+from lion_core.unit.unit_form import UnitForm
 from lion_core.unit.process_chat import process_chat
-from lion_core.unit.process_act import process_act
-
-if TYPE_CHECKING:
-    from lion_core.session.branch import Branch
+from lion_core.unit.process_act import process_action
+from lion_core.session.branch import Branch
 
 
-async def prepare_output(form: BaseForm, verbose_direct: bool) -> BaseForm:
+async def prepare_output(
+    form: UnitForm,
+    verbose_direct: bool,
+) -> BaseForm:
     """
     Prepare the output form based on the action responses.
 
@@ -69,206 +71,312 @@ async def prepare_output(form: BaseForm, verbose_direct: bool) -> BaseForm:
     return form
 
 
-async def process_direct(
+async def _direct(
     branch: Branch,
-    form: BaseForm | None,
-    instruction: str | None = None,
-    context: dict[str, Any] | None = None,
-    tools: Any | None = None,
-    reason: bool = True,
-    predict: bool = False,
-    score: bool = True,
-    select: Any | None = None,
-    plan: Any | None = None,
-    brainstorm: Any | None = None,
-    reflect: Any | None = None,
-    tool_schema: Any | None = None,
+    form: UnitForm | None = None,
+    *,
+    instruction: str | str = None,
+    context: Any = None,
+    guidance: str = LN_UNDEFINED,
+    reason: bool = False,
+    confidence: bool = False,
+    score: bool = False,
+    plan: bool = False,
+    reflect: bool = False,
+    tool_schema: list = None,
+    invoke_tool: bool = None,
     allow_action: bool = False,
     allow_extension: bool = False,
-    max_extension: int | None = None,
-    confidence: Any | None = None,
-    score_num_digits: int | None = None,
-    score_range: tuple[float, float] | None = None,
-    select_choices: list[str] | None = None,
-    plan_num_step: int | None = None,
-    predict_num_sentences: int | None = None,
+    max_extension: int = None,  # 3
+    score_num_digits=None,
+    score_range: tuple[int] | list[int] = None,
+    plan_num_step: int = None,
+    chain: bool = False,
+    num_chain: int = None,
+    strict_form=LN_UNDEFINED,
+    task_description=LN_UNDEFINED,
+    tools: Any | None = None,
     clear_messages: bool = False,
     verbose_direct: bool = True,
-    images: str | list[str] | None = None,
-    image_path: str | None = None,
-    return_branch: bool = False,
-    **kwargs: Any,
+    invoke_action: bool = True,
+    action_response_parser: Callable = None,
+    action_parser_kwargs: dict = None,
+    strict_validation=None,
+    structure_str=None,
+    fallback_structure=None,
+    chain_plan: bool = False,
+    _extension_ctr=None,
+    **kwargs: Any,  # additional model kwargs
 ) -> tuple[Branch, BaseForm] | BaseForm:
-    """
-    Process a direct interaction with the model.
 
-    Args:
-        branch: The branch to process the interaction.
-        form: The core form to be processed.
-        instruction: The instruction for the interaction.
-        context: The context for the interaction.
-        tools: The tools to be used.
-        reason: Whether to include reasoning.
-        predict: Whether to include prediction.
-        score: Whether to include scoring.
-        select: Selection criteria.
-        plan: Planning information.
-        brainstorm: Brainstorming information.
-        reflect: Reflection information.
-        tool_schema: Schema for the tools.
-        allow_action: Whether to allow actions.
-        allow_extension: Whether to allow extensions.
-        max_extension: Maximum number of extensions allowed.
-        confidence: Confidence level.
-        score_num_digits: Number of digits for scoring.
-        score_range: Range for scoring.
-        select_choices: Choices for selection.
-        plan_num_step: Number of steps in the plan.
-        predict_num_sentences: Number of sentences for prediction.
-        clear_messages: Whether to clear messages.
-        verbose: Whether to print verbose output.
-        image: Image data for the interaction.
-        image_path: Path to an image file.
-        return_branch: Whether to return the branch along with the form.
-        **kwargs: Additional keyword arguments for the chat process.
+    if clear_messages:
+        branch.clear_messages()
 
-    Returns:
-        The processed form, optionally with the branch.
-    """
-    branch, report = create_unit_form(
-        branch=branch,
-        form=form,
-        instruction=instruction,
-        context=context,
-        tools=tools,
-        reason=reason,
-        predict=predict,
-        score=score,
-        select=select,
-        plan=plan,
-        brainstorm=brainstorm,
-        reflect=reflect,
-        tool_schema=tool_schema,
-        allow_action=allow_action,
-        allow_extension=allow_extension,
-        max_extension=max_extension,
-        confidence=confidence,
-        score_num_digits=score_num_digits,
-        score_range=score_range,
-        select_choices=select_choices,
-        plan_num_step=plan_num_step,
-        predict_num_sentences=predict_num_sentences,
-        clear_messages=clear_messages,
-        return_branch=True,
-    )
+    if tools:
+        tool_schema = branch.tool_manager.get_tool_schema(tools)
+
+    if not form:
+        form = UnitForm(
+            instruction=instruction,
+            context=context,
+            guidance=guidance,
+            reason=reason,
+            confidence=confidence,
+            score=score,
+            plan=plan,
+            reflect=reflect,
+            tool_schema=tool_schema,
+            invoke_tool=invoke_tool,
+            allow_action=allow_action,
+            allow_extension=allow_extension,
+            max_extension=max_extension,
+            score_num_digits=score_num_digits,
+            score_range=score_range,
+            plan_num_step=plan_num_step,
+            chain=chain,
+            num_chain=num_chain,
+            strict=strict_form,
+            task_description=task_description,
+        )
+
+    elif form and tool_schema:
+        form.append_to_input("tool_schema", tool_schema)
 
     if verbose_direct:
         print("Chatting with model...")
 
-    task1 = report.new_task(task1)
-
-    form1 = await process_chat(
-        branch=branch, form=form, images=images, image_path=image_path, **kwargs
+    form = await process_chat(
+        branch=branch,
+        form=form,
+        strict_validation=strict_validation,
+        structure_str=structure_str,
+        fallback_structure=fallback_structure,
+        invoke_action=False,
+        **kwargs,
     )
 
-    if allow_action and getattr(form, "action_required", None):
-        if actions := getattr(form, "actions", None):
+    if allow_action and form.action_required:
+        if actions := form.actions:
             if verbose_direct:
                 print("Found action requests in model response. Processing actions...")
 
-            form = await process_act(
+            form = await process_action(
                 branch=branch,
                 form=form,
                 actions=actions,
-                handle_unmatched="force",
-                return_branch=True,
+                invoke_action=invoke_action,
+                action_response_parser=action_response_parser,
+                action_parser_kwargs=action_parser_kwargs,
             )
 
             if verbose_direct:
                 print("Actions processed!")
 
-    last_form = form
-    ctr = 0
-
-    # Handle extensions if allowed and required
     extension_forms = []
-    max_extension = max_extension if isinstance(max_extension, int) else 1
-    plan_ = getattr(form, "plan", None)
-
-    while (
-        allow_extension
-        and max_extension - ctr > 0
-        and getattr(last_form, "extension_required", None)
-    ):
+    if allow_extension and form.extension_required:
         if verbose_direct:
-            print(f"\nFound extension requests in model response.")
-            print(f"------------------- Processing extension -------------------")
+            print("Found extension requests in model response. Processing extension...")
 
-        # Ensure the next step in the plan is handled
-        directive_kwargs = {
-            "tools": tools,
-            "reason": reason,
-            "predict": predict,
-            "score": score,
-            "allow_action": allow_action,
-            "confidence": confidence,
-            "score_num_digits": score_num_digits,
-            "score_range": score_range,
-            "predict_num_sentences": predict_num_sentences,
-            "max_extension": max_extension - ctr,
-            **kwargs,
-        }
-        _ext = []
-        if plan_:
-            keys = [f"step_{i+1}" for i in range(len(plan_))]
-            plan_ = validate_mapping(plan_, keys, handle_unmatched="force")
+        ext, _extension_ctr = await _extend(
+            branch=branch,
+            form=form,
+            max_extension=max_extension - _extension_ctr,
+            allow_action=allow_action,
+            invoke_action=invoke_action,
+            reason=reason,
+            confidence=confidence,
+            score=score,
+            reflect=reflect,
+            tool_schema=tool_schema,
+            score_num_digits=score_num_digits,
+            score_range=score_range,
+            tools=tools,
+            verbose_direct=verbose_direct,
+            action_response_parser=action_response_parser,
+            action_parser_kwargs=action_parser_kwargs,
+            strict_validation=strict_validation,
+            structure_str=structure_str,
+            fallback_structure=fallback_structure,
+            chain_plan=chain_plan,
+            _extension_ctr=_extension_ctr,
+        )
+        extension_forms.extend(ext)
 
-            for i in keys:
-                directive_kwargs["instruction"] = plan[i]
-                last_form = await process_direct(**directive_kwargs)
-                directive_kwargs["max_extension"] -= 1
+    return form, extension_forms, branch, _extension_ctr
 
-                last_form.add_field("is_extension", True)
-                _ext.append(last_form)
 
-                if directive_kwargs["max_extension"] <= 0:
+# you can only plan once
+async def _extend(
+    branch: Branch,
+    form: UnitForm,
+    max_extension: int,
+    allow_action: bool = False,
+    invoke_action: bool = True,
+    reason: bool = False,
+    confidence: bool = False,
+    score: bool = False,
+    reflect: bool = False,
+    tool_schema: list = None,
+    score_num_digits=None,
+    score_range: tuple[int] | list[int] = None,
+    tools: Any | None = None,
+    verbose_direct: bool = True,
+    action_response_parser: Callable = None,
+    action_parser_kwargs: dict = None,
+    strict_validation=None,
+    structure_str=None,
+    fallback_structure=None,
+    chain_plan=False,
+    _extension_ctr=0,
+):
+    last_form = form
+    extension_forms = []
+
+    directive_kwargs = {
+        "allow_action": allow_action,
+        "invoke_action": invoke_action,
+        "reason": reason,
+        "confidence": confidence,
+        "score": score,
+        "reflect": reflect,
+        "tool_schema": tool_schema,
+        "score_num_digits": score_num_digits,
+        "verbose_direct": verbose_direct,
+        "action_response_parser": action_response_parser,
+        "action_parser_kwargs": action_parser_kwargs,
+        "strict_validation": strict_validation,
+        "structure_str": structure_str,
+        "fallback_structure": fallback_structure,
+        "chain_plan": chain_plan,
+        "tools": tools,
+        "score_range": score_range,
+    }
+
+    if plan_ := last_form.plan:
+        keys = [f"step_{i+1}" for i in range(len(plan_))]
+        plan_ = validate_mapping(plan_, keys, handle_unmatched="force")
+
+        if verbose_direct:
+            print(f"Model proposed a {len(plan_)}-step plan. Processing plan...")
+
+        inner_ctr = 0
+
+        for i in keys:
+            directive_kwargs["instruction"] = plan_[i]
+
+            if verbose_direct:
+                print(
+                    "---------------- Processing plan step "
+                    f"No.{inner_ctr+1}/{len(plan_)}----------------"
+                )
+
+            last_form, _, _ = await _direct(branch, last_form, **directive_kwargs)
+
+            directive_kwargs["_sub_extension_ctr"] += 1
+            _extension_ctr += 1
+            max_extension -= 1
+
+            last_form._is_extension = True
+            extension_forms.append(last_form)
+
+            if not chain_plan:
+                if (
+                    _extension_ctr
+                    >= max_extension + directive_kwargs["_sub_extension_ctr"]
+                ):
                     break
-                if not getattr(last_form, "extension_required", None):
+                if not last_form.extension_required:
                     break
 
-        else:
-            # Handle single step extension
-            last_form = await process_direct(**directive_kwargs)
-            last_form.add_field("is_extension", True)
-            _ext.append(last_form)
+        if verbose_direct:
+            print("Plan processed!")
 
+    else:
+        if verbose_direct:
+            print(
+                f"---------------- Processing Extension No.{_extension_ctr+1}----------------"
+            )
+
+        directive_kwargs["max_extension"] = max_extension - _extension_ctr
+        last_form, _ext, _ = await _direct(branch, last_form, **directive_kwargs)
+        extension_forms.append(last_form)
         extension_forms.extend(_ext)
-        last_form = _ext[-1] if isinstance(_ext, list) else _ext
-        ctr += len(_ext)
+
+        extension_forms = list(set(extension_forms))
+        extra_extent = len(extension_forms) - len(_ext)
+        _extension_ctr += extra_extent
+
+    return extension_forms, _extension_ctr
+
+
+async def process_direct(
+    branch: Branch,
+    form: UnitForm | None,
+    *,
+    instruction: str | str = None,
+    context: Any = None,
+    guidance: str = LN_UNDEFINED,
+    reason: bool = False,
+    confidence: bool = False,
+    score: bool = False,
+    plan: bool = False,
+    reflect: bool = False,
+    tool_schema: list = None,
+    invoke_tool: bool = None,
+    allow_action: bool = False,
+    allow_extension: bool = False,
+    max_extension: int = None,
+    tools: Any | None = None,
+    return_branch=False,
+    chain_plan=False,
+    **kwargs: Any,  # additional _direct kwargs
+):
+
+    _extension_ctr = 0
+    extension_forms = []
+
+    d_kwargs = {
+        "branch": branch,
+        "form": form,
+        "instruction": instruction,
+        "context": context,
+        "guidance": guidance,
+        "reason": reason,
+        "confidence": confidence,
+        "score": score,
+        "plan": plan,
+        "reflect": reflect,
+        "tool_schema": tool_schema,
+        "invoke_tool": invoke_tool,
+        "allow_action": allow_action,
+        "allow_extension": allow_extension,
+        "max_extension": max_extension,
+        "tools": tools,
+        "chain_plan": chain_plan,
+        **kwargs,
+    }
+
+    async def direct(ctr):
+        d_kwargs["_extension_ctr"] = ctr
+        return await _direct(**d_kwargs)
+
+    form, exts, branch, _extension_ctr = await direct(_extension_ctr)
+    extension_forms.extend(exts)
+
+    last_form = exts[-1] if exts and isinstance(exts, list) else form
+
+    sub_ctr = 0
+    while _extension_ctr <= max_extension and last_form.extension_required:
+        last_form, _ext, branch, sub_ctr = await direct(_extension_ctr)
+        last_form._is_extension = True
+        sub_ctr += 1
+        _extension_ctr += sub_ctr
+        d_kwargs["max_extension"] = max_extension - _extension_ctr
+        extension_forms.append(last_form)
+        extension_forms.extend(_ext)
 
     if extension_forms:
-
-        if not getattr(form, "extension_forms", None):
-            form.add_field("extension_forms", [])
-        form.extension_forms.extend(extension_forms)
-
-        action_responses = [
-            i.action_response
-            for i in extension_forms
-            if getattr(i, "action_response", None) is not None
-        ]
-
-        if not hasattr(form, "action_response"):
-            for action_response in action_responses:
-                form.action_response.extend(action_response)
-
-        for action_response in action_responses:
-            nmerge([form.action_response, action_response])
-
-    report = ...
-    report["final_form"] = ...
-    report["all_tasks"] = Pile()
-
-    form = await prepare_output(form, verbose_direct)
+        extension_forms = list(set(extension_forms))
+        form.extension_forms = extension_forms
 
     return form, branch if return_branch else form
