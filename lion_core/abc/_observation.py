@@ -82,8 +82,8 @@ class Action(Event):
         pass
 
 
-class ObservableAction(Action, Observable):
-    ...
+class ObservableAction(Action, Observable): ...
+
 
 __all__ = ["Event", "Condition", "Signal", "Action", "ObservableAction"]
 

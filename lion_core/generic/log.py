@@ -39,9 +39,9 @@ class BaseLog(Element, ImmutableRecord):
         if isinstance(value, Note):
             return value
         if isinstance(value, dict):
-            return Note.from_dict(**value)
+            return Note(**value)
         try:
-            return Note.from_dict(**to_dict(value))
+            return Note(**to_dict(value))
         except Exception as e:
             raise e
 

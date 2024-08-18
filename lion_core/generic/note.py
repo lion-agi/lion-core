@@ -241,7 +241,7 @@ class Note(BaseModel, Container):
         self.update(items.content, indices)
 
     @classmethod
-    def from_dict(cls, **kwargs) -> "Note":
+    def from_dict(cls, kwargs) -> "Note":
         """
         Create a Note from a dictionary.
 

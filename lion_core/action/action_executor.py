@@ -19,17 +19,16 @@ from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import prog, Progression
 
 from lion_core.action.status import ActionStatus
+from lion_core.action.action_processor import ActionProcessor
 
-
-
-    
 
 class ActionExecutor(BaseExecutor):
 
     def __init__(self, **kwargs) -> None:
         self.processor_config = kwargs
-        self.pile: Pile = pile(item_type=ObservableAction)
+        self.pile: Pile = pile(item_type={ObservableAction})
         self.pending: Progression = prog()
+        self.processor: ActionProcessor = None
 
     async def append(self, action: ObservableAction):
         self.pile.append(action)

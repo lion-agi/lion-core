@@ -66,7 +66,7 @@ async def process_chatcompletion(
         _choices = completion.pop("choices", None)
 
         def process_completion_choice(
-            choice: dict, price: tuple[float, float] | None
+            choice: dict, c_: tuple[float, float] | None
         ) -> Any:
             if isinstance(choice, dict):
                 msg = choice.pop("message", None)
@@ -86,8 +86,8 @@ async def process_chatcompletion(
                 0,
             )
             m = completion.get("model")
-            if m and price:
-                ttl = (a * price[0] + b * price[1]) / 1_000_000
+            if m and c_:
+                ttl = (a * c_[0] + b * c_[1]) / 1_000_000
                 branch.messages[-1].metadata.insert(["extra", "usage", "expense"], ttl)
             return msg
 
@@ -96,11 +96,7 @@ async def process_chatcompletion(
 
         if _choices and isinstance(_choices, list):
             for _choice in _choices:
-                message = process_completion_choice(_choice, price=costs)
-
-        await imodel.update_status("chat/completions", "succeeded")
-    else:
-        await imodel.update_status("chat/completions", "failed")
+                message = process_completion_choice(_choice, c_=costs)
 
     return message
 
@@ -193,7 +189,6 @@ def process_model_response(
             fill_mapping=fill_mapping,
             strict=strict,
         )
-
     return out_
 
 
