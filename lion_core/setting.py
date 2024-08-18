@@ -28,8 +28,8 @@ LION_ID_CONFIG = {
     "random_hyphen": True,
     "num_hyphens": 4,
     "hyphen_start_index": 6,
-    "hyphen_end_index": 24,
-    "prefix": "ln-",
+    "hyphen_end_index": -6,
+    "prefix": "ln",
     "postfix": "",
 }
 
