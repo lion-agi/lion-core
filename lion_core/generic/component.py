@@ -297,7 +297,7 @@ class Component(Element):
         output_str = (
             f"{self.__class__.__name__}("
             f"ln_id={self.ln_id[:8]}..., "
-            f"timestamp={str(self._created_datetime)[:-6]}, "
+            f"timestamp={str(self.created_datetime)[:-6]}, "
             f"content='{content_preview}', "
             f"metadata_keys={list(self.metadata.keys())}, "
         )
@@ -348,7 +348,7 @@ class Component(Element):
         repr_str = (
             f"{self.class_name()}("
             f"ln_id={repr(self.ln_id)}, "
-            f"timestamp={str(self._created_datetime)[:-6]}, "
+            f"timestamp={str(self.created_datetime)[:-6]}, "
             f"content={content_repr}, "
             f"metadata={truncate_dict(self.metadata.content)}, "
         )
@@ -503,5 +503,7 @@ class Component(Element):
             dict_.update(self._field_annotation(f))
         return dict_
 
+
+__all__ = ["Component"]
 
 # File: lion_core/generic/component.py

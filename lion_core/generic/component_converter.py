@@ -6,3 +6,5 @@ class ComponentConverterRegistry(ConverterRegistry): ...
 
 ComponentConverterRegistry.register("dict", DictConverter())
 ComponentConverterRegistry.register("json", JsonConverter())
+
+__all__ = ["ComponentConverterRegistry", "DictConverter", "JsonConverter"]

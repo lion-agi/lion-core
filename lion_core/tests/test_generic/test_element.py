@@ -42,8 +42,8 @@ def test_initialization(custom_id, custom_timestamp):
 def test_created_datetime_property(custom_timestamp):
     element = Element(timestamp=custom_timestamp)
     expected_datetime = datetime.fromtimestamp(custom_timestamp, tz=timezone.utc)
-    assert element._created_datetime == expected_datetime
-    assert element._created_datetime.tzinfo == timezone.utc
+    assert element.created_datetime == expected_datetime
+    assert element.created_datetime.tzinfo == timezone.utc
 
 
 def test_ln_id_validator(custom_id):
@@ -150,7 +150,7 @@ def test_element_with_future_timestamp():
     future_timestamp = time.time() + 10000  # 10000 seconds in the future
     element = Element(timestamp=future_timestamp)
     assert element.timestamp > time.time()
-    assert element._created_datetime > datetime.now(timezone.utc)
+    assert element.created_datetime > datetime.now(timezone.utc)
 
 
 def test_element_serialization_consistency():

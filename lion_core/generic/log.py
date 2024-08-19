@@ -59,4 +59,5 @@ class BaseLog(Element, ImmutableRecord):
         return Note(**self.to_dict())
 
 
-# File: lion_core/log/base.py
+__all__ = ["BaseLog"]
+# File: lion_core/generic/log.py

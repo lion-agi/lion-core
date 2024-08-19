@@ -11,15 +11,7 @@ T = TypeVar("T")
 
 
 def to_list_type(value: Any) -> list[Any]:
-    """
-    Convert input to a list format compatible with Lion framework.
-
-    Args:
-        value: Input of any type to be converted.
-
-    Returns:
-        A list representation of the input value.
-    """
+    """Convert input to a list format"""
     if value is None:
         return []
     if isinstance(value, str):
@@ -36,18 +28,7 @@ def to_list_type(value: Any) -> list[Any]:
 
 
 def validate_order(value: Any) -> list[str]:
-    """
-    Validate and standardize order representation for Lion framework.
-
-    Args:
-        value: Input to be validated and converted.
-
-    Returns:
-        A list of strings representing valid Lion IDs.
-
-    Raises:
-        LionIDError: If input contains invalid types or Lion IDs.
-    """
+    """Validate and standardize order representation"""
 
     try:
         result = []

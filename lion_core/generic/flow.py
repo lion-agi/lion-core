@@ -1,31 +1,17 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 from collections.abc import Mapping
-from collections import deque
+from typing import Any
 from pydantic import Field
 from pydantic_core import PydanticUndefined
 from lion_core.setting import LN_UNDEFINED
 
 import contextlib
-
-from lion_core.exceptions import ItemNotFoundError, LionTypeError, LionValueError
-from lion_core.generic.element import Element
 from lion_core.abc import Collective
-
+from lion_core.exceptions import (
+    ItemNotFoundError,
+    LionTypeError,
+    LionValueError,
+)
+from lion_core.generic.element import Element
 
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import Progression, prog
@@ -85,24 +71,31 @@ class Flow(Element):
             raise LionValueError(f"Invalid progressions: {e}")
 
     def all_orders(self) -> list[list[str]]:
+        """Get all progression orders as a list of lists."""
         return [list(seq) for seq in self.progressions]
 
     def unique(self) -> list[str]:
+        """Get a list of unique items across all progressions."""
         return list({item for seq in self.progressions for item in seq})
 
     def keys(self):
+        """Yield the keys (IDs) of all progressions."""
         yield from self.progressions.keys()
 
     def values(self):
+        """Yield the values (Progression objects) of all progressions."""
         yield from self.progressions.values()
 
     def items(self):
+        """Yield the (key, value) pairs of all progressions."""
         yield from self.progressions.items()
 
     def __getitem__(self, prog_=None, default=LN_UNDEFINED):
+        """Get a progression by its ID or name."""
         return self.get(prog_, default)
 
     def __setitem__(self, prog_, index=None, value=None, /):
+        """Set a progression or an item within a progression."""
         if prog_ not in self:
             raise ItemNotFoundError(f"Sequence {prog_}")
 
@@ -113,21 +106,47 @@ class Flow(Element):
         self.progressions[prog_] = value
 
     def __contains__(self, item):
+        """Check if an item is in any progression or in the registry."""
         return (
             item in self.registry or item in self.progressions or item in self.unique()
         )
 
     def shape(self):
+        """
+        Get the shape of the Flow.
+
+        Returns:
+            A tuple containing the number of progressions and a list of their lengths.
+        """
         return (len(self.all_orders()), [len(i) for i in self.all_orders()])
 
     def size(self):
+        """
+        Get the total number of items across all progressions.
+
+        Returns:
+            The total number of items in the Flow.
+        """
+
         return sum(len(seq) for seq in self.all_orders())
 
     def clear(self):
+        """Clear all progressions and the registry."""
         self.progressions.clear()
         self.registry.clear()
 
     def include(self, prog_=None, item=None, name=None):
+        """
+        Include a progression or an item in a progression.
+
+        Args:
+            prog_: The progression to include or modify.
+            item: The item to include in the progression.
+            name: The name for the progression.
+
+        Returns:
+            True if the inclusion was successful, False otherwise.
+        """
         _sequence = self._find_prog(prog_, None) or self._find_prog(name, None)
         if not _sequence:
             if not item and not name:
@@ -155,6 +174,17 @@ class Flow(Element):
                 return False
 
     def exclude(self, seq=None, item=None, name=None):
+        """
+        Exclude a progression or an item from a progression.
+
+        Args:
+            seq: The progression to exclude or modify.
+            item: The item to exclude from the progression.
+            name: The name of the progression to exclude.
+
+        Returns:
+            True if the exclusion was successful, False otherwise.
+        """
         # if sequence is not None, we will not check the name
         if seq is not None:
 
@@ -182,6 +212,17 @@ class Flow(Element):
             return False
 
     def register(self, prog_: Progression, name: str = None):
+        """
+        Register a new progression.
+
+        Args:
+            prog_: The Progression object to register.
+            name: The name for the progression.
+
+        Raises:
+            LionTypeError: If prog_ is not a Progression.
+            ValueError: If the name already exists in the registry.
+        """
         if not isinstance(prog_, Progression):
             raise LionTypeError(f"Sequence must be of type Progression.")
 
@@ -199,6 +240,13 @@ class Flow(Element):
         self.registry[name] = prog_.ln_id
 
     def append(self, item, prog_=None, /):
+        """
+        Append an item to a progression.
+
+        Args:
+            item: The item to append.
+            prog_: The progression to append to (optional).
+        """
         if not prog_:
             if self.default_name in self.registry:
                 prog_ = self.registry[self.default_name]
@@ -221,6 +269,15 @@ class Flow(Element):
         self.register(p)
 
     def popleft(self, prog_=None, /):
+        """
+        Remove and return the leftmost item from a progression.
+
+        Args:
+            prog_: The progression to pop from (optional).
+
+        Returns:
+            The leftmost item from the specified progression.
+        """
         prog_ = self._find_prog(prog_)
         return self.progressions[prog_].popleft()
 
@@ -229,7 +286,20 @@ class Flow(Element):
             key: len(self.progressions[value]) for key, value in self.registry.items()
         }
 
-    def get(self, prog_=None, default=LN_UNDEFINED) -> deque[str] | None:
+    def get(self, prog_=None, default=LN_UNDEFINED) -> Progression | Any:
+        """
+        Get a progression by its ID or name.
+
+        Args:
+            prog_: The progression ID or name.
+            default: Default value if progression is not found.
+
+        Returns:
+            The requested Progression or the default value.
+
+        Raises:
+            ItemNotFoundError: If no progression is found and no default is provided.
+        """
         prog_ = getattr(prog_, "ln_id", None) or prog_
 
         if prog_ is None:
@@ -249,6 +319,13 @@ class Flow(Element):
             return default
 
     def remove(self, item, prog_="all"):
+        """
+        Remove an item from one or all progressions.
+
+        Args:
+            item: The item to remove.
+            prog_: The progression to remove from, or "all" for all progressions.
+        """
         if prog_ == "all":
             for seq in self.progressions:
                 seq.remove(item)
@@ -295,3 +372,8 @@ class Flow(Element):
 
 def flow(progressions=None, default_name=None):
     return Flow(progressions, default_name)
+
+
+__all__ = ["Flow", "flow"]
+
+# Flow: lion_core/generic/flow.py
