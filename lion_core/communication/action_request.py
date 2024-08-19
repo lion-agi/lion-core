@@ -44,6 +44,7 @@ def prepare_action_request(
     Raises:
         ValueError: If the arguments cannot be converted to a dictionary or are otherwise invalid.
     """
+
     def _prepare_arguments(_arg: Any) -> dict[str, Any]:
         """
         Prepare and validate the arguments for an action request.

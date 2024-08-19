@@ -68,6 +68,7 @@ class ActionResponse(RoledMessage):
         func_output (Any | MessageFlag): The output from the function specified in the action request.
         protected_init_params (dict | None): Optional parameters for protected initialization.
     """
+
     @override
     def __init__(
         self,
