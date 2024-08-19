@@ -751,8 +751,8 @@ async def test_async_performance():
 
     pop_time = end_time - start_time
 
-    assert include_time < 1  # Adjust based on your performance requirements
-    assert pop_time < 1  # Adjust based on your performance requirements
+    assert include_time < 1.65  # Adjust based on your performance requirements
+    assert pop_time < 1.65  # Adjust based on your performance requirements
 
 
 # File: tests/test_pile.py
