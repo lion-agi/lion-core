@@ -1,3 +1,19 @@
+"""
+Copyright 2024 HaiyangLi
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from typing import Any
 from typing_extensions import override
 
@@ -17,14 +33,30 @@ def format_system_content(
     system_message: str,
 ) -> Note:
     """
-    Format the system content with optional datetime.
+    Format the system content with optional datetime information.
+
+    This function creates a system message formatted as a `Note` object, optionally
+    including a timestamp. The timestamp can be automatically generated in ISO format
+    or provided as a string.
 
     Args:
-        system_datetime: Flag or string to include datetime.
-        system_message: The system message content.
+        system_datetime (bool | str | None): A flag or string indicating whether to include
+            a datetime in the system message.
+            - If `False` or `None`, no datetime is included.
+            - If `True`, the current system datetime is appended in ISO format.
+            - If a string is provided, it is appended as the datetime.
+        system_message (str): The content of the system message. If not provided,
+            a default system message is used.
 
     Returns:
-        Note: Formatted system content.
+        Note: A `Note` object containing the formatted system content with the optional datetime.
+
+    Example:
+        >>> format_system_content(True, "System maintenance complete")
+        Note with content: "System maintenance complete. System Date: 2024-08-19T12:34"
+
+        >>> format_system_content("2024-08-19", "System update scheduled")
+        Note with content: "System update scheduled. System Date: 2024-08-19"
     """
     system_message = system_message or DEFAULT_SYSTEM
     if not system_datetime:
@@ -37,7 +69,27 @@ def format_system_content(
 
 
 class System(RoledMessage):
-    """Represents a system message in an LLM conversation."""
+    """
+    Represents a system message in a language model (LLM) conversation.
+
+    The `System` class is a specialized type of `RoledMessage` that encapsulates
+    messages from the system within a conversation. These messages may include
+    system-related information such as updates, notifications, or status reports.
+
+    Inherits:
+        - RoledMessage: Provides basic message structure, including content and role.
+
+    Attributes:
+        content (Note): The content of the system message, formatted with optional datetime.
+        role (MessageRole): The role of the message, set to "system".
+
+    Properties:
+        system_info (Any): Retrieves the system information stored in the message content.
+
+    Methods:
+        __init__(self, system, sender, recipient, system_datetime, protected_init_params):
+            Initializes a new `System` message instance.
+    """
 
     @override
     def __init__(
@@ -49,15 +101,23 @@ class System(RoledMessage):
         protected_init_params: dict | None = None,
     ):
         """
-        Initialize a System message instance.
+        Initialize a `System` message instance.
+
+        This constructor initializes a `System` message with optional content, sender,
+        recipient, and datetime information. The system message can be created fresh,
+        loaded from a previous state, or cloned from an existing instance.
 
         Args:
-            system: The main content of the system message.
-            sender: The sender of the system message.
-            recipient: The intended recipient of the system message.
-            system_datetime: Flag or string to include datetime in the message.
-            protected_init_params: Protected initialization parameters for
-                message loading.
+            system (Any | MessageFlag, optional): The main content of the system message.
+                Defaults to None.
+            sender (str | None | MessageFlag, optional): The sender of the system message.
+                Defaults to None.
+            recipient (str | None | MessageFlag, optional): The intended recipient of the system message.
+                Defaults to None.
+            system_datetime (bool | str | None | MessageFlag, optional): A flag or string to include
+                datetime in the message. Defaults to None.
+            protected_init_params (dict | None, optional): Protected initialization parameters
+                for message loading. Defaults to None.
         """
         if all(
             x == MessageFlag.MESSAGE_LOAD
@@ -84,7 +144,16 @@ class System(RoledMessage):
 
     @property
     def system_info(self) -> Any:
-        """Get system information stored in the message content."""
+        """
+        Retrieve the system information stored in the message content.
+
+        This property accesses the `system_info` field in the message content,
+        which typically contains the formatted system message along with any
+        datetime information.
+
+        Returns:
+            Any: The system information stored in the message content.
+        """
         return self.content.get("system_info", None)
 
 

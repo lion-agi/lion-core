@@ -32,13 +32,41 @@ class BaseForm(Component, MutableRecord):
     """
     Base form class providing core functionality for form handling.
 
-    Serves as a foundation for creating custom forms in the lion-core library.
-    Includes methods for managing output fields, handling results, and
-    field annotations.
+    This class serves as a foundation for creating custom forms within the lion-core
+    library. It includes methods for managing output fields, handling results, and
+    applying field annotations. The `BaseForm` class focuses on output fields, which
+    are fields that are presented as the result of form processing. Output fields can
+    include all, part, or none of the request fields and can be conditionally modified
+    by the process if the form is not set to be strict.
 
-    This class focuses on output fields, which are fields that are outputted
-    and presented. Output fields can include all, part, or none of the
-    request fields and can be conditionally modified by the process if not strict.
+    Attributes:
+        assignment (str | None): The objective of the task, which may define how
+            input fields are processed into output fields. For example, "input1, input2 -> output".
+        template_name (str): The name of the form template. Defaults to "default_form".
+        output_fields (list[str]): A list of field names that are outputted and presented by the form.
+            These can include all, part, or none of the request fields.
+        none_as_valid_value (bool): Indicates whether to treat `None` as a valid value when
+            processing output fields. Defaults to `False`.
+
+    Methods:
+        get_results(suppress: bool = False, valid_only: bool = False) -> dict[str, Any]:
+            Retrieve the results of the form as a dictionary of field names and their values.
+
+    Properties:
+        work_fields (list[str]): Returns the list of fields that are outputted by the form.
+        work_dict (dict[str, Any]): Returns a dictionary of all work fields and their values.
+        required_fields (list[str]): Returns the list of fields that are required for the form.
+        required_dict (dict[str, Any]): Returns a dictionary of all required fields and their values.
+        display_dict (dict[str, Any]): Returns a dictionary of the required fields and their values
+            for display purposes.
+
+    Example:
+        >>> form = BaseForm(
+                assignment="input1, input2 -> output",
+                output_fields=["output1", "output2"],
+            )
+        >>> result = form.get_results()
+        >>> print(result)
     """
 
     assignment: str | None = Field(
@@ -125,6 +153,7 @@ class BaseForm(Component, MutableRecord):
 
     @property
     def work_fields(self) -> list[str]:
+        """Returns the list of fields that are outputted by the form."""
         return self.output_fields
 
     @property
@@ -184,6 +213,7 @@ class BaseForm(Component, MutableRecord):
 
     @property
     def display_dict(self) -> dict[str, Any]:
+        """Returns a dictionary of the required fields and their values for display purposes."""
         return self.required_dict
 
 
