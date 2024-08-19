@@ -27,7 +27,7 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build changelog
       id: github_release
-      uses: release-drafter/release-drafter@v5
+      uses: release-drafter/release-drafter@v6
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Create Release
