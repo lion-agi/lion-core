@@ -740,12 +740,17 @@ class Form(BaseForm):
             case _:
                 raise LionValueError(f"Invalid field type {field_type}")
 
-        if any([
-            value is not LN_UNDEFINED,
-            annotation is not LN_UNDEFINED,
-            field_obj is not LN_UNDEFINED,
-            bool(kwargs)
-        ]) or field_name not in self.all_fields:
+        if (
+            any(
+                [
+                    value is not LN_UNDEFINED,
+                    annotation is not LN_UNDEFINED,
+                    field_obj is not LN_UNDEFINED,
+                    bool(kwargs),
+                ]
+            )
+            or field_name not in self.all_fields
+        ):
             self.update_field(**config)
 
     def append_to_input(

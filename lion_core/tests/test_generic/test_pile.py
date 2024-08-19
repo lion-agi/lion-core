@@ -211,7 +211,7 @@ async def test_concurrent_operations():
         for _ in range(500):
             if not p.is_empty():
                 p.pop(0)
-            await asyncio.sleep(0.002)
+            await asyncio.sleep(0.001)
 
     await asyncio.gather(add_items(), remove_items())
     assert 450 <= len(p) <= 550  # Allow for some variance due to timing
@@ -426,7 +426,7 @@ async def test_pile_async_iteration():
         total = 0
         async for item in p:
             total += item.value
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.001)
         return total
 
     result = await async_sum()
@@ -550,7 +550,7 @@ async def test_concurrent_operations():
         for _ in range(50):
             if not p.is_empty():
                 await p.apop(0)
-            await asyncio.sleep(0.002)
+            await asyncio.sleep(0.001)
 
     await asyncio.gather(add_items(), remove_items())
     assert 40 <= len(p) <= 60  # Allow for some variance due to timing
@@ -647,7 +647,7 @@ async def test_async_pile_as_queue():
     async def producer():
         for i in range(100):
             await p.ainclude(Component(content=i))
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.001)
 
     async def consumer():
         consumed = []
@@ -656,7 +656,7 @@ async def test_async_pile_as_queue():
                 item = await p.apop(0)
                 consumed.append(item)
             except ItemNotFoundError:
-                await asyncio.sleep(0.01)
+                await asyncio.sleep(0.001)
         return consumed
 
     producer_task = asyncio.create_task(producer())
@@ -677,7 +677,7 @@ async def test_async_task_queue_simulation():
     async def task_producer():
         for i in range(100):
             await task_queue.ainclude(Component(content=f"Task {i}"))
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.001)
 
     async def task_consumer():
         completed_tasks = []
@@ -685,10 +685,10 @@ async def test_async_task_queue_simulation():
             try:
                 task = await task_queue.apop(0)
                 # Simulate task execution
-                await asyncio.sleep(0.02)
+                await asyncio.sleep(0.001)
                 completed_tasks.append(task)
             except ItemNotFoundError:
-                await asyncio.sleep(0.01)
+                await asyncio.sleep(0.001)
         return completed_tasks
 
     producer = asyncio.create_task(task_producer())

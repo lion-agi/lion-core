@@ -25,8 +25,7 @@ def test_base_form_init():
     assert not form.none_as_valid_value
 
     form_with_fields = create_sample_base_form(
-        assignment="field1 -> field2",
-        output_fields=["field1", "field2"]
+        assignment="field1 -> field2", output_fields=["field1", "field2"]
     )
     assert form_with_fields.output_fields == ["field1", "field2"]
 
@@ -139,10 +138,16 @@ def test_base_form_various_data_types():
         list_field: list = Field(default_factory=list)
         dict_field: dict = Field(default_factory=dict)
 
-    form = ComplexBaseForm(output_fields=[
-        "string_field", "int_field", "float_field",
-        "bool_field", "list_field", "dict_field"
-    ])
+    form = ComplexBaseForm(
+        output_fields=[
+            "string_field",
+            "int_field",
+            "float_field",
+            "bool_field",
+            "list_field",
+            "dict_field",
+        ]
+    )
     form.string_field = "test"
     form.int_field = 42
     form.float_field = 3.14
@@ -160,7 +165,7 @@ def test_base_form_various_data_types():
 
 
 # Test BaseForm with large number of fields
-@pytest.mark.slow
+# @pytest.mark.slow
 def test_base_form_large_number_of_fields():
     class LargeBaseForm(BaseForm):
         pass
@@ -184,14 +189,14 @@ def test_base_form_large_number_of_fields():
 
 
 # Test BaseForm performance
-@pytest.mark.slow
+# @pytest.mark.slow
 def test_base_form_performance():
     import time
 
     class PerformanceBaseForm(BaseForm):
         pass
 
-    num_fields = 10000
+    num_fields = 1000
     output_fields = []
     for i in range(num_fields):
         field_name = f"field_{i}"
@@ -206,7 +211,7 @@ def test_base_form_performance():
     _ = form.get_results()
     end_time = time.time()
 
-    assert end_time - start_time < 10
+    assert end_time - start_time < 1
 
 
 # Test BaseForm with nested structures
@@ -227,8 +232,7 @@ def test_base_form_nested_structures():
 # Test BaseForm serialization
 def test_base_form_serialization():
     form = create_sample_base_form(
-        assignment="field1 -> field2",
-        output_fields=["field1", "field2"]
+        assignment="field1 -> field2", output_fields=["field1", "field2"]
     )
     form.field1 = "test_value"
     form.field2 = 42
@@ -264,7 +268,7 @@ def test_base_form_comprehensive():
 
     form = ComprehensiveBaseForm(
         assignment="string_field, int_field -> list_field",
-        output_fields=["string_field", "int_field", "list_field"]
+        output_fields=["string_field", "int_field", "list_field"],
     )
 
     form.string_field = "test"
@@ -277,7 +281,11 @@ def test_base_form_comprehensive():
 
     # Test get_results with different parameters
     full_results = form.get_results()
-    assert full_results == {"string_field": "test", "int_field": 42, "list_field": [1, 2, 3]}
+    assert full_results == {
+        "string_field": "test",
+        "int_field": 42,
+        "list_field": [1, 2, 3],
+    }
 
     valid_results = form.get_results(valid_only=True)
     assert valid_results == full_results

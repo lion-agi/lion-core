@@ -1173,6 +1173,23 @@ class Pile(Element, Collective, Generic[T]):
             await asyncio.sleep(0)  # Yield control to the event loop
             return item
 
+    @async_synchronized
+    async def adump(self, clear=True) -> dict:
+        result = self.to_dict()
+        if clear:
+            await self.aclear()
+        return result
+
+    def dump(self, clear=True) -> dict:
+        result = self.to_dict()
+        if clear:
+            self.clear()
+        return result
+
+    @classmethod
+    def load(cls, data: dict) -> "Pile":
+        return cls.from_dict(data)
+
 
 def pile(
     items: Any = None,

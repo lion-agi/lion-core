@@ -132,7 +132,7 @@ class ActionProcessor(BaseProcessor):
                 task = asyncio.create_task(next.invoke())
                 tasks.add(task)
             prev = next
-            
+
         if tasks:
             await asyncio.wait(tasks)
             self.available_capacity = self.capacity

@@ -47,7 +47,7 @@ class DictConverter(Converter):
 class JsonConverter(Converter):
 
     @staticmethod
-    def from_obj(cls, obj: str, **kwargs):
+    def from_obj(cls, obj: str, **kwargs) -> dict:
         try:
             return json.loads(obj, **kwargs)
         except Exception as e:

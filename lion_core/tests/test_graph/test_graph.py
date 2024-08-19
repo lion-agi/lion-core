@@ -225,7 +225,7 @@ def test_graph_serialization(basic_graph):
 
 
 # Test performance with large graphs
-@pytest.mark.slow
+# @pytest.mark.slow
 def test_large_graph_performance():
     graph = Graph()
     num_nodes = 10000
@@ -393,7 +393,7 @@ def test_graph_with_multiple_edge_types():
 
 
 # Test graph operations with large number of nodes and edges
-@pytest.mark.slow
+# @pytest.mark.slow
 def test_graph_operations_with_large_data():
     graph = Graph()
     num_nodes = 10000
@@ -578,7 +578,7 @@ async def test_graph_concurrent_modifications():
 
 
 # Test graph with very long node and edge chains
-@pytest.mark.slow
+# @pytest.mark.slow
 def test_graph_with_long_chains():
     graph = Graph()
     chain_length = 10000
@@ -628,7 +628,7 @@ def test_graph_property_updates():
 
 
 # Test graph performance with different operations
-@pytest.mark.slow
+# @pytest.mark.slow
 def test_graph_performance():
     import time
 
@@ -831,11 +831,11 @@ async def test_graph_concurrent_operations():
         node = create_test_node(f"Node_{asyncio.current_task().get_name()}")
         graph.add_node(node)
         graph.add_edge(create_test_edge(base_node, node))
-        await asyncio.sleep(0.01)  # Simulate some processing time
+        await asyncio.sleep(0.0001)  # Simulate some processing time
         graph.remove_node(node)
 
     async def read_graph():
-        await asyncio.sleep(0.005)  # Simulate some processing time
+        await asyncio.sleep(0.0001)  # Simulate some processing time
         _ = graph.get_successors(base_node)
 
     tasks = [add_and_remove_node() for _ in range(100)] + [
@@ -848,7 +848,7 @@ async def test_graph_concurrent_operations():
     assert base_node.ln_id in graph.internal_nodes
 
 
-@pytest.mark.slow
+# @pytest.mark.slow
 def test_graph_large_sparse():
     graph = Graph()
     num_nodes = 10000
@@ -883,7 +883,7 @@ def test_graph_large_sparse():
 
 
 # Test graph with node and edge removal stress test
-@pytest.mark.slow
+# @pytest.mark.slow
 def test_graph_removal_stress():
     graph = Graph()
     num_initial_nodes = 10000

@@ -15,10 +15,11 @@ limitations under the License.
 """
 
 from typing import Any
+from pydantic import Field
 from typing_extensions import override
-from lion_core.libs import ucall, CallDecorator as cd
+from lion_core.libs import CallDecorator as cd, rcall
 from lion_core.action.base import ObservableAction
-
+from lion_core.action.status import ActionStatus
 from lion_core.action.tool import Tool
 
 
@@ -42,21 +43,21 @@ class FunctionCalling(ObservableAction):
         __repr__(): Returns a detailed string representation of the function call.
     """
 
-    def __init__(
-        self, func_tool: Tool, arguments: dict[str, Any] | None = None
-    ) -> None:
-        """
-        Initializes a FunctionCalling instance.
+    func_tool: Tool | None = Field(None, exclude=True)
+    arguments: dict[str, Any] | None = None
+    content_fields: list = ["response", "arguments", "function_name"]
+    function_name: str | None = None
 
-        Args:
-            func_tool (Tool): The tool containing the function and optional
-                processors.
-            arguments (dict[str, Any], optional): The arguments to pass to the
-                function. Defaults to an empty dictionary.
-        """
-        super().__init__()
+    def __init__(
+        self,
+        func_tool: Tool,
+        arguments: dict[str, Any],
+        retry_config: dict[str, Any] | None = None,
+    ):
+        super().__init__(retry_config=retry_config)
         self.func_tool: Tool = func_tool
         self.arguments: dict[str, Any] = arguments or {}
+        self.function_name = func_tool.function_name
 
     @override
     async def invoke(self):
@@ -83,12 +84,25 @@ class FunctionCalling(ObservableAction):
             postprocess_kwargs=self.func_tool.post_processor_kwargs,
         )
         async def _inner(**kwargs):
-            return await ucall(self.func_tool.function, **kwargs)
+            config = {**self.retry_config, **kwargs}
+            config["timing"] = True
+            return await rcall(self.func_tool.function, **config)
 
-        result = await _inner(**self.arguments)
-        if self.func_tool.parser is not None:
-            return self.func_tool.parser(result)
-        return result
+        try:
+            result, elp = await _inner(**self.arguments)
+            self.response = result
+            self.execution_time = elp
+            self.status = ActionStatus.COMPLETED
+
+            if self.func_tool.parser is not None:
+                result = self.func_tool.parser(result)
+
+            await self.to_log()
+            return result
+
+        except Exception as e:
+            self.status = ActionStatus.FAILED
+            self.error = str(e)
 
     def __str__(self) -> str:
         """
