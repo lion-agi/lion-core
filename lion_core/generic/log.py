@@ -1,14 +1,14 @@
 """Base module for logging in the Lion framework."""
 
 from pydantic import Field, field_serializer
-from lion_core.libs import to_dict
+
 from lion_core.abc import ImmutableRecord
-from lion_core.generic.note import Note
 from lion_core.generic.element import Element
+from lion_core.generic.note import Note
+from lion_core.libs import to_dict
 
 
 class BaseLog(Element, ImmutableRecord):
-
     content: Note = Field(
         default_factory=Note,
         title="Log Content",

@@ -1,23 +1,7 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 import asyncio
-from typing import Any, Callable, List, Dict, TypeVar
-from lion_core.libs.data_handlers import to_list
+from typing import Any, Callable, Dict, List, TypeVar
 
+from lion_core.libs.data_handlers import to_list
 from lion_core.libs.function_handlers._ucall import ucall
 from lion_core.setting import LN_UNDEFINED
 
@@ -34,7 +18,6 @@ def lcall(
     dropna: bool = False,
     **kwargs,
 ) -> list[Any]:
-
     lst = to_list(input_)
     if len(to_list(func, flatten=True, dropna=True)) != 1:
         raise ValueError("There must be one and only one function for list calling.")

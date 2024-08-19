@@ -1,30 +1,16 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 import inspect
 from enum import Enum
 from typing import Any
-from typing_extensions import override
+
 from pydantic import Field, field_validator
-from lion_core.abc import Relational
-from lion_core.sys_utils import SysUtil
+from typing_extensions import override
+
 from lion_core._class_registry import get_class
-from lion_core.generic.note import Note
-from lion_core.generic.component import Component
+from lion_core.abc import Relational
 from lion_core.communication.base_mail import BaseMail
+from lion_core.generic.component import Component
+from lion_core.generic.note import Note
+from lion_core.sys_utils import SysUtil
 
 
 class MessageField(str, Enum):
@@ -117,7 +103,7 @@ class RoledMessage(Relational, Component, BaseMail):
     @field_validator("role")
     def _validate_role(cls, v: Any) -> MessageRole | None:
         """Validates the role of the message."""
-        if v in MessageRole:
+        if v in [r.value for r in MessageRole]:
             return MessageRole(v)
         raise ValueError(f"Invalid message role: {v}")
 

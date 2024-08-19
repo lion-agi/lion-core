@@ -1,18 +1,16 @@
 import atexit
 import json
+import os
 from typing import Any, TypeVar
 
-import os
 from lion_core.abc._observer import BaseManager
-from lion_core.generic.pile import Pile, pile
-
 from lion_core.generic.log import BaseLog
+from lion_core.generic.pile import Pile, pile
 
 T = TypeVar("T", bound=BaseLog)
 
 
 class LogManager(BaseManager):
-
     def __init__(self, logs: Any = None, persist_path: str = None):
         self.logs: Pile[T] = pile(logs or {}, {BaseLog})
         self.persist_path = persist_path

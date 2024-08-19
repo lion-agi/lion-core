@@ -1,35 +1,17 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 from typing import Any, Callable
 
-from lion_core.abc import BaseExecutor, Temporal, Observable
-from lion_core.sys_utils import SysUtil
+from lion_core.abc import BaseExecutor, Observable, Temporal
 from lion_core.exceptions import LionTypeError, LionValueError
-from lion_core.libs import ucall
-
 from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
 from lion_core.imodel.imodel import iModel
+from lion_core.libs import ucall
 from lion_core.rule.base import Rule
 from lion_core.rule.rulebook import RuleBook
+from lion_core.sys_utils import SysUtil
 
 
 class RuleProcessor(BaseExecutor, Temporal, Observable):
-
     def __init__(
         self,
         *,
@@ -67,7 +49,6 @@ class RuleProcessor(BaseExecutor, Temporal, Observable):
         check_func: Callable = None,
         **kwargs,
     ):
-
         if annotation is None:
             if isinstance(form, BaseForm) and field in form.all_fields:
                 annotation = form.field_getattr(field, "annotation")
@@ -152,7 +133,6 @@ class RuleProcessor(BaseExecutor, Temporal, Observable):
         dict_ = {}
         for k, v in response.items():
             if k in form.request_fields:
-
                 kwargs = form.validation_kwargs.get(k, {})
                 _annotation = form.field_getattr(k, "annotation")
 

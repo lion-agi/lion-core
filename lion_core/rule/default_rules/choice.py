@@ -1,10 +1,10 @@
 from typing_extensions import override
+
 from lion_core.libs import choose_most_similar
 from lion_core.rule.base import Rule
 
 
 class ChoiceRule(Rule):
-
     @property
     def keys(self):
         return self.info.get(["keys"], [])

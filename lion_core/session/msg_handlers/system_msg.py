@@ -1,8 +1,8 @@
 from typing import Any
 
-from lion_core.setting import LN_UNDEFINED
 from lion_core.communication.message import MessageFlag
 from lion_core.communication.system import System
+from lion_core.setting import LN_UNDEFINED
 
 
 def handle_system(
@@ -11,7 +11,6 @@ def handle_system(
     recipient: Any | MessageFlag,
     system_datetime: bool | str | None | MessageFlag,
 ):
-
     if isinstance(system, System):
         return system
 

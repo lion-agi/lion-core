@@ -1,5 +1,7 @@
 from typing import Any
-from pydantic import Field, ConfigDict, BaseModel
+
+from pydantic import BaseModel, ConfigDict, Field
+
 from lion_core.abc import Condition
 
 

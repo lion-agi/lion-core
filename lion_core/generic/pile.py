@@ -1,51 +1,35 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
-from collections.abc import Sequence
-import threading
 import asyncio
+import threading
+from collections.abc import Sequence
 from functools import wraps
 from typing import (
     Any,
-    TypeVar,
-    Type,
-    Iterable,
-    Generic,
     AsyncIterator,
     Callable,
-    overload,
+    Generic,
+    Iterable,
     Iterator,
+    Type,
+    TypeVar,
+    overload,
 )
-from typing_extensions import override
 
 from pydantic import Field, field_serializer
+from typing_extensions import override
 
-from lion_core.libs import to_list
-from lion_core.abc import Observable, Collective
-from lion_core.sys_utils import SysUtil
+from lion_core.abc import Collective, Observable
 from lion_core.exceptions import (
+    ItemExistsError,
     ItemNotFoundError,
     LionTypeError,
     LionValueError,
-    ItemExistsError,
 )
-from lion_core.setting import LN_UNDEFINED
 from lion_core.generic.element import Element
 from lion_core.generic.progression import Progression, prog
 from lion_core.generic.utils import to_list_type, validate_order
+from lion_core.libs import to_list
+from lion_core.setting import LN_UNDEFINED
+from lion_core.sys_utils import SysUtil
 
 T = TypeVar("T", bound=Observable)
 
@@ -620,11 +604,13 @@ class Pile(Element, Collective, Generic[T]):
 
     @overload
     @async_synchronized
-    async def asetitem(self, key: int | str, item: T) -> None: ...
+    async def asetitem(self, key: int | str, item: T) -> None:
+        ...
 
     @overload
     @async_synchronized
-    async def asetitem(self, key: slice, item: Iterable[T]) -> None: ...
+    async def asetitem(self, key: slice, item: Iterable[T]) -> None:
+        ...
 
     @async_synchronized
     async def asetitem(self, key: int | str | slice, item: T | Iterable[T]) -> None:
@@ -645,11 +631,13 @@ class Pile(Element, Collective, Generic[T]):
 
     @overload
     @async_synchronized
-    async def apop(self, key: int | str, default: T = LN_UNDEFINED) -> T | None: ...
+    async def apop(self, key: int | str, default: T = LN_UNDEFINED) -> T | None:
+        ...
 
     @overload
     @async_synchronized
-    async def apop(self, key: slice, default: Any = LN_UNDEFINED): ...
+    async def apop(self, key: slice, default: Any = LN_UNDEFINED):
+        ...
 
     @async_synchronized
     async def apop(self, key: int | str | slice, default: Any = LN_UNDEFINED):
@@ -683,11 +671,13 @@ class Pile(Element, Collective, Generic[T]):
 
     @overload
     @async_synchronized
-    async def ainclude(self, item: T) -> None: ...
+    async def ainclude(self, item: T) -> None:
+        ...
 
     @overload
     @async_synchronized
-    async def ainclude(self, item: Iterable[T]) -> None: ...
+    async def ainclude(self, item: Iterable[T]) -> None:
+        ...
 
     @async_synchronized
     async def ainclude(self, item: T | Iterable[T]) -> None:
@@ -705,11 +695,13 @@ class Pile(Element, Collective, Generic[T]):
 
     @overload
     @async_synchronized
-    async def aexclude(self, item: T) -> None: ...
+    async def aexclude(self, item: T) -> None:
+        ...
 
     @overload
     @async_synchronized
-    async def aexclude(self, item: Iterable[T]) -> None: ...
+    async def aexclude(self, item: Iterable[T]) -> None:
+        ...
 
     @async_synchronized
     async def aexclude(self, item: T | Iterable[T]) -> None:

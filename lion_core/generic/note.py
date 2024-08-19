@@ -1,37 +1,15 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
-from functools import singledispatchmethod
 from collections.abc import Mapping
+from functools import singledispatchmethod
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from typing_extensions import override
-from pydantic import Field, BaseModel, ConfigDict, field_serializer
+
 from lion_core.abc import Container
-from lion_core.libs import (
-    nget,
-    ninsert,
-    nset,
-    npop,
-    flatten,
-    to_dict,
-    fuzzy_parse_json,
-)
+from lion_core.generic.element import Element
+from lion_core.libs import flatten, fuzzy_parse_json, nget, ninsert, npop, nset, to_dict
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
-from lion_core.generic.element import Element
 
 
 class Note(BaseModel, Container):
@@ -215,7 +193,6 @@ class Note(BaseModel, Container):
 
     @update.register(str)
     def _(self, items: str, indices: list[str | int] = None, /):
-
         item_: dict | None = to_dict(
             items,
             str_type="json",

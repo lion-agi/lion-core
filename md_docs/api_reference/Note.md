@@ -284,4 +284,3 @@ new_note = Note.from_dict(note_dict)
 - The `update` method can handle various input types, including dictionaries, strings (which it attempts to parse as JSON), and other Note objects.
 - The `LN_UNDEFINED` constant is used to distinguish between explicitly set `None` values and missing values.
 - Flattened views of keys, values, and items use the `|` character as a separator for nested keys.
-

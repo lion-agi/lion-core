@@ -1,14 +1,14 @@
 from typing import List, Literal
-from typing_extensions import override
+
 from pydantic import Field
+from typing_extensions import override
 
 from lion_core.abc._space import Container
+from lion_core.communication.base_mail import BaseMail
 from lion_core.exceptions import ItemExistsError, LionValueError
-
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import Progression, prog
-from lion_core.communication.base_mail import BaseMail
 
 
 class Exchange(Element, Container):

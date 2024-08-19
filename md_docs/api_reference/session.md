@@ -177,4 +177,3 @@ for branch in session.branches:
 - The `conversations` attribute (a `Flow` object) can be used to manage complex conversation structures across multiple branches.
 - The `branch_type` attribute allows for customization of the Branch class used in the session, enabling easy extension of branch functionality.
 - When creating a new branch without specifying a system message, it will use a clone of the session's system message.
-

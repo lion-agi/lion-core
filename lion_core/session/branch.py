@@ -1,44 +1,26 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 from typing import Any, Callable, ClassVar, Literal
-from typing_extensions import override
 
 from pydantic import Field, model_validator
+from typing_extensions import override
 
 from lion_core.abc import BaseiModel
-from lion_core.libs import is_same_dtype
-from lion_core.converter import ConverterRegistry
-from lion_core.generic.pile import Pile
-from lion_core.generic.note import Note
-from lion_core.generic.progression import prog, Progression
-from lion_core.generic.exchange import Exchange
-
 from lion_core.action import Tool, ToolManager
-from lion_core.communication.message import RoledMessage
-from lion_core.communication.system import System
-from lion_core.communication.instruction import Instruction
-from lion_core.communication.assistant_response import AssistantResponse
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.action_response import ActionResponse
-from lion_core.communication.message import RoledMessage, MessageFlag
-from lion_core.communication.package import Package
+from lion_core.communication.assistant_response import AssistantResponse
+from lion_core.communication.instruction import Instruction
 from lion_core.communication.mail import Mail
+from lion_core.communication.message import MessageFlag, RoledMessage
+from lion_core.communication.package import Package
+from lion_core.communication.system import System
+from lion_core.converter import ConverterRegistry
+from lion_core.generic.exchange import Exchange
+from lion_core.generic.note import Note
+from lion_core.generic.pile import Pile
+from lion_core.generic.progression import Progression, prog
+from lion_core.libs import is_same_dtype
 from lion_core.session.base import BaseSession
-from lion_core.session.msg_handlers import validate_message, create_message
+from lion_core.session.msg_handlers import create_message, validate_message
 
 
 class BranchConverterRegistry(ConverterRegistry):
@@ -64,7 +46,6 @@ class Branch(BaseSession):
 
     @model_validator(mode="before")
     def _validate_input(cls, data: dict) -> dict:
-
         messages = data.pop("messages", None)
         data["messages"] = cls.pile_type(
             validate_message(messages),
@@ -131,7 +112,6 @@ class Branch(BaseSession):
         metadata: Note | dict = None,  # additional branch parameters
         delete_previous_system: bool = None,
     ) -> bool:
-
         _msg = create_message(
             sender=sender,
             recipient=recipient,

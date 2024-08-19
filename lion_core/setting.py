@@ -2,7 +2,6 @@ from datetime import timezone
 
 
 class LionUndefined:
-
     def __init__(self):
         self.undefined = True
 

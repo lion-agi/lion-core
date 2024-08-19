@@ -1,34 +1,16 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 import inspect
-
 from abc import abstractmethod
 from typing import Any, Callable
-from pydantic import PrivateAttr, Field
+
+from pydantic import Field, PrivateAttr
 from typing_extensions import override
 
-from lion_core.abc import Condition, Action
-from lion_core.generic.element import Element
-
+from lion_core.abc import Action, Condition
 from lion_core.exceptions import LionOperationError
-from lion_core.libs import ucall, to_list, to_dict
-from lion_core.generic.note import note, Note
 from lion_core.form.base import BaseForm
-
+from lion_core.generic.element import Element
+from lion_core.generic.note import Note, note
+from lion_core.libs import to_dict, to_list, ucall
 
 RULE_SYS_FIELDS = [
     "base_config",
@@ -43,7 +25,6 @@ RULE_SYS_FIELDS = [
 
 
 class Rule(Element, Condition, Action):
-
     base_config: dict = {}
     info: Note = Field(default_factory=note)
     _is_init: bool = PrivateAttr(False)
@@ -222,7 +203,6 @@ class Rule(Element, Condition, Action):
         return value
 
     async def validate(self, value: Any, /) -> Any:
-
         try:
             await self.check_value(value)
             return value
@@ -286,7 +266,6 @@ def prepare_info(
 
 
 def validate_types(value):
-
     apply_types = []
     value = to_list(value, dropna=True, flatten=True)
 

@@ -1,29 +1,13 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 from typing import Any, Literal
 
 from pydantic import Field, field_serializer
 
-from lion_core.sys_utils import SysUtil
-from lion_core.generic.pile import pile, Pile
-from lion_core.generic.note import Note
-from lion_core.exceptions import LionRelationError, ItemExistsError
-from lion_core.graph.edge import Edge
+from lion_core.exceptions import ItemExistsError, LionRelationError
 from lion_core.generic.node import Node
+from lion_core.generic.note import Note
+from lion_core.generic.pile import Pile, pile
+from lion_core.graph.edge import Edge
+from lion_core.sys_utils import SysUtil
 
 
 class Graph(Node):

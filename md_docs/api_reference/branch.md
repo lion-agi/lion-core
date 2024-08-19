@@ -224,4 +224,3 @@ new_branch = Branch.convert_from(branch_dict, key="dict")
 - The `mailbox` attribute facilitates asynchronous communication with other components in the Lion framework.
 - The `tool_manager` allows for dynamic registration and management of tools within the branch.
 - The `imodel` attribute can be used to associate an intelligent model with the branch for advanced processing capabilities.
-

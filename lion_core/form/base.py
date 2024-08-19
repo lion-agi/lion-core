@@ -1,19 +1,3 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 """Base form class for the lion-core library."""
 
 from typing import Any, Literal
@@ -23,9 +7,9 @@ from pydantic_core import PydanticUndefined
 
 from lion_core.abc import MutableRecord
 from lion_core.exceptions import LionValueError
+from lion_core.form.utils import ERR_MAP
 from lion_core.generic.component import Component
 from lion_core.setting import LN_UNDEFINED
-from lion_core.form.utils import ERR_MAP
 
 
 class BaseForm(Component, MutableRecord):

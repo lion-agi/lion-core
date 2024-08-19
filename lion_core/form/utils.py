@@ -1,7 +1,6 @@
-from lion_core.libs import strip_lower
-from lion_core.exceptions import LionValueError, LionOperationError, LionTypeError
+from lion_core.exceptions import LionOperationError, LionTypeError, LionValueError
 from lion_core.generic.note import note
-
+from lion_core.libs import strip_lower
 
 RESTRICTED_FIELDS = {
     "input_fields",

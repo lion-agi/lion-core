@@ -1,12 +1,12 @@
 from typing import Any, Callable, Literal
 
-from lion_core.session.msg_handlers.action_msg import handle_action
-from lion_core.session.msg_handlers.instruction_msg import handle_instruction
-from lion_core.session.msg_handlers.assistant_msg import handle_assistant
-from lion_core.session.msg_handlers.system_msg import handle_system
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.action_response import ActionResponse
 from lion_core.communication.message import MessageFlag
+from lion_core.session.msg_handlers.action_msg import handle_action
+from lion_core.session.msg_handlers.assistant_msg import handle_assistant
+from lion_core.session.msg_handlers.instruction_msg import handle_instruction
+from lion_core.session.msg_handlers.system_msg import handle_system
 
 
 def create_message(

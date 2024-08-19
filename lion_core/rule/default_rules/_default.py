@@ -1,11 +1,10 @@
 from lion_core.generic.note import note
-
+from lion_core.rule.default_rules.boolean import BooleanRule
 from lion_core.rule.default_rules.choice import ChoiceRule
+from lion_core.rule.default_rules.function_calling import FunctionCallingRule
 from lion_core.rule.default_rules.mapping import MappingRule
 from lion_core.rule.default_rules.number import NumberRule
-from lion_core.rule.default_rules.boolean import BooleanRule
 from lion_core.rule.default_rules.string import StringRule
-from lion_core.rule.default_rules.function_calling import FunctionCallingRule
 
 base_boolean_config = {"apply_types": ["bool"], "rule": BooleanRule}
 

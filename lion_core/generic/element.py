@@ -1,21 +1,15 @@
 from datetime import datetime
 from typing import Any, TypeVar
+
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 from typing_extensions import override
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    AliasChoices,
-    field_validator,
-)
-
+from lion_core._class_registry import LION_CLASS_REGISTRY, get_class
+from lion_core.abc._characteristic import Observable, Temporal
 from lion_core.abc._concept import AbstractElement
-from lion_core.abc._characteristic import Temporal, Observable
+from lion_core.exceptions import LionIDError
 from lion_core.setting import TIME_CONFIG
 from lion_core.sys_utils import SysUtil
-from lion_core._class_registry import LION_CLASS_REGISTRY, get_class
-from lion_core.exceptions import LionIDError
 
 T = TypeVar("T", bound="Element")
 

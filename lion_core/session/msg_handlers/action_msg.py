@@ -78,7 +78,6 @@ def handle_action(
     arguments,
     func_output,
 ) -> ActionRequest | ActionResponse | None:
-
     a = handle_action_response(
         sender=sender,
         action_request=action_request,
