@@ -15,6 +15,7 @@ limitations under the License.
 """
 
 from typing import Any
+from pydantic import Field
 from typing_extensions import override
 from lion_core.libs import CallDecorator as cd, rcall
 from lion_core.action.base import ObservableAction
@@ -25,8 +26,10 @@ from lion_core.action.tool import Tool
 class FunctionCalling(ObservableAction):
     """Represents a callable function with its arguments."""
 
-    func_tool: Tool | None = None
+    func_tool: Tool | None = Field(None, exclude=True)
     arguments: dict[str, Any] | None = None
+    content_fields: list = ["response", "arguments", "function_name"]
+    function_name: str | None = None
 
     def __init__(
         self,
@@ -37,6 +40,7 @@ class FunctionCalling(ObservableAction):
         super().__init__(retry_config=retry_config)
         self.func_tool: Tool = func_tool
         self.arguments: dict[str, Any] = arguments or {}
+        self.function_name = func_tool.function_name
 
     @override
     async def invoke(self):
@@ -59,7 +63,9 @@ class FunctionCalling(ObservableAction):
             self.status = ActionStatus.COMPLETED
 
             if self.func_tool.parser is not None:
-                return self.func_tool.parser(result)
+                result = self.func_tool.parser(result)
+
+            await self.to_log()
             return result
 
         except Exception as e:

@@ -18,7 +18,6 @@ from typing import Any
 
 from pydantic import Field, PrivateAttr
 
-from lion_core.communication import action_response
 from lion_core.libs import to_dict
 from lion_core.form.form import Form
 from lion_core.setting import LN_UNDEFINED
@@ -42,11 +41,13 @@ class UnitForm(Form):
             "places. 1 being very confident in a good job, 0 is not confident "
             "at all."
         ),
-        validation_kwargs={
-            "upper_bound": 1,
-            "lower_bound": 0,
-            "num_type": float,
-            "precision": 2,
+        json_schema_extra={
+            "validation_kwargs": {
+                "upper_bound": 1,
+                "lower_bound": 0,
+                "num_type": float,
+                "precision": 2,
+            },
         },
     )
 
@@ -110,16 +111,6 @@ class UnitForm(Form):
         examples=["{step_1: {plan: '...', reason: '...'}}"],
     )
 
-    score: float | None = Field(
-        None,
-        description=(
-            "A numeric score. Higher is better. If not otherwise instructed, "
-            "fill this field with your own performance rating. Try hard and be "
-            "self-critical."
-        ),
-        examples=[0.2, 5, 2.7],
-    )
-
     reflection: str | None = Field(
         None,
         description=(
@@ -151,7 +142,6 @@ class UnitForm(Form):
         guidance: str = LN_UNDEFINED,
         reason: bool = False,
         confidence: bool = False,
-        score: bool = False,
         plan: bool = False,
         reflect: bool = False,
         tool_schema: list = None,
@@ -159,8 +149,6 @@ class UnitForm(Form):
         allow_action: bool = False,
         allow_extension: bool = False,
         max_extension: int = None,
-        score_num_digits=None,
-        score_range: tuple[int] | list[int] = None,
         plan_num_step: int = None,
         strict=LN_UNDEFINED,
         task_description=LN_UNDEFINED,
@@ -219,24 +207,6 @@ class UnitForm(Form):
 
         if confidence:
             self.append_to_request("confidence")
-
-        if score:
-            self.append_to_request("score")
-
-            score_range = score_range or [0, 10]
-            score_num_digits = score_num_digits or 0
-
-            self.validation_kwargs["score"] = {
-                "upper_bound": score_range[1],
-                "lower_bound": score_range[0],
-                "num_type": int if score_num_digits == 0 else float,
-                "precision": score_num_digits if score_num_digits != 0 else None,
-            }
-
-            self.task += (
-                f"- Give a numeric score in [{score_range[0]}, {score_range[1]}] "
-                f"and precision of {score_num_digits or 0} decimal places.\n"
-            )
 
         if reflect:
             self.append_to_request("reflection")
