@@ -70,6 +70,29 @@ def prepare_instruction_content(
     images: str | list | None = None,  # list of base64 encoded images
     image_detail: Literal["low", "high", "auto"] | None = None,
 ) -> Note:
+    """
+    Prepares the content for an instruction message.
+
+    This function constructs a `Note` object containing various elements of an instruction,
+    such as guidance, instruction text, context, images, and request fields. It also formats
+    the request fields into a response format if provided.
+
+    Args:
+        guidance (str | None): High-level task guidance or instructions. Defaults to None.
+        instruction (str | None): The main instruction or task description. Defaults to "N/A".
+        context (str | dict | list | None): Additional context related to the instruction.
+            Can be a string, dictionary, or list. Defaults to None.
+        request_fields (dict | None): A dictionary of fields that the response should include.
+            If provided, the request fields will be formatted into a JSON-parsable response format. Defaults to None.
+        images (str | list | None): A list or single base64 encoded string representing images associated with the instruction. Defaults to None.
+        image_detail (Literal["low", "high", "auto"] | None): The level of detail for image processing. Defaults to None.
+
+    Returns:
+        Note: A `Note` object containing the formatted instruction content.
+
+    Raises:
+        None: The function does not raise exceptions under normal operation.
+    """
 
     out_ = {}
     if guidance:
@@ -93,24 +116,30 @@ def prepare_instruction_content(
 
 
 class Instruction(RoledMessage):
-    """Represents an instruction message in the system.
+    """
+    Represents an instruction message in the system.
 
-    This class extends RoledMessage to handle instruction-specific content,
-    including context, images, and request fields. It supports both regular
-    initialization and cloning/loading from existing messages.
+    The `Instruction` class is used to manage and format instruction messages
+    within the LION system. It extends `RoledMessage` and provides functionality
+    for handling various types of content, including context, images, and
+    requested fields. The class also supports creating instructions from forms
+    and updating content dynamically.
 
     Attributes:
-        content (Note): Contains instruction details, context, and image info.
+        content (Note): Contains instruction details, context, images, and request fields.
         sender (str): The sender of the instruction, defaults to "user".
         recipient (str): The recipient of the instruction, defaults to "N/A".
 
     Properties:
-        instruct (str): Returns the main instruction content.
+        guidance (str): Returns the guidance content.
+        instruction (str): Returns the main instruction content.
 
     Methods:
+        update_images(images, image_detail): Adds new images and updates image detail level.
+        update_guidance(guidance): Updates the guidance content of the instruction.
+        update_request_fields(request_fields): Updates the requested fields in the instruction.
         update_context(*args, **kwargs): Adds new context to the instruction.
-        from_task(cls, task, sender, recipient, images, image_detail):
-            Creates an Instruction instance from a BaseTask object.
+        from_form(cls, form, sender, recipient, images, image_detail, ...): Creates an `Instruction` instance from a form.
     """
 
     @override
@@ -126,17 +155,22 @@ class Instruction(RoledMessage):
         image_detail: Literal["low", "high", "auto"] | MessageFlag = None,
         protected_init_params: dict | None = None,
     ):
-        """Initialize an Instruction instance.
+        """
+        Initializes an Instruction instance.
 
         Args:
-            instruction: The main instruction content.
-            context: Additional context for the instruction.
-            images: List of images related to the instruction.
-            sender: The sender of the instruction.
-            recipient: The intended recipient of the instruction.
-            request_fields: Dictionary of fields requested in the response.
-            image_detail: Level of detail for image processing.
-            protected_init_params: Protected init parameters for loading.
+            instruction (str|MessageFlag): The main instruction content.
+            context (str|dict|list|MessageFlag, optional): Additional context for the instruction.
+            guidance (str|MessageFlag, optional): Additional guidance content.
+            images (list|MessageFlag, optional): List of images related to the instruction.
+            sender (str|MessageFlag, optional): The sender of the instruction. Defaults to "user".
+            recipient (str|MessageFlag, optional): The intended recipient of the instruction. Defaults to "N/A".
+            request_fields (dict|MessageFlag, optional): Dictionary of fields requested in the response.
+            image_detail (Literal["low", "high", "auto"]|MessageFlag, optional): Level of detail for image processing.
+            protected_init_params (dict, optional): Protected init parameters for loading.
+
+        Raises:
+            LionTypeError: If the provided arguments do not match expected types.
         """
         message_flags = [
             instruction,
@@ -185,6 +219,13 @@ class Instruction(RoledMessage):
         images: list | str,
         image_detail: Literal["low", "high", "auto"] = None,
     ):
+        """
+        Adds new images and updates the image detail level.
+
+        Args:
+            images (list|str): A list or a single base64-encoded image string.
+            image_detail (Literal["low", "high", "auto"], optional): The detail level of the images.
+        """
         images = images if isinstance(images, list) else [images]
         _ima: list = self.content.get(["images"], [])
         _ima.extend(images)
@@ -194,6 +235,15 @@ class Instruction(RoledMessage):
             self.content["image_detail"] = image_detail
 
     def update_guidance(self, guidance: str):
+        """
+        Updates the guidance content of the instruction.
+
+        Args:
+            guidance (str): The new guidance content.
+
+        Raises:
+            LionTypeError: If the guidance is not a valid string.
+        """
         if guidance and isinstance(guidance, str):
             self.content["guidance"] = guidance
             return
@@ -202,13 +252,23 @@ class Instruction(RoledMessage):
         )
 
     def update_request_fields(self, request_fields: dict):
+        """
+        Updates the requested fields in the instruction.
+
+        Args:
+            request_fields (dict): A dictionary of the requested fields.
+        """
         self.content["request_fields"].update(request_fields)
         self.content["request_response_format"] = prepare_request_response_format(
             request_fields=self.content["request_fields"],
         )
 
     def update_context(self, *args, **kwargs):
-        """Adds new context to the instruction."""
+        """
+        Adds new context to the instruction.
+
+        This method can add additional context from both positional and keyword arguments.
+        """
         self.content["context"] = self.content.get("context", [])
         if args:
             self.content["context"].extend(args)
@@ -217,6 +277,14 @@ class Instruction(RoledMessage):
 
     @override
     def _format_content(self) -> dict[str, Any]:
+        """
+        Formats the content of the instruction.
+
+        This method handles the conversion of content to the required format, including the integration of images.
+
+        Returns:
+            dict[str, Any]: The formatted content.
+        """
         _msg = super()._format_content()
         if isinstance(_msg["content"], str):
             return _msg
@@ -254,13 +322,23 @@ class Instruction(RoledMessage):
         Creates an Instruction instance from a form.
 
         Args:
-            form: The form containing instruction details.
-            sender: The sender of the instruction.
-            recipient: The recipient of the instruction.
-            images: The image content in base64 encoding.
+            form (BaseForm | Type[Form]): The form containing instruction details.
+            sender (str, optional): The sender of the instruction.
+            recipient (Any, optional): The recipient of the instruction.
+            images (str, optional): The image content in base64 encoding.
+            image_detail (str, optional): The detail level of the images.
+            strict (bool, optional): Strict mode for the form validation.
+            assignment (str, optional): The assignment description.
+            task_description (str, optional): Description of the task.
+            fill_inputs (bool, optional): Whether to fill inputs automatically.
+            none_as_valid_value (bool, optional): Whether None is considered a valid input.
+            input_value_kwargs (dict, optional): Additional kwargs for input values.
 
         Returns:
-            The created Instruction instance.
+            Instruction: The created Instruction instance.
+
+        Raises:
+            LionTypeError: If the form is not a valid subclass or instance of `BaseForm`.
         """
         try:
             if inspect.isclass(form) and issubclass(form, Form):

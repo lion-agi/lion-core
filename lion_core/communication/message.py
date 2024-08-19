@@ -54,7 +54,38 @@ class MessageFlag(str, Enum):
 
 
 class RoledMessage(Relational, Component, BaseMail):
-    """A base class representing a message with validators and properties."""
+    """
+    A base class representing a message with roles, validators, and properties.
+
+    The `RoledMessage` class is designed to encapsulate a message within a system
+    where each message has a specific role, such as "system", "user", or "assistant".
+    It includes functionality for validating the role, managing the content,
+    handling images, and generating chat-friendly representations of the message.
+
+    Inherits:
+        - Relational: Provides relationship management features.
+        - Component: Adds component-based functionalities.
+        - BaseMail: Introduces sender and recipient fields for message routing.
+
+    Attributes:
+        content (Note): The content of the message, stored in a `Note` object.
+        role (MessageRole | None): The role of the message in the conversation.
+            It can be one of "system", "user", or "assistant".
+
+    Properties:
+        image_content (list[dict[str, Any]] | None): Returns the image content
+            if present in the message, otherwise returns None.
+        chat_msg (dict[str, Any] | None): Returns the message in a chat
+            representation format, or None if an error occurs.
+
+    Methods:
+        clone() -> "RoledMessage":
+            Creates a clone of the current `RoledMessage` object.
+        from_dict(cls, data: dict, **kwargs) -> "RoledMessage":
+            Loads a `RoledMessage` object from a dictionary.
+        __str__() -> str:
+            Provides a string representation of the message with a content preview.
+    """
 
     content: Note = Field(
         default_factory=Note,
@@ -85,11 +116,13 @@ class RoledMessage(Relational, Component, BaseMail):
 
     @field_validator("role")
     def _validate_role(cls, v: Any) -> MessageRole | None:
+        """Validates the role of the message."""
         if v in MessageRole:
             return MessageRole(v)
         raise ValueError(f"Invalid message role: {v}")
 
     def _format_content(self) -> dict[str, Any]:
+        """Format the message content for chat representation."""
         if self.content.get("images", None):
             content = self.content.to_dict()
         else:
@@ -97,7 +130,16 @@ class RoledMessage(Relational, Component, BaseMail):
         return {"role": self.role.value, "content": content}
 
     def clone(self) -> "RoledMessage":
-        """Creates a copy of the current System object."""
+        """
+        Creates a copy of the current `RoledMessage` object.
+
+        The clone will have the same role and content as the original message,
+        and will be marked with metadata indicating that it was cloned.
+
+        Returns:
+            RoledMessage: A new `RoledMessage` instance with identical content
+                and role as the original.
+        """
 
         cls = self.__class__
         signature = inspect.signature(cls.__init__)
@@ -115,6 +157,17 @@ class RoledMessage(Relational, Component, BaseMail):
     @override
     @classmethod
     def from_dict(cls, data: dict, **kwargs) -> "RoledMessage":
+        """
+        Loads a `RoledMessage` object from a dictionary.
+
+        Args:
+            data (dict): The dictionary containing the message data.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            RoledMessage: An instance of `RoledMessage` populated with the
+                data from the dictionary.
+        """
         data = SysUtil.copy(data)
         if "lion_class" in data:
             cls = get_class(data.pop("lion_class"))
@@ -141,7 +194,16 @@ class RoledMessage(Relational, Component, BaseMail):
 
     @override
     def __str__(self) -> str:
-        """Provide a string representation of the message with content preview."""
+        """
+        Provides a string representation of the message with a content preview.
+
+        The preview is truncated to 75 characters to give a brief overview
+        of the message content.
+
+        Returns:
+            str: A string summarizing the message role, sender, and a preview
+                of the content.
+        """
         content_preview = (
             f"{str(self.content)[:75]}..."
             if len(str(self.content)) > 75

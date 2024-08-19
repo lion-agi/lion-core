@@ -18,6 +18,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install black isort flake8 mypy pylint bandit safety
+        pip install pytest-asyncio
     - name: Run linters and checks
       run: |
         black --check .
@@ -32,7 +33,9 @@ jobs:
         pip install sphinx sphinx_rtd_theme
         cd docs && make html
     - name: Run tests
-      run: pytest tests/
+      run: pytest --maxfail=1 --disable-warnings tests/
+    - name: Run tests with pytest-asyncio
+      run: pytest --asyncio-mode=auto --maxfail=1 --disable-warnings tests/
     - name: Check for sensitive data
       uses: gitleaks/gitleaks-action@v2
       env:
