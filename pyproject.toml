@@ -27,10 +27,9 @@ dynamic = ["version"]
 [project.optional-dependencies]
 dev = [
     "pytest>=6.0",
-    "pytest-cov>=2.0",
     "mypy>=0.910",
     "flake8>=4.0",
-    "black>=22.0",
+    "black==23.3.0",
     "isort>=5.0",
 ]
 
