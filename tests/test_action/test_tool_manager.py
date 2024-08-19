@@ -1,8 +1,8 @@
 import pytest
 
-from lion_core.action.tool_manager import ToolManager
-from lion_core.action.tool import Tool, func_to_tool
 from lion_core.action.function_calling import FunctionCalling
+from lion_core.action.tool import Tool, func_to_tool
+from lion_core.action.tool_manager import ToolManager
 
 
 # Mock functions for testing

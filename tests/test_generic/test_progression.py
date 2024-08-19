@@ -1,14 +1,15 @@
-import pytest
-from pydantic import Field
-from typing import Any
-from collections import deque
 import asyncio
 import random
 import string
+from collections import deque
+from typing import Any
 
-from lion_core.generic.progression import Progression, prog
-from lion_core.generic.element import Element
+import pytest
+from pydantic import Field
+
 from lion_core.exceptions import ItemNotFoundError
+from lion_core.generic.element import Element
+from lion_core.generic.progression import Progression, prog
 from lion_core.sys_utils import SysUtil
 
 

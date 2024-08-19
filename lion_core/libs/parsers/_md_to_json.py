@@ -1,8 +1,8 @@
 import re
 from typing import Any, Callable
 
-from lion_core.libs.parsers._util import md_json_char_map
 from lion_core.libs.parsers._fuzzy_parse_json import fuzzy_parse_json
+from lion_core.libs.parsers._util import md_json_char_map
 
 
 def md_to_json(

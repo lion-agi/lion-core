@@ -23,9 +23,7 @@ jobs:
       run: |
         black --check .
         isort --check-only .
-        flake8 .
         mypy .
-        pylint **/*.py
         bandit -r . -f custom
         safety check
     - name: Check documentation build

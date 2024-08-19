@@ -1,14 +1,16 @@
-import pytest
 import asyncio
 from collections import deque
 from unittest.mock import MagicMock, patch
-from lion_core.sys_utils import SysUtil
-from lion_core.communication.mail_manager import MailManager
-from lion_core.generic.pile import Pile
-from lion_core.generic.exchange import Exchange
-from lion_core.communication.mail import Mail
-from lion_core.communication.package import Package, PackageCategory
+
+import pytest
+
 from lion_core.abc import Observable
+from lion_core.communication.mail import Mail
+from lion_core.communication.mail_manager import MailManager
+from lion_core.communication.package import Package, PackageCategory
+from lion_core.generic.exchange import Exchange
+from lion_core.generic.pile import Pile
+from lion_core.sys_utils import SysUtil
 
 
 class MockObservable(Observable):

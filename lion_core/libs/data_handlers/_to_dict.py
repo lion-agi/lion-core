@@ -1,7 +1,8 @@
-from functools import singledispatch
-from collections.abc import Mapping, Sequence
 import json
-from typing import Any, TypeVar, Literal, Callable
+from collections.abc import Mapping, Sequence
+from functools import singledispatch
+from typing import Any, Callable, Literal, TypeVar
+
 from lion_core.setting import LionUndefined
 
 T = TypeVar("T", bound=dict[str, Any] | list[dict[str, Any]])

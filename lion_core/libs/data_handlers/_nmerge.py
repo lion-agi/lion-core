@@ -1,6 +1,7 @@
 from collections import defaultdict
 from itertools import chain
 from typing import Any, Callable, Sequence
+
 from lion_core.libs.data_handlers._util import is_homogeneous
 
 

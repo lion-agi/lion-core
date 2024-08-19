@@ -1,7 +1,7 @@
 from typing_extensions import override
-from lion_core.libs import fuzzy_parse_json, to_dict, to_list
-from lion_core.exceptions import LionOperationError
 
+from lion_core.exceptions import LionOperationError
+from lion_core.libs import fuzzy_parse_json, to_dict, to_list
 from lion_core.rule.default_rules.mapping import MappingRule
 
 

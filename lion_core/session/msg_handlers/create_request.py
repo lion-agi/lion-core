@@ -1,11 +1,10 @@
-from lion_core.generic.note import note
 from lion_core.communication.action_request import ActionRequest
-from lion_core.libs import to_dict, strip_lower, fuzzy_parse_json
-
+from lion_core.generic.note import note
+from lion_core.libs import fuzzy_parse_json, strip_lower, to_dict
 from lion_core.session.msg_handlers.extract_request import (
+    extract_action_request,
     extract_request_from_content_code_block,
     extract_request_plain_function_calling,
-    extract_action_request,
 )
 
 

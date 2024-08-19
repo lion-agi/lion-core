@@ -1,7 +1,8 @@
-import pytest
 import asyncio
-from unittest.mock import patch, AsyncMock
 from typing import AsyncGenerator
+from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from lion_core.libs.function_handlers._tcall import tcall
 

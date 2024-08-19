@@ -1,10 +1,11 @@
 import pytest
+
 from lion_core.libs.data_handlers._util import (
+    deep_update,
+    get_target_container,
     is_homogeneous,
     is_same_dtype,
     is_structure_homogeneous,
-    deep_update,
-    get_target_container,
 )
 
 

@@ -1,15 +1,14 @@
 from typing import Any, Callable
 
-from lion_core.abc import BaseExecutor, Temporal, Observable
-from lion_core.sys_utils import SysUtil
+from lion_core.abc import BaseExecutor, Observable, Temporal
 from lion_core.exceptions import LionTypeError, LionValueError
-from lion_core.libs import ucall
-
 from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
 from lion_core.imodel.imodel import iModel
+from lion_core.libs import ucall
 from lion_core.rule.base import Rule
 from lion_core.rule.rulebook import RuleBook
+from lion_core.sys_utils import SysUtil
 
 
 class RuleProcessor(BaseExecutor, Temporal, Observable):

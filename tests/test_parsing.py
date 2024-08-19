@@ -1,10 +1,11 @@
-from lion_core.libs.parsers import *
 import unittest
-from lion_core.libs.parsers._md_to_json import escape_chars_in_json
+
+from lion_core.libs.parsers import *
 from lion_core.libs.parsers._extract_docstring import (
     _extract_docstring_details_google,
     _extract_docstring_details_rest,
 )
+from lion_core.libs.parsers._md_to_json import escape_chars_in_json
 
 
 class TestChooseMostSimilar(unittest.TestCase):

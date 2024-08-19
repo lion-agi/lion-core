@@ -1,10 +1,10 @@
-import unittest
 import asyncio
 import time
+import unittest
 from unittest.mock import patch
-from lion_core.sys_utils import SysUtil
 
 from lion_core.libs.function_handlers._throttle import Throttle
+from lion_core.sys_utils import SysUtil
 
 
 class TestThrottle(unittest.IsolatedAsyncioTestCase):

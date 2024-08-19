@@ -1,4 +1,5 @@
 from typing import override
+
 from lion_core.libs import to_str
 from lion_core.rule.base import Rule
 

@@ -7,9 +7,9 @@ from pydantic_core import PydanticUndefined
 
 from lion_core.abc import MutableRecord
 from lion_core.exceptions import LionValueError
+from lion_core.form.utils import ERR_MAP
 from lion_core.generic.component import Component
 from lion_core.setting import LN_UNDEFINED
-from lion_core.form.utils import ERR_MAP
 
 
 class BaseForm(Component, MutableRecord):

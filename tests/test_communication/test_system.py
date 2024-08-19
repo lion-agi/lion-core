@@ -1,7 +1,9 @@
-import pytest
 from datetime import datetime
-from lion_core.communication.system import System, format_system_content, DEFAULT_SYSTEM
-from lion_core.communication.message import MessageRole, MessageFlag
+
+import pytest
+
+from lion_core.communication.message import MessageFlag, MessageRole
+from lion_core.communication.system import DEFAULT_SYSTEM, System, format_system_content
 from lion_core.generic.note import Note
 from lion_core.sys_utils import SysUtil
 

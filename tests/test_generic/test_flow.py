@@ -1,22 +1,22 @@
-from pydantic import Field
-import pytest
-from typing import Any
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
-from lion_core.generic.flow import Flow
-from lion_core.generic.progression import Progression, prog
-from lion_core.generic.pile import Pile
-from lion_core.generic.component import Component
-from lion_core.generic.note import Note
+import pytest
+from pydantic import Field
+
 from lion_core.exceptions import (
     ItemNotFoundError,
+    LionIDError,
     LionTypeError,
     LionValueError,
-    LionIDError,
 )
+from lion_core.generic.component import Component
+from lion_core.generic.flow import Flow
+from lion_core.generic.note import Note
+from lion_core.generic.pile import Pile
+from lion_core.generic.progression import Progression, prog
 from lion_core.sys_utils import SysUtil
-
 
 sample_progressions = [
     prog([Component(content=i) for i in range(3)], name=f"prog_{j}") for j in range(3)
@@ -37,8 +37,8 @@ def test_flow_with_generator_input():
 
 @pytest.mark.parametrize("n_progs, prog_size", [(10, 100), (100, 10), (1000, 1)])
 def test_flow_performance_scaling(n_progs, prog_size):
-    import time
     import random
+    import time
 
     start_time = time.time()
 

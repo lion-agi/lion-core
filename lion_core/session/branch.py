@@ -1,28 +1,26 @@
 from typing import Any, Callable, ClassVar, Literal
-from typing_extensions import override
 
 from pydantic import Field, model_validator
+from typing_extensions import override
 
 from lion_core.abc import BaseiModel
-from lion_core.libs import is_same_dtype
-from lion_core.converter import ConverterRegistry
-from lion_core.generic.pile import Pile
-from lion_core.generic.note import Note
-from lion_core.generic.progression import prog, Progression
-from lion_core.generic.exchange import Exchange
-
 from lion_core.action import Tool, ToolManager
-from lion_core.communication.message import RoledMessage
-from lion_core.communication.system import System
-from lion_core.communication.instruction import Instruction
-from lion_core.communication.assistant_response import AssistantResponse
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.action_response import ActionResponse
-from lion_core.communication.message import RoledMessage, MessageFlag
-from lion_core.communication.package import Package
+from lion_core.communication.assistant_response import AssistantResponse
+from lion_core.communication.instruction import Instruction
 from lion_core.communication.mail import Mail
+from lion_core.communication.message import MessageFlag, RoledMessage
+from lion_core.communication.package import Package
+from lion_core.communication.system import System
+from lion_core.converter import ConverterRegistry
+from lion_core.generic.exchange import Exchange
+from lion_core.generic.note import Note
+from lion_core.generic.pile import Pile
+from lion_core.generic.progression import Progression, prog
+from lion_core.libs import is_same_dtype
 from lion_core.session.base import BaseSession
-from lion_core.session.msg_handlers import validate_message, create_message
+from lion_core.session.msg_handlers import create_message, validate_message
 
 
 class BranchConverterRegistry(ConverterRegistry):

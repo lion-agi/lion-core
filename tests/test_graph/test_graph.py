@@ -1,11 +1,13 @@
 import random
 import time
+
 import pytest
-from lion_core.graph.graph import Graph
-from lion_core.generic.node import Node
-from lion_core.graph.edge import Edge
+
 from lion_core.exceptions import LionRelationError
+from lion_core.generic.node import Node
 from lion_core.generic.pile import Pile
+from lion_core.graph.edge import Edge
+from lion_core.graph.graph import Graph
 
 
 # Helper functions to create test nodes and edges

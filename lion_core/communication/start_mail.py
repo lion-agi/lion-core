@@ -1,12 +1,13 @@
 from typing import Any
-from typing_extensions import override
+
 from pydantic import Field
+from typing_extensions import override
 
 from lion_core.abc import Signal
-from lion_core.generic.element import Element
-from lion_core.generic.exchange import Exchange
 from lion_core.communication.mail import Mail
 from lion_core.communication.package import Package
+from lion_core.generic.element import Element
+from lion_core.generic.exchange import Exchange
 
 
 class StartMail(Element, Signal):

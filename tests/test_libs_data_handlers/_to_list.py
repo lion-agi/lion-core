@@ -1,8 +1,10 @@
+from collections import OrderedDict, deque, namedtuple
+
 import pytest
-from collections import deque, OrderedDict, namedtuple
 from pydantic import BaseModel
-from lion_core.setting import LionUndefined
+
 from lion_core.libs.data_handlers._to_list import to_list
+from lion_core.setting import LionUndefined
 
 
 class CustomIterable:

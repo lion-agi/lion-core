@@ -1,20 +1,16 @@
+import contextlib
 from collections.abc import Mapping
 from typing import Any
+
 from pydantic import Field
 from pydantic_core import PydanticUndefined
-from lion_core.setting import LN_UNDEFINED
 
-import contextlib
 from lion_core.abc import Collective
-from lion_core.exceptions import (
-    ItemNotFoundError,
-    LionTypeError,
-    LionValueError,
-)
+from lion_core.exceptions import ItemNotFoundError, LionTypeError, LionValueError
 from lion_core.generic.element import Element
-
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import Progression, prog
+from lion_core.setting import LN_UNDEFINED
 
 
 class Flow(Element):

@@ -2,9 +2,9 @@ import asyncio
 from typing import Any, Callable, TypeVar
 
 from lion_core.libs.function_handlers._util import (
-    is_coroutine_func,
     custom_error_handler,
     force_async,
+    is_coroutine_func,
 )
 
 T = TypeVar("T")

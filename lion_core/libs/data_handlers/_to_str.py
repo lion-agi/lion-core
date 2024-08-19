@@ -1,7 +1,8 @@
 import json
-from typing import Any
-from collections.abc import Mapping, Iterable
+from collections.abc import Iterable, Mapping
 from functools import singledispatch
+from typing import Any
+
 from pydantic import BaseModel
 
 from lion_core.libs.data_handlers._to_dict import to_dict

@@ -1,10 +1,12 @@
-import pytest
 from typing import Callable
+
+import pytest
 from pydantic import ValidationError
-from lion_core.sys_utils import SysUtil
+
 from lion_core.communication.action_request import ActionRequest, prepare_action_request
-from lion_core.communication.message import MessageRole, MessageFlag
+from lion_core.communication.message import MessageFlag, MessageRole
 from lion_core.generic.note import Note
+from lion_core.sys_utils import SysUtil
 
 
 # Helper function for tests

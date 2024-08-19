@@ -1,5 +1,5 @@
-from typing import Any, Protocol, runtime_checkable, TypeVar
 import json
+from typing import Any, Protocol, TypeVar, runtime_checkable
 
 T = TypeVar("T")
 

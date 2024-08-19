@@ -1,4 +1,5 @@
 from abc import abstractmethod
+
 from lion_core.abc._concept import AbstractObserver
 
 

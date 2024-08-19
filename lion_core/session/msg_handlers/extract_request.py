@@ -1,5 +1,5 @@
 from lion_core.communication.action_request import ActionRequest
-from lion_core.libs import to_dict, nget, fuzzy_parse_json
+from lion_core.libs import fuzzy_parse_json, nget, to_dict
 
 
 def extract_request_plain_function_calling(

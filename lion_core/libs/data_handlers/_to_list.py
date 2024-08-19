@@ -1,8 +1,10 @@
-from collections.abc import Mapping, Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from functools import singledispatch
 from typing import Any, TypeVar
-from lion_core.setting import LionUndefined
+
 from pydantic import BaseModel
+
+from lion_core.setting import LionUndefined
 
 T = TypeVar("T")
 

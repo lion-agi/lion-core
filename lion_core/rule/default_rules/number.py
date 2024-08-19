@@ -1,7 +1,9 @@
 from typing import Any
+
 from typing_extensions import override
-from lion_core.libs import to_num
+
 from lion_core.exceptions import LionTypeError
+from lion_core.libs import to_num
 from lion_core.rule.base import Rule
 
 

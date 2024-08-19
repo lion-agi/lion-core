@@ -1,7 +1,8 @@
 import asyncio
-import pytest
-from typing import Any
 import json
+from typing import Any
+
+import pytest
 
 from lion_core.action.tool import Tool, func_to_tool
 

@@ -1,18 +1,16 @@
 import inspect
-
 from abc import abstractmethod
 from typing import Any, Callable
-from pydantic import PrivateAttr, Field
+
+from pydantic import Field, PrivateAttr
 from typing_extensions import override
 
-from lion_core.abc import Condition, Action
-from lion_core.generic.element import Element
-
+from lion_core.abc import Action, Condition
 from lion_core.exceptions import LionOperationError
-from lion_core.libs import ucall, to_list, to_dict
-from lion_core.generic.note import note, Note
 from lion_core.form.base import BaseForm
-
+from lion_core.generic.element import Element
+from lion_core.generic.note import Note, note
+from lion_core.libs import to_dict, to_list, ucall
 
 RULE_SYS_FIELDS = [
     "base_config",

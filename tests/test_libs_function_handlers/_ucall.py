@@ -1,7 +1,8 @@
-import pytest
 import asyncio
 from typing import AsyncGenerator
 from unittest.mock import patch
+
+import pytest
 
 from lion_core.libs.function_handlers._ucall import ucall
 

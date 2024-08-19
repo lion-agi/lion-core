@@ -1,12 +1,13 @@
-import pytest
-from datetime import datetime, timezone
 import time
+from datetime import datetime, timezone
 
+import pytest
 from pydantic_core._pydantic_core import ValidationError
+
+from lion_core.exceptions import LionValueError
 from lion_core.generic.component import Component
 from lion_core.generic.note import Note
 from lion_core.sys_utils import SysUtil
-from lion_core.exceptions import LionValueError
 
 
 @pytest.fixture

@@ -1,8 +1,10 @@
-import pytest
 from collections import OrderedDict, namedtuple
+
+import pytest
 from pydantic import BaseModel
+
+from lion_core.libs.data_handlers._to_str import strip_lower, to_str
 from lion_core.setting import LionUndefined
-from lion_core.libs.data_handlers._to_str import to_str, strip_lower
 
 
 class CustomModel(BaseModel):

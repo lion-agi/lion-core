@@ -1,10 +1,10 @@
-import unittest
 import asyncio
+import unittest
 
 from lion_core.libs.function_handlers._util import (
+    custom_error_handler,
     force_async,
     is_coroutine_func,
-    custom_error_handler,
     max_concurrent,
     throttle,
 )

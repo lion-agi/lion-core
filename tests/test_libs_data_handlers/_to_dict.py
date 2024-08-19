@@ -1,9 +1,11 @@
-import pytest
-from typing import Any
-from collections import deque, OrderedDict, namedtuple
+from collections import OrderedDict, deque, namedtuple
 from dataclasses import dataclass
+from typing import Any
+
+import pytest
 from pydantic import BaseModel
-from lion_core.libs.data_handlers._to_dict import to_dict, LionUndefined
+
+from lion_core.libs.data_handlers._to_dict import LionUndefined, to_dict
 
 
 class MockToDict:

@@ -1,14 +1,15 @@
+from typing import Any
+
 import pytest
 from pydantic import Field, ValidationError
-from typing import Any
 from pydantic_core import PydanticUndefined
 
-from lion_core.setting import LN_UNDEFINED, LionUndefined
-from lion_core.exceptions import LionValueError, LionOperationError, LionTypeError
-from lion_core.generic.component import Component
-from lion_core.generic.note import Note
+from lion_core.exceptions import LionOperationError, LionTypeError, LionValueError
 from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
+from lion_core.generic.component import Component
+from lion_core.generic.note import Note
+from lion_core.setting import LN_UNDEFINED, LionUndefined
 
 
 # Helper functions and classes

@@ -2,9 +2,9 @@ from typing import Any
 
 from pydantic import Field, field_validator
 
-from lion_core.sys_utils import SysUtil
-from lion_core.generic.element import Element
 from lion_core.exceptions import LionIDError, LionValueError
+from lion_core.generic.element import Element
+from lion_core.sys_utils import SysUtil
 
 
 def validate_sender_recipient(value: Any) -> str:

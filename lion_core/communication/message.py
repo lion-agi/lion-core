@@ -1,14 +1,16 @@
 import inspect
 from enum import Enum
 from typing import Any
-from typing_extensions import override
+
 from pydantic import Field, field_validator
-from lion_core.abc import Relational
-from lion_core.sys_utils import SysUtil
+from typing_extensions import override
+
 from lion_core._class_registry import get_class
-from lion_core.generic.note import Note
-from lion_core.generic.component import Component
+from lion_core.abc import Relational
 from lion_core.communication.base_mail import BaseMail
+from lion_core.generic.component import Component
+from lion_core.generic.note import Note
+from lion_core.sys_utils import SysUtil
 
 
 class MessageField(str, Enum):

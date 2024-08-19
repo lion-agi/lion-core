@@ -1,13 +1,10 @@
 from typing import Any
+
 from typing_extensions import override
 
-from lion_core.sys_utils import SysUtil
+from lion_core.communication.message import MessageFlag, MessageRole, RoledMessage
 from lion_core.generic.note import Note
-from lion_core.communication.message import (
-    RoledMessage,
-    MessageRole,
-    MessageFlag,
-)
+from lion_core.sys_utils import SysUtil
 
 DEFAULT_SYSTEM = "You are a helpful AI assistant. Let's think step by step."
 

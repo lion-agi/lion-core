@@ -1,6 +1,7 @@
 from abc import abstractmethod
-from lion_core.abc._concept import AbstractSpace, AbstractElement
+
 from lion_core.abc._characteristic import Traversal
+from lion_core.abc._concept import AbstractElement, AbstractSpace
 
 
 class Container(AbstractSpace, AbstractElement):

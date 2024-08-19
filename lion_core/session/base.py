@@ -1,13 +1,14 @@
 from typing import Type
-from pydantic import Field, model_validator, PrivateAttr
 
-from lion_core.sys_utils import SysUtil
+from pydantic import Field, PrivateAttr, model_validator
+
 from lion_core.abc import AbstractSpace
 from lion_core.communication.system import System
 from lion_core.generic.node import Node
 from lion_core.generic.pile import Pile
 from lion_core.imodel.imodel import iModel
 from lion_core.session.msg_handlers import validate_system
+from lion_core.sys_utils import SysUtil
 
 
 class BaseSession(Node, AbstractSpace):

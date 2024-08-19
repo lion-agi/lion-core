@@ -1,4 +1,4 @@
-from typing import Any, Callable, AsyncGenerator, TypeVar
+from typing import Any, AsyncGenerator, Callable, TypeVar
 
 from lion_core.libs.data_handlers import to_list
 from lion_core.libs.function_handlers._lcall import alcall

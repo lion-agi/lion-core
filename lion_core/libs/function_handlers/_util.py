@@ -1,8 +1,8 @@
-import logging
 import asyncio
-from typing import Any, Callable, TypeVar
-from functools import lru_cache, wraps
+import logging
 from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache, wraps
+from typing import Any, Callable, TypeVar
 
 from lion_core.libs.function_handlers._throttle import Throttle
 

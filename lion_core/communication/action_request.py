@@ -1,13 +1,10 @@
 from typing import Any, Callable
+
 from typing_extensions import override
 
-from lion_core.libs import to_dict, to_str, fuzzy_parse_json
+from lion_core.communication.message import MessageFlag, MessageRole, RoledMessage
 from lion_core.generic.note import Note
-from lion_core.communication.message import (
-    RoledMessage,
-    MessageRole,
-    MessageFlag,
-)
+from lion_core.libs import fuzzy_parse_json, to_dict, to_str
 
 
 def prepare_action_request(

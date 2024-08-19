@@ -1,16 +1,18 @@
-import pytest
 from typing import Any, Literal
-from lion_core.sys_utils import SysUtil
+
+import pytest
+
 from lion_core.communication.instruction import (
     Instruction,
+    format_image_content,
     prepare_instruction_content,
     prepare_request_response_format,
-    format_image_content,
 )
-from lion_core.communication.message import MessageRole, MessageFlag
-from lion_core.generic.note import Note
+from lion_core.communication.message import MessageFlag, MessageRole
 from lion_core.form.form import Form
+from lion_core.generic.note import Note
 from lion_core.setting import LN_UNDEFINED
+from lion_core.sys_utils import SysUtil
 
 
 # Helper function to create a mock BaseTask

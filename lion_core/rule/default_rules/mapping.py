@@ -1,13 +1,10 @@
-from typing import Any
-from typing_extensions import override
 from collections.abc import Mapping
-from lion_core.libs import validate_mapping
-from lion_core.exceptions import (
-    LionOperationError,
-    LionValueError,
-    LionTypeError,
-)
+from typing import Any
 
+from typing_extensions import override
+
+from lion_core.exceptions import LionOperationError, LionTypeError, LionValueError
+from lion_core.libs import validate_mapping
 from lion_core.rule.default_rules.choice import ChoiceRule
 
 

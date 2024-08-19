@@ -1,7 +1,8 @@
-from typing import Any, Callable, Sequence, TypedDict, Literal
 import re
-from lion_core.libs.parsers._md_to_json import md_to_json
+from typing import Any, Callable, Literal, Sequence, TypedDict
+
 from lion_core.libs.parsers._fuzzy_parse_json import fuzzy_parse_json
+from lion_core.libs.parsers._md_to_json import md_to_json
 from lion_core.libs.parsers._validate_keys import validate_keys
 
 ScoreFunc = Callable[[str, str], float]

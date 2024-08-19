@@ -1,4 +1,5 @@
 import pytest
+
 from lion_core.libs.data_handlers._npop import npop
 from lion_core.setting import LN_UNDEFINED
 

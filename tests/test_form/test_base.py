@@ -2,9 +2,9 @@ import pytest
 from pydantic import Field
 from pydantic_core import PydanticUndefined
 
-from lion_core.setting import LN_UNDEFINED
-from lion_core.generic.component import Component
 from lion_core.form.base import BaseForm
+from lion_core.generic.component import Component
+from lion_core.setting import LN_UNDEFINED
 
 
 # Helper functions and classes

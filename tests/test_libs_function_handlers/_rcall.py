@@ -1,6 +1,6 @@
-import unittest
 import asyncio
-from unittest.mock import patch, AsyncMock
+import unittest
+from unittest.mock import AsyncMock, patch
 
 from lion_core.libs.function_handlers._rcall import rcall
 

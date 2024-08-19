@@ -1,21 +1,15 @@
-from functools import singledispatchmethod
 from collections.abc import Mapping
+from functools import singledispatchmethod
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from typing_extensions import override
-from pydantic import Field, BaseModel, ConfigDict, field_serializer
+
 from lion_core.abc import Container
-from lion_core.libs import (
-    nget,
-    ninsert,
-    nset,
-    npop,
-    flatten,
-    to_dict,
-    fuzzy_parse_json,
-)
+from lion_core.generic.element import Element
+from lion_core.libs import flatten, fuzzy_parse_json, nget, ninsert, npop, nset, to_dict
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
-from lion_core.generic.element import Element
 
 
 class Note(BaseModel, Container):

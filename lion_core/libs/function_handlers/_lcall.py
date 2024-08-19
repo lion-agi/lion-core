@@ -1,7 +1,7 @@
 import asyncio
-from typing import Any, Callable, List, Dict, TypeVar
-from lion_core.libs.data_handlers import to_list
+from typing import Any, Callable, Dict, List, TypeVar
 
+from lion_core.libs.data_handlers import to_list
 from lion_core.libs.function_handlers._ucall import ucall
 from lion_core.setting import LN_UNDEFINED
 

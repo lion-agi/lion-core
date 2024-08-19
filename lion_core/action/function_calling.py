@@ -1,10 +1,13 @@
 from typing import Any
+
 from pydantic import Field
 from typing_extensions import override
-from lion_core.libs import CallDecorator as cd, rcall
+
 from lion_core.action.base import ObservableAction
 from lion_core.action.status import ActionStatus
 from lion_core.action.tool import Tool
+from lion_core.libs import CallDecorator as cd
+from lion_core.libs import rcall
 
 
 class FunctionCalling(ObservableAction):

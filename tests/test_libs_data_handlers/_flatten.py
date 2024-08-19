@@ -1,4 +1,5 @@
 import pytest
+
 from lion_core.libs.data_handlers._flatten import flatten, get_flattened_keys
 
 

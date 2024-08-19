@@ -1,7 +1,8 @@
 import pytest
-from lion_core.sys_utils import SysUtil
+
 from lion_core.communication.assistant_response import AssistantResponse
-from lion_core.communication.message import MessageRole, MessageFlag
+from lion_core.communication.message import MessageFlag, MessageRole
+from lion_core.sys_utils import SysUtil
 
 
 # Basic functionality tests

@@ -2,12 +2,12 @@ from typing import Any, Literal
 
 from pydantic import Field, field_serializer
 
-from lion_core.sys_utils import SysUtil
-from lion_core.generic.pile import pile, Pile
-from lion_core.generic.note import Note
-from lion_core.exceptions import LionRelationError, ItemExistsError
-from lion_core.graph.edge import Edge
+from lion_core.exceptions import ItemExistsError, LionRelationError
 from lion_core.generic.node import Node
+from lion_core.generic.note import Note
+from lion_core.generic.pile import Pile, pile
+from lion_core.graph.edge import Edge
+from lion_core.sys_utils import SysUtil
 
 
 class Graph(Node):
