@@ -1,32 +1,30 @@
-# Pile Class Documentation
+# Pile API Documentation
 
 ## Overview
 
-The `Pile` class is a core container in the Lion framework, designed to store and manage collections of `Element` objects. It provides a flexible, ordered collection with both list-like and dictionary-like access patterns. The `Pile` class maintains the order of items while allowing fast access by unique identifiers.
+The `Pile` class is a thread-safe, async-compatible, ordered collection of Observable elements in the Lion framework. It combines the characteristics of both lists and dictionaries, providing fast access by index or unique identifier while maintaining item order.
 
 ## Class Definition
 
 ```python
 class Pile(Element, Collective, Generic[T]):
-    ...
+    """Thread-safe async-compatible, ordered collection of Observable elements."""
 ```
-
-The `Pile` class inherits from `Element` and `Collective`, and uses Generic typing for flexibility.
 
 ## Key Features
 
-1. Ordered storage of `Element` objects
-2. Both list-like and dictionary-like access patterns
-3. Type checking for item inclusion
-4. Arithmetic operations for combining Piles
-5. Flexible item retrieval and manipulation methods
+- Ordered storage with O(1) access by index or Lion ID
+- Optional type enforcement
+- Thread-safe write operations
+- Asynchronous support for key operations
+- Flexible synchronous and asynchronous iteration
 
 ## Attributes
 
-- `pile_` (dict[str, T]): Internal storage mapping identifiers to items.
-- `item_type` (set[Type[Observable]] | None): Set of allowed item types.
-- `order` (Progression): Progression specifying the order of item identifiers.
-- `strict` (bool): Flag to enforce strict type checking if `item_type` is defined.
+- `pile_: dict[str, T]` - Internal storage mapping Lion IDs to items
+- `item_type: set[Type[Observable]] | None` - Set of allowed types for items
+- `order: Progression` - Maintains the order of items
+- `strict: bool` - Whether to enforce strict type checking
 
 ## Constructor
 
@@ -37,296 +35,177 @@ def __init__(
     item_type: set[Type[Observable]] | None = None,
     order: Progression | list | None = None,
     strict: bool = False,
-):
-    ...
+    **kwargs,
+)
 ```
 
-Initializes a new Pile instance.
-
-- `items`: Initial items for the pile.
-- `item_type`: Allowed types for items in the pile.
-- `order`: Initial order of items (as Progression).
-- `strict`: Whether to enforce strict type checking.
+Initialize a Pile instance.
 
 ## Methods
 
-### Access and Retrieval
+### Synchronous Methods
 
-#### \__getitem__(key) -> T | Pile
+#### Item Access and Modification
 
-Retrieve items from the pile using a key.
+- `__getitem__(self, key: int | str | slice) -> T | "Pile"`: Get item(s) by index, ID, or slice
+- `__setitem__(self, key: int | str | slice, item: T | Sequence[T]) -> None`: Set item(s)
+- `pop(self, key: int | str | slice, default: Any = LN_UNDEFINED) -> T | "Pile" | None`: Remove and return item(s)
+- `get(self, key: int | str | slice, default: Any = LN_UNDEFINED) -> T | "Pile" | None`: Get item(s) with default
+- `remove(self, item: T) -> None`: Remove a specific item
+- `include(self, item: T | Iterable[T]) -> None`: Include item(s) if not present
+- `exclude(self, item: T | Iterable[T]) -> None`: Exclude item(s) if present
+- `update(self, other) -> None`: Update Pile with items from another iterable or Pile
+- `insert(self, index: int, item: T) -> None`: Insert an item at a specific position
+- `append(self, item: T) -> None`: Append an item to the end (alias for `include`)
+
+#### Collection Operations
+
+- `clear(self) -> None`: Remove all items
+- `keys(self) -> Sequence[str]`: Return a sequence of all keys (Lion IDs)
+- `values(self) -> Sequence[T]`: Return a sequence of all values
+- `items(self) -> Sequence[tuple[str, T]]`: Return a sequence of all (key, value) pairs
+- `is_empty(self) -> bool`: Check if the Pile is empty
+- `size(self) -> int`: Get the number of items
+
+#### Iteration and Conversion
+
+- `__iter__(self) -> Iterator[T]`: Return an iterator over the items
+- `__next__(self) -> T`: Return the next item
+- `__list__(self) -> list[T]`: Convert the Pile to a list
+
+#### Arithmetic Operations
+
+- `__add__(self, other: T | Iterable[T]) -> "Pile"`: Create a new Pile with added items
+- `__sub__(self, other: T | Iterable[T]) -> "Pile"`: Create a new Pile with items removed
+- `__iadd__(self, other: T | Iterable[T]) -> "Pile"`: Add items in-place
+- `__isub__(self, other: T | Iterable[T]) -> "Pile"`: Remove items in-place
+- `__radd__(self, other: T | Iterable[T]) -> "Pile"`: Reverse addition
+
+#### Serialization
+
+- `to_dict(self, **kwargs) -> dict`: Convert the Pile to a dictionary representation
+- `from_dict(cls, data: dict[str, Any]) -> "Pile"`: Create a Pile instance from a dictionary
+- `dump(self, clear=True) -> dict`: Dump Pile contents to a dictionary and optionally clear
+- `load(cls, data: dict) -> "Pile"`: Load a Pile from a dictionary
+
+### Asynchronous Methods
+
+- `asetitem(self, key: int | str | slice, item: T | Iterable[T]) -> None`: Asynchronously set item(s)
+- `apop(self, key: int | str | slice, default: Any = LN_UNDEFINED) -> T | "Pile" | None`: Asynchronously remove and return item(s)
+- `aremove(self, item: T) -> None`: Asynchronously remove a specific item
+- `ainclude(self, item: T | Iterable[T]) -> None`: Asynchronously include item(s)
+- `aexclude(self, item: T | Iterable[T]) -> None`: Asynchronously exclude item(s)
+- `aclear(self) -> None`: Asynchronously clear all items
+- `aupdate(self, other: Any) -> None`: Asynchronously update Pile
+- `aget(self, key: Any, default=LN_UNDEFINED)`: Asynchronously get item(s)
+- `__aiter__(self) -> AsyncIterator[T]`: Asynchronous iterator
+- `__anext__(self) -> T`: Asynchronously get next item
+- `adump(self, clear=True) -> dict`: Asynchronously dump Pile contents
+
+## Usage Examples
+
+### Creating a Pile
 
 ```python
-from lion_core.generic import Pile as pile
+from lion_core.generic.pile import Pile, pile
+from lion_core.abc import Observable
 
-p = pile([Node(value=i) for i in range(5)])
-print(p[0])  # Output: Node with value 0
-print(p[1:3])  # Output: Pile containing Nodes with values 1 and 2
+class MyItem(Observable):
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+
+# Create a Pile with type checking
+my_pile = Pile(items=[MyItem(1), MyItem(2)], item_type={MyItem})
+
+# Use the pile helper function
+another_pile = pile(items=[MyItem(3), MyItem(4)], item_type={MyItem})
 ```
 
-#### \__setitem__(key, item) -> None
-
-Set new values in the pile using various key types.
+### Adding and Removing Items
 
 ```python
-p = pile([Node(value=i) for i in range(3)])
-p[1] = Node(value=10)
-print(p[1])
+# Add items
+my_pile.include(MyItem(5))
+my_pile.append(MyItem(6))
+
+# Remove items
+removed_item = my_pile.pop(0)
+my_pile.remove(MyItem(2))
+
+# Update with multiple items
+my_pile.update([MyItem(7), MyItem(8)])
 ```
 
-#### \__contains__(item: Any) -> bool
-
-Check if item(s) are present in the pile.
+### Accessing Items
 
 ```python
-p = pile([Node(value=i) for i in range(3)])
-print(Node(value=1) in p)  # Output: True
-print(Node(value=5) in p)  # Output: False
-```
+# By index
+first_item = my_pile[0]
 
-#### get(key: Any, default=LN_UNDEFINED) -> T | Pile | None
+# By slice
+slice_of_items = my_pile[1:3]
 
-Retrieve item(s) associated with given key.
+# By ID
+item_by_id = my_pile[first_item.ln_id]
 
-```python
-p = pile([Node(value=i) for i in range(3)])
-print(p.get(1))  # Output: Node with value 1
-print(p.get(5, "Not found"))  # Output: "Not found"
-```
-
-### Manipulation
-
-#### pop(key: Any, default=LN_UNDEFINED) -> T | Pile | None
-
-Remove and return item(s) associated with given key.
-
-```python
-p = pile([Node(value=i) for i in range(3)])
-popped = p.pop(1)
-print(popped)  # Output: Node with value 1
-print(len(p))  # Output: 2
-```
-
-#### remove(item: T) -> None
-
-Remove an item from the pile.
-
-```python
-p = pile([Node(value=i) for i in range(3)])
-p.remove(Node(value=1))
-print(len(p))  # Output: 2
-```
-
-#### include(item: Any)
-
-Include item(s) in pile if not already present.
-
-```python
-p = pile([Node(value=i) for i in range(2)])
-p.include(Node(value=2))
-print(len(p))  # Output: 3
-```
-
-#### exclude(item: Any)
-
-Exclude item(s) from pile if present.
-
-```python
-p = pile([Node(value=i) for i in range(3)])
-p.exclude(Node(value=1))
-print(len(p))  # Output: 2
-```
-
-#### clear() -> None
-
-Remove all items from the pile.
-
-```python
-p = pile([Node(value=i) for i in range(3)])
-p.clear()
-print(len(p))  # Output: 0
-```
-
-#### update(other: Any)
-
-Update pile with another collection of items.
-
-```python
-p1 = pile([Node(value=i) for i in range(2)])
-p2 = pile([Node(value=i) for i in range(2, 4)])
-p1.update(p2)
-print(len(p1))  # Output: 4
-```
-
-#### append(item: T)
-
-Append item to end of pile.
-
-```python
-p = pile([Node(value=i) for i in range(2)])
-p.append(Node(value=2))
-print(len(p))  # Output: 3
-```
-
-#### insert(index, item)
-
-Insert item(s) at specific position.
-
-```python
-p = pile([Node(value=i) for i in range(2)])
-p.insert(1, Node(value=10))
-print(p[1])  # Output: Node with value 10
-```
-
-### Information
-
-#### __len__() -> int
-
-Get the number of items in the pile.
-
-```python
-p = pile([Node(value=i) for i in range(3)])
-print(len(p))  # Output: 3
-```
-
-#### is_empty() -> bool
-
-Check if the pile is empty.
-
-```python
-p = pile()
-print(p.is_empty())  # Output: True
-```
-
-#### size() -> int
-
-Get the number of items in the pile.
-
-```python
-p = pile([Node(value=i) for i in range(3)])
-print(p.size())  # Output: 3
+# With default value
+item = my_pile.get("non_existent_id", default=MyItem(-1))
 ```
 
 ### Iteration
 
-#### \__iter__() -> Iterable
-
-Return an iterator over the items in the pile.
-
 ```python
-p = pile([Node(value=i) for i in range(3)])
-for node in p:
-    print(node.value)  # Output: 0, 1, 2
-```
+# Synchronous iteration
+for item in my_pile:
+    print(item.value)
 
-#### keys() -> list
-
-Get the keys of the pile in their specified order.
-
-```python
-p = pile([Node(value=i) for i in range(3)])
-print(p.keys())  # Output: [ln_..., ln_..., ln_...]
-```
-
-#### values() -> list
-
-Get the values of the pile in their specified order.
-
-```python
-p = pile([Node(value=i) for i in range(3)])
-values = p.values()
-print([node.value for node in values])  # Output: [0, 1, 2]
-```
-
-#### items() -> list[tuple[str, T]]
-
-Get the items of the pile as (key, value) pairs in their order.
-
-```python
-p = pile([Node(value=i) for i in range(2)])
-for key, node in p.items():
-    print(f"{key}: {node.value}")  # Output: ln_...: 0, ln_...: 1
+# Asynchronous iteration
+async for item in my_pile:
+    print(item.value)
 ```
 
 ### Arithmetic Operations
 
-#### \__add__(other: T) -> Pile
-
-Create a new pile by including item(s) using `+`.
-
 ```python
-p1 = pile([Node(value=i) for i in range(2)])
-p2 = pile([Node(value=i) for i in range(2, 4)])
-combined = p1 + p2
-print(len(combined))  # Output: 4
+# Combine piles
+combined_pile = my_pile + another_pile
+
+# Remove items
+result_pile = my_pile - [MyItem(1), MyItem(2)]
+
+# In-place operations
+my_pile += [MyItem(9), MyItem(10)]
+my_pile -= [MyItem(3)]
 ```
 
-#### \__sub__(other) -> Pile
-
-Create a new pile by excluding item(s) using `-`.
+### Serialization
 
 ```python
-p = pile([Node(value=i) for i in range(3)])
-result = p - Node(value=1)
-print(len(result))  # Output: 2
+# Convert to dictionary
+pile_dict = my_pile.to_dict()
+
+# Create from dictionary
+new_pile = Pile.from_dict(pile_dict)
+
+# Dump and load
+dumped_data = my_pile.dump()
+loaded_pile = Pile.load(dumped_data)
 ```
 
-#### \__iadd__(other: T) -> Pile
+## Best Practices
 
-Include item(s) in the current pile in place using `+=`.
+1. Use type hints and the `item_type` parameter to ensure type safety within your Pile.
+2. Prefer the `include` and `exclude` methods over direct list manipulation for better type checking and thread safety.
+3. Use asynchronous methods (`ainclude`, `aexclude`, etc.) in async contexts for better performance and concurrency.
+4. When iterating over a Pile in a multi-threaded or async environment, be aware that the Pile's state may change. Use the provided snapshot iteration to prevent issues.
+5. Utilize the arithmetic operations (`+`, `-`, `+=`, `-=`) for efficient Pile manipulation.
+6. When subclassing `Pile`, use the `@synchronized` and `@async_synchronized` decorators for methods that modify state to maintain thread-safety.
 
-```python
-p = pile([Node(value=i) for i in range(2)])
-p += Node(value=2)
-print(len(p))  # Output: 3
-```
+## Notes
 
-#### \__isub__(other) -> Pile
+- The `Pile` class is not safe for concurrent writes from multiple threads or asyncio tasks without external synchronization.
+- Modifying the Pile during iteration may lead to unexpected behavior. Use the iteration snapshot for safe concurrent access.
+- The `strict` parameter enforces exact type matching when set to `True`. When `False`, it allows subclasses of the specified `item_type`.
+- The `Pile` class uses a `Progression` object internally to maintain item order, providing both list-like and dict-like access patterns.
 
-Exclude item(s) from the current pile in place using `-=`.
-
-```python
-p = pile([Node(value=i) for i in range(3)])
-p -= Node(value=1)
-print(len(p))  # Output: 2
-```
-
-## Usage Notes
-
-1. The `Pile` class operates on Lion IDs internally, not on the actual `Element` objects.
-2. Type checking is performed when adding items to ensure consistency within the `Pile`.
-3. The `strict` flag determines whether subclasses of specified `item_type` are allowed.
-4. Arithmetic operations (`+`, `-`, `+=`, `-=`) provide convenient ways to combine or modify `Pile` instances.
-5. The `order` attribute (of type `Progression`) maintains the sequence of items, allowing for ordered operations.
-
-## Example Usage
-
-```python
-from lion_core.generic import Node, Pile as pile
-
-# Create a new Pile
-p = pile([Node(value=i) for i in range(3)], name="TestPile")
-
-# Add a new item
-p.append(Node(value=3))
-
-# Access items
-print(p[0])  # Output: Node with value 0
-print(p[1:3])  # Output: Pile containing Nodes with values 1 and 2
-
-# Check if an item exists
-print(Node(value=2) in p)  # Output: True
-
-# Remove an item
-p.remove(Node(value=1))
-
-# Combine Piles
-p2 = pile([Node(value=i) for i in range(4, 6)])
-combined = p + p2
-
-print(len(combined))  # Output: 5
-```
-
-## Conclusion
-
-The `Pile` class is a versatile and powerful container in the Lion framework. Its combination of ordered storage, flexible access patterns, and type safety makes it suitable for a wide range of use cases within the framework. By understanding its capabilities and usage patterns, developers can effectively leverage the `Pile` class in their Lion framework projects.

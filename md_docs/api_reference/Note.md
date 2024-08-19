@@ -1,217 +1,287 @@
-# Note Class Documentation
+# Note API Documentation
 
 ## Overview
 
-The `Note` class is a flexible container for managing nested dictionary data structures in the Lion framework. It extends `pydantic.BaseModel` and provides a rich set of methods for manipulating and accessing nested data, supporting both flat and hierarchical operations.
+The `Note` class is a flexible container for managing nested dictionary data structures in the Lion framework. It provides a rich set of methods for manipulating and accessing nested data, making it ideal for storing and managing complex, hierarchical information.
 
 ## Class Definition
 
 ```python
-class Note(BaseModel):
-    content: dict[str, Any] = Field(default_factory=dict)
-    ...
+class Note(BaseModel, Container):
+    """A container for managing nested dictionary data structures."""
 ```
 
-## Key Features
+## Attributes
 
-1. Nested data manipulation (get, set, insert, pop)
-2. Flexible update methods supporting various input types
-3. Flattened and hierarchical data access
-4. Serialization and deserialization capabilities
-5. Integration with Lion framework's Element and BaseMail classes
+- `content: dict[str, Any]` - The internal dictionary storing the nested data structure.
 
 ## Constructor
 
 ```python
 def __init__(self, **kwargs):
-    super().__init__()
-    self.content = kwargs
 ```
 
-Initializes a new Note instance with the provided keyword arguments as content.
+Initialize a Note instance with the provided keyword arguments as initial content.
 
 ## Methods
 
 ### Data Manipulation
 
-#### pop(indices: list[str] | str, default: Any = LN_UNDEFINED) -> Any
-
-Removes and returns an item from the nested structure.
+#### `pop`
 
 ```python
-note = Note(a={"b": {"c": 1}})
-value = note.pop(['a', 'b', 'c'])
-print(value)  # Output: 1
-print(note.to_dict())  # Output: {'a': {'b': {}}}
+def pop(self, indices: list[str] | str, default: Any = LN_UNDEFINED, /) -> Any:
 ```
 
-#### insert(indices: list[str] | str, value: Any) -> None
+Remove and return an item from the nested structure.
 
-Inserts a value into the nested structure at the specified indices.
+#### `insert`
 
 ```python
-note = Note(a={"b": {}})
-note.insert(['a', 'b', 'c'], 1)
-print(note.to_dict())  # Output: {'a': {'b': {'c': 1}}}
+def insert(self, indices: list[str] | str, value: Any, /) -> None:
 ```
 
-#### set(indices: list[str] | str, value: Any) -> None
+Insert a value into the nested structure at the specified indices.
 
-Sets a value in the nested structure at the specified indices. If the path doesn't exist, it will be created.
+#### `set`
 
 ```python
-note = Note(a={"b": {}})
-note.set(['a', 'b', 'c'], 1)
-note.set('d', 2)
-print(note.to_dict())  # Output: {'a': {'b': {'c': 1}}, 'd': 2}
+def set(self, indices: list[str] | str, value: Any, /) -> None:
 ```
 
-#### get(indices: list[str] | str, default: Any = LN_UNDEFINED) -> Any
+Set a value in the nested structure at the specified indices.
 
-Gets a value from the nested structure at the specified indices.
+#### `get`
 
 ```python
-note = Note(a={"b": {"c": 1}})
-value = note.get(['a', 'b', 'c'])
-print(value)  # Output: 1
-print(note.get('d', 'Not found'))  # Output: Not found
+def get(self, indices: list[str] | str, default: Any = LN_UNDEFINED, /) -> Any:
 ```
+
+Get a value from the nested structure at the specified indices.
+
+#### `update`
+
+```python
+def update(self, items: Any, indices: list[str | int] = None, /):
+```
+
+Update the Note with new items, optionally at specific indices.
+
+#### `clear`
+
+```python
+def clear(self):
+```
+
+Clear the content of the Note.
 
 ### Data Access
 
-#### keys(flat: bool = False)
-
-Returns an iterator of keys.
+#### `keys`
 
 ```python
-note = Note(a=1, b={"c": 2})
-print(list(note.keys()))  # Output: ['a', 'b']
-print(list(note.keys(flat=True)))  # Output: ['a', 'b.c']
+def keys(self, /, flat: bool = False) -> list:
 ```
 
-#### values(flat: bool = False)
+Get the keys of the Note, optionally flattened.
 
-Returns an iterator of values.
+#### `values`
 
 ```python
-note = Note(a=1, b={"c": 2})
-print(list(note.values()))  # Output: [1, {'c': 2}]
-print(list(note.values(flat=True)))  # Output: [1, 2]
+def values(self, /, flat: bool = False):
 ```
 
-#### items(flat: bool = False)
+Get the values of the Note, optionally flattened.
 
-Returns an iterator of (key, value) pairs.
+#### `items`
 
 ```python
-note = Note(a=1, b={"c": 2})
-print(list(note.items()))  # Output: [('a', 1), ('b', {'c': 2})]
-print(list(note.items(flat=True)))  # Output: [('a', 1), ('b.c', 2)]
+def items(self, /, flat: bool = False):
 ```
 
-### Conversion and Serialization
+Get the items (key-value pairs) of the Note, optionally flattened.
 
-#### to_dict(**kwargs) -> dict[str, Any]
+### Conversion and Representation
 
-Converts the Note to a dictionary.
+#### `to_dict`
 
 ```python
-note = Note(a=1, b={"c": 2})
-print(note.to_dict())  # Output: {'a': 1, 'b': {'c': 2}}
+def to_dict(self, **kwargs) -> dict[str, Any]:
 ```
 
-#### from_dict(**kwargs) -> Note
+Convert the Note to a dictionary.
 
-Creates a Note from a dictionary.
+#### `from_dict`
 
 ```python
-note = Note.from_dict(a=1, b={"c": 2})
-print(note)  # Output: Note(content={'a': 1, 'b': {'c': 2}})
+@classmethod
+def from_dict(cls, kwargs) -> "Note":
 ```
 
-### Update Methods
+Create a Note from a dictionary.
 
-#### update(items: Any, indices: list[str | int] = None, /)
-
-Updates the Note with the provided items. This method has multiple implementations based on the input type.
+#### `__str__`
 
 ```python
-note = Note(a=1)
-note.update({'b': 2})
-print(note.to_dict())  # Output: {'a': 1, 'b': 2}
-
-note.update("{'c': 3}")  # Update from JSON string
-print(note.to_dict())  # Output: {'a': 1, 'b': 2, 'c': 3}
-
-note.update(Note(d=4))  # Update from another Note
-print(note.to_dict())  # Output: {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+def __str__(self) -> str:
 ```
 
-### Other Methods
+Return a string representation of the Note.
 
-#### clear()
-
-Clears the content of the Note.
+#### `__repr__`
 
 ```python
-note = Note(a=1, b=2)
-note.clear()
-print(note.to_dict())  # Output: {}
+def __repr__(self) -> str:
 ```
 
-### Magic Methods
+Return a detailed string representation of the Note.
 
-- `__contains__(indices: str | list) -> bool`: Check if indices exist in the Note.
-- `__len__() -> int`: Get the number of top-level items in the Note.
-- `__iter__()`: Iterate over the top-level keys of the Note.
-- `__next__()`: Get the next top-level key in the Note.
-- `__str__() -> str`: Get a string representation of the Note's content.
-- `__repr__() -> str`: Get a detailed string representation of the Note.
-- `__getitem__(*indices) -> Any`: Get a value using square bracket notation.
-- `__setitem__(indices: list[str | int], value: Any) -> None`: Set a value using square bracket notation.
+### Container Operations
 
-## Usage Notes
-
-1. The Note class is designed to handle nested data structures efficiently.
-2. It provides both flat and hierarchical access to data, making it versatile for different use cases.
-3. The update method can handle various input types, including dictionaries, JSON strings, and other Note objects.
-4. When using the `get` method, you can provide a default value to be returned if the specified path doesn't exist.
-5. The `set` method will create the necessary nested structure if it doesn't exist.
-
-## Example Usage
+#### `__contains__`
 
 ```python
-from lion_core.generic import Note
-
-# Create a new Note
-note = Note(a=1, b={"c": 2})
-
-# Add nested data
-note.set(['b', 'd'], 3)
-print(note.to_dict())  # Output: {'a': 1, 'b': {'c': 2, 'd': 3}}
-
-# Access data
-print(note.get(['b', 'c']))  # Output: 2
-
-# Update with a dictionary
-note.update({'e': 4})
-
-# Update with a JSON string
-note.update('{"f": 5}')
-
-# Flatten the structure
-flat_items = list(note.items(flat=True))
-print(flat_items)  # Output: [('a', 1), ('b.c', 2), ('b.d', 3), ('e', 4), ('f', 5)]
-
-# Use square bracket notation
-note['g'] = 6
-print(note['g'])  # Output: 6
-
-# Clear the Note
-note.clear()
-print(note.to_dict())  # Output: {}
+def __contains__(self, indices: str | list) -> bool:
 ```
 
-## Conclusion
+Check if the Note contains the specified indices.
 
-The `Note` class provides a powerful and flexible way to manage nested data structures in the Lion framework. Its rich set of methods for manipulation, access, and serialization make it suitable for a wide range of use cases involving complex, nested data.
+#### `__len__`
+
+```python
+def __len__(self) -> int:
+```
+
+Return the number of top-level keys in the Note.
+
+#### `__iter__`
+
+```python
+def __iter__(self):
+```
+
+Return an iterator over the top-level keys of the Note.
+
+#### `__next__`
+
+```python
+def __next__(self):
+```
+
+Return the next top-level key in the Note.
+
+### Item Access
+
+#### `__getitem__`
+
+```python
+def __getitem__(self, *indices) -> Any:
+```
+
+Get an item or nested item from the Note using indexing.
+
+#### `__setitem__`
+
+```python
+def __setitem__(self, indices: str | tuple, value: Any) -> None:
+```
+
+Set an item or nested item in the Note using indexing.
+
+## Usage Examples
+
+### Creating a Note
+
+```python
+from lion_core.generic.note import Note, note
+
+# Create a Note instance
+my_note = Note(name="John Doe", age=30, address={"city": "New York", "country": "USA"})
+
+# Use the note helper function
+another_note = note(title="Meeting Notes", date="2024-03-15", attendees=["Alice", "Bob"])
+```
+
+### Accessing and Modifying Data
+
+```python
+# Get values
+name = my_note.get("name")
+city = my_note.get(["address", "city"])
+
+# Set values
+my_note.set("email", "john@example.com")
+my_note.set(["address", "zip"], "10001")
+
+# Using indexing
+my_note["phone"] = "555-1234"
+country = my_note["address"]["country"]
+
+# Remove values
+removed_age = my_note.pop("age")
+
+# Update multiple values
+my_note.update({"occupation": "Engineer", "skills": ["Python", "JavaScript"]})
+```
+
+### Nested Operations
+
+```python
+# Insert nested data
+my_note.insert(["education", "university"], "MIT")
+
+# Update nested data
+my_note.update({"grades": {"math": 95, "physics": 88}}, indices=["education"])
+
+# Access nested data
+math_grade = my_note.get(["education", "grades", "math"])
+```
+
+### Iteration and Checks
+
+```python
+# Iterate over top-level keys
+for key in my_note:
+    print(key)
+
+# Check if a key or path exists
+if "address" in my_note:
+    print("Address information is available")
+
+if ["education", "university"] in my_note:
+    print("University information is available")
+
+# Get all keys (flat or nested)
+all_keys = my_note.keys(flat=True)
+
+# Get all items (flat or nested)
+all_items = my_note.items(flat=True)
+```
+
+### Conversion
+
+```python
+# Convert to dictionary
+note_dict = my_note.to_dict()
+
+# Create from dictionary
+new_note = Note.from_dict(note_dict)
+```
+
+## Best Practices
+
+1. Use the `note` helper function for quick Note creation with a clean syntax.
+2. Prefer using the `get` method with a default value to safely access potentially missing data.
+3. Use the `update` method for bulk updates, especially when modifying nested structures.
+4. When working with deeply nested structures, consider using the flattened views (`keys(flat=True)`, `items(flat=True)`) for easier data manipulation.
+5. Use type hints when working with Notes to improve code readability and catch potential type errors early.
+6. When subclassing `Note`, ensure to properly handle the `content` attribute to maintain the class's functionality.
+
+## Notes
+
+- The `Note` class is designed to be flexible and can handle arbitrary levels of nesting.
+- When using `pop`, `insert`, `set`, or `get` methods, you can provide the indices as either a list of strings or a single string for top-level access.
+- The `update` method can handle various input types, including dictionaries, strings (which it attempts to parse as JSON), and other Note objects.
+- The `LN_UNDEFINED` constant is used to distinguish between explicitly set `None` values and missing values.
+- Flattened views of keys, values, and items use the `|` character as a separator for nested keys.
+

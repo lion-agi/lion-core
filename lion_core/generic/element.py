@@ -1,19 +1,3 @@
-"""
-Copyright 2024 HaiyangLi
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 from datetime import datetime
 from typing import Any, TypeVar
 from typing_extensions import override
@@ -68,7 +52,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         LION_CLASS_REGISTRY[cls.__name__] = cls
 
     @property
-    def _created_datetime(self) -> datetime:
+    def created_datetime(self) -> datetime:
         """Get the creation datetime of the Element."""
         return datetime.fromtimestamp(self.timestamp, tz=TIME_CONFIG["tz"])
 
@@ -110,15 +94,11 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
 
     @override
     def __str__(self) -> str:
-        timestamp_str = self._created_datetime.isoformat(timespec="minutes")
+        timestamp_str = self.created_datetime.isoformat(timespec="minutes")
         return (
             f"{self.class_name()}(ln_id={self.ln_id[:6]}.., "
             f"timestamp={timestamp_str})"
         )
-
-    # @override
-    # def __repr__(self) -> str:
-    #     return self.__str__()
 
     def __hash__(self) -> int:
         return hash(self.ln_id)
@@ -131,5 +111,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         """Return the length of the Element."""
         return 1
 
+
+__all__ = ["Element"]
 
 # File: lion_core/generic/element.py

@@ -289,3 +289,5 @@ def note(**kwargs) -> Note:
 
 
 __all__ = ["Note", "note"]
+
+# File : lion_core/generic/note.py

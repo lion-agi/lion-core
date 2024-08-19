@@ -1,256 +1,367 @@
-# Progression Class Documentation
+# Progression API Documentation
 
 ## Overview
 
-The `Progression` class is a core component of the Lion framework, designed to manage and manipulate ordered sequences of items using their Lion IDs. It combines list-like functionality with Lion-specific features, providing a powerful tool for handling collections within the framework.
+The `Progression` class is a flexible, ordered sequence container for Lion IDs in the Lion framework. It inherits from both `Element` and `Ordering` classes, providing a unique combination of identity management and ordered collection functionality.
 
 ## Class Definition
 
 ```python
 class Progression(Element, Ordering):
-    ...
+    """A flexible, ordered sequence container for Lion IDs."""
 ```
-
-## Key Features
-
-1. Ordered management of Lion IDs
-2. List-like indexing and Lion ID-based operations
-3. Comprehensive item manipulation methods
-4. Common sequence operations
-5. Arithmetic operations for combining progressions
 
 ## Attributes
 
-- `name` (str | None): Optional name for the progression.
-- `order` (list[str]): Ordered list of Lion IDs.
+- `name: str | None` - The name of the progression (optional)
+- `order: list[str]` - The ordered list of Lion IDs
 
 ## Methods
 
-### Core Operations
+### Core Functionality
 
-#### \__init__(order: list[str] | None = None, name: str | None = None)
+#### `__init__`
+
+```python
+def __init__(self, order: Any = None, name: str | None = None):
+```
 
 Initializes a new Progression instance.
 
-```python
-@field_validator("order", mode="before")
-def _validate_order(cls, value):
-    return validate_order(value)
-```
+- `order`: Initial order of items (optional)
+- `name`: Name for the progression (optional)
 
-This method ensures that the initial order is properly validated.
-
-#### \__contains__(item: Any) -> bool
-
-Checks if an item or items are in the progression.
+#### `__contains__`
 
 ```python
-if item is None or not self.order:
-    return False
-
-item = to_list_type(item) if not isinstance(item, list) else item
-
-check = False
-for i in item:
-    check = False
-    if isinstance(i, str):
-        check = i in self.order
-    elif isinstance(i, Element):
-        check = i.ln_id in self.order
-    if not check:
-        return False
-
-return check
+def __contains__(self, item: Any) -> bool:
 ```
 
-#### \__getitem__(key: int | slice) -> str | Progression
+Checks if item(s) are in the progression.
 
-Retrieves an item or slice of items from the progression.
+#### `size`
 
 ```python
-try:
-    a = self.order[key]
-    if not a:
-        raise ItemNotFoundError(f"index {key} item not found")
-    if isinstance(key, slice):
-        return self.__class__(order=a)
-    else:
-        return a
-except IndexError:
-    raise ItemNotFoundError(f"index {key} item not found")
+def size(self) -> int:
 ```
-
-#### \__setitem__(key: int | slice, value: Any) -> None
-
-Sets an item or slice of items in the progression.
-
-```python
-a = validate_order(value)
-self.order[key] = a
-self.order = to_list(self.order, flatten=True)
-```
-
-This method allows for updating single items or slices of the progression, ensuring that the new values are valid Lion IDs.
-
-#### \__len__() -> int
 
 Returns the number of items in the progression.
 
-```python
-return len(self.order)
-```
-
-#### \__iter__() -> Iterator[str]
-
-Returns an iterator over the items in the progression.
+#### `clear`
 
 ```python
-return iter(self.order)
+def clear(self) -> None:
 ```
 
-### Manipulation Methods
+Removes all items from the progression.
 
-#### append(item: Any) -> None
+#### `is_empty`
+
+```python
+def is_empty(self) -> bool:
+```
+
+Checks if the progression is empty.
+
+### Item Management
+
+#### `append`
+
+```python
+def append(self, item: Any) -> None:
+```
 
 Appends an item to the end of the progression.
 
+#### `pop`
+
 ```python
-item_ = validate_order(item)
-self.order.extend(item_)
+def pop(self, index: int | None = None) -> str:
 ```
 
-#### include(item: Any)
+Removes and returns an item from the progression.
+
+#### `include`
+
+```python
+def include(self, item: Any):
+```
 
 Includes item(s) in the progression if not already present.
 
-```python
-item_ = validate_order(item)
-for i in item_:
-    if i not in self.order:
-        self.order.append(i)
-```
+#### `exclude`
 
-#### exclude(item: int | Any)
+```python
+def exclude(self, item: int | Any):
+```
 
 Excludes an item or items from the progression.
 
-```python
-for i in validate_order(item):
-    while i in self:
-        self.remove(i)
-```
+#### `remove`
 
-#### remove(item: Any) -> None
+```python
+def remove(self, item: Any) -> None:
+```
 
 Removes the next occurrence of an item from the progression.
 
+#### `popleft`
+
 ```python
-if item in self:
-    item = validate_order(item)
-    l_ = list(self.order)
-
-    with contextlib.suppress(ValueError):
-        for i in item:
-            l_.remove(i)
-        self.order = l_
-        return
-
-raise ItemNotFoundError(f"{item}")
+def popleft(self) -> str:
 ```
 
-#### insert(index: int, item: Any) -> None
+Removes and returns the leftmost item from the progression.
+
+#### `extend`
+
+```python
+def extend(self, item: Any) -> None:
+```
+
+Extends the progression from the right with another progression.
+
+#### `insert`
+
+```python
+def insert(self, index: int, item: Any) -> None:
+```
 
 Inserts an item at the specified index.
 
+### Information Retrieval
+
+#### `index`
+
 ```python
-item_ = validate_order(item)
-for i in reversed(item_):
-    self.order.insert(index, SysUtil.get_id(i))
+def index(self, item: Any, start: int = 0, end: int | None = None) -> int:
+```
+
+Returns the index of an item in the progression.
+
+#### `count`
+
+```python
+def count(self, item: Any) -> int:
+```
+
+Returns the number of occurrences of an item.
+
+### Iteration and Access
+
+#### `__iter__`
+
+```python
+def __iter__(self) -> Iterator[str]:
+```
+
+Returns an iterator over the items in the progression.
+
+#### `__next__`
+
+```python
+def __next__(self) -> str:
+```
+
+Returns the next item in the progression.
+
+#### `__getitem__`
+
+```python
+def __getitem__(self, key: int | slice):
+```
+
+Gets an item or slice of items from the progression.
+
+#### `__setitem__`
+
+```python
+def __setitem__(self, key: int | slice, value: Any) -> None:
+```
+
+Sets an item or slice of items in the progression.
+
+#### `__delitem__`
+
+```python
+def __delitem__(self, key: int | slice) -> None:
+```
+
+Deletes an item or slice of items from the progression.
+
+### Comparison and Representation
+
+#### `__eq__`
+
+```python
+def __eq__(self, other: object) -> bool:
+```
+
+Compares two Progression instances for equality.
+
+#### `__repr__`
+
+```python
+def __repr__(self) -> str:
+```
+
+Returns a string representation of the progression for debugging.
+
+#### `__str__`
+
+```python
+def __str__(self) -> str:
+```
+
+Returns a user-friendly string representation of the progression.
+
+### Arithmetic Operations
+
+#### `__add__`
+
+```python
+def __add__(self, other: Any) -> "Progression":
+```
+
+Returns a new progression with items added to the end.
+
+#### `__radd__`
+
+```python
+def __radd__(self, other: Any) -> "Progression":
+```
+
+Supports right-side addition.
+
+#### `__iadd__`
+
+```python
+def __iadd__(self, other: Any) -> "Progression":
+```
+
+Adds an item to the end of the progression in-place.
+
+#### `__sub__`
+
+```python
+def __sub__(self, other: Any) -> "Progression":
+```
+
+Returns a new progression with specified items removed.
+
+#### `__isub__`
+
+```python
+def __isub__(self, other: Any) -> "Progression":
+```
+
+Removes an item from the progression in-place.
+
+### Utility Functions
+
+#### `__reverse__`
+
+```python
+def __reverse__(self) -> Iterator[str]:
+```
+
+Returns a reversed progression.
+
+#### `__bool__`
+
+```python
+def __bool__(self) -> bool:
+```
+
+Checks if the progression is not empty.
+
+#### `__hash__`
+
+```python
+def __hash__(self) -> int:
+```
+
+Returns a hash value for the progression.
+
+## Usage Examples
+
+### Creating a Progression
+
+```python
+from lion_core.generic.progression import Progression, prog
+
+# Create an empty progression
+p1 = Progression()
+
+# Create a progression with initial items
+p2 = Progression(order=["item1", "item2", "item3"], name="MyProgression")
+
+# Use the prog helper function
+p3 = prog(["item4", "item5"], name="AnotherProgression")
+```
+
+### Managing Items
+
+```python
+# Add items
+p1.append("new_item")
+p1.include(["item1", "item2"])
+
+# Remove items
+removed_item = p1.pop()
+p1.exclude("item1")
+p1.remove("item2")
+
+# Access items
+first_item = p1[0]
+slice_of_items = p1[1:3]
+
+# Modify items
+p1[0] = "modified_item"
+```
+
+### Iterating and Checking
+
+```python
+# Iterate over items
+for item in p1:
+    print(item)
+
+# Check membership
+if "item3" in p1:
+    print("Item found!")
+
+# Get information
+print(f"Size: {p1.size()}")
+print(f"Is empty: {p1.is_empty()}")
 ```
 
 ### Arithmetic Operations
 
-#### \__add__(other: Any) -> Progression
-
-Adds an item or items to the end of the progression.
-
 ```python
-p1 + p2
-```
-
-#### \__iadd__(other: Any) -> Progression
-
-Adds an item to the end of the progression in-place.
-
-```python
-p1 += p2
-```
-
-## Usage Examples
-
-### Basic Usage
-
-```python
-from lion_core.generic import Node, Progression as prog
-
-
-# Creating a Progression
-p = prog([Node(value=1), Node(value=2)], name="Test")
-
-print(str(p))
-# Output: 'Progression(name=Test, size=2, items=['ln_...', 'ln_...'])'
-
-# Using __contains__
-print(Node(value=1) in p)  # Output: True
-
-# Using __getitem__
-print(p[0])  # Output: 'ln_...' (the Lion ID of the first element)
-
-# Using __setitem__
-p[1] = Node(value=3)
-print(p[1])  # Output: 'ln_...' (the Lion ID of the new element)
-
-# Using append
-p.append(Node(value=4))
-print(len(p))  # Output: 3
-```
-
-### Advanced Operations
-
-```python
-# Creating two Progressions
-p1 = prog([Node(value=1), Node(value=2)], name="Prog1")
-p2 = prog([Node(value=3), Node(value=4)], name="Prog2")
-
-# Using __add__
+# Combine progressions
 combined = p1 + p2
-print(str(combined))
-# Output: 'Progression(name=None, size=4, items=['ln_...', 'ln_...', 'ln_...', 'ln_...'])'
 
-# Using __iadd__
-p1 += [Node(value=5), Node(value=6)]
-print(str(p1))
-# Output: 'Progression(name=Prog1, size=4, items=['ln_...', 'ln_...', 'ln_...', 'ln_...'])'
+# Remove items
+result = p1 - ["item1", "item2"]
 
-# Using slicing
-sliced = p1[1:3]
-print(str(sliced))
-# Output: 'Progression(name=None, size=2, items=['ln_...', 'ln_...'])'
-
-# Using insert
-p1.insert(1, Node(value=7))
-print(str(p1))
-# Output: 'Progression(name=Prog1, size=5, items=['ln_...', 'ln_...', 'ln_...', 'ln_...', 'ln_...'])'
+# In-place operations
+p1 += ["new_item1", "new_item2"]
+p1 -= ["item_to_remove"]
 ```
 
-## Important Notes
+## Best Practices
 
-1. The `Progression` class operates on Lion IDs, not actual Element objects.
-2. It provides both mutable (in-place) and immutable operations.
-3. Printed representations show truncated Lion IDs for readability.
-4. The class is optimized for Lion ID operations, which may affect performance with large datasets.
-5. `__setitem__` allows for updating both single items and slices, ensuring type consistency.
+1. Use the `prog` helper function for quick Progression creation.
+2. Prefer `include` and `exclude` methods over direct list manipulation for better type safety.
+3. Use `validate_order` when working with external data to ensure valid Lion IDs.
+4. Leverage the arithmetic operations for efficient Progression manipulation.
+5. Use the `name` attribute to give semantic meaning to your Progressions.
 
-## Conclusion
+## Notes
 
-The Progression class is a versatile tool in the Lion framework, offering powerful capabilities for managing ordered sequences of items via their Lion IDs. Its combination of list-like functionality and Lion-specific features makes it suitable for a wide range of use cases within the framework.
+- The `Progression` class uses `validate_order` to ensure all items are valid Lion IDs.
+- The class supports both integer indexing and slicing for flexible item access.
+- Arithmetic operations create new Progression instances, while in-place operations (`+=`, `-=`) modify the existing instance.
+- The `extend` method specifically requires another `Progression` instance, enforcing type safety.
+

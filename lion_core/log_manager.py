@@ -2,6 +2,7 @@ import atexit
 import json
 from typing import Any, TypeVar
 
+import os
 from lion_core.abc._observer import BaseManager
 from lion_core.generic.pile import Pile, pile
 
@@ -27,18 +28,20 @@ class LogManager(BaseManager):
             self._save(id_, data, persist_path)
 
     def dump(self, clear=True, persist_path=None) -> dict:
-        with self.logs.lock:
-            id_ = self.logs[-1].ln_id[:-6]
-            data = self.logs.dump(clear)
-            self._save(id_, data, persist_path)
+        id_ = self.logs[-1].ln_id[:-6]
+        data = self.logs.dump(clear)
+        self._save(id_, data, persist_path)
 
     def _save(self, id_, data, persist_path=None):
         persist_path = persist_path or self.persist_path
 
         if not persist_path:
-            persist_path = f"/data/logs/{id_}.json"
+            persist_path = f"./data/logs/{id_}.json"
 
-        with open(self.persist_dir, "w") as f:
+        if not os.path.exists(os.path.dirname(persist_path)):
+            os.makedirs(os.path.dirname(persist_path))
+
+        with open(persist_path, "w") as f:
             json.dump(data, f)
 
     def load_json(self, persist_path=None):
