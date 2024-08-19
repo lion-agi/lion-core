@@ -1,6 +1,8 @@
-from lion_core.setting import LN_UNDEFINED
-import lion_core.libs as CoreLib
-from lion_core.sys_utils import SysUtil as CoreUtil
+"""lion-core"""
+
+import logging
+from .version import __version__
 
 
-__all__ = ["LN_UNDEFINED", "CoreLib", "CoreUtil"]
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
