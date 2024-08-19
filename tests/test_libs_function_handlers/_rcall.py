@@ -32,7 +32,6 @@ async def mock_handler(e: Exception) -> str:
 
 
 class TestRCallFunction(unittest.IsolatedAsyncioTestCase):
-
     async def test_rcall_basic(self):
         result = await rcall(async_func, 1, retries=2)
         self.assertEqual(result, 2)

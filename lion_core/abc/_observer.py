@@ -50,7 +50,6 @@ class BaseProcessor(AbstractObserver):
 
 
 class BaseEngine(AbstractObserver):
-
     @abstractmethod
     async def run(self, *args, **kwargs):
         """Asynchronously runs the engine's core functionality."""

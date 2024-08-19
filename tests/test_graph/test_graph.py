@@ -487,7 +487,6 @@ def test_graph_with_attributes():
             self.add_field("attributes", value=attributes)
 
     class AttributeEdge(Edge):
-
         def __init__(self, head, tail, attributes):
             super().__init__(head, tail)
             for k, v in attributes.items():

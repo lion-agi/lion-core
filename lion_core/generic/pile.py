@@ -604,11 +604,13 @@ class Pile(Element, Collective, Generic[T]):
 
     @overload
     @async_synchronized
-    async def asetitem(self, key: int | str, item: T) -> None: ...
+    async def asetitem(self, key: int | str, item: T) -> None:
+        ...
 
     @overload
     @async_synchronized
-    async def asetitem(self, key: slice, item: Iterable[T]) -> None: ...
+    async def asetitem(self, key: slice, item: Iterable[T]) -> None:
+        ...
 
     @async_synchronized
     async def asetitem(self, key: int | str | slice, item: T | Iterable[T]) -> None:
@@ -629,11 +631,13 @@ class Pile(Element, Collective, Generic[T]):
 
     @overload
     @async_synchronized
-    async def apop(self, key: int | str, default: T = LN_UNDEFINED) -> T | None: ...
+    async def apop(self, key: int | str, default: T = LN_UNDEFINED) -> T | None:
+        ...
 
     @overload
     @async_synchronized
-    async def apop(self, key: slice, default: Any = LN_UNDEFINED): ...
+    async def apop(self, key: slice, default: Any = LN_UNDEFINED):
+        ...
 
     @async_synchronized
     async def apop(self, key: int | str | slice, default: Any = LN_UNDEFINED):
@@ -667,11 +671,13 @@ class Pile(Element, Collective, Generic[T]):
 
     @overload
     @async_synchronized
-    async def ainclude(self, item: T) -> None: ...
+    async def ainclude(self, item: T) -> None:
+        ...
 
     @overload
     @async_synchronized
-    async def ainclude(self, item: Iterable[T]) -> None: ...
+    async def ainclude(self, item: Iterable[T]) -> None:
+        ...
 
     @async_synchronized
     async def ainclude(self, item: T | Iterable[T]) -> None:
@@ -689,11 +695,13 @@ class Pile(Element, Collective, Generic[T]):
 
     @overload
     @async_synchronized
-    async def aexclude(self, item: T) -> None: ...
+    async def aexclude(self, item: T) -> None:
+        ...
 
     @overload
     @async_synchronized
-    async def aexclude(self, item: Iterable[T]) -> None: ...
+    async def aexclude(self, item: Iterable[T]) -> None:
+        ...
 
     @async_synchronized
     async def aexclude(self, item: T | Iterable[T]) -> None:

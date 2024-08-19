@@ -182,7 +182,6 @@ class SysUtil:
         ) or (
             len(item) == 32  # for backward compatibility
         ):
-
             return item
         raise LionIDError("Item must be observable and contain a valid Lion ID.")
 

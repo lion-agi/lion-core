@@ -12,7 +12,6 @@ from lion_core.sys_utils import SysUtil
 
 
 class RuleProcessor(BaseExecutor, Temporal, Observable):
-
     def __init__(
         self,
         *,
@@ -50,7 +49,6 @@ class RuleProcessor(BaseExecutor, Temporal, Observable):
         check_func: Callable = None,
         **kwargs,
     ):
-
         if annotation is None:
             if isinstance(form, BaseForm) and field in form.all_fields:
                 annotation = form.field_getattr(field, "annotation")
@@ -135,7 +133,6 @@ class RuleProcessor(BaseExecutor, Temporal, Observable):
         dict_ = {}
         for k, v in response.items():
             if k in form.request_fields:
-
                 kwargs = form.validation_kwargs.get(k, {})
                 _annotation = form.field_getattr(k, "annotation")
 

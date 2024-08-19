@@ -32,7 +32,6 @@ async def mock_handler(e: Exception) -> str:
 
 
 class TestMCallFunction(unittest.IsolatedAsyncioTestCase):
-
     async def test_mcall_single_func(self):
         inputs = [1, 2, 3, 4, 5]
         result = await mcall(inputs, async_func)

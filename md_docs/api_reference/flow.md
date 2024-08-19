@@ -313,4 +313,3 @@ new_flow = Flow.from_dict(flow_dict)
 - When adding items without specifying a Progression, the `default_name` is used if set.
 - The `shape()` method provides a quick overview of the Flow's structure, returning the number of Progressions and their individual lengths.
 - The `LN_UNDEFINED` constant is used to distinguish between explicitly set `None` values and missing values in the `get` method.
-

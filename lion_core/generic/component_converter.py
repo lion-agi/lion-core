@@ -1,7 +1,8 @@
 from lion_core.converter import ConverterRegistry, DictConverter, JsonConverter
 
 
-class ComponentConverterRegistry(ConverterRegistry): ...
+class ComponentConverterRegistry(ConverterRegistry):
+    ...
 
 
 ComponentConverterRegistry.register("dict", DictConverter())

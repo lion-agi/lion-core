@@ -178,7 +178,6 @@ class CallDecorator:
         """
 
         def decorator(func: F) -> F:
-
             @wraps(func)
             async def async_wrapper(*args, **kwargs) -> Any:
                 preprocessed_args = (

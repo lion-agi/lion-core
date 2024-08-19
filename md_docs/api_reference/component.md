@@ -240,7 +240,7 @@ priority_description = component.field_getattr("priority", "description")
 ### Updating MetaData
 
 ```python
-# set an item to metadata 
+# set an item to metadata
 component.metadata["config", "version"] = 1
 
 # change an value
@@ -266,4 +266,3 @@ component.metadata.get(["config", "spec"], None)
 - The `LN_UNDEFINED` constant is used to represent undefined values and is distinct from `None`.
 - The class supports dynamic field management, allowing for flexible data structures.
 - Converter functionality allows for easy transformation between different data formats.
-

@@ -18,7 +18,6 @@ class Converter(Protocol):
 
 
 class DictConverter(Converter):
-
     @staticmethod
     def from_obj(cls, obj: dict, **kwargs) -> dict:
         return obj
@@ -29,7 +28,6 @@ class DictConverter(Converter):
 
 
 class JsonConverter(Converter):
-
     @staticmethod
     def from_obj(cls, obj: str, **kwargs) -> dict:
         try:

@@ -3,7 +3,6 @@ from lion_core.generic.element import Element
 
 
 class iModel(Element, BaseiModel):
-
     async def update_config(self, *args, **kwargs):
         raise NotImplementedError
 

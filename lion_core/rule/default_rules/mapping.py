@@ -9,7 +9,6 @@ from lion_core.rule.default_rules.choice import ChoiceRule
 
 
 class MappingRule(ChoiceRule):
-
     @override
     async def check_value(self, value: dict, /) -> str:
         if not isinstance(value, Mapping):
@@ -23,7 +22,6 @@ class MappingRule(ChoiceRule):
 
     @override
     async def fix_value(self, value: Any):
-
         if isinstance(value, list) and len(value) == 1:
             value = value[0]
 

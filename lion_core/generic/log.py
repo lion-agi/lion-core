@@ -9,7 +9,6 @@ from lion_core.libs import to_dict
 
 
 class BaseLog(Element, ImmutableRecord):
-
     content: Note = Field(
         default_factory=Note,
         title="Log Content",

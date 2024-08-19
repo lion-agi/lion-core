@@ -16,7 +16,6 @@ from lion_core.sys_utils import SysUtil
 
 
 class RuleBook(Element, BaseRecord):
-
     rules_info: Note = note()
     active_rules: Pile[Rule] = Field(
         default_factory=lambda: pile(

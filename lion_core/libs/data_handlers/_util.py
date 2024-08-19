@@ -146,7 +146,6 @@ def get_target_container(
     """
     current_element = nested
     for index in indices:
-
         if isinstance(current_element, list):
             if isinstance(index, str) and index.isdigit():
                 index = int(index)

@@ -8,7 +8,6 @@ from lion_core.rule.base import Rule
 
 
 class NumberRule(Rule):
-
     @override
     async def check_value(self, value: Any) -> Any:
         """

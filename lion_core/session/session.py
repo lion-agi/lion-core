@@ -51,7 +51,6 @@ class Session(BaseSession):
         tools: Any = None,
         **kwargs,  # additional branch parameters
     ) -> Branch:
-
         if system in [None, LN_UNDEFINED]:
             system = self.system.clone()
             system.sender = self.ln_id

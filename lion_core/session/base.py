@@ -12,7 +12,6 @@ from lion_core.sys_utils import SysUtil
 
 
 class BaseSession(Node, AbstractSpace):
-
     system: System | None = Field(None)
     user: str | None = Field(None)
     imodel: iModel | None = Field(None)

@@ -193,7 +193,6 @@ class Note(BaseModel, Container):
 
     @update.register(str)
     def _(self, items: str, indices: list[str | int] = None, /):
-
         item_: dict | None = to_dict(
             items,
             str_type="json",

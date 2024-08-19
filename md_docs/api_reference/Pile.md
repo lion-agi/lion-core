@@ -208,4 +208,3 @@ loaded_pile = Pile.load(dumped_data)
 - Modifying the Pile during iteration may lead to unexpected behavior. Use the iteration snapshot for safe concurrent access.
 - The `strict` parameter enforces exact type matching when set to `True`. When `False`, it allows subclasses of the specified `item_type`.
 - The `Pile` class uses a `Progression` object internally to maintain item order, providing both list-like and dict-like access patterns.
-

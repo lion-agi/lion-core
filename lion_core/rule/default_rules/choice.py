@@ -5,7 +5,6 @@ from lion_core.rule.base import Rule
 
 
 class ChoiceRule(Rule):
-
     @property
     def keys(self):
         return self.info.get(["keys"], [])

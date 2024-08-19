@@ -28,7 +28,6 @@ async def mock_handler(e: Exception) -> str:
 
 
 class TestPCallFunction(unittest.IsolatedAsyncioTestCase):
-
     async def test_pcall_basic(self):
         funcs = [async_func for _ in range(5)]
         result = await pcall(funcs)

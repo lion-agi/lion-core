@@ -71,7 +71,6 @@ class TestExtractCodeBlocks(unittest.TestCase):
 
 
 class TestExtractDocstringDetails(unittest.TestCase):
-
     def test_extract_google_style(self):
         def sample_func():
             """
@@ -474,8 +473,8 @@ class TestExtractJsonBlock(unittest.TestCase):
         md_content = """
         ```json
         {
-            "key": "value", 
-            "key2": ["value1", "value2"], 
+            "key": "value",
+            "key2": ["value1", "value2"],
             "key3": {"nested_key": "nested_value"}
         }
         ```
@@ -615,7 +614,6 @@ class TestFuzzyParseJson(unittest.TestCase):
 
 
 class TestForceValidateMapping(unittest.TestCase):
-
     def test_valid_json_string(self):
         keys = ["key1", "key2"]
         input_str = '{"key1": "value1", "key2": "value2"}'

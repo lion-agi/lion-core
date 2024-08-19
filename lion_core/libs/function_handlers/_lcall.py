@@ -18,7 +18,6 @@ def lcall(
     dropna: bool = False,
     **kwargs,
 ) -> list[Any]:
-
     lst = to_list(input_)
     if len(to_list(func, flatten=True, dropna=True)) != 1:
         raise ValueError("There must be one and only one function for list calling.")

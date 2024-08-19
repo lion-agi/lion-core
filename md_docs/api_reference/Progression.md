@@ -364,4 +364,3 @@ p1 -= ["item_to_remove"]
 - The class supports both integer indexing and slicing for flexible item access.
 - Arithmetic operations create new Progression instances, while in-place operations (`+=`, `-=`) modify the existing instance.
 - The `extend` method specifically requires another `Progression` instance, enforcing type safety.
-

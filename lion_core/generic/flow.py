@@ -14,7 +14,6 @@ from lion_core.setting import LN_UNDEFINED
 
 
 class Flow(Element):
-
     progressions: Pile[Progression] = Field(
         default_factory=lambda: pile({}, Progression)
     )
@@ -183,7 +182,6 @@ class Flow(Element):
         """
         # if sequence is not None, we will not check the name
         if seq is not None:
-
             with contextlib.suppress(ItemNotFoundError, AttributeError):
                 if item:
                     # if there is item, we exclude it from the sequence
@@ -196,7 +194,6 @@ class Flow(Element):
             return False
 
         elif name is not None:
-
             with contextlib.suppress(ItemNotFoundError):
                 if item:
                     # if there is item, we exclude it from the sequence
@@ -340,7 +337,6 @@ class Flow(Element):
         return next(self.__iter__())
 
     def _find_prog(self, prog_=None, default=LN_UNDEFINED):
-
         if not prog_:
             if self.default_name in self.registry:
                 return self.registry[self.default_name]

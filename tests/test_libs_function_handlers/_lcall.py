@@ -23,7 +23,6 @@ async def mock_handler(e: Exception) -> str:
 
 
 class TestLCallFunction(unittest.IsolatedAsyncioTestCase):
-
     async def test_lcall_basic(self):
         inputs = [1, 2, 3]
         results = await alcall(mock_func, inputs, add=1)

@@ -14,7 +14,6 @@ def handle_instruction(
     images: list | MessageFlag,
     image_detail: Literal["low", "high", "auto"] | MessageFlag,
 ):
-
     if isinstance(instruction, Instruction):
         if context:
             instruction.update_context(context)

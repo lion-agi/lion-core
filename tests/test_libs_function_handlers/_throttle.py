@@ -8,7 +8,6 @@ from lion_core.sys_utils import SysUtil
 
 
 class TestThrottle(unittest.IsolatedAsyncioTestCase):
-
     def setUp(self):
         self.throttle_period = 1  # 1 second throttle period
         self.throttle = Throttle(self.throttle_period)

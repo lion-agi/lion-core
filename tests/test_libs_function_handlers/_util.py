@@ -39,7 +39,6 @@ def mock_handler(e: Exception) -> str:
 
 # Tests
 class TestUtilityFunctions(unittest.IsolatedAsyncioTestCase):
-
     async def test_force_async(self):
         async_sync_func = force_async(sync_func)
         result = await async_sync_func(1)

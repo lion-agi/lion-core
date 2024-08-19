@@ -46,7 +46,6 @@ class Branch(BaseSession):
 
     @model_validator(mode="before")
     def _validate_input(cls, data: dict) -> dict:
-
         messages = data.pop("messages", None)
         data["messages"] = cls.pile_type(
             validate_message(messages),
@@ -113,7 +112,6 @@ class Branch(BaseSession):
         metadata: Note | dict = None,  # additional branch parameters
         delete_previous_system: bool = None,
     ) -> bool:
-
         _msg = create_message(
             sender=sender,
             recipient=recipient,

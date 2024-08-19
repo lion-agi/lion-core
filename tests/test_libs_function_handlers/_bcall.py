@@ -32,7 +32,6 @@ async def mock_handler(e: Exception) -> str:
 
 
 class TestBCallFunction(unittest.IsolatedAsyncioTestCase):
-
     async def test_bcall_basic(self):
         inputs = [1, 2, 3, 4, 5]
         batches = []

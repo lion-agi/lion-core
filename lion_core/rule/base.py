@@ -25,7 +25,6 @@ RULE_SYS_FIELDS = [
 
 
 class Rule(Element, Condition, Action):
-
     base_config: dict = {}
     info: Note = Field(default_factory=note)
     _is_init: bool = PrivateAttr(False)
@@ -204,7 +203,6 @@ class Rule(Element, Condition, Action):
         return value
 
     async def validate(self, value: Any, /) -> Any:
-
         try:
             await self.check_value(value)
             return value
@@ -268,7 +266,6 @@ def prepare_info(
 
 
 def validate_types(value):
-
     apply_types = []
     value = to_list(value, dropna=True, flatten=True)
 

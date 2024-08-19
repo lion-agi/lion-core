@@ -6,7 +6,6 @@ def handle_assistant(
     recipient,
     assistant_response,
 ):
-
     if isinstance(assistant_response, AssistantResponse):
         return assistant_response
 

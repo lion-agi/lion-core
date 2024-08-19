@@ -11,7 +11,6 @@ def handle_system(
     recipient: Any | MessageFlag,
     system_datetime: bool | str | None | MessageFlag,
 ):
-
     if isinstance(system, System):
         return system
 
