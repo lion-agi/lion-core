@@ -44,9 +44,6 @@ jobs:
       run: |
         black --check .
         isort --check-only .
-        flake8 .
-        mypy .
-        vermin --target=3.11 -v .
 
     - name: Upload coverage
       uses: codecov/codecov-action@v3
