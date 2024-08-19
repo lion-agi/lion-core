@@ -26,6 +26,22 @@ from lion_core.form.form import Form
 
 
 class Report(BaseForm):
+    """
+    Report class that extends BaseForm to manage and track task completion.
+
+    This class provides functionalities to create forms, track completed tasks,
+    and generate reports based on a template. It is designed to manage
+    multiple forms and their assignments, keeping track of completed tasks
+    and their results.
+
+    Attributes:
+        default_form_template (Type[Form]): The default template for creating forms.
+        strict_form (bool): Indicates whether the form is strict. If True,
+            the form cannot be modified after initialization.
+        completed_tasks (Pile[Form]): A pile of completed tasks.
+        completed_task_assignments (dict[str, str]): Dictionary of assignments
+            completed for the report, mapping form IDs to assignments.
+    """
 
     default_form_template: Type[Form] = Form
     strict_form: bool = Field(
@@ -44,6 +60,16 @@ class Report(BaseForm):
 
     @property
     def work_fields(self) -> list[str]:
+        """
+        Get a list of work fields in the report.
+
+        Work fields are fields that are not part of the base report structure
+        but are added dynamically. These fields represent the core tasks
+        or assignments being tracked in the report.
+
+        Returns:
+            list[str]: A list of work fields.
+        """
         base_report_fields = self.__class__.model_fields.keys()
         return [i for i in self.all_fields.keys() if i not in base_report_fields]
 
@@ -51,6 +77,18 @@ class Report(BaseForm):
         self,
         none_as_valid_value: bool = False,
     ):
+        """
+        Get a list of incomplete fields in the report.
+
+        This method checks all fields in the report and returns a list of those
+        that are incomplete, based on whether `None` is considered a valid value.
+
+        Args:
+            none_as_valid_value (bool): If True, `None` is considered a valid value.
+
+        Returns:
+            list[str]: A list of incomplete fields.
+        """
         base_report_fields = self.__class__.model_fields.keys()
 
         result = []
@@ -70,6 +108,23 @@ class Report(BaseForm):
         input_fields: list[str],
         request_fields: list[str],
     ):
+        """
+        Parse and create an assignment string from input and request fields.
+
+        This method generates an assignment string in the format
+        "input_field1, input_field2 -> request_field1, request_field2".
+
+        Args:
+            input_fields (list[str]): A list of input fields.
+            request_fields (list[str]): A list of request fields.
+
+        Returns:
+            str: The parsed assignment string.
+
+        Raises:
+            ValueError: If input_fields or request_fields are not lists or
+                        if any field is missing from the form.
+        """
         if not isinstance(input_fields, list):
             raise ERR_MAP["type", "not_list"](
                 input_fields, "The input_fields must be a list of strings."
@@ -99,6 +154,31 @@ class Report(BaseForm):
         none_as_valid_value: bool | None = False,
         strict=None,
     ):
+        """
+        Create a form based on the assignment or input/request fields.
+
+        This method generates a new form either based on a direct assignment string
+        or by parsing input and request fields to create the assignment. The form
+        can be configured to pre-fill input fields and handle `None` values
+        as valid or invalid.
+
+        Args:
+            assignment (str): The assignment string defining the task.
+            input_fields (list[str], optional): A list of input fields.
+            request_fields (list[str], optional): A list of request fields.
+            task_description (str, optional): A description of the task.
+            fill_inputs (bool, optional): Whether to pre-fill input fields.
+            none_as_valid_value (bool, optional): Whether to treat `None` as a valid value.
+            strict (bool, optional): Whether the form should be strict.
+
+        Returns:
+            Form: The created form.
+
+        Raises:
+            ValueError: If both assignment and input/request fields are provided
+                        or if neither is provided.
+        """
+
         if assignment is not None:
             if input_fields is not None or request_fields is not None:
                 raise ValueError(
@@ -131,6 +211,21 @@ class Report(BaseForm):
         form: Form,
         update_results=False,
     ):
+        """
+        Save a completed form to the report.
+
+        This method adds a form to the `completed_tasks` pile, ensuring that
+        all fields in the form are compatible with the report. Optionally, it
+        can update the report fields with results from the form.
+
+        Args:
+            form (Form): The form to be saved.
+            update_results (bool): Whether to update the report with form results.
+
+        Raises:
+            ValueError: If the form is incomplete or if its fields do not match
+                        the report's fields.
+        """
         try:
             form.check_is_completed(handle_how="raise")
         except Exception as e:
@@ -158,6 +253,23 @@ class Report(BaseForm):
         template_class: Type[BaseForm],
         **input_kwargs,
     ):
+        """
+        Create a report from a form template.
+
+        This method generates a report object using the fields from a specified
+        form template. The report is populated with input values provided via
+        keyword arguments.
+
+        Args:
+            template_class (Type[BaseForm]): The form template class to use.
+            **input_kwargs: Values to initialize the report's fields.
+
+        Returns:
+            Report: The generated report.
+
+        Raises:
+            ValueError: If the template class is not a subclass of `BaseForm`.
+        """
         if not issubclass(template_class, BaseForm):
             raise LionValueError(
                 "Invalid form template. The template class must be a subclass of Form."
@@ -187,6 +299,22 @@ class Report(BaseForm):
         form: BaseForm,
         fill_inputs: bool = True,
     ):
+        """
+        Create a report from an existing form.
+
+        This method generates a report object using the fields from an existing form,
+        optionally filling the report with the form's input values.
+
+        Args:
+            form (BaseForm): The form to use as a template.
+            fill_inputs (bool): Whether to fill the report with the form's input values.
+
+        Returns:
+            Report: The generated report.
+
+        Raises:
+            ValueError: If the provided form is not an instance of `BaseForm`.
+        """
         if not isinstance(form, BaseForm):
             raise ERR_MAP["type", "not_form_instance"](form)
 

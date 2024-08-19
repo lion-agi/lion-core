@@ -36,6 +36,7 @@ class Graph(Node):
     Attributes:
         internal_nodes (Pile): The internal nodes of the graph.
         internal_edges (Pile): The internal edges of the graph.
+        node_edge_mapping (Note): The mapping of nodes to edges for search purposes.
     """
 
     internal_nodes: Pile = Field(
@@ -54,6 +55,15 @@ class Graph(Node):
 
     @field_serializer("internal_nodes", "internal_edges")
     def _serialize_internal_piles(self, value):
+        """
+        Serialize the internal nodes and edges.
+
+        Args:
+            value: The Pile of internal nodes or edges to serialize.
+
+        Returns:
+            Serialized representation of the Pile.
+        """
         value = value.to_dict()
         value = value["pile_"]
         return value
@@ -63,10 +73,11 @@ class Graph(Node):
         Add a node to the graph.
 
         Args:
-            node: The node to add.
+            node (Node): The node to add.
 
         Raises:
-            LionRelationError: If the node already exists in the graph.
+            LionRelationError: If the node already exists in the graph or
+                if the node type is invalid.
         """
         try:
             if not isinstance(node, Node):
@@ -79,13 +90,14 @@ class Graph(Node):
 
     def add_edge(self, edge: Edge) -> None:
         """
-        Add a edge to the graph.
+        Add an edge to the graph.
 
         Args:
-            edge: The edge to add.
+            edge (Edge): The edge to add.
 
         Raises:
-            LionRelationError: If the edge already exists in the graph.
+            LionRelationError: If the edge already exists in the graph or
+                if either the head or tail node does not exist in the graph.
         """
         try:
             if not isinstance(edge, Edge):
@@ -104,6 +116,17 @@ class Graph(Node):
             raise LionRelationError(f"Error adding node: {e}")
 
     def remove_node(self, node: Node | str) -> None:
+        """
+        Remove a node from the graph.
+
+        This method removes a node and all connected edges from the graph.
+
+        Args:
+            node (Node | str): The node or node ID to remove.
+
+        Raises:
+            LionRelationError: If the node does not exist in the graph.
+        """
         _id = SysUtil.get_id(node)
         if _id not in self.internal_nodes:
             raise LionRelationError(f"Node {node} not found in the graph nodes.")
@@ -122,7 +145,15 @@ class Graph(Node):
         return self.internal_nodes.pop(_id)
 
     def remove_edge(self, edge: Edge | str) -> None:
-        """Remove an edge from the graph."""
+        """
+        Remove an edge from the graph.
+
+        Args:
+            edge (Edge | str): The edge or edge ID to remove.
+
+        Raises:
+            LionRelationError: If the edge does not exist in the graph.
+        """
         _id = SysUtil.get_id(edge)
         if _id not in self.internal_edges:
             raise LionRelationError(f"Edge {edge} not found in the graph edges.")
@@ -138,16 +169,20 @@ class Graph(Node):
         direction: Literal["both", "in", "out"] = "both",
     ) -> Pile[Edge]:
         """
-
         Find edges connected to a node in a specific direction.
 
         Args:
-            node: The node to find edges for.
-            direction: The direction to search ("in" or "out").
-                    it's from the node's perspective.
+            node (Any): The node to find edges for.
+            direction (Literal["both", "in", "out"], optional):
+                The direction to search ("in", "out", or "both").
+                Defaults to "both".
 
         Returns:
-            A Pile of Edges connected to the node in the specified direction.
+            Pile[Edge]: A Pile of edges connected to the node in the specified direction.
+
+        Raises:
+            LionRelationError: If the node is not found in the graph.
+            ValueError: If the direction is not one of "both", "in", or "out".
         """
         if direction not in {"both", "in", "out"}:
             raise ValueError("The direction should be 'both', 'in', or 'out'.")
@@ -172,6 +207,8 @@ class Graph(Node):
         """
         Get all head nodes in the graph.
 
+        Head nodes are nodes with no incoming edges.
+
         Returns:
             Pile: A Pile containing all head nodes.
         """
@@ -184,6 +221,17 @@ class Graph(Node):
         return self.internal_nodes.__class__(items=result, item_type={Node})
 
     def get_predecessors(self, node: Node):
+        """
+        Get all predecessor nodes of a given node.
+
+        Predecessors are nodes that have outgoing edges to the given node.
+
+        Args:
+            node (Node): The node to find predecessors for.
+
+        Returns:
+            Pile: A Pile containing all predecessor nodes.
+        """
         edges = self.find_node_edge(node, direction="in")
         result = []
         for edge in edges:
@@ -192,6 +240,17 @@ class Graph(Node):
         return self.internal_nodes.__class__(items=result, item_type={Node})
 
     def get_successors(self, node: Node):
+        """
+        Get all successor nodes of a given node.
+
+        Successors are nodes that have incoming edges from the given node.
+
+        Args:
+            node (Node): The node to find successors for.
+
+        Returns:
+            Pile: A Pile containing all successor nodes.
+        """
         edges = self.find_node_edge(node, direction="out")
         result = []
         for edge in edges:
