@@ -556,7 +556,10 @@ async def test_concurrent_operations():
 
 @pytest.mark.asyncio
 async def test_async_setitem(async_sample_pile):
-    async_sample_ = async_sample_pile
+    if not isinstance(async_sample_pile, Pile):
+        async_sample_ = await async_sample_pile
+    else:
+        async_sample_ = async_sample_pile
     await async_sample_.asetitem(2, Component(content=10))
     assert async_sample_[2].content == 10
 
@@ -566,7 +569,10 @@ async def test_async_setitem(async_sample_pile):
 
 @pytest.mark.asyncio
 async def test_async_remove(async_sample_pile):
-    async_sample_ = async_sample_pile
+    if not isinstance(async_sample_pile, Pile):
+        async_sample_ = await async_sample_pile
+    else:
+        async_sample_ = async_sample_pile
     element = async_sample_[2]
     await async_sample_.aremove(element)
     assert len(async_sample_) == 4
@@ -578,7 +584,10 @@ async def test_async_remove(async_sample_pile):
 
 @pytest.mark.asyncio
 async def test_async_include(async_sample_pile):
-    async_sample_ = async_sample_pile
+    if not isinstance(async_sample_pile, Pile):
+        async_sample_ = await async_sample_pile
+    else:
+        async_sample_ = async_sample_pile
     new_element = Component(content=100)
     await async_sample_.ainclude(new_element)
     assert len(async_sample_) == 6
@@ -587,7 +596,10 @@ async def test_async_include(async_sample_pile):
 
 @pytest.mark.asyncio
 async def test_async_exclude(async_sample_pile):
-    async_sample_ = async_sample_pile
+    if not isinstance(async_sample_pile, Pile):
+        async_sample_ = await async_sample_pile
+    else:
+        async_sample_ = async_sample_pile
     element = async_sample_[2]
     await async_sample_.aexclude(element)
     assert len(async_sample_) == 4
@@ -599,7 +611,10 @@ async def test_async_exclude(async_sample_pile):
 
 @pytest.mark.asyncio
 async def test_async_update(async_sample_pile):
-    async_sample_ = async_sample_pile
+    if not isinstance(async_sample_pile, Pile):
+        async_sample_ = await async_sample_pile
+    else:
+        async_sample_ = async_sample_pile
     new_elements = [Component(content=i) for i in range(5, 8)]
     await async_sample_.aupdate(new_elements)
     assert len(async_sample_) == 8
@@ -607,7 +622,10 @@ async def test_async_update(async_sample_pile):
 
 @pytest.mark.asyncio
 async def test_async_get(async_sample_pile):
-    async_sample_ = async_sample_pile
+    if not isinstance(async_sample_pile, Pile):
+        async_sample_ = await async_sample_pile
+    else:
+        async_sample_ = async_sample_pile
     element = await async_sample_.aget(2)
 
     default = object()
@@ -616,7 +634,10 @@ async def test_async_get(async_sample_pile):
 
 @pytest.mark.asyncio
 async def test_async_iter(async_sample_pile):
-    async_sample_ = async_sample_pile
+    if not isinstance(async_sample_pile, Pile):
+        async_sample_ = await async_sample_pile
+    else:
+        async_sample_ = async_sample_pile
     values = []
     async for item in async_sample_:
         values.append(item.content)
@@ -625,7 +646,10 @@ async def test_async_iter(async_sample_pile):
 
 @pytest.mark.asyncio
 async def test_async_next(async_sample_pile):
-    async_sample_ = async_sample_pile
+    if not isinstance(async_sample_pile, Pile):
+        async_sample_ = await async_sample_pile
+    else:
+        async_sample_ = async_sample_pile
     aiter = async_sample_.__aiter__()
     assert (await aiter.__anext__()).content == 0
     assert (await aiter.__anext__()).content == 1
