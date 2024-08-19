@@ -70,7 +70,6 @@ line_length = 88
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q --cov=lion_core"
 testpaths = [
     "tests",
 ]
