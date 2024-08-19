@@ -106,9 +106,10 @@ def test_mail_manager_send_all(mail_manager, mock_source):
 
 @pytest.mark.asyncio
 async def test_mail_manager_execute(mail_manager):
-    with patch.object(mail_manager, "collect_all") as mock_collect_all, patch.object(
-        mail_manager, "send_all"
-    ) as mock_send_all:
+    with (
+        patch.object(mail_manager, "collect_all") as mock_collect_all,
+        patch.object(mail_manager, "send_all") as mock_send_all,
+    ):
         mail_manager.execute_stop = False
         task = asyncio.create_task(mail_manager.execute(refresh_time=0.1))
 
@@ -212,9 +213,10 @@ async def test_mail_manager_execute_with_interruption(mail_manager):
         await asyncio.sleep(0.01)
         mail_manager.execute_stop = True
 
-    with patch.object(mail_manager, "collect_all") as mock_collect_all, patch.object(
-        mail_manager, "send_all"
-    ) as mock_send_all:
+    with (
+        patch.object(mail_manager, "collect_all") as mock_collect_all,
+        patch.object(mail_manager, "send_all") as mock_send_all,
+    ):
         interrupt_task = asyncio.create_task(interrupt())
         execute_task = asyncio.create_task(mail_manager.execute(refresh_time=0.01))
 

@@ -10,12 +10,10 @@ class PileLoader(Protocol[T]):
     """Protocol defining the interface for pile loader classes."""
 
     @staticmethod
-    def from_obj(cls, obj: T) -> dict | Sequence[dict]:
-        ...
+    def from_obj(cls, obj: T) -> dict | Sequence[dict]: ...
 
     @staticmethod
-    def can_load(cls, obj: Any) -> bool:
-        ...
+    def can_load(cls, obj: Any) -> bool: ...
 
 
 class PileLoaderRegistry:

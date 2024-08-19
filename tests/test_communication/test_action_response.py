@@ -110,7 +110,9 @@ def test_action_response_with_large_output():
 
 
 def test_action_response_unicode():
-    request = ActionRequest("test_func", {"arg": "你好世界"}, SysUtil.id(), SysUtil.id())
+    request = ActionRequest(
+        "test_func", {"arg": "你好世界"}, SysUtil.id(), SysUtil.id()
+    )
     response = ActionResponse(request, SysUtil.id(), "こんにちは世界")
     assert response.func_output == "こんにちは世界"
 
