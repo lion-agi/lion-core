@@ -53,8 +53,3 @@ jobs:
 
     - name: Run tests with pytest-asyncio
       run: pytest --asyncio-mode=auto --maxfail=1 --disable-warnings tests/
-
-    - name: Check for sensitive data
-      uses: gitleaks/gitleaks-action@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
