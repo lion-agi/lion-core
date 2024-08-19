@@ -118,7 +118,7 @@ To set up the development environment for Lion-Core, follow these steps:
 
 4. **Run the tests**:
     ```bash
-    pytest
+    pytest --maxfail=1 --disable-warnings tests/
     ```
 
 5. **Check code style**:
