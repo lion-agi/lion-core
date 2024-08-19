@@ -117,7 +117,7 @@ class RoledMessage(Relational, Component, BaseMail):
     @field_validator("role")
     def _validate_role(cls, v: Any) -> MessageRole | None:
         """Validates the role of the message."""
-        if v in MessageRole:
+        if v in [r.value for r in MessageRole]:
             return MessageRole(v)
         raise ValueError(f"Invalid message role: {v}")
 
