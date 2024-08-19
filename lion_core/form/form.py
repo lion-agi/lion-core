@@ -296,7 +296,7 @@ class Form(BaseForm):
         a = self.all_fields
         prompt = ""
         if "guidance" in a:
-            prompt += f"### Overall Guidance:\n{getattr(self, "guidance")}.\n"
+            prompt += f"### Overall Guidance:\n{getattr(self, 'guidance')}.\n"
 
         prompt += "### Task Instructions:\n"
         prompt += f"1. Provided Input Fields: {', '.join(self.input_fields)}.\n"
