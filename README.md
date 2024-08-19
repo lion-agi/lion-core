@@ -48,7 +48,7 @@ Lion-Core is on an exciting journey of evolution. Here's a glimpse into our visi
 
 ## 📦 Installation
 
-Lion-Core is not yet available on PyPI. You can install the development version directly from the repository:
+Lion-Core is not yet available on PyPI. You can install the nightly version directly from the repository:
 
 ```bash
 pip install git+https://github.com/lion-agi/lion-core.git
@@ -93,3 +93,52 @@ If you use Lion-Core in your research or project, please cite it as follows:
 ---
 
 Note: Lion-Core is an extraction and refinement of core components from the larger lionagi project. After reaching version 0.1.0, development will continue on Lion-Core while also informing a rewrite of the lionagi library.
+
+## 🛠️ Development Environment Setup
+
+To set up the development environment for Lion-Core, follow these steps:
+
+1. **Clone the repository**:
+    ```bash
+    git clone https://github.com/lion-agi/lion-core.git
+    cd lion-core
+    ```
+
+2. **Create a virtual environment**:
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    ```
+
+3. **Install the dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    pip install -r requirements-dev.txt
+    ```
+
+4. **Run the tests**:
+    ```bash
+    pytest
+    ```
+
+5. **Check code style**:
+    ```bash
+    black --check .
+    ```
+
+6. **Run linters**:
+    ```bash
+    flake8 .
+    isort --check-only .
+    ```
+
+7. **Build the documentation**:
+    ```bash
+    cd docs
+    make html
+    ```
+
+8. **Start developing**:
+    - Make your changes and ensure all tests pass.
+    - Follow the code style guidelines and run the linters.
+    - Update the documentation if necessary.
