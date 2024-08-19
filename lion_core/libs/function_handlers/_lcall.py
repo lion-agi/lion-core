@@ -16,6 +16,7 @@ limitations under the License.
 
 import asyncio
 from typing import Any, Callable, List, Dict, TypeVar
+from lion_core.libs.data_handlers import to_list
 
 from lion_core.libs.function_handlers._ucall import ucall
 from lion_core.setting import LN_UNDEFINED
@@ -24,7 +25,23 @@ T = TypeVar("T")
 ErrorHandler = Callable[[Exception], Any]
 
 
-async def lcall(
+def lcall(
+    func: Callable[..., T],
+    /,
+    input_: List[Any],
+    *,
+    flatten: bool = False,
+    dropna: bool = False,
+    **kwargs,
+) -> list[Any]:
+
+    lst = to_list(input_)
+    if len(to_list(func, flatten=True, dropna=True)) != 1:
+        raise ValueError("There must be one and only one function for list calling.")
+    return to_list([func(i, **kwargs) for i in lst], flatten=flatten, dropna=dropna)
+
+
+async def alcall(
     func: Callable[..., T],
     input_: List[Any],
     retries: int = 0,

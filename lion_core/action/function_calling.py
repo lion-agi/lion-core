@@ -15,55 +15,62 @@ limitations under the License.
 """
 
 from typing import Any
+from pydantic import Field
 from typing_extensions import override
-from lion_core.libs import ucall
-from lion_core.abc import Action
-
+from lion_core.libs import CallDecorator as cd, rcall
+from lion_core.action.base import ObservableAction
+from lion_core.action.status import ActionStatus
 from lion_core.action.tool import Tool
 
 
-class FunctionCalling(Action):
+class FunctionCalling(ObservableAction):
     """Represents a callable function with its arguments."""
 
+    func_tool: Tool | None = Field(None, exclude=True)
+    arguments: dict[str, Any] | None = None
+    content_fields: list = ["response", "arguments", "function_name"]
+    function_name: str | None = None
+
     def __init__(
-        self, func_tool: Tool, arguments: dict[str, Any] | None = None
-    ) -> None:
-        super().__init__()
+        self,
+        func_tool: Tool,
+        arguments: dict[str, Any],
+        retry_config: dict[str, Any] | None = None,
+    ):
+        super().__init__(retry_config=retry_config)
         self.func_tool: Tool = func_tool
         self.arguments: dict[str, Any] = arguments or {}
+        self.function_name = func_tool.function_name
 
     @override
-    async def invoke(self) -> Any:
-        """Asynchronously invoke the stored function with the arguments."""
-        kwargs = self.arguments
-        if self.func_tool.pre_processor:
-            kwargs = await ucall(
-                self.func_tool.pre_processor,
-                self.arguments,
-                **self.func_tool.pre_processor_kwargs,
-            )
-            if not isinstance(kwargs, dict):
-                raise ValueError("Pre-processor must return a dictionary.")
+    async def invoke(self):
+
+        @cd.pre_post_process(
+            preprocess=self.func_tool.pre_processor,
+            postprocess=self.func_tool.post_processor,
+            preprocess_kwargs=self.func_tool.pre_processor_kwargs,
+            postprocess_kwargs=self.func_tool.post_processor_kwargs,
+        )
+        async def _inner(**kwargs):
+            config = {**self.retry_config, **kwargs}
+            config["timing"] = True
+            return await rcall(self.func_tool.function, **config)
 
         try:
-            result = await ucall(
-                self.func_tool.function,
-                **kwargs,
-            )
-        except Exception:
-            raise
+            result, elp = await _inner(**self.arguments)
+            self.response = result
+            self.execution_time = elp
+            self.status = ActionStatus.COMPLETED
 
-        if self.func_tool.post_processor:
-            post_process_kwargs = self.func_tool.post_processor_kwargs or {}
-            result = await ucall(
-                self.func_tool.post_processor,
-                result,
-                **post_process_kwargs,
-            )
+            if self.func_tool.parser is not None:
+                result = self.func_tool.parser(result)
 
-        return (
-            result if self.func_tool.parser is None else self.func_tool.parser(result)
-        )
+            await self.to_log()
+            return result
+
+        except Exception as e:
+            self.status = ActionStatus.FAILED
+            self.error = str(e)
 
     def __str__(self) -> str:
         return f"{self.func_tool.function_name}({self.arguments})"

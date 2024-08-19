@@ -14,61 +14,119 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import inspect
+
 from abc import abstractmethod
 from typing import Any, Callable
+from pydantic import PrivateAttr, Field
 from typing_extensions import override
 
+from lion_core.abc import Condition, Action
+from lion_core.generic.element import Element
 
-from lion_core.abc import Condition, Observable, Temporal, Action
 from lion_core.exceptions import LionOperationError
-from lion_core.sys_utils import SysUtil
-from lion_core.libs import ucall
-from lion_core.generic.note import Note
+from lion_core.libs import ucall, to_list, to_dict
+from lion_core.generic.note import note, Note
 from lion_core.form.base import BaseForm
 
 
-class Rule(Condition, Action, Observable, Temporal):
+RULE_SYS_FIELDS = [
+    "base_config",
+    "fix",
+    "apply_types",
+    "exclude_types",
+    "apply_fields",
+    "exclude_fields",
+    "validation_kwargs",
+    "accept_info_key",
+]
 
-    base_config = {}
+
+class Rule(Element, Condition, Action):
+
+    base_config: dict = {}
+    info: Note = Field(default_factory=note)
+    _is_init: bool = PrivateAttr(False)
 
     def __init__(
         self,
-        fix: bool = False,
-        apply_types: list[str] | None = None,
-        exclude_types: list[str] | None = None,
-        apply_fields: list[str] = None,
-        exclude_fields: list[str] = None,
-        **kwargs,  # validation_kwargs
+        *,
+        info: Note = None,
+        accept_info_key=[],
+        **kwargs,
     ):
         super().__init__()
-        self.ln_id = SysUtil.id()
-        self.timestamp = SysUtil.time(type_="timestamp")
-        config = {**self.base_config, **kwargs}
-        self.rule_info = Note(
-            **{
-                "fix": fix,
-                "apply_types": apply_types or config.pop("apply_types", []),
-                "exclude_types": exclude_types or [],
-                "apply_fields": apply_fields or [],
-                "exclude_fields": exclude_fields or [],
-                **config,
-            }
+        self.info = prepare_info(
+            info=info,
+            base_config=self.base_config,
+            accept_info_key=accept_info_key
+            or self.base_config.get("accept_info_key", []),
+            **kwargs,
         )
 
     @property
+    def fix(self):
+        return self.info.get(["fix"], False)
+
+    @fix.setter
+    def fix(self, value: bool):
+        if not isinstance(value, bool):
+            raise LionOperationError("fix must be a boolean")
+        self.info["fix"] = value
+
+    @property
+    def apply_types(self):
+        return self.info.get(["apply_types"], [])
+
+    @apply_types.setter
+    def apply_types(self, value: list[str]):
+        apply_types = validate_types(value)
+        self.info["apply_types"] = apply_types
+
+    @property
+    def exclude_types(self):
+        return self.info.get(["exclude_types"], [])
+
+    @exclude_types.setter
+    def exclude_types(self, value: list[str]):
+        exclude_types = validate_types(value)
+        self.info["exclude_types"] = exclude_types
+
+    @property
+    def apply_fields(self):
+        return self.info.get(["apply_fields"], [])
+
+    @apply_fields.setter
+    def apply_fields(self, value: list[str]):
+        value = to_list(value, dropna=True, flatten=True)
+        for i in value:
+            if not isinstance(i, str):
+                raise LionOperationError("apply_fields must be a list of str")
+
+        self.info["apply_fields"] = value
+
+    @property
+    def exclude_fields(self):
+        return self.info.get(["exclude_fields"], [])
+
+    @exclude_fields.setter
+    def exclude_fields(self, value: list[str]):
+        value = to_list(value, dropna=True, flatten=True)
+        for i in value:
+            if not isinstance(i, str):
+                raise LionOperationError("exclude_fields must be a list of str")
+
+        self.info["exclude_fields"] = value
+
+    @property
     def validation_kwargs(self) -> dict:
-        return {
-            k: v
-            for k, v in self.rule_info.to_dict().items()
-            if k
-            not in [
-                "fix",
-                "apply_types",
-                "exclude_types",
-                "apply_fields",
-                "exclude_fields",
-            ]
-        }
+        """a dict for fix_value method"""
+        return self.info.get(["validation_kwargs"], {})
+
+    @validation_kwargs.setter
+    def validation_kwargs(self, value: dict):
+        value = to_dict(value)
+        self.info["validation_kwargs"] = value
 
     # must only return True or False
     @override
@@ -76,14 +134,9 @@ class Rule(Condition, Action, Observable, Temporal):
         self,
         field: str,
         value: Any,
-        form: BaseForm,
-        *args,
-        apply_fields: list[str] = None,
-        exclude_fields: list[str] = None,
-        annotation: list | str = None,
-        check_func: (
-            Callable | Any
-        ) = None,  # takes priority over annotation and self.rule_condition
+        /,
+        annotation: Any = None,
+        check_func: Callable | Any = None,
         **kwargs,  # additional kwargs for custom check func or self.rule_condition
     ) -> bool:
         """
@@ -105,17 +158,11 @@ class Rule(Condition, Action, Observable, Temporal):
         Raises:
             LionOperationError: If an invalid check function is provided.
         """
-        if field not in form.work_fields:
+
+        if field in self.exclude_fields:
             return False
 
-        apply_fields: list = apply_fields or self.rule_info.get(["apply_fields"], [])
-        exclude_fields: list = exclude_fields or self.rule_info.get(
-            ["exclude_fields"], []
-        )
-
-        if exclude_fields and field in exclude_fields:
-            return False
-        if apply_fields and field in apply_fields:
+        if field in self.apply_fields:
             return True
 
         if self.rule_condition != Rule.rule_condition:
@@ -123,7 +170,7 @@ class Rule(Condition, Action, Observable, Temporal):
             if not isinstance(check_func, Callable):
                 raise LionOperationError("Invalid check function provided")
             try:
-                a = await ucall(check_func, field, value, form, *args, **kwargs)
+                a = await ucall(check_func, field, value, **kwargs)
                 if isinstance(a, bool):
                     return a
             except Exception:
@@ -131,58 +178,28 @@ class Rule(Condition, Action, Observable, Temporal):
 
         # if not in custom fields, nor using custom validation condition
         # we will resort to use field annotation
-        annotation = annotation or form._get_field_annotation(field)
+        if not annotation:
+            return False
+
         if isinstance(annotation, dict) and field in annotation:
             annotation = annotation[field]
         annotation = [annotation] if isinstance(annotation, str) else annotation
 
         if annotation and len(annotation) > 0:
             for i in annotation:
-                if i in self.rule_info.get(
-                    ["apply_types"], []
-                ) and i not in self.rule_info.get(["exclude_types"], []):
+                if i in self.apply_types and i not in self.exclude_types:
                     return True
             return False
 
         return False
-
-    @override
-    async def invoke(self, value) -> Any:
-        """
-        Invoke the rule on a field value.
-
-        This method attempts to validate the value and fix it if necessary.
-
-        Args:
-            field: The field being processed.
-            value: The value to validate or fix.
-            form: The form containing the field.
-
-        Returns:
-            Any: The validated or fixed value.
-
-        Raises:
-            LionOperationError: If validation or fixing fails.
-        """
-        try:
-            return await self.validate(value, **self.validation_kwargs)
-
-        except Exception as e1:
-            if self["fix"]:
-                try:
-                    a = await self.perform_fix(value, **self.validation_kwargs)
-                    return a
-                except Exception as e2:
-                    raise LionOperationError("failed to fix field") from e2
-            raise LionOperationError("failed to validate field") from e1
 
     # must only return True or False
     async def rule_condition(
         self,
         field: str,
         value: Any,
+        /,
         form: BaseForm,
-        *args,
         **kwargs,
     ) -> bool:
         """
@@ -196,43 +213,93 @@ class Rule(Condition, Action, Observable, Temporal):
         """
         return False
 
-    # can return corrected value, raise error, or return None (suppress)
-    async def perform_fix(
-        self,
-        value: Any,
-        *args,
-        suppress=False,
-        **kwargs,
-    ) -> Any:
-        try:
-            return await self.fix_field(value, *args, **kwargs)
-        except Exception as e:
-            if suppress:
-                return None
-            raise LionOperationError("Failed to fix field") from e
+    @abstractmethod
+    async def check_value(self, value: Any, /):
+        """raise error if check failed"""
+        ...
 
-    # must return corrected value or raise error
-    async def fix_field(
-        self,
-        value: Any,
-        *args,
-        **kwargs,
-    ):
+    async def fix_value(self, value: Any, /) -> Any:
         return value
 
-    # must return correct value as is or raise error
-    @abstractmethod
-    async def validate(
+    async def validate(self, value: Any, /) -> Any:
+
+        try:
+            await self.check_value(value)
+            return value
+
+        except Exception as e1:
+            if self.fix:
+                try:
+                    return await self.fix_value(value)
+                except Exception as e2:
+                    raise LionOperationError(
+                        f"Failed to validate field: {e2}",
+                    ) from e1
+        return value
+
+    @override
+    async def invoke(
         self,
+        field: str,
         value: Any,
-        *args,
-        **kwargs,
+        /,
+        form: BaseForm,
+        check_func: Callable | Any = None,
+        **kwargs,  # additional kwargs for custom check func or self.rule_condition
     ) -> Any:
-        """
-        either return a correct value, or raise error,
-        if raise error will attempt to fix it if fix is True
-        """
-        pass
+        if not await self.apply(
+            field,
+            value,
+            form=form,
+            check_func=check_func,
+            **kwargs,
+        ):
+            return value
+        return await self.validate(value)
+
+
+def prepare_info(
+    info: dict | None,
+    base_config: dict,
+    accept_info_key: list,
+    **kwargs,
+):
+    d_ = {}
+    if info is not None:
+        if isinstance(info, dict):
+            d_ = info
+        if isinstance(info, Note):
+            d_ = info.to_dict()
+
+    config = {**base_config, **kwargs}
+    d_ = {**d_, **config}
+    _d = {}
+
+    for k, v in d_.items():
+        if k not in RULE_SYS_FIELDS + accept_info_key:
+            _d["validation_kwargs"] = _d.get("validation_kwargs", {})
+            _d["validation_kwargs"].update(v)
+        else:
+            _d[k] = v
+
+    return note(**_d)
+
+
+def validate_types(value):
+
+    apply_types = []
+    value = to_list(value, dropna=True, flatten=True)
+
+    for i in value:
+        if isinstance(i, str):
+            apply_types.append(i)
+        elif inspect.isclass(i):
+            apply_types.append(i.__name__)
+
+    if len(apply_types) != len(value):
+        raise LionOperationError("apply_types must be a list of str or type")
+
+    return apply_types
 
 
 # File: lion_core/rule/base.py

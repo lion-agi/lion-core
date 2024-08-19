@@ -114,7 +114,7 @@ class SysUtil:
     def id(
         n: int = LION_ID_CONFIG["n"],
         prefix: str | None = LION_ID_CONFIG["prefix"],
-        postfix: str | None = None,
+        postfix: str | None = LION_ID_CONFIG["postfix"],
         random_hyphen: bool = LION_ID_CONFIG["random_hyphen"],
         num_hyphens: int | None = LION_ID_CONFIG["num_hyphens"],
         hyphen_start_index: int | None = LION_ID_CONFIG["hyphen_start_index"],

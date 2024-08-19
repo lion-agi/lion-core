@@ -14,92 +14,39 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import contextlib
-from typing import Any, override, Literal, Callable
+from typing import Any
+from typing_extensions import override
 from collections.abc import Mapping
-from lion_core.libs import to_dict, validate_mapping, fuzzy_parse_json
-from lion_core.exceptions import LionOperationError, LionValueError, LionTypeError
+from lion_core.libs import validate_mapping
+from lion_core.exceptions import (
+    LionOperationError,
+    LionValueError,
+    LionTypeError,
+)
 
 from lion_core.rule.default_rules.choice import ChoiceRule
 
 
 class MappingRule(ChoiceRule):
-    """
-    Rule for validating that a value is a mapping (dictionary) with specific keys.
-
-    Attributes:
-        apply_type (str): The type of data to which the rule applies.
-    """
-
-    base_config = {
-        "apply_types": ["dict"],
-        "score_func": None,
-        "fuzzy_match": True,
-        "fill_value": None,
-        "fill_mapping": None,
-        "strict": False,
-        "handle_unmatched": "force",
-    }
 
     @override
-    async def validate(self, value: Any) -> Any:
-        """
-        Validate that the value is a mapping with specific keys.
-
-        Args:
-            value (Any): The value to validate.
-            *args: Additional arguments.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Any: The validated value.
-
-        Raises:
-            ValueError: If the value is not a valid mapping or has incorrect keys.
-        """
+    async def check_value(self, value: dict, /) -> str:
         if not isinstance(value, Mapping):
             raise LionTypeError("Invalid mapping field type.")
 
         if self.keys:
             if (keys := set(value.keys())) != set(self.keys):
                 raise LionValueError(
-                    f"Invalid mapping keys. Current keys {[i for i in keys]} != {self.keys}"
+                    f"Invalid mapping keys. Current keys {[keys]} != {self.keys}"
                 )
-        return value
 
     @override
-    async def fix_field(self, value: Any, *args, **kwargs):
+    async def fix_value(self, value: Any):
 
         if isinstance(value, list) and len(value) == 1:
             value = value[0]
 
-        if isinstance(value, str):
-            with contextlib.suppress(ValueError):
-                value = to_dict(value, str_style="json", parser=fuzzy_parse_json)
-            with contextlib.suppress(ValueError):
-                value = to_dict(value, str_style="xml")
-
-        if not isinstance(value, dict):
-            try:
-                value = to_dict(value)
-            except ValueError as e:
-                raise LionOperationError(
-                    f"Failed to fix {value} into a mapping."
-                ) from e
-
-        if self.keys:
-            check_keys = set(value.keys())
-            if check_keys != set(self.keys):
-                try:
-                    return validate_mapping(
-                        value, keys=self.keys, **self.validation_kwargs
-                    )
-                except Exception as e:
-                    raise LionValueError("Invalid dict keys.") from e
-        else:
-            try:
-                return fuzzy_parse_json(value)
-            except Exception as e:
-                raise LionValueError(f"Failed to fix {value} into a mapping.") from e
-
-        return value
+        try:
+            return validate_mapping(value, self.keys, **self.validation_kwargs)
+        except ValueError as e:
+            raise LionOperationError(f"Failed to fix {value} into a mapping.") from e

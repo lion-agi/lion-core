@@ -207,19 +207,19 @@ def test_mail_manager_collect_and_send_cycle(mail_manager, mock_source):
 @pytest.mark.asyncio
 async def test_mail_manager_execute_with_interruption(mail_manager):
     async def interrupt():
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.01)
         mail_manager.execute_stop = True
 
     with patch.object(mail_manager, "collect_all") as mock_collect_all, patch.object(
         mail_manager, "send_all"
     ) as mock_send_all:
         interrupt_task = asyncio.create_task(interrupt())
-        execute_task = asyncio.create_task(mail_manager.execute(refresh_time=0.1))
+        execute_task = asyncio.create_task(mail_manager.execute(refresh_time=0.01))
 
         # Use a timeout to prevent the test from hanging
         try:
             await asyncio.wait_for(
-                asyncio.gather(interrupt_task, execute_task), timeout=1.0
+                asyncio.gather(interrupt_task, execute_task), timeout=0.1
             )
         except asyncio.TimeoutError:
             pass
@@ -258,7 +258,7 @@ async def test_mail_manager_performance():
 
     # Use a timeout to prevent the test from hanging
     try:
-        await asyncio.wait_for(manager.execute(refresh_time=0), timeout=5.0)
+        await asyncio.wait_for(manager.execute(refresh_time=0), timeout=0.5)
     except asyncio.TimeoutError:
         pass
     finally:
@@ -266,7 +266,7 @@ async def test_mail_manager_performance():
 
     end_time = asyncio.get_event_loop().time()
 
-    assert end_time - start_time <= 5.1  # Should process mails in less than 5 seconds
+    assert end_time - start_time <= 0.51  # Should process mails in less than 5 seconds
 
 
 @pytest.mark.asyncio
@@ -291,7 +291,7 @@ async def test_mail_manager_thread_safety():
 
     # Use a timeout to prevent the test from hanging
     try:
-        await asyncio.wait_for(asyncio.gather(*tasks), timeout=5.0)
+        await asyncio.wait_for(asyncio.gather(*tasks), timeout=0.05)
     except asyncio.TimeoutError:
         pass
 

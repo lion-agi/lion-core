@@ -17,7 +17,7 @@ limitations under the License.
 from typing import Any, Callable, AsyncGenerator, TypeVar
 
 from lion_core.libs.data_handlers import to_list
-from lion_core.libs.function_handlers._lcall import lcall
+from lion_core.libs.function_handlers._lcall import alcall
 
 T = TypeVar("T")
 ErrorHandler = Callable[[Exception], Any]
@@ -76,9 +76,9 @@ async def bcall(
 
     for i in range(0, len(input_), batch_size):
         batch = input_[i : i + batch_size]
-        batch_results = await lcall(
-            func,
-            batch,
+        batch_results = await alcall(
+            func=func,
+            input_=batch,
             retries=retries,
             initial_delay=initial_delay,
             delay=delay,

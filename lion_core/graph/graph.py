@@ -19,7 +19,7 @@ from typing import Any, Literal
 from pydantic import Field, field_serializer
 
 from lion_core.sys_utils import SysUtil
-from lion_core.generic.pile import Pile, pile
+from lion_core.generic.pile import pile, Pile
 from lion_core.generic.note import Note
 from lion_core.exceptions import LionRelationError, ItemExistsError
 from lion_core.graph.edge import Edge
@@ -72,7 +72,7 @@ class Graph(Node):
             if not isinstance(node, Node):
                 raise LionRelationError("Failed to add node: Invalid node type.")
             _id = SysUtil.get_id(node)
-            self.internal_nodes.insert(-1, node)
+            self.internal_nodes.insert(len(self.internal_nodes), node)
             self.node_edge_mapping.insert(_id, {"in": {}, "out": {}})
         except ItemExistsError as e:
             raise LionRelationError(f"Error adding node: {e}")
@@ -97,7 +97,7 @@ class Graph(Node):
                 raise LionRelationError(
                     "Failed to add edge: Either edge head or tail node does not exist in the graph."
                 )
-            self.internal_edges.insert(-1, edge)
+            self.internal_edges.insert(len(self.internal_edges), edge)
             self.node_edge_mapping[edge.head, "out", edge.ln_id] = edge.tail
             self.node_edge_mapping[edge.tail, "in", edge.ln_id] = edge.head
         except ItemExistsError as e:
@@ -149,6 +149,8 @@ class Graph(Node):
         Returns:
             A Pile of Edges connected to the node in the specified direction.
         """
+        if direction not in {"both", "in", "out"}:
+            raise ValueError("The direction should be 'both', 'in', or 'out'.")
 
         _id = SysUtil.get_id(node)
         if _id not in self.internal_nodes:
@@ -164,7 +166,7 @@ class Graph(Node):
             for edge_id in self.node_edge_mapping[_id, "out"].keys():
                 result.append(self.internal_edges[edge_id])
 
-        return Pile(items=result, item_type={Edge})
+        return self.internal_nodes.__class__(items=result, item_type={Edge})
 
     def get_heads(self) -> Pile:
         """
@@ -179,7 +181,7 @@ class Graph(Node):
             if self.node_edge_mapping[node_id, "in"] == {}:
                 result.append(self.internal_nodes[node_id])
 
-        return Pile(items=result, item_type={Node})
+        return self.internal_nodes.__class__(items=result, item_type={Node})
 
     def get_predecessors(self, node: Node):
         edges = self.find_node_edge(node, direction="in")
@@ -187,15 +189,15 @@ class Graph(Node):
         for edge in edges:
             node_id = edge.head
             result.append(self.internal_nodes[node_id])
-        return Pile(items=result, item_type={Node})
+        return self.internal_nodes.__class__(items=result, item_type={Node})
 
-    def get_successor(self, node: Node):
+    def get_successors(self, node: Node):
         edges = self.find_node_edge(node, direction="out")
         result = []
         for edge in edges:
             node_id = edge.tail
             result.append(self.internal_nodes[node_id])
-        return Pile(items=result, item_type={Node})
+        return self.internal_nodes.__class__(items=result, item_type={Node})
 
 
 __all__ = ["Graph"]

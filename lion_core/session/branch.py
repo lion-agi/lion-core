@@ -118,6 +118,7 @@ class Branch(BaseSession):
         guidance: Any | MessageFlag = None,
         request_fields: dict | MessageFlag = None,
         system: Any = None,
+        system_sender: Any = None,
         system_datetime: bool | str | None | MessageFlag = None,
         images: list | MessageFlag = None,
         image_detail: Literal["low", "high", "auto"] | MessageFlag = None,
@@ -148,6 +149,7 @@ class Branch(BaseSession):
             func=func,
             arguments=arguments,
             func_output=func_output,
+            system_sender=system_sender,
         )
 
         if isinstance(_msg, System):
@@ -418,6 +420,8 @@ class Branch(BaseSession):
         Returns:
             list[dict[str, Any]]: A list of chat message dictionaries.
         """
+        if not all(i in self.messages for i in (progress or self.progress)):
+            raise ValueError("Invalid progress")
         return [self.messages[i].chat_msg for i in (progress or self.progress)]
 
     def _is_invoked(self) -> bool:

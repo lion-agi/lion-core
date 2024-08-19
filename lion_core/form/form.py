@@ -21,16 +21,17 @@ import inspect
 from typing import Any, Literal, Type
 from typing_extensions import override
 
-from pydantic import Field, model_validator, ConfigDict
+from pydantic import Field, model_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
 
+from lion_core.generic.component import T
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 from lion_core.exceptions import LionValueError
 from lion_core.generic.note import Note
 from lion_core.form.base import BaseForm
-from lion_core.form.utils import get_input_output_fields, ERR_MAP, RESTRICTED_FIELDS
+from lion_core.form.utils import get_input_output_fields, ERR_MAP
 
 
 class Form(BaseForm):
@@ -73,209 +74,14 @@ class Form(BaseForm):
         description="Detailed description of the task",
     )
     init_input_kwargs: dict[str, Any] = Field(default_factory=dict, exclude=True)
-    has_processed: bool = Field(
-        default=False,
-        description="Indicates if the task has been processed.",
-        exclude=True,
-    )
-    model_config = ConfigDict(
-        extra="allow",
-        arbitrary_types_allowed=True,
-        use_enum_values=True,
-        populate_by_name=True,
-    )
-
-    def to_dict(self, *, valid_only=False):
-        _dict = super().to_dict()
-        if not valid_only:
-            return _dict
-
-        disallow_values = [LN_UNDEFINED, PydanticUndefined]
-        if not self.none_as_valid_value:
-            disallow_values.append(None)
-        return {k: v for k, v in _dict.items() if v not in disallow_values}
-
-    @override
-    @property
-    def work_fields(self) -> list[str]:
-        """Return a list of all fields involved in the task."""
-        return self.input_fields + self.request_fields
-
-    @override
-    @property
-    def required_fields(self) -> list[str]:
-        """Return a list of all unique required fields."""
-        return list(set(self.input_fields + self.request_fields + self.output_fields))
-
-    @property
-    def validation_kwargs(self):
-        return {
-            i: self.field_getattr(i, "validation_kwargs", {}) for i in self.work_fields
-        }
-
-    @property
-    def instruction_dict(self) -> dict[str, Any]:
-        """Return a dictionary with task instruction information."""
-        return {
-            "context": self.instruction_context,
-            "instruction": self.instruction_prompt,
-            "request_fields": self.instruction_request_fields,
-        }
-
-    @property
-    def instruction_context(self) -> str:
-        """Generate a description of the form's input fields."""
-        return "".join(
-            f"""
-## input: {i}:
-- description: {getattr(self.all_fields[i], "description", "N/A")}.
-- value: {str(getattr(self, self.request_fields[idx]))}.
-- examples: {getattr(self.all_fields[i], "examples", "N/A")}.
-"""
-            for idx, i in enumerate(self.request_fields)
-        )
-
-    @property
-    def instruction_prompt(self) -> str:
-        """Generate a task instruction prompt for the form."""
-        return f"""
-## Task Instructions
-Please follow prompts to complete the task:
-1. Your task is: {self.task}.
-2. The provided input fields are: {', '.join(self.request_fields)}.
-3. The requested output fields are: {', '.join(self.request_fields)}.
-4. Provide your response in the specified JSON format.
-"""
-
-    @property
-    def instruction_request_fields(self) -> dict[str, str]:
-        """Get descriptions of the form's requested fields."""
-        return {
-            field: self.all_fields[field].description or "N/A"
-            for field in self.request_fields
-        }
-
-    @override
-    def update_field(
-        self,
-        field_name: str,
-        value: Any = LN_UNDEFINED,
-        annotation: Any = LN_UNDEFINED,
-        field_obj: FieldInfo | Any = LN_UNDEFINED,
-        **kwargs: Any,
-    ) -> None:
-        """
-        Update a field in the form.
-
-        Extends the base update_field method to also update
-        the init_input_kwargs dictionary.
-        """
-        super().update_field(
-            field_name=field_name,
-            value=value,
-            annotation=annotation,
-            field_obj=field_obj,
-            **kwargs,
-        )
-        self._fill_init_input_kwargs(field_name)
-
-    @override
-    def __setattr__(self, field_name: str, value: Any) -> None:
-        """
-        Set an attribute of the form.
-
-        Extends the base __setattr__ method to enforce strictness
-        and update the init_input_kwargs dictionary.
-        """
-        if self.strict and field_name in RESTRICTED_FIELDS:
-            raise ERR_MAP["assignment", "strict"](field_name)
-
-        super().__setattr__(field_name, value)
-        self._fill_init_input_kwargs(field_name)
-
-    def _fill_init_input_kwargs(self, field_name):
-        if field_name in self.input_fields:
-            self.init_input_kwargs[field_name] = getattr(self, field_name)
 
     def check_is_completed(
         self,
-        handle_how: Literal["raise", "return_missing"] = "raise",
+        handle_how: Literal["return_missing", "raise"] = "raise",
     ) -> list[str] | None:
-        """
-        Check if all required fields are completed.
-
-        Args:
-            handle_how: How to handle incomplete fields.
-
-        Returns:
-            List of incomplete fields if handle_how is "return_missing",
-            None otherwise.
-
-        Raises:
-            ValueError: If required fields are incomplete and handle_how
-                is "raise".
-        """
         if self.strict and self.has_processed:
             return
-
-        non_complete_request = []
-        invalid_values = [LN_UNDEFINED, PydanticUndefined]
-        if not self.none_as_valid_value:
-            invalid_values.append(None)
-
-        for i in self.required_fields:
-            if getattr(self, i) in invalid_values:
-                non_complete_request.append(i)
-
-        if non_complete_request:
-            if handle_how == "raise":
-                raise ERR_MAP["assignment", "incomplete_request"](non_complete_request)
-            elif handle_how == "return_missing":
-                return non_complete_request
-        else:
-            self.has_processed = True
-
-    def check_is_workable(
-        self,
-        handle_how: Literal["raise", "return_missing"] = "raise",
-    ) -> list[str] | None:
-        """
-        Check if all input fields are filled and the form is workable.
-
-        Args:
-            handle_how: How to handle missing inputs.
-
-        Returns:
-            List of missing inputs if handle_how is "return_missing",
-            None otherwise.
-
-        Raises:
-            ValueError: If input fields are missing and handle_how is "raise".
-        """
-        if self.strict and self.has_processed:
-            raise ERR_MAP["assignment", "strict_processed"]
-
-        missing_inputs = []
-        invalid_values = [LN_UNDEFINED, PydanticUndefined]
-        if not self.none_as_valid_value:
-            invalid_values.append(None)
-
-        for i in self.input_fields:
-            if getattr(self, i) in invalid_values:
-                missing_inputs.append(i)
-
-        if missing_inputs:
-            if handle_how == "raise":
-                raise ERR_MAP["assignment", "incomplete_input"](missing_inputs)
-            elif handle_how == "return_missing":
-                return missing_inputs
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        for i in ["input_fields", "request_fields", "task"]:
-            if i in data:
-                data.pop(i)
-        return cls(**data)
+        return super().check_is_completed(handle_how)
 
     @model_validator(mode="before")
     @classmethod
@@ -323,14 +129,15 @@ Please follow prompts to complete the task:
         data["request_fields"] = request_fields
         data["output_fields"] = data.get("output_fields", request_fields)
         data["init_input_kwargs"] = {}
-        data["strict_assignment"] = data.get("strict_assignment", False)
+        data["strict"] = data.get("strict", False)
 
         for in_ in data["input_fields"]:
             data["init_input_kwargs"][in_] = (
                 data.pop(in_, LN_UNDEFINED)
                 if in_ not in cls.model_fields
-                else data.get(in_, None)
+                else data.get(in_, LN_UNDEFINED)
             )
+
         return data
 
     @model_validator(mode="after")
@@ -355,6 +162,166 @@ Please follow prompts to complete the task:
 
         return self
 
+    @override
+    @property
+    def work_fields(self) -> list[str]:
+        """Return a list of all fields involved in the task."""
+        return self.input_fields + self.request_fields
+
+    @override
+    @property
+    def required_fields(self) -> list[str]:
+        """Return a list of all unique required fields."""
+        return list(set(self.input_fields + self.request_fields + self.output_fields))
+
+    @property
+    def validation_kwargs(self):
+        return {
+            i: self.field_getattr(i, "validation_kwargs", {}) for i in self.work_fields
+        }
+
+    @property
+    def instruction_dict(self) -> dict[str, Any]:
+        """Return a dictionary with task instruction information."""
+        return {
+            "context": self.instruction_context,
+            "instruction": self.instruction_prompt,
+            "request_fields": self.instruction_request_fields,
+        }
+
+    @property
+    def instruction_context(self) -> str:
+        """Generate a description of the form's input fields."""
+
+        a = self.all_fields
+
+        context = f"### Input Fields:\n"
+        for idx, i in enumerate(self.input_fields):
+            context += f"Input No.{idx+1}: {i}\n"
+            if getattr(a[i], "description", None):
+                context += f"  - description: {a[i].description}.\n"
+            context += f"  - value: {getattr(self, i)}.\n"
+        return context
+
+    @property
+    def instruction_prompt(self) -> str:
+        """Generate a task instruction prompt for the form."""
+
+        a = self.all_fields
+        prompt = ""
+        if "guidance" in a:
+            prompt += f"### Overall Guidance:\n{getattr(self, "guidance")}.\n"
+
+        prompt += "### Task Instructions:\n"
+        prompt += f"1. Provided Input Fields: {', '.join(self.input_fields)}.\n"
+        prompt += f"2. Requested Output Fields: {', '.join(self.request_fields)}.\n"
+        prompt += f"3. Your task:\n{self.task}.\n"
+
+        return prompt
+
+    @property
+    def instruction_request_fields(self) -> dict[str, str]:
+        """Get descriptions of the form's requested fields."""
+
+        a = self.all_fields
+
+        context = f"### Output Fields:\n"
+        for idx, i in enumerate(self.request_fields):
+            context += f"Input No.{idx+1}: {i}\n"
+            if getattr(a[i], "description", None):
+                context += f"  - description: {a[i].description}.\n"
+            if getattr(a[i], "examples", None):
+                context += f"  - examples: {a[i].examples}.\n"
+
+        return context
+
+    @override
+    def update_field(
+        self,
+        field_name: str,
+        value: Any = LN_UNDEFINED,
+        annotation: Any = LN_UNDEFINED,
+        field_obj: FieldInfo | Any = LN_UNDEFINED,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Update a field in the form.
+
+        Extends the base update_field method to also update
+        the init_input_kwargs dictionary.
+        """
+        super().update_field(
+            field_name=field_name,
+            value=value,
+            annotation=annotation,
+            field_obj=field_obj,
+            **kwargs,
+        )
+        self._fill_init_input_kwargs(field_name)
+
+    @override
+    def __setattr__(self, field_name: str, value: Any) -> None:
+        """
+        Set an attribute of the form.
+
+        Extends the base __setattr__ method to enforce strictness
+        and update the init_input_kwargs dictionary.
+        """
+        if self.strict and field_name in {
+            "assignment",
+            "input_fields",
+            "request_fields",
+        }:
+            raise ERR_MAP["assignment", "strict"](field_name)
+
+        if field_name in {"input_fields", "request_fields"}:
+            raise ERR_MAP["field", "modify_input_request_list"]
+
+        if field_name in {"init_input_kwargs"}:
+            raise ERR_MAP["field", "modify_restricted"](field_name)
+
+        super().__setattr__(field_name, value)
+        self._fill_init_input_kwargs(field_name)
+
+    def _fill_init_input_kwargs(self, field_name):
+        if field_name in self.input_fields:
+            self.init_input_kwargs[field_name] = getattr(self, field_name)
+
+    def check_is_workable(
+        self,
+        handle_how: Literal["raise", "return_missing"] = "raise",
+    ) -> list[str] | None:
+        """
+        Check if all input fields are filled and the form is workable.
+
+        Args:
+            handle_how: How to handle missing inputs.
+
+        Returns:
+            List of missing inputs if handle_how is "return_missing",
+            None otherwise.
+
+        Raises:
+            ValueError: If input fields are missing and handle_how is "raise".
+        """
+        if self.strict and self.has_processed:
+            raise ERR_MAP["assignment", "strict_processed"]
+
+        missing_inputs = []
+        invalid_values = [LN_UNDEFINED, PydanticUndefined]
+        if not self.none_as_valid_value:
+            invalid_values.append(None)
+
+        for i in self.input_fields:
+            if getattr(self, i) in invalid_values:
+                missing_inputs.append(i)
+
+        if missing_inputs:
+            if handle_how == "raise":
+                raise ERR_MAP["assignment", "incomplete_input"](missing_inputs)
+            elif handle_how == "return_missing":
+                return missing_inputs
+
     def is_completed(self) -> bool:
         try:
             self.check_is_completed(handle_how="raise")
@@ -368,6 +335,43 @@ Please follow prompts to complete the task:
             return True
         except Exception:
             return False
+
+    def to_dict(self, *, valid_only=False):
+        _dict = super().to_dict()
+        if not valid_only:
+            return _dict
+
+        disallow_values = [LN_UNDEFINED, PydanticUndefined]
+        if not self.none_as_valid_value:
+            disallow_values.append(None)
+        return {k: v for k, v in _dict.items() if v not in disallow_values}
+
+    @override
+    @classmethod
+    def from_dict(cls, data: dict, **kwargs) -> T:
+        input_data = SysUtil.copy(data)
+
+        input_data.pop("lion_class", None)
+        input_data.pop("input_fields", None)
+        input_data.pop("request_fields", None)
+        task = input_data.pop("task", "")
+
+        extra_fields = {}
+        for k, v in list(input_data.items()):
+            if k not in cls.model_fields:
+                extra_fields[k] = input_data.pop(k)
+        obj = cls.model_validate(input_data, **kwargs)
+        obj.task = task
+        for k, v in extra_fields.items():
+            obj.update_field(field_name=k, value=v)
+
+        metadata = SysUtil.copy(data.get("metadata", {}))
+        last_updated = metadata.get("last_updated", None)
+        if last_updated is not None:
+            obj.metadata.set(["last_updated"], last_updated)
+        else:
+            obj.metadata.pop(["last_updated"], None)
+        return obj
 
     def fill_input_fields(
         self,
@@ -425,15 +429,14 @@ Please follow prompts to complete the task:
         form: BaseForm | Type[BaseForm],
         guidance: str | dict[str, Any] | None = None,
         assignment: str | None = None,
-        strict: bool = None,
+        strict: bool = False,
         task_description: str | None = None,
-        fill_inputs: bool | None = True,
-        none_as_valid_value: bool | None = None,
+        fill_inputs: bool = True,
+        none_as_valid_value: bool = False,
         output_fields: list[str] | None = None,
-        same_form_output_fields: bool | None = False,
+        same_form_output_fields: bool = False,
         **input_value_kwargs,
     ):
-
         if inspect.isclass(form):
             if not issubclass(form, BaseForm):
                 raise ERR_MAP["type", "not_form_class"](form)
@@ -449,29 +452,32 @@ Please follow prompts to complete the task:
                     "Cannot provide output_fields and "
                     "same_form_output_fields at the same time."
                 )
-            output_fields = form.output_fields
+            output_fields = SysUtil.copy(form.output_fields)
+
+        if not assignment:
+            if not getattr(form, "assignment", None):
+                raise ERR_MAP["assignment", "no_assignment"]
+            assignment = form.assignment
 
         obj = cls(
             guidance=guidance or getattr(form, "guidance", None),
-            assignment=assignment or form.assignment,
-            task_description=task_description,
-            none_as_valid_value=(
-                none_as_valid_value
-                if isinstance(none_as_valid_value, bool)
-                else getattr(form, "strict", False)
+            assignment=assignment,
+            task_description=task_description
+            or getattr(
+                form,
+                "task_description",
+                "",
             ),
-            strict=(
-                strict if isinstance(strict, bool) else getattr(form, "strict", False)
-            ),
+            none_as_valid_value=none_as_valid_value
+            or getattr(form, "none_as_valid_value", False),
+            strict=strict or getattr(form, "strict", False),
             output_fields=output_fields,
         )
 
-        for i in obj.work_dict.keys():
+        for i in obj.work_fields:
             if i not in form_fields:
-                raise ERR_MAP["invalid_assignment"](i)
+                raise ERR_MAP["assignment", "invalid_assignment"](i)
             obj.update_field(i, field_obj=form_fields[i])
-            if not none_as_valid_value and getattr(obj, i) is None:
-                setattr(obj, i, LN_UNDEFINED)
 
         if fill_inputs:
             if inspect.isclass(form):
@@ -488,19 +494,15 @@ Please follow prompts to complete the task:
 
     def _append_to_one(
         self,
-        field_name: Any,
+        field_name: str,
         field_type: Literal["input", "output", "request"],
         value: Any = LN_UNDEFINED,
         annotation: Any = LN_UNDEFINED,
         field_obj: FieldInfo | Any = LN_UNDEFINED,
         **kwargs,
     ):
-        _f = lambda x: [i.strip() for i in x.split(",") if i]
-        if not (a := _f(field_name)) or len(a) > 1:
-            raise ERR_MAP["field", "error"](
-                "Cannot append more than one field at a time, "
-                "a field's name cannot contain commas."
-            )
+        if self.strict and field_type in {"input", "request"}:
+            raise ERR_MAP["assignment", "strict"](field_type)
 
         config = {
             "field_name": field_name,
@@ -509,9 +511,6 @@ Please follow prompts to complete the task:
             "field_obj": field_obj,
             **kwargs,
         }
-
-        if self.strict:
-            raise ERR_MAP["assignment", "strict"](field_type)
 
         match field_type:
             case "input":
@@ -534,7 +533,18 @@ Please follow prompts to complete the task:
             case _:
                 raise LionValueError(f"Invalid field type {field_type}")
 
-        self.update_field(**config)
+        if (
+            any(
+                [
+                    value is not LN_UNDEFINED,
+                    annotation is not LN_UNDEFINED,
+                    field_obj is not LN_UNDEFINED,
+                    bool(kwargs),
+                ]
+            )
+            or field_name not in self.all_fields
+        ):
+            self.update_field(**config)
 
     def append_to_input(
         self,

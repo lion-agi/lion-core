@@ -73,7 +73,7 @@ def npop(
             last_key,
         )
     except Exception as e:
-        if default:
+        if default is not LN_UNDEFINED:
             return default
         else:
             raise KeyError(f"Invalid npop. Error: {e}")
