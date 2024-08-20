@@ -1,4 +1,14 @@
+import os
+
 from setuptools import find_packages, setup
+
+here = os.path.abspath(os.path.dirname(__file__))
+
+# Get the code version
+version = {}
+with open(os.path.join(here, "lion_core/version.py")) as fp:
+    exec(fp.read(), version)
+__version__ = version["__version__"]
 
 # Read the contents of the README file
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -10,7 +20,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="lion_core",
-    version="0.1.1",
+    version=__version__,
     author="HaiyangLi",
     author_email="quantocean.li@gmail.com",
     description="A core package for the Lion framework.",
