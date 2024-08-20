@@ -1,8 +1,11 @@
 """Base module for logging in the Lion framework."""
 
+from typing import Any
+
 from pydantic import Field, field_serializer
 
 from lion_core.abc import ImmutableRecord
+from lion_core.exceptions import LionAccessError
 from lion_core.generic.element import Element
 from lion_core.generic.note import Note
 from lion_core.libs import to_dict
@@ -21,17 +24,36 @@ class BaseLog(Element, ImmutableRecord):
         description="Metadata about the log entry.",
     )
 
+    _immutable: bool = Field(False, exclude=True)
+
     def __init__(self, content: Note, loginfo: Note, **kwargs):
         super().__init__(**kwargs)
         self.content = self._validate_note(content)
         self.loginfo = self._validate_note(loginfo)
 
     @classmethod
+    def _validate_load_data(cls, data: dict):
+        try:
+            data["ln_id"] = data.pop("log_id")
+            data["timestamp"] = data.pop("log_timestamp")
+            data["lion_class"] = data.pop("log_class")
+            return data
+        except Exception as e:
+            raise LionAccessError(
+                f"Log can only be loaded from a previously saved log entries.",
+            ) from e
+
+    @classmethod
     def from_dict(cls, data: dict):
-        return cls(
-            content=cls._validate_note(data.get("content", {})),
-            loginfo=cls._validate_note(data.get("loginfo", {})),
-        )
+        data = cls._validate_load_data(data)
+        self = cls(**data)
+        self._immutable = True
+        return self
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if self._immutable:
+            raise AttributeError("Cannot modify immutable log entry.")
+        super().__setattr__(name, value)
 
     def _validate_note(cls, value):
         if not value:
@@ -50,13 +72,11 @@ class BaseLog(Element, ImmutableRecord):
         return value.to_dict()
 
     def to_dict(self):
-        info = self.loginfo.to_dict()
-        info["log_id"] = self.ln_id
-        info["log_timestamp"] = self.timestamp
-        return {
-            "content": self.content.to_dict(),
-            "loginfo": info,
-        }
+        dict_ = super().to_dict()
+        dict_["log_id"] = dict_.pop("ln_id")
+        dict_["log_class"] = dict_.pop("lion_class")
+        dict_["log_timestamp"] = dict_.pop("timestamp")
+        return dict_
 
     def to_note(self):
         return Note(**self.to_dict())
