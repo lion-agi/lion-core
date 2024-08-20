@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from pydantic import Field, field_serializer
+from pydantic import Field, PrivateAttr, field_serializer
 
 from lion_core.abc import ImmutableRecord
 from lion_core.exceptions import LionAccessError
@@ -24,7 +24,7 @@ class BaseLog(Element, ImmutableRecord):
         description="Metadata about the log entry.",
     )
 
-    _immutable: bool = Field(False, exclude=True)
+    _immutable: bool = PrivateAttr(False)
 
     def __init__(self, content: Note, loginfo: Note, **kwargs):
         super().__init__(**kwargs)
