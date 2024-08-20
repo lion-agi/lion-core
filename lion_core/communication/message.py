@@ -5,10 +5,12 @@ from typing import Any
 from pydantic import Field, field_validator
 from typing_extensions import override
 
+from lion_core import message_log_manager
 from lion_core._class_registry import get_class
 from lion_core.abc import Relational
 from lion_core.communication.base_mail import BaseMail
 from lion_core.generic.component import Component
+from lion_core.generic.log import BaseLog
 from lion_core.generic.note import Note
 from lion_core.sys_utils import SysUtil
 
@@ -199,6 +201,18 @@ class RoledMessage(Relational, Component, BaseMail):
             f"Message(role={self.role}, sender={self.sender}, "
             f"content='{content_preview}')"
         )
+
+    def to_log(self):
+        dict_ = self.to_dict()
+        content = dict_.pop("content")
+        _log = BaseLog(
+            content=content,
+            loginfo=dict_,
+        )
+        return _log
+
+    async def alog(self):
+        await message_log_manager.alog(self.to_log())
 
 
 # File: lion_core/communication/message.py

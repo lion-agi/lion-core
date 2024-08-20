@@ -50,9 +50,12 @@ class BaseLog(Element, ImmutableRecord):
         return value.to_dict()
 
     def to_dict(self):
+        info = self.loginfo.to_dict()
+        info["log_id"] = self.ln_id
+        info["log_timestamp"] = self.timestamp
         return {
             "content": self.content.to_dict(),
-            "loginfo": self.loginfo.to_dict(),
+            "loginfo": info,
         }
 
     def to_note(self):

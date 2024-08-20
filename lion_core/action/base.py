@@ -50,15 +50,10 @@ class ObservableAction(Element, Action):
         """
         return {}
 
-    async def to_log(self) -> BaseLog:
-        try:
-            log_ = self._to_log()
-            await event_log_manager.alog(log_)
-            return log_
-        finally:
-            del self
+    async def alog(self) -> BaseLog:
+        await event_log_manager.alog(self.to_log())
 
-    def _to_log(self) -> BaseLog:
+    def to_log(self) -> BaseLog:
         dict_ = super().to_dict()
         content = {k: dict_[k] for k in self.content_fields if k in dict_}
         loginfo = {k: dict_[k] for k in dict_ if k not in self.content_fields}

@@ -66,14 +66,20 @@ class FunctionCalling(ObservableAction):
 
         @cd.pre_post_process(
             preprocess=self.func_tool.pre_processor,
-            postprocess=self.func_tool.post_processor,
             preprocess_kwargs=self.func_tool.pre_processor_kwargs,
-            postprocess_kwargs=self.func_tool.post_processor_kwargs,
         )
         async def _inner(**kwargs):
             config = {**self.retry_config, **kwargs}
             config["timing"] = True
-            return await rcall(self.func_tool.function, **config)
+            result, elp = await rcall(self.func_tool.function, **config)
+            if self.func_tool.post_processor:
+                kwargs = self.func_tool.post_processor_kwargs or {}
+                kwargs["timing"] = True
+                result, elp2 = await rcall(
+                    self.func_tool.post_processor, result, **kwargs
+                )
+                elp += elp2
+            return result, elp
 
         try:
             result, elp = await _inner(**self.arguments)
@@ -84,12 +90,13 @@ class FunctionCalling(ObservableAction):
             if self.func_tool.parser is not None:
                 result = self.func_tool.parser(result)
 
-            await self.to_log()
+            await self.alog()
             return result
 
         except Exception as e:
             self.status = ActionStatus.FAILED
             self.error = str(e)
+            await self.alog()
 
     def __str__(self) -> str:
         """

@@ -11,16 +11,17 @@ event_log_manager = LogManager(
     subfolder="events",
     file_prefix="event_",
 )
-global_log_manager = LogManager(
+message_log_manager = LogManager(
     persist_dir="./data/logs",
-    subfolder="global",
+    subfolder="messages",
+    file_prefix="message_",
 )
 
 __all__ = [
     "LN_UNDEFINED",
     "LION_ID_CONFIG",
     "BASE_LION_FIELDS",
-    "event_log_manager",
+    "message_log_manager",
     "global_log_manager",
 ]
 
