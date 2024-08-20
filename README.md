@@ -6,8 +6,6 @@
 
 > Lion-Core is a lightweight yet powerful Python library designed to serve as a foundational framework for machine learning, artificial intelligence, workflow automation, scientific computing, and advanced data management.
 
-**🚨 Note: Lion-Core is currently in alpha testing (v0.1.0). Expect frequent updates and potential API changes.**
-
 ---
 
 ## 🌟 Highlights
@@ -167,13 +165,13 @@ pip install git+https://github.com/lion-agi/lion-core.git
 4. Run tests:
     ```bash
     pytest --maxfail=1 --disable-warnings tests/
+    pytest_asyncio --maxfail=1 --disable-warnings tests/
     ```
 
 5. Check code style:
     ```bash
     black --check .
     isort --check-only .
-    flake8 .
     ```
 
 </details>
