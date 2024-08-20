@@ -11,9 +11,19 @@ T = TypeVar("T", bound=BaseLog)
 
 
 class LogManager(BaseManager):
-    def __init__(self, logs: Any = None, persist_path: str = None):
+    def __init__(
+        self,
+        logs: Any = None,
+        persist_dir: str = None,
+        persist_path: str = None,
+        subfolder=None,
+        file_prefix: str = None,
+    ):
         self.logs: Pile[T] = pile(logs or {}, {BaseLog})
+        self.persist_dir = persist_dir
         self.persist_path = persist_path
+        self.file_prefix = file_prefix
+        self.subfolder = subfolder
         atexit.register(self.save_at_exit)
 
     async def alog(self, log_):
@@ -34,7 +44,10 @@ class LogManager(BaseManager):
         persist_path = persist_path or self.persist_path
 
         if not persist_path:
-            persist_path = f"./data/logs/{id_}.json"
+            persist_dir = self.persist_dir or "./data/logs"
+            if self.subfolder:
+                persist_dir = f"{persist_dir}/{self.subfolder}"
+            persist_path = f"{persist_dir}/{self.file_prefix or ''}{id_}.json"
 
         if not os.path.exists(os.path.dirname(persist_path)):
             os.makedirs(os.path.dirname(persist_path))
@@ -56,7 +69,5 @@ class LogManager(BaseManager):
         if self.logs:
             self.dump(clear=True)
 
-
-log_manager = LogManager()
 
 # File: lion_core/log/log_manager.py
