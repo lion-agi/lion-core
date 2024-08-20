@@ -2,8 +2,6 @@
 
 Lion-Core is a lightweight yet powerful Python library designed to serve as a foundational framework for machine learning, artificial intelligence, workflow automation, scientific computing, and advanced data management. With a focus on simplicity and extensibility, Lion-Core aims to provide a robust toolkit for complex computational tasks while maintaining a minimal dependency footprint.
 
-**Note: Lion-Core is currently in alpha testing. Expect frequent updates and potential API changes.**
-
 ## 🌟 Highlights
 
 - **Minimal Dependencies**: Built with only `Pydantic` as a dependency, ensuring a lightweight and easily maintainable codebase.
@@ -28,21 +26,10 @@ Lion-Core is a lightweight yet powerful Python library designed to serve as a fo
 
 - **Worker System**: Powerful workflow composition capabilities, enabling the creation of complex, multi-stage computational pipelines.
 
-## 🛣️ Roadmap
-
-We're currently working towards version 0.1.0, focusing on:
-
-- Polishing core abstractions and data structures
-- Enhancing the converter system for broader compatibility
-- Refining workflow automation processes
-- Expanding scientific computing utilities
-
 ## 📦 Installation
 
-As Lion-Core is in alpha testing, it's not yet available on PyPI. You can install the development version directly from the repository:
-
 ```bash
-pip install git+https://github.com/lion-agi/lion-core.git
+pip install lion-core
 ```
 
 ## 🛠️ Development Environment Setup
