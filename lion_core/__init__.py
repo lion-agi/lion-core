@@ -7,7 +7,6 @@ from .setting import BASE_LION_FIELDS, LION_ID_CONFIG, LN_UNDEFINED
 from .version import __version__
 
 __all__ = [
-    "log_manager",
     "LN_UNDEFINED",
     "LION_ID_CONFIG",
     "BASE_LION_FIELDS",
