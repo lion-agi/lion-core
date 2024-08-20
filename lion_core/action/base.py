@@ -2,11 +2,11 @@ from typing import Any
 
 from pydantic import Field
 
+from lion_core import event_log_manager
 from lion_core.abc import Action
 from lion_core.action.status import ActionStatus
 from lion_core.generic.element import Element
 from lion_core.generic.log import BaseLog
-from lion_core.log_manager import event_log_manager
 
 
 class ObservableAction(Element, Action):
