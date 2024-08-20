@@ -34,7 +34,7 @@ class LogManager(BaseManager):
         persist_path = persist_path or self.persist_path
 
         if not persist_path:
-            persist_path = f"./data/logs/{id_}.json"
+            persist_path = f"./data/logs/event{id_}.json"
 
         if not os.path.exists(os.path.dirname(persist_path)):
             os.makedirs(os.path.dirname(persist_path))
@@ -57,6 +57,7 @@ class LogManager(BaseManager):
             self.dump(clear=True)
 
 
-log_manager = LogManager()
+event_log_manager = LogManager()
+global_log_manager = LogManager()
 
 # File: lion_core/log/log_manager.py

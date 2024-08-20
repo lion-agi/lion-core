@@ -6,7 +6,7 @@ from lion_core.abc import Action
 from lion_core.action.status import ActionStatus
 from lion_core.generic.element import Element
 from lion_core.generic.log import BaseLog
-from lion_core.log_manager import log_manager
+from lion_core.log_manager import event_log_manager
 
 
 class ObservableAction(Element, Action):
@@ -53,7 +53,7 @@ class ObservableAction(Element, Action):
     async def to_log(self) -> BaseLog:
         try:
             log_ = self._to_log()
-            await log_manager.alog(log_)
+            await event_log_manager.alog(log_)
             return log_
         finally:
             del self
