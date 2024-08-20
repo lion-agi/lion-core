@@ -22,7 +22,7 @@ class LogManager(BaseManager):
     async def adump(self, clear=True, persist_path=None) -> dict:
         async with self.logs.async_lock:
             id_ = self.logs[-1].ln_id[:-6]
-            data = await self.logs.dump(clear)
+            data = await self.logs.adump(clear)
             self._save(id_, data, persist_path)
 
     def dump(self, clear=True, persist_path=None) -> dict:
