@@ -1,8 +1,9 @@
 # 🦁 Lion-Core: Unleash the Power of AI Development
 
 [![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/lion-core?color=blue)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
-[![Discord](https://img.shields.io/discord/1234567890?color=7289da&label=discord&logo=discord)](https://discord.gg/JDj9ENhUE8)
+![Discord](https://img.shields.io/discord/1167495547670777866?color=7289da&label=discord&logo=discord)
 
 > Lion-Core is a lightweight yet powerful Python library designed to serve as a foundational framework for machine learning, artificial intelligence, workflow automation, scientific computing, and advanced data management.
 
