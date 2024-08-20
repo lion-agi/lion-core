@@ -97,7 +97,7 @@ def _process_list(lst: list[Any], flatten: bool, dropna: bool) -> list[Any]:
     result = []
     for item in lst:
         if isinstance(item, Iterable) and not isinstance(
-            item, (str, bytes, bytearray, Mapping)
+            item, str | bytes | bytearray | Mapping
         ):
             if flatten:
                 result.extend(_process_list(list(item), flatten, dropna))

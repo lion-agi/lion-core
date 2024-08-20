@@ -22,7 +22,7 @@ def to_list_type(value: Any) -> list[Any]:
         return value.values()
     if isinstance(value, Mapping):
         return list(value.values())
-    if isinstance(value, (list, tuple, set, deque, Generator)):
+    if isinstance(value, list | tuple | set | deque | Generator):
         return list(value)
     return [value]
 

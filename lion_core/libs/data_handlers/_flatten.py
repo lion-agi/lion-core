@@ -141,7 +141,7 @@ def _dynamic_flatten_in_place(
                 keys_to_delete.append(k)
                 nested_structure.update(v)
             elif not dict_only and (
-                isinstance(v, list) or not isinstance(v, (dict, list))
+                isinstance(v, list) or not isinstance(v, dict | list)
             ):
                 nested_structure[new_key] = v
                 if parent_key:

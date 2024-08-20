@@ -45,7 +45,7 @@ def extract_request_from_content_code_block(content_: list[dict]) -> list[dict]:
         elif "arguments" in request_:
             out["arguments"] = request_["arguments"]
 
-        if isinstance((_arg := out.get("arguments")), str):
+        if isinstance(_arg := out.get("arguments"), str):
             if (
                 a := to_dict(_arg, str_type="json", parser=fuzzy_parse_json)
             ) is not None:

@@ -41,9 +41,9 @@ def _filter_dict(
         The filtered dictionary.
     """
     return {
-        k: nfilter(v, condition) if isinstance(v, (dict, list)) else v
+        k: nfilter(v, condition) if isinstance(v, dict | list) else v
         for k, v in dictionary.items()
-        if condition(v) or isinstance(v, (dict, list))
+        if condition(v) or isinstance(v, dict | list)
     }
 
 
@@ -60,9 +60,9 @@ def _filter_list(lst: list[Any], condition: Callable[[Any], bool]) -> list[Any]:
         The filtered list.
     """
     return [
-        nfilter(item, condition) if isinstance(item, (dict, list)) else item
+        nfilter(item, condition) if isinstance(item, dict | list) else item
         for item in lst
-        if condition(item) or isinstance(item, (dict, list))
+        if condition(item) or isinstance(item, dict | list)
     ]
 
 

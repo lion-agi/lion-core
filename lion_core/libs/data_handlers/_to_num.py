@@ -120,7 +120,7 @@ def str_to_num(
     numbers = [_convert_to_num(num_str, num_type, precision) for num_str in number_strs]
 
     for number in numbers:
-        if isinstance(number, (int, float, complex)):
+        if isinstance(number, int | float | complex):
             if upper_bound is not None and number > upper_bound:
                 raise ValueError(
                     f"Number {number} is greater than the upper bound of "

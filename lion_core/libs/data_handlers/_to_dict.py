@@ -139,7 +139,7 @@ def _(
     out = [
         (
             to_dict(item, **kwargs)
-            if isinstance(item, (Mapping, Sequence)) and not isinstance(item, str)
+            if isinstance(item, Mapping | Sequence) and not isinstance(item, str)
             else item
         )
         for item in input_

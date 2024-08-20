@@ -82,7 +82,7 @@ def is_structure_homogeneous(
             structure_type = list
             for item in substructure:
                 if not isinstance(item, structure_type) and isinstance(
-                    item, (list, dict)
+                    item, list | dict
                 ):
                     return False, None
                 result, _ = _check_structure(item)
@@ -92,7 +92,7 @@ def is_structure_homogeneous(
             structure_type = dict
             for item in substructure.values():
                 if not isinstance(item, structure_type) and isinstance(
-                    item, (list, dict)
+                    item, list | dict
                 ):
                     return False, None
                 result, _ = _check_structure(item)

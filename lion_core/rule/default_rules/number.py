@@ -22,7 +22,7 @@ class NumberRule(Rule):
         Raises:
             ValueError: If the value is not a valid number.
         """
-        if isinstance(value, (int, float, complex)):
+        if isinstance(value, int | float | complex):
             return value
         raise LionTypeError(f"Invalid number field type: {type(value)}")
 

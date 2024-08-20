@@ -66,7 +66,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
                 raise ValueError(f"Invalid datetime string format: {value}")
         if isinstance(value, datetime):
             return value.timestamp()
-        elif isinstance(value, (float | int)):
+        elif isinstance(value, float | int):
             return value
         else:
             raise ValueError(f"Unsupported type for time_attr: {type(value)}")
