@@ -10,7 +10,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="lion_core",
-    version="0.1.0",
+    version="0.1.1",
     author="HaiyangLi",
     author_email="quantocean.li@gmail.com",
     description="A core package for the Lion framework.",
