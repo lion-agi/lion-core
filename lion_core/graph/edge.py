@@ -60,7 +60,7 @@ class Edge(Element):
             self.properties.set("condition", condition)
         if label:
             self.properties.set("label", label)
-        self.properties.update(kwargs)
+        self.properties.update([], kwargs)
 
     @field_serializer("properties")
     def _serialize_properties(self, value):

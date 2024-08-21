@@ -1,19 +1,10 @@
-from typing import Any
+from typing import Any, Callable
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from typing_extensions import override
 
 from lion_core.abc import Container
-from lion_core.libs import (
-    flatten,
-    fuzzy_parse_json,
-    nget,
-    ninsert,
-    npop,
-    nset,
-    to_dict,
-    to_list,
-)
+from lion_core.libs import flatten, nfilter, nget, ninsert, nmerge, npop, nset, to_list
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 
@@ -124,6 +115,7 @@ class Note(BaseModel, Container):
     def to_dict(self, **kwargs: Any) -> dict[str, Any]:
         """
         Convert the Note to a dictionary.
+        kwargs: Additional keyword arguments for BaseModel.model_dump
 
         Returns:
             A dictionary representation of the Note.
@@ -135,25 +127,38 @@ class Note(BaseModel, Container):
         """Clear the content of the Note."""
         self.content.clear()
 
-    def update(self, indices: INDICE_TYPE, value: Any, /):
-        """Update values in the nested structure at the specified indices."""
-        indices = to_list(indices, flatten=True, dropna=True)
+    def update(
+        self,
+        indices: INDICE_TYPE,
+        *args: list[Any],
+        filter: Callable[[Any], bool] | None = None,
+        overwrite: bool = False,
+        dict_sequence: bool = False,
+        sort_list: bool = False,
+        custom_sort: Callable[[Any], Any] | None = None,
+    ):
+        """
+        update the content of the Note with a number of dictionaries or Notes.
+        optionally filter the values, overwrite existing keys, and sort lists.
+        """
+        if not indices:
+            args = [self.content, *args]
+        else:
+            args = [self.content.get(indices, {}), *args]
 
-        existing = self.get(indices, None)
-        if existing is None:
+        args = [arg.content if isinstance(arg, self.__class__) else arg for arg in args]
+        value = [nfilter(arg, filter) for arg in args] if filter else args
+        value = nmerge(
+            value,
+            overwrite=overwrite,
+            dict_sequence=dict_sequence,
+            sort_list=sort_list,
+            custom_sort=custom_sort,
+        )
+        if not indices:
+            self.content = value
+        else:
             self.set(indices, value)
-            return
-
-        if isinstance(value, str):
-            value = to_dict(value, suppress=True, parser=fuzzy_parse_json) or value
-
-        if isinstance(existing, dict) and isinstance(value, dict):
-            existing.update(value)
-            return
-
-        existing = [existing] if not isinstance(existing, list) else existing
-        existing.extend(value if isinstance(value, list) else [value])
-        self.set(indices, existing)
 
     @classmethod
     def from_dict(cls, kwargs: Any) -> "Note":
