@@ -5,6 +5,7 @@ from pydantic import Field
 from lion_core import event_log_manager
 from lion_core.abc import Action
 from lion_core.action.status import ActionStatus
+from lion_core.exceptions import LionAccessError
 from lion_core.generic.element import Element
 from lion_core.generic.log import BaseLog
 
@@ -54,7 +55,17 @@ class ObservableAction(Element, Action):
         await event_log_manager.alog(self.to_log())
 
     def to_log(self) -> BaseLog:
-        dict_ = super().to_dict()
+        dict_ = self.to_dict()
         content = {k: dict_[k] for k in self.content_fields if k in dict_}
         loginfo = {k: dict_[k] for k in dict_ if k not in self.content_fields}
         return BaseLog(content=content, loginfo=loginfo)
+
+    @classmethod
+    def from_dict(cls, data):
+        raise LionAccessError(
+            "An action cannot be recreated. Once it's done, it's done."
+        )
+
+
+__all__ = ["ObservableAction"]
+# File: lion_core/action/base.py

@@ -163,3 +163,7 @@ class ActionProcessor(BaseProcessor):
             bool: Always returns True, indicating permission is granted.
         """
         return True
+
+
+__all__ = ["ActionProcessor"]
+# File: lion_core/action/action_processor.py

@@ -22,7 +22,7 @@ __all__ = [
     "LION_ID_CONFIG",
     "BASE_LION_FIELDS",
     "message_log_manager",
-    "global_log_manager",
+    "event_log_manager",
 ]
 
 logger = logging.getLogger(__name__)

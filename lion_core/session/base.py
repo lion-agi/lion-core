@@ -7,7 +7,7 @@ from lion_core.communication.system import System
 from lion_core.generic.node import Node
 from lion_core.generic.pile import Pile
 from lion_core.imodel.imodel import iModel
-from lion_core.session.msg_handlers import validate_system
+from lion_core.session.msg_handlers.system_msg import validate_system
 from lion_core.sys_utils import SysUtil
 
 
@@ -39,4 +39,5 @@ class BaseSession(Node, AbstractSpace):
         return self
 
 
+__all__ = ["BaseSession"]
 # File: lion_core/session/base.py
