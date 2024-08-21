@@ -74,8 +74,8 @@ class ActionExecutor(BaseExecutor):
         Args:
             action (ObservableAction): The action to be added to the pile.
         """
-        self.pile.append(action)
-        self.pending.append(action)
+        await self.pile.ainclude(action)
+        self.pending.include(action)
 
     async def create_processor(self):
         """
@@ -139,3 +139,8 @@ class ActionExecutor(BaseExecutor):
             Iterator: An iterator over the actions in the pile.
         """
         return iter(self.pile)
+
+
+__all__ = ["ActionExecutor"]
+
+# File: lion_core/action/action_executor.py
