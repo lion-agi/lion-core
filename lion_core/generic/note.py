@@ -1,15 +1,23 @@
-from collections.abc import Mapping
-from functools import singledispatchmethod
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from typing_extensions import override
 
 from lion_core.abc import Container
-from lion_core.generic.element import Element
-from lion_core.libs import flatten, fuzzy_parse_json, nget, ninsert, npop, nset, to_dict
+from lion_core.libs import (
+    flatten,
+    fuzzy_parse_json,
+    nget,
+    ninsert,
+    npop,
+    nset,
+    to_dict,
+    to_list,
+)
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
+
+INDICE_TYPE = str | list[str | int]
 
 
 class Note(BaseModel, Container):
@@ -23,16 +31,19 @@ class Note(BaseModel, Container):
         populate_by_name=True,
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize a Note instance with the given keyword arguments."""
         super().__init__()
         self.content = kwargs
 
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
+        """Initialize subclass and register update method."""
         super().__pydantic_init_subclass__(**kwargs)
         cls.update.register(cls, cls._update_with_note)
 
     @field_serializer("content")
     def _serialize_content(self, value: Any) -> dict[str, Any]:
+        """Serialize the content, handling special cases for BaseMail objects."""
         from lion_core.communication.base_mail import BaseMail
 
         output_dict = SysUtil.copy(value, deep=True)
@@ -50,108 +61,67 @@ class Note(BaseModel, Container):
             output_dict.update(info_dict)
         return output_dict
 
-    def pop(self, indices: list[str] | str, default: Any = LN_UNDEFINED, /) -> Any:
-        """
-        Remove and return an item from the nested structure.
-
-        Args:
-            indices: The path to the item to be removed.
-            default: The value to return if the item is not found.
-
-        Returns:
-            The removed item or the default value.
-        """
-        if isinstance(indices, str):
-            indices = [indices]
+    def pop(self, indices: INDICE_TYPE, default: Any = LN_UNDEFINED, /) -> Any:
+        """Remove and return an item from the nested structure."""
+        indices = to_list(indices, flatten=True, dropna=True)
         return npop(self.content, indices, default)
 
-    def insert(self, indices: list[str] | str, value: Any, /) -> None:
-        """
-        Insert a value into the nested structure at the specified indices.
-
-        Args:
-            indices: The path where to insert the value.
-            value: The value to insert.
-        """
-        if isinstance(indices, str):
-            indices = [indices]
+    def insert(self, indices: INDICE_TYPE, value: Any, /) -> None:
+        """Insert a value into the nested structure at the specified indices."""
+        indices = to_list(indices, flatten=True, dropna=True)
         ninsert(self.content, indices, value)
 
-    def set(self, indices: list[str] | str, value: Any, /) -> None:
-        """
-        Set a value in the nested structure at the specified indices.
-        If the path doesn't exist, it will be created.
+    def set(self, indices: INDICE_TYPE, value: Any, /) -> None:
+        """Set a value in the nested structure at the specified indices."""
+        indices = to_list(indices, flatten=True, dropna=True)
 
-        Args:
-            indices: The path where to set the value.
-            value: The value to set.
-        """
-        if isinstance(indices, str):
-            indices = [indices]
-
-        if not self.get(indices, None):
+        if self.get(indices, None) is None:
             self.insert(indices, value)
         else:
             nset(self.content, indices, value)
 
-    def get(self, indices: list[str] | str, default: Any = LN_UNDEFINED, /) -> Any:
-        """
-        Get a value from the nested structure at the specified indices.
-
-        Args:
-            indices: The path to the value in the nested structure.
-            default: The default value to return if the item is not found.
-
-        Returns:
-            The value at the specified indices or the default value.
-        """
-        if isinstance(indices, str):
-            indices = [indices]
+    def get(self, indices: INDICE_TYPE, default: Any = LN_UNDEFINED, /) -> Any:
+        """Get a value from the nested structure at the specified indices."""
+        indices = to_list(indices, flatten=True, dropna=True)
         return nget(self.content, indices, default)
 
-    def keys(self, /, flat: bool = False) -> list:
+    def keys(self, /, flat: bool = False, **kwargs: Any) -> list:
         """
         Get the keys of the Note.
 
         Args:
             flat: If True, return flattened keys.
-
-        Returns:
-            An iterator of keys.
+            kwargs: Additional keyword arguments for flattening
         """
         if flat:
-            return flatten(self.content).keys()
+            return flatten(self.content, **kwargs).keys()
         return list(self.content.keys())
 
-    def values(self, /, flat: bool = False):
+    def values(self, /, flat: bool = False, **kwargs: Any):
         """
         Get the values of the Note.
 
         Args:
             flat: If True, return flattened values.
-
-        Returns:
-            An iterator of values.
+            kwargs: Additional keyword arguments for flattening
         """
         if flat:
-            return flatten(self.content).values()
+            return flatten(self.content, **kwargs).values()
         return self.content.values()
 
-    def items(self, /, flat: bool = False):
+    def items(self, /, flat: bool = False, **kwargs: Any):
         """
         Get the items of the Note.
 
         Args:
             flat: If True, return flattened items.
-
-        Returns:
-            An iterator of (key, value) pairs.
+            kwargs: Additional keyword arguments for flattening
         """
         if flat:
-            return flatten(self.content).items()
+            return flatten(self.content, **kwargs).items()
         return self.content.items()
 
-    def to_dict(self, **kwargs) -> dict[str, Any]:
+    def to_dict(self, **kwargs: Any) -> dict[str, Any]:
         """
         Convert the Note to a dictionary.
 
@@ -162,106 +132,72 @@ class Note(BaseModel, Container):
         return output_dict["content"]
 
     def clear(self):
-        """
-        Clear the content of the Note.
-        """
+        """Clear the content of the Note."""
         self.content.clear()
 
-    @singledispatchmethod
-    def update(self, items: Any, indices: list[str | int] = None, /):
-        try:
-            d_ = to_dict(items)
-            if isinstance(d_, dict):
-                self.update(d_, indices)
-            else:
-                self.set(indices, [d_] if not isinstance(d_, list) else d_)
-        except Exception as e:
-            raise TypeError(f"Invalid input type for update: {type(items)}") from e
+    def update(self, indices: INDICE_TYPE, value: Any, /):
+        """Update values in the nested structure at the specified indices."""
+        indices = to_list(indices, flatten=True, dropna=True)
 
-    @update.register(dict)
-    def _(self, items: dict, indices: list[str | int] = None, /):
-        if indices:
-            a = self.get(indices, {}).update(items)
-            self.set(indices, a)
+        existing = self.get(indices, None)
+        if existing is None:
+            self.set(indices, value)
             return
 
-        self.content.update(items)
+        if isinstance(value, str):
+            value = to_dict(value, suppress=True, parser=fuzzy_parse_json) or value
 
-    @update.register(Mapping)
-    def _(self, items: Mapping, indices: list[str | int] = None, /):
-        return self.update(dict(items), indices)
+        if isinstance(existing, dict) and isinstance(value, dict):
+            existing.update(value)
+            return
 
-    @update.register(str)
-    def _(self, items: str, indices: list[str | int] = None, /):
-        item_: dict | None = to_dict(
-            items,
-            str_type="json",
-            parser=fuzzy_parse_json,
-            suppress=True,
-        )
-        if item_ is None:
-            item_ = to_dict(
-                items,
-                str_type="xml",
-                suppress=True,
-            )
-
-        if not isinstance(item_, dict):
-            raise ValueError(f"Invalid input type for update: {type(items)}")
-        self.update(item_, indices)
-
-    @update.register(Element)
-    def _(self, items: Element, indices: list[str | int] = None, /):
-        self.update(items.to_dict(), indices)
-
-    def _update_with_note(self, items: "Note", indices: list[str | int] = None, /):
-        self.update(items.content, indices)
+        existing = [existing] if not isinstance(existing, list) else existing
+        existing.extend(value if isinstance(value, list) else [value])
+        self.set(indices, existing)
 
     @classmethod
-    def from_dict(cls, kwargs) -> "Note":
-        """
-        Create a Note from a dictionary.
-
-        Returns:
-            A Note object.
-        """
+    def from_dict(cls, kwargs: Any) -> "Note":
+        """Create a Note from a dictionary."""
         return cls(**kwargs)
 
-    def __contains__(self, indices: str | list) -> bool:
+    def __contains__(self, indices: INDICE_TYPE) -> bool:
+        """Check if the Note contains the specified indices."""
         return self.content.get(indices, LN_UNDEFINED) is not LN_UNDEFINED
 
     def __len__(self) -> int:
+        """Return the length of the Note's content."""
         return len(self.content)
 
     def __iter__(self):
+        """Return an iterator over the Note's content."""
         return iter(self.content)
 
     def __next__(self):
+        """Return the next item in the Note's content."""
         return next(iter(self.content))
 
     @override
     def __str__(self) -> str:
+        """Return a string representation of the Note's content."""
         return str(self.content)
 
     @override
     def __repr__(self) -> str:
+        """Return a detailed string representation of the Note's content."""
         return repr(self.content)
 
-    def __getitem__(self, *indices) -> Any:
-        indices = list(indices[0]) if isinstance(indices[0], tuple) else list(indices)
+    def __getitem__(self, *indices: INDICE_TYPE) -> Any:
+        """Get an item from the Note using index notation."""
+        indices = to_list(indices, flatten=True, dropna=True)
         return self.get(indices)
 
-    def __setitem__(self, indices: str | tuple, value: Any) -> None:
+    def __setitem__(self, indices: INDICE_TYPE, value: Any) -> None:
+        """Set an item in the Note using index notation."""
         self.set(indices, value)
 
 
-def note(**kwargs) -> Note:
-    """
-    Create a Note object from keyword arguments.
-
-    Returns:
-        A Note object.
-    """
+def note(**kwargs: Any) -> Note:
+    """Create a Note object from keyword arguments."""
     return Note(**kwargs)
 
 
