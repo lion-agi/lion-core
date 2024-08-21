@@ -163,17 +163,29 @@ pip install git+https://github.com/lion-agi/lion-core.git
     pip install -e .[dev]
     ```
 
-4. Run tests:
+4. Set up pre-commit hooks:
+    ```bash
+    pre-commit install
+    ```
+
+5. Run tests:
     ```bash
     pytest --maxfail=1 --disable-warnings tests/
     pytest_asyncio --maxfail=1 --disable-warnings tests/
     ```
 
-5. Check code style:
+6. Check code style:
     ```bash
     black --check .
     isort --check-only .
     ```
+
+7. (Optional) Run pre-commit hooks manually:
+    ```bash
+    pre-commit run --all-files
+    ```
+
+Note: Pre-commit hooks will run automatically on `git commit`. If any checks fail, the commit will be aborted. Fix the issues and try committing again.
 
 </details>
 
