@@ -65,3 +65,7 @@ class ObservableAction(Element, Action):
         raise LionAccessError(
             "An action cannot be recreated. Once it's done, it's done."
         )
+
+
+__all__ = ["ObservableAction"]
+# File: lion_core/action/base.py
