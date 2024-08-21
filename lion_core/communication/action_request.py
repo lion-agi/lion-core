@@ -98,7 +98,7 @@ class ActionRequest(RoledMessage):
             arguments (dict | MessageFlag): The arguments for the function.
             sender (Any | MessageFlag): The sender of the request.
             recipient (Any | MessageFlag): The recipient of the request.
-            protected_init_params (dict | None, optional): Optional parameters for
+            protected_init_params (dict | None): Optional parameters for
                                                            protected initialization.
         """
         message_flags = [func, arguments, sender, recipient]
@@ -149,6 +149,26 @@ class ActionRequest(RoledMessage):
             str | None: The ID of the action response, or None if not responded.
         """
         return self.content.get("action_response_id", None)
+
+    @property
+    def arguments(self) -> dict[str, Any]:
+        """
+        Get the arguments for the action request.
+
+        Returns:
+            dict[str, Any]: The arguments for the action request.
+        """
+        return self.request_dict.get("arguments", {})
+
+    @property
+    def function(self) -> str:
+        """
+        Get the function name for the action request.
+
+        Returns:
+            str: The function name for the action request.
+        """
+        return self.request_dict.get("function", "")
 
 
 # File: lion_core/communication/action_request.py
