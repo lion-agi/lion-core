@@ -1,6 +1,5 @@
 from abc import abstractmethod
 
-from lion_core.abc._characteristic import Observable
 from lion_core.abc._concept import AbstractObservation
 
 
