@@ -11,7 +11,6 @@ from typing import (
     Iterator,
     Type,
     TypeVar,
-    overload,
 )
 
 from pydantic import Field, field_serializer
@@ -50,6 +49,9 @@ def async_synchronized(func: Callable):
             return await func(self, *args, **kwargs)
 
     return wrapper
+
+
+PILE_KEY_TYPE = int | str | slice
 
 
 class Pile(Element, Collective, Generic[T]):
@@ -208,7 +210,7 @@ class Pile(Element, Collective, Generic[T]):
         items = [Element.from_dict(i) for i in items]
         return cls(items=items, **data)
 
-    def __setitem__(self, key: int | str | slice, item: T | Sequence[T]) -> None:
+    def __setitem__(self, key: PILE_KEY_TYPE, item: T | Sequence[T]) -> None:
         """Set an item or items in the Pile.
 
         Args:
@@ -225,9 +227,7 @@ class Pile(Element, Collective, Generic[T]):
         self._setitem(key, item)
 
     @synchronized
-    def pop(
-        self, key: int | str | slice, default: Any = LN_UNDEFINED
-    ) -> T | "Pile" | None:
+    def pop(self, key: PILE_KEY_TYPE, default: Any = LN_UNDEFINED) -> T | "Pile" | None:
         """Remove and return an item or items from the Pile.
 
         Args:
@@ -322,9 +322,7 @@ class Pile(Element, Collective, Generic[T]):
         self.update(item)
 
     @synchronized
-    def get(
-        self, key: int | str | slice, default: Any = LN_UNDEFINED
-    ) -> T | "Pile" | None:
+    def get(self, key: PILE_KEY_TYPE, default: Any = LN_UNDEFINED) -> T | "Pile" | None:
         """Retrieve item(s) associated with the given key.
 
         Args:
@@ -418,7 +416,7 @@ class Pile(Element, Collective, Generic[T]):
         except StopIteration:
             raise StopIteration("End of pile")
 
-    def __getitem__(self, key: int | str | slice):
+    def __getitem__(self, key: PILE_KEY_TYPE):
         """Get item(s) from the Pile by index, ID, or slice.
 
         Args:
@@ -601,17 +599,8 @@ class Pile(Element, Collective, Generic[T]):
         return self._async_lock
 
     ## Async Interface methods
-
-    @overload
     @async_synchronized
-    async def asetitem(self, key: int | str, item: T) -> None: ...
-
-    @overload
-    @async_synchronized
-    async def asetitem(self, key: slice, item: Iterable[T]) -> None: ...
-
-    @async_synchronized
-    async def asetitem(self, key: int | str | slice, item: T | Iterable[T]) -> None:
+    async def asetitem(self, key: PILE_KEY_TYPE, item: T | Iterable[T]) -> None:
         """Asynchronously set an item or items in the Pile.
 
         Args:
@@ -627,16 +616,8 @@ class Pile(Element, Collective, Generic[T]):
         """
         self._setitem(key, item)
 
-    @overload
     @async_synchronized
-    async def apop(self, key: int | str, default: T = LN_UNDEFINED) -> T | None: ...
-
-    @overload
-    @async_synchronized
-    async def apop(self, key: slice, default: Any = LN_UNDEFINED): ...
-
-    @async_synchronized
-    async def apop(self, key: int | str | slice, default: Any = LN_UNDEFINED):
+    async def apop(self, key: PILE_KEY_TYPE, default: Any = LN_UNDEFINED):
         """Asynchronously remove and return an item or items from the Pile.
 
         Args:
@@ -665,14 +646,6 @@ class Pile(Element, Collective, Generic[T]):
         """
         self._remove(item)
 
-    @overload
-    @async_synchronized
-    async def ainclude(self, item: T) -> None: ...
-
-    @overload
-    @async_synchronized
-    async def ainclude(self, item: Iterable[T]) -> None: ...
-
     @async_synchronized
     async def ainclude(self, item: T | Iterable[T]) -> None:
         """Asynchronously include item(s) in the Pile if not already present.
@@ -686,14 +659,6 @@ class Pile(Element, Collective, Generic[T]):
         self._include(item)
         if item not in self:
             raise LionTypeError(f"Item {item} is not of allowed types")
-
-    @overload
-    @async_synchronized
-    async def aexclude(self, item: T) -> None: ...
-
-    @overload
-    @async_synchronized
-    async def aexclude(self, item: Iterable[T]) -> None: ...
 
     @async_synchronized
     async def aexclude(self, item: T | Iterable[T]) -> None:
@@ -741,24 +706,14 @@ class Pile(Element, Collective, Generic[T]):
             await asyncio.sleep(0)  # Yield control to the event loop
 
     async def __anext__(self) -> T:
-        """Asynchronously return the next item in the Pile.
-
-        Returns:
-            The next item in the Pile.
-
-        Raises:
-            StopAsyncIteration: When there are no more items in the Pile.
-
-        Note:
-            This method uses an internal AsyncPileIterator for iteration.
-        """
+        """Asynchronously return the next item in the Pile."""
         try:
             return await anext(self.AsyncPileIterator(self))
         except StopAsyncIteration:
             raise StopAsyncIteration("End of pile")
 
     ## private methods
-    def _getitem(self, key):
+    def _getitem(self, key: Any):
         """
         Retrieve items from the pile using a key.
 
@@ -820,7 +775,7 @@ class Pile(Element, Collective, Generic[T]):
             except Exception as e:
                 raise ItemNotFoundError(f"Key {key}. Error:{e}")
 
-    def _setitem(self, key, item) -> None:
+    def _setitem(self, key: Any, item: Any) -> None:
         """
         Set new values in the pile using various key types.
 
@@ -869,7 +824,7 @@ class Pile(Element, Collective, Generic[T]):
             self.order += key
             self.pile_.update(item_dict)
 
-    def _get(self, key: Any, default=LN_UNDEFINED):
+    def _get(self, key: Any, default: Any = LN_UNDEFINED):
         """
         Retrieve item(s) associated with given key.
 
@@ -915,7 +870,7 @@ class Pile(Element, Collective, Generic[T]):
                     raise ItemNotFoundError(f"Item not found. Error: {e}")
                 return default
 
-    def _pop(self, key: Any, default=LN_UNDEFINED):
+    def _pop(self, key: Any, default: Any = LN_UNDEFINED):
         """
         Remove and return item(s) associated with given key.
 
@@ -1020,15 +975,10 @@ class Pile(Element, Collective, Generic[T]):
         self.order.clear()
 
     def _update(self, other: Any):
-        """
-        Update pile with another collection of items.
-
-        Args:
-            other: Collection to update with. Can be any LionIDable.
-        """
+        """Update pile with another collection of items."""
         self.include(other)
 
-    def _validate_item_type(self, value):
+    def _validate_item_type(self, value: Any) -> set[Type[Observable]] | None:
         """
         Validate the item type for the pile.
 
@@ -1092,7 +1042,7 @@ class Pile(Element, Collective, Generic[T]):
 
         return result
 
-    def _validate_order(self, value: Progression):
+    def _validate_order(self, value: Any) -> Progression:
         if not value:
             return Progression(order=list(self.pile_.keys()))
 
@@ -1126,7 +1076,7 @@ class Pile(Element, Collective, Generic[T]):
         """
         self.update(item)
 
-    def _insert(self, index, item):
+    def _insert(self, index: int, item: T):
         item_dict = self._validate_pile(item)
 
         item_order = []
@@ -1138,7 +1088,7 @@ class Pile(Element, Collective, Generic[T]):
         self.pile_.update(item_dict)
 
     @field_serializer("pile_")
-    def _(self, value):
+    def _(self, value: dict[str, T]) -> dict[str, dict]:
         return [i.to_dict() for i in value.values()]
 
     class AsyncPileIterator:
@@ -1158,13 +1108,10 @@ class Pile(Element, Collective, Generic[T]):
             return item
 
     @async_synchronized
-    async def adump(self, clear=True) -> dict:
-        result = self.to_dict()
-        if clear:
-            await self.aclear()
-        return result
+    async def adump(self, clear: bool = True) -> dict:
+        self.dump(clear)
 
-    def dump(self, clear=True) -> dict:
+    def dump(self, clear: bool = True) -> dict:
         result = self.to_dict()
         if clear:
             self.clear()

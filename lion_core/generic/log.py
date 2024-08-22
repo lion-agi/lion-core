@@ -32,7 +32,7 @@ class BaseLog(Element, ImmutableRecord):
         self.loginfo = self._validate_note(loginfo)
 
     @classmethod
-    def _validate_load_data(cls, data: dict):
+    def _validate_load_data(cls, data: dict) -> dict:
         try:
             data["ln_id"] = data.pop("log_id")
             data["timestamp"] = data.pop("log_timestamp")
@@ -44,7 +44,7 @@ class BaseLog(Element, ImmutableRecord):
             ) from e
 
     @classmethod
-    def from_dict(cls, data: dict):
+    def from_dict(cls, data: dict) -> "BaseLog":
         data = cls._validate_load_data(data)
         self = cls(**data)
         self._immutable = True
@@ -55,7 +55,7 @@ class BaseLog(Element, ImmutableRecord):
             raise AttributeError("Cannot modify immutable log entry.")
         super().__setattr__(name, value)
 
-    def _validate_note(cls, value):
+    def _validate_note(cls, value: Any) -> Note:
         if not value:
             return Note()
         if isinstance(value, Note):
@@ -68,7 +68,7 @@ class BaseLog(Element, ImmutableRecord):
             raise e
 
     @field_serializer("content", "loginfo")
-    def _serialize_note(self, value):
+    def _serialize_note(self, value: Note) -> dict:
         return value.to_dict()
 
     def to_dict(self):
@@ -78,7 +78,7 @@ class BaseLog(Element, ImmutableRecord):
         dict_["log_timestamp"] = dict_.pop("timestamp")
         return dict_
 
-    def to_note(self):
+    def to_note(self) -> Note:
         return Note(**self.to_dict())
 
 

@@ -1,6 +1,5 @@
 import contextlib
-from collections.abc import Mapping
-from typing import Any
+from typing import Any, Iterator
 
 from pydantic import Field
 from pydantic_core import PydanticUndefined
@@ -21,7 +20,11 @@ class Flow(Element):
     registry: dict = Field(default_factory=dict)
     default_name: str = Field(None)
 
-    def __init__(self, progressions=None, default_name=None):
+    def __init__(
+        self,
+        progressions: Pile[Progression] | None = None,
+        default_name: str | None = None,
+    ):
         """
         Initializes a Flow instance.
 
@@ -35,29 +38,11 @@ class Flow(Element):
         if default_name:
             self.default_name = default_name
 
-        # if mapping we assume a dictionary of in {name: data} format
-        if isinstance(progressions, (Mapping, Collective)):
-            for name, prog_ in progressions.items():
-                if not isinstance(prog_, Progression):
-                    try:
-                        prog_ = prog(prog_, name)
-                    except Exception as e:
-                        raise e
-                if (a := name or prog_.name) is not None:
-                    self.register(prog_, a)
-                else:
-                    self.register(prog_, prog_.ln_id)
-            return
-
         for prog_ in progressions:
-            if not isinstance(prog_, Progression):
-                try:
-                    prog_ = prog(prog_)
-                except Exception as e:
-                    raise e
-            self.register(prog_)
+            a = prog_.name or prog_.ln_id
+            self.register(prog_, a)
 
-    def _validate_progressions(self, value):
+    def _validate_progressions(self, value: Any) -> Pile[Progression]:
         try:
             if isinstance(value, Collective):
                 value = list(value)
@@ -73,23 +58,33 @@ class Flow(Element):
         """Get a list of unique items across all progressions."""
         return list({item for seq in self.progressions for item in seq})
 
-    def keys(self):
+    def keys(self) -> Iterator[str]:
         """Yield the keys (IDs) of all progressions."""
         yield from self.progressions.keys()
 
-    def values(self):
+    def values(self) -> Iterator[Progression]:
         """Yield the values (Progression objects) of all progressions."""
         yield from self.progressions.values()
 
-    def items(self):
+    def items(self) -> Iterator[tuple[str, Progression]]:
         """Yield the (key, value) pairs of all progressions."""
         yield from self.progressions.items()
 
-    def __getitem__(self, prog_=None, default=LN_UNDEFINED):
+    def __getitem__(
+        self,
+        prog_: str | Progression = None,
+        default: Any = LN_UNDEFINED,
+    ):
         """Get a progression by its ID or name."""
         return self.get(prog_, default)
 
-    def __setitem__(self, prog_, index=None, value=None, /):
+    def __setitem__(
+        self,
+        prog_: Progression | str,
+        index: int | slice | None = None,
+        value: Any = None,
+        /,
+    ):
         """Set a progression or an item within a progression."""
         if prog_ not in self:
             raise ItemNotFoundError(f"Sequence {prog_}")
@@ -100,13 +95,13 @@ class Flow(Element):
 
         self.progressions[prog_] = value
 
-    def __contains__(self, item):
+    def __contains__(self, item: Any) -> bool:
         """Check if an item is in any progression or in the registry."""
         return (
             item in self.registry or item in self.progressions or item in self.unique()
         )
 
-    def shape(self):
+    def shape(self) -> tuple[int, list[int]]:
         """
         Get the shape of the Flow.
 
@@ -115,7 +110,7 @@ class Flow(Element):
         """
         return (len(self.all_orders()), [len(i) for i in self.all_orders()])
 
-    def size(self):
+    def size(self) -> int:
         """
         Get the total number of items across all progressions.
 
@@ -130,7 +125,12 @@ class Flow(Element):
         self.progressions.clear()
         self.registry.clear()
 
-    def include(self, prog_=None, item=None, name=None):
+    def include(
+        self,
+        prog_: str | Progression | None = None,
+        item: Any = None,
+        name: str | None = None,
+    ):
         """
         Include a progression or an item in a progression.
 
@@ -168,7 +168,12 @@ class Flow(Element):
 
                 return False
 
-    def exclude(self, seq=None, item=None, name=None):
+    def exclude(
+        self,
+        prog_: Progression | str | None = None,
+        item: Any = None,
+        name: str | None = None,
+    ):
         """
         Exclude a progression or an item from a progression.
 
@@ -181,19 +186,19 @@ class Flow(Element):
             True if the exclusion was successful, False otherwise.
         """
         # if sequence is not None, we will not check the name
-        if seq is not None:
+        if prog_ is not None:
             with contextlib.suppress(ItemNotFoundError, AttributeError):
                 if item:
                     # if there is item, we exclude it from the sequence
-                    self.progressions[self.registry[seq]].exclude(item)
-                    return item not in self.progressions[self.registry[seq]]
+                    self.progressions[self.registry[prog_]].exclude(item)
+                    return item not in self.progressions[self.registry[prog_]]
                 else:
                     # if there is no item, we exclude the sequence
-                    a = self.registry.pop(seq.name or seq.ln_id, None)
-                    return a is not None and self.progressions.exclude(seq)
+                    a = self.registry.pop(prog_.name or prog_.ln_id, None)
+                    return a is not None and self.progressions.exclude(prog_)
             return False
 
-        elif name is not None:
+        if name is not None:
             with contextlib.suppress(ItemNotFoundError):
                 if item:
                     # if there is item, we exclude it from the sequence
@@ -204,7 +209,7 @@ class Flow(Element):
                     return a is not None and self.progressions.exclude(a)
             return False
 
-    def register(self, prog_: Progression, name: str = None):
+    def register(self, prog_: Progression, name: str | None = None, /):
         """
         Register a new progression.
 
@@ -232,7 +237,7 @@ class Flow(Element):
         self.progressions.include(prog_)
         self.registry[name] = prog_.ln_id
 
-    def append(self, item, prog_=None, /):
+    def append(self, item: Any, prog_: str | Progression | None = None, /):
         """
         Append an item to a progression.
 
@@ -261,7 +266,7 @@ class Flow(Element):
         p = prog(item, prog_ if isinstance(prog_, str) else None)
         self.register(p)
 
-    def popleft(self, prog_=None, /):
+    def popleft(self, prog_: str | Progression | None = None, /):
         """
         Remove and return the leftmost item from a progression.
 
@@ -279,7 +284,11 @@ class Flow(Element):
             key: len(self.progressions[value]) for key, value in self.registry.items()
         }
 
-    def get(self, prog_=None, default=LN_UNDEFINED) -> Progression | Any:
+    def get(
+        self,
+        prog_: Progression | str | None = None,
+        default: Any = LN_UNDEFINED,
+    ) -> Progression | Any:
         """
         Get a progression by its ID or name.
 
@@ -311,7 +320,7 @@ class Flow(Element):
                 raise e
             return default
 
-    def remove(self, item, prog_="all"):
+    def remove(self, item: Any, prog_: str | Progression | None = None, /):
         """
         Remove an item from one or all progressions.
 
@@ -336,7 +345,9 @@ class Flow(Element):
     def __next__(self):
         return next(self.__iter__())
 
-    def _find_prog(self, prog_=None, default=LN_UNDEFINED):
+    def _find_prog(
+        self, prog_: str | Progression | None = None, default: Any = LN_UNDEFINED
+    ):
         if not prog_:
             if self.default_name in self.registry:
                 return self.registry[self.default_name]
@@ -357,12 +368,14 @@ class Flow(Element):
         }
 
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, data: dict):
         progressions = Pile.from_dict(data["progressions"])
         return cls(progressions, data["default_name"])
 
 
-def flow(progressions=None, default_name=None):
+def flow(
+    progressions: Pile[Progression] | None = None, default_name: str | None = None
+):
     return Flow(progressions, default_name)
 
 
