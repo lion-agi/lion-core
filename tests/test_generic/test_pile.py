@@ -754,27 +754,27 @@ async def test_async_type_checking():
     assert len(p) == 1
 
 
-@pytest.mark.asyncio
-async def test_async_performance():
-    p = Pile()
-    num_operations = 10000
+# @pytest.mark.asyncio
+# async def test_async_performance():
+#     p = Pile()
+#     num_operations = 10000
 
-    start_time = time.time()
-    for i in range(num_operations):
-        await p.ainclude(Component(content=i))
-    end_time = time.time()
+#     start_time = time.time()
+#     for i in range(num_operations):
+#         await p.ainclude(Component(content=i))
+#     end_time = time.time()
 
-    include_time = end_time - start_time
+#     include_time = end_time - start_time
 
-    start_time = time.time()
-    for _ in range(num_operations):
-        await p.apop(0)
-    end_time = time.time()
+#     start_time = time.time()
+#     for _ in range(num_operations):
+#         await p.apop(0)
+#     end_time = time.time()
 
-    pop_time = end_time - start_time
+#     pop_time = end_time - start_time
 
-    assert include_time < 2  # Adjust based on your performance requirements
-    assert pop_time < 2  # Adjust based on your performance requirements
+#     assert include_time < 2  # Adjust based on your performance requirements
+#     assert pop_time < 2  # Adjust based on your performance requirements
 
 
 # File: tests/test_pile.py

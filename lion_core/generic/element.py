@@ -51,14 +51,14 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         return datetime.fromtimestamp(self.timestamp, tz=TIME_CONFIG["tz"])
 
     @field_validator("ln_id", mode="before")
-    def _validate_id(cls, value) -> str:
+    def _validate_id(cls, value: Any) -> str:
         try:
             return SysUtil.get_id(value)
         except:
             raise LionIDError(f"Invalid lion id: {value}")
 
     @field_validator("timestamp", mode="before")
-    def _validate_timestamp(cls, value):
+    def _validate_timestamp(cls, value: Any) -> float:
         if isinstance(value, str):
             try:
                 value = datetime.fromisoformat(value)
@@ -72,7 +72,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
             raise ValueError(f"Unsupported type for time_attr: {type(value)}")
 
     @classmethod
-    def from_dict(cls, data, **kwargs) -> T:
+    def from_dict(cls, data: dict, **kwargs: Any) -> T:
         """create an instance of the Element or its subclass from a dictionary."""
         if "lion_class" in data:
             cls = get_class(data.pop("lion_class"))
@@ -80,7 +80,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
             return cls.from_dict(data, **kwargs)
         return cls.model_validate(data, **kwargs)
 
-    def to_dict(self, **kwargs) -> dict:
+    def to_dict(self, **kwargs: Any) -> dict:
         """Convert the Element to a dictionary representation."""
         dict_ = self.model_dump(**kwargs)
         dict_["lion_class"] = self.class_name()

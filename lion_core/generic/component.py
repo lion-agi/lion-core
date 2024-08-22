@@ -191,7 +191,7 @@ class Component(Element):
         self.metadata.set(["last_updated", field_name], current_time)
 
     @override
-    def to_dict(self, **kwargs) -> dict:
+    def to_dict(self, **kwargs: Any) -> dict:
         """
         Convert the component to a dictionary representation.
 
@@ -208,12 +208,12 @@ class Component(Element):
         dict_ = {**dict_, **extra_fields, "lion_class": self.class_name()}
         return dict_
 
-    def to_note(self, **kwargs):
+    def to_note(self, **kwargs: Any) -> Note:
         return Note(**self.to_dict(**kwargs))
 
     @override
     @classmethod
-    def from_dict(cls, data: dict, **kwargs) -> T:
+    def from_dict(cls, data: dict, **kwargs: Any) -> T:
         """
         Create a component instance from a dictionary.
 
@@ -365,7 +365,7 @@ class Component(Element):
         return self.get_converter_registry().convert_to(self, key, **kwargs)
 
     @classmethod
-    def convert_from(cls, obj: Any, key: str = "dict", /, **kwargs) -> T:
+    def convert_from(cls, obj: Any, key: str = "dict", /, **kwargs: Any) -> T:
         """Convert data to create a new component instance using the ConverterRegistry."""
         data = cls.get_converter_registry().convert_from(cls, obj, key)
         return cls.from_dict(data, **kwargs)
