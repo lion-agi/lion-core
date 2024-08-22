@@ -61,7 +61,7 @@ class ObservableAction(Element, Action):
         return BaseLog(content=content, loginfo=loginfo)
 
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, data: Any):
         raise LionAccessError(
             "An action cannot be recreated. Once it's done, it's done."
         )

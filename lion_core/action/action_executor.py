@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Any, Type
 
 from lion_core.abc import BaseExecutor
 from lion_core.action.action_processor import ActionProcessor
@@ -31,7 +31,7 @@ class ActionExecutor(BaseExecutor):
 
     processor_class: Type[ActionProcessor] = ActionProcessor
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """
         Initializes the ActionExecutor with the provided configuration.
 

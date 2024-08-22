@@ -1,6 +1,6 @@
 import asyncio
 
-from typing_extensions import override
+from typing_extensions import Any, override
 
 from lion_core.abc import BaseProcessor
 from lion_core.action.base import ObservableAction
@@ -139,7 +139,7 @@ class ActionProcessor(BaseProcessor):
         self.execution_mode = False
 
     @classmethod
-    async def create(cls, **kwargs) -> "ActionProcessor":
+    async def create(cls, **kwargs: Any) -> "ActionProcessor":
         """
         Class method to create an instance of ActionProcessor.
 
@@ -152,7 +152,7 @@ class ActionProcessor(BaseProcessor):
         processor = cls(**kwargs)
         return processor
 
-    async def request_permission(self, **kwargs) -> bool:
+    async def request_permission(self, **kwargs: Any) -> bool:
         """
         Placeholder method to request permission before processing an action.
 

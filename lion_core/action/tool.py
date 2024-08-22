@@ -172,12 +172,5 @@ def func_to_tool(
     return tools
 
 
-ToolType = bool | Tool | str | list[Tool | str | dict[str, Any]] | dict[str, Any]
-
-
-__all__ = [
-    "Tool",
-    "func_to_tool",
-    "ToolType",
-]
+__all__ = ["Tool", "func_to_tool"]
 # File: lion_core/action/tool.py

@@ -3,9 +3,14 @@ from typing import Any, Callable
 
 from lion_core.abc import BaseManager
 from lion_core.action.function_calling import FunctionCalling
-from lion_core.action.tool import Tool, ToolType, func_to_tool
+from lion_core.action.tool import Tool, func_to_tool
 from lion_core.communication.action_request import ActionRequest
 from lion_core.libs import fuzzy_parse_json, to_list
+
+SINGLE_TOOL_TYPE = Tool | Callable[..., Any]
+TOOL_TYPE = (
+    SINGLE_TOOL_TYPE | list[SINGLE_TOOL_TYPE | str] | dict[str, Any] | bool | str
+)
 
 
 class ToolManager(BaseManager):
@@ -39,7 +44,7 @@ class ToolManager(BaseManager):
         """
         self.registry: dict[str, Tool] = registry or {}
 
-    def __contains__(self, tool: Tool | str | Callable[..., Any]) -> bool:
+    def __contains__(self, tool: SINGLE_TOOL_TYPE | str) -> bool:
         """
         Checks if a tool is registered in the registry.
 
@@ -59,7 +64,7 @@ class ToolManager(BaseManager):
 
     def register_tool(
         self,
-        tool: Tool | Callable[..., Any],
+        tool: SINGLE_TOOL_TYPE,
         update: bool = False,
     ):
         """
@@ -85,10 +90,7 @@ class ToolManager(BaseManager):
 
         self.registry[tool.function_name] = tool
 
-    def register_tools(
-        self,
-        tools: list[Tool | Callable[..., Any]] | Tool | Callable[..., Any],
-    ):
+    def register_tools(self, tools: list[SINGLE_TOOL_TYPE]):
         """
         Registers multiple tools in the registry.
 
@@ -211,7 +213,7 @@ class ToolManager(BaseManager):
             return self.match_tool(_call)
         raise ValueError(f"Invalid function call {func_call}")
 
-    async def invoke(self, func_call: Any) -> Any:
+    async def invoke(self, func_call: dict | str | ActionRequest) -> Any:
         """
         Invokes a tool based on the provided function call.
 
@@ -236,7 +238,7 @@ class ToolManager(BaseManager):
 
     def get_tool_schema(
         self,
-        tools: ToolType = False,
+        tools: TOOL_TYPE = False,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """
