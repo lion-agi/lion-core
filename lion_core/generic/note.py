@@ -115,6 +115,7 @@ class Note(BaseModel, Container):
     def to_dict(self, **kwargs: Any) -> dict[str, Any]:
         """
         Convert the Note to a dictionary.
+
         kwargs: Additional keyword arguments for BaseModel.model_dump
 
         Returns:
@@ -132,14 +133,20 @@ class Note(BaseModel, Container):
         indices: INDICE_TYPE,
         *args: list[Any],
         filter: Callable[[Any], bool] | None = None,
-        overwrite: bool = False,
-        dict_sequence: bool = False,
+        overwrite: bool = True,
+        dict_sequence: bool = True,
         sort_list: bool = False,
         custom_sort: Callable[[Any], Any] | None = None,
     ):
         """
         update the content of the Note with a number of dictionaries or Notes.
         optionally filter the values, overwrite existing keys, and sort lists.
+
+        default behavior is to mimic the behavior of dict.update().
+        which is to overwrite existing keys.
+        Optionally, you can set overwrite to False, and by default, the subsequent
+        duplicated keys will have a postfix of '_1', '_2', '_3', etc to preserve
+        all data.
         """
         if not indices:
             args = [self.content, *args]
