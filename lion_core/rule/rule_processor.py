@@ -1,10 +1,10 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from lion_core.abc import BaseExecutor, Observable, Temporal
 from lion_core.exceptions import LionTypeError, LionValueError
 from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
-from lion_core.imodel.imodel import iModel
 from lion_core.libs import ucall
 from lion_core.rule.base import Rule
 from lion_core.rule.rulebook import RuleBook
@@ -65,12 +65,15 @@ class RuleProcessor(BaseExecutor, Temporal, Observable):
                 try:
                     return await rule.validate(value)
                 except Exception as e:
-                    raise LionValueError(f"Failed to validate field: {field}") from e
+                    raise LionValueError(
+                        f"Failed to validate field: {field}"
+                    ) from e
 
         if self.strict:
             error_message = (
-                f"Failed to validate {field} because no rule applied. To return the "
-                "original value directly when no rule applies, set strict=False."
+                f"Failed to validate {field} because no rule applied."
+                " To return the original value directly when no rule "
+                "applies, set strict=False."
             )
             raise LionValueError(error_message)
 
@@ -108,15 +111,19 @@ class RuleProcessor(BaseExecutor, Temporal, Observable):
                 response = {form.request_fields[0]: response}
             else:
                 if structure_str:
-                    fallback_structure = fallback_structure or self.fallback_structure
+                    fallback_structure = (
+                        fallback_structure or self.fallback_structure
+                    )
 
                     if fallback_structure is None:
                         raise ValueError(
-                            "Response is a string, you asked to structure the string"
-                            "but no structure imodel was provided"
+                            "Response is a string, you asked to structure "
+                            "the string but no structure imodel was provided"
                         )
                     try:
-                        response = await ucall(fallback_structure, response, **kwargs)
+                        response = await ucall(
+                            fallback_structure, response, **kwargs
+                        )
                     except Exception as e:
                         raise ValueError(
                             "Failed to structure the response string"

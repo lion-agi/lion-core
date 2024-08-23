@@ -1,8 +1,13 @@
 import inspect
+from typing import Any, Literal
 
-from typing_extensions import Any, Literal, Type, override
+from typing_extensions import override
 
-from lion_core.communication.message import MessageFlag, MessageRole, RoledMessage
+from lion_core.communication.message import (
+    MessageFlag,
+    MessageRole,
+    RoledMessage,
+)
 from lion_core.exceptions import LionTypeError
 from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
@@ -11,12 +16,10 @@ from lion_core.setting import LN_UNDEFINED
 
 
 def prepare_request_response_format(request_fields: dict) -> str:
-    return f"""
-MUST RETURN JSON-PARSEABLE RESPONSE ENCLOSED BY JSON CODE BLOCKS. ---
-```json
-{request_fields}
-```---
-""".strip()
+    return (
+        "MUST RETURN JSON-PARSEABLE RESPONSE ENCLOSED BY JSON CODE BLOCKS. "
+        f"---\n```json\n{request_fields}\n```\n---"
+    ).strip()
 
 
 def _f(idx: str, x: str) -> dict[str, Any]:
@@ -28,17 +31,6 @@ def _f(idx: str, x: str) -> dict[str, Any]:
             "detail": x,
         },
     }
-
-
-def format_image_content(
-    text_content: str,
-    images: list,
-    image_detail: Literal["low", "high", "auto"],
-) -> dict[str, Any]:
-    """Format text content with images for message content."""
-    content = [{"type": "text", "text": text_content}]
-    content.extend(_f(i, image_detail) for i in images)
-    return content
 
 
 def format_image_content(
@@ -67,7 +59,10 @@ def prepare_instruction_content(
 
     out_["instruction"] = instruction or "N/A"
     if context:
-        out_["context"] = context if not isinstance(context, str) else [context]
+        if not isinstance(context, str):
+            out_["context"] = context
+        else:
+            out_["context"] = [context]
     if images:
         out_["images"] = images if isinstance(images, list) else [images]
         out_["image_detail"] = image_detail or "low"
@@ -167,9 +162,10 @@ class Instruction(RoledMessage):
     def update_request_fields(self, request_fields: dict):
         """Update the requested fields in the instruction."""
         self.content["request_fields"].update(request_fields)
-        self.content["request_response_format"] = prepare_request_response_format(
+        format_ = prepare_request_response_format(
             request_fields=self.content["request_fields"],
         )
+        self.content["request_response_format"] = format_
 
     def update_context(self, *args, **kwargs):
         """Add new context to the instruction."""
@@ -203,7 +199,7 @@ class Instruction(RoledMessage):
     def from_form(
         cls,
         *,
-        form: BaseForm | Type[Form],
+        form: BaseForm | type[Form],
         sender: str | None = None,
         recipient: Any = None,
         images: str | None = None,
@@ -251,7 +247,8 @@ class Instruction(RoledMessage):
                 return self
         except Exception as e:
             raise LionTypeError(
-                "Invalid form. The form must be a subclass or an instance of BaseForm."
+                "Invalid form. The form must be a subclass or an instance "
+                "of BaseForm."
             ) from e
 
 

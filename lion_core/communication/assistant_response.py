@@ -1,6 +1,12 @@
-from typing_extensions import Any, override
+from typing import Any
 
-from lion_core.communication.message import MessageFlag, MessageRole, RoledMessage
+from typing_extensions import override
+
+from lion_core.communication.message import (
+    MessageFlag,
+    MessageRole,
+    RoledMessage,
+)
 
 
 class AssistantResponse(RoledMessage):
@@ -20,7 +26,7 @@ class AssistantResponse(RoledMessage):
             assistant_response: The content of the assistant's response.
             sender: The sender of the response, typically the assistant.
             recipient: The recipient of the response.
-            protected_init_params: Optional parameters for protected initialization.
+            protected_init_params: Optional parameters for protected init.
         """
         message_flags = [assistant_response, sender, recipient]
 
@@ -41,14 +47,13 @@ class AssistantResponse(RoledMessage):
             if isinstance(assistant_response, str):
                 assistant_response = {"content": assistant_response}
             elif isinstance(assistant_response, dict):
-                if not "content" in assistant_response:
-                    a_ = {}
-                    a_["content"] = assistant_response
-                    assistant_response = a_
+                if "content" not in assistant_response:
+                    assistant_response = {"content": assistant_response}
         else:
             assistant_response = {"content": ""}
 
-        self.content["assistant_response"] = assistant_response.get("content", "")
+        res = assistant_response.get("content", "")
+        self.content["assistant_response"] = res
 
     @property
     def response(self) -> Any:

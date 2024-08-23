@@ -5,7 +5,6 @@ import os
 import random
 from collections.abc import Mapping
 from hashlib import sha256
-from typing import Type
 
 
 def unique_hash(n: int = 32) -> str:
@@ -16,8 +15,8 @@ def unique_hash(n: int = 32) -> str:
 
 
 def is_same_dtype(
-    input_: list | dict, dtype: Type | None = None, return_dtype: bool = False
-) -> bool | tuple[bool, Type]:
+    input_: list | dict, dtype: type | None = None, return_dtype: bool = False
+) -> bool | tuple[bool, type]:
     """Check if all elements in input have the same data type."""
     if not input_:
         return True if not return_dtype else (True, None)
@@ -54,7 +53,7 @@ def insert_random_hyphens(
 
 
 def get_file_classes(file_path):
-    with open(file_path, "r") as file:
+    with open(file_path) as file:
         file_content = file.read()
 
     tree = ast.parse(file_content)
@@ -73,7 +72,9 @@ def get_class_file_registry(folder_path, pattern_list):
         for file in files:
             if file.endswith(".py"):
                 if any(pattern in root for pattern in pattern_list):
-                    class_file_dict = get_file_classes(os.path.join(root, file))
+                    class_file_dict = get_file_classes(
+                        os.path.join(root, file)
+                    )
                     class_file_registry.update(class_file_dict)
     return class_file_registry
 

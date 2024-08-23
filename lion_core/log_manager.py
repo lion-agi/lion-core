@@ -59,7 +59,7 @@ class LogManager(BaseManager):
         persist_path = persist_path or self.persist_path
         try:
             data = None
-            with open(persist_path, "r") as f:
+            with open(persist_path) as f:
                 data = json.load(f)
             self.logs = Pile.load(data)
         except FileNotFoundError:

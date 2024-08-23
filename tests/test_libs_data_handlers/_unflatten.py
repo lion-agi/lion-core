@@ -140,7 +140,9 @@ def test_unflatten_with_large_input():
 
 def test_unflatten_performance_with_deep_nesting(benchmark):
     def create_deep_nested():
-        return {"|".join([f"level{i}" for i in range(100)]): i for i in range(100)}
+        return {
+            "|".join([f"level{i}" for i in range(100)]): i for i in range(100)
+        }
 
     flat_dict = create_deep_nested()
     result = benchmark(unflatten, flat_dict, sep="|")

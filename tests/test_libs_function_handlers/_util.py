@@ -59,7 +59,9 @@ class TestUtilityFunctions(unittest.IsolatedAsyncioTestCase):
 
     async def test_max_concurrent(self):
         async_limited_func = max_concurrent(async_func, limit=1)
-        results = await asyncio.gather(async_limited_func(1), async_limited_func(2))
+        results = await asyncio.gather(
+            async_limited_func(1), async_limited_func(2)
+        )
         self.assertEqual(results, [2, 3])
 
     async def test_throttle(self):
@@ -73,10 +75,13 @@ class TestUtilityFunctions(unittest.IsolatedAsyncioTestCase):
             await async_sync_func_with_error(3)
 
     async def test_max_concurrent_with_error(self):
-        async_limited_func_with_error = max_concurrent(async_func_with_error, limit=1)
+        async_limited_func_with_error = max_concurrent(
+            async_func_with_error, limit=1
+        )
         with self.assertRaises(ValueError):
             await asyncio.gather(
-                async_limited_func_with_error(1), async_limited_func_with_error(3)
+                async_limited_func_with_error(1),
+                async_limited_func_with_error(3),
             )
 
     async def test_throttle_with_error(self):

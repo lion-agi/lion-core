@@ -45,7 +45,9 @@ def test_npop_various_scenarios(data, indices, expected_result, expected_data):
         ({"a": 1}, ["b"], LN_UNDEFINED, LN_UNDEFINED, {"a": 1}),
     ],
 )
-def test_npop_with_default(data, indices, default, expected_result, expected_data):
+def test_npop_with_default(
+    data, indices, default, expected_result, expected_data
+):
     assert npop(data, indices, default=default) == expected_result
     assert data == expected_data
 
@@ -235,7 +237,9 @@ def test_npop_with_all_python_basic_types():
         ({"a": [1, {"b": 2}]}, "a.1.b", 2, {"a": [1, {}]}),
     ],
 )
-def test_npop_with_string_indices(data, indices, expected_result, expected_data):
+def test_npop_with_string_indices(
+    data, indices, expected_result, expected_data
+):
     assert npop(data, indices.split(".")) == expected_result
     assert data == expected_data
 

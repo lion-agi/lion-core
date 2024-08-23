@@ -1,5 +1,6 @@
 import asyncio
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 ErrorHandler = Callable[[Exception], None]
@@ -54,7 +55,9 @@ async def tcall(
             if timeout is None:
                 result = await func(*args, **kwargs)
             else:
-                result = await asyncio.wait_for(func(*args, **kwargs), timeout=timeout)
+                result = await asyncio.wait_for(
+                    func(*args, **kwargs), timeout=timeout
+                )
         else:
             # Synchronous function
             if timeout is None:

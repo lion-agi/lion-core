@@ -1,4 +1,4 @@
-"""lion-core"""
+"""lion-core."""
 
 import logging
 
@@ -23,6 +23,7 @@ __all__ = [
     "BASE_LION_FIELDS",
     "message_log_manager",
     "event_log_manager",
+    "__version__",
 ]
 
 logger = logging.getLogger(__name__)

@@ -1,4 +1,5 @@
-from typing import Any, Callable, Literal, Sequence, TypedDict
+from collections.abc import Callable, Sequence
+from typing import Any, Literal, TypedDict
 
 from lion_core.libs.algorithms.jaro_distance import jaro_winkler_similarity
 

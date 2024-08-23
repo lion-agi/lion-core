@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Any
 
 from lion_core.abc import BaseExecutor
 from lion_core.action.action_processor import ActionProcessor
@@ -29,7 +29,7 @@ class ActionExecutor(BaseExecutor):
         **kwargs: Additional keyword arguments passed to the processor class.
     """
 
-    processor_class: Type[ActionProcessor] = ActionProcessor
+    processor_class: type[ActionProcessor] = ActionProcessor
 
     def __init__(self, **kwargs: Any) -> None:
         """

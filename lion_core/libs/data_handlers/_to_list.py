@@ -13,22 +13,21 @@ T = TypeVar("T")
 def to_list(
     input_: Any, /, *, flatten: bool = False, dropna: bool = False
 ) -> list[Any]:
-    """
-    Convert various input types to a list.
+    """Convert various input types to a list.
 
-    This function handles different input types and converts them to a list,
+    Handles different input types and converts them to a list,
     with options for flattening nested structures and removing None values.
 
-    Accepted input types and their behaviors:
+    Accepted input types and behaviors:
     1. None or LionUndefined: Returns an empty list [].
-    2. str, bytes, bytearray: Returns a single-item list containing the input.
-    3. Mapping (dict, OrderedDict, etc.): Returns a single-item list containing the input.
-    4. BaseModel: Returns a single-item list containing the input.
+    2. str, bytes, bytearray: Returns a single-item list with the input.
+    3. Mapping (dict, etc.): Returns a single-item list with the input.
+    4. BaseModel: Returns a single-item list with the input.
     5. Sequence (list, tuple, etc.):
        - If flatten=False, returns the sequence as a list.
        - If flatten=True, flattens nested sequences.
-    6. Other Iterables: Converts to a list, then applies flattening if specified.
-    7. Any other type: Returns a single-item list containing the input.
+    6. Other Iterables: Converts to a list, flattens if specified.
+    7. Any other type: Returns a single-item list with the input.
 
     Args:
         input_: The input to be converted to a list.
@@ -36,7 +35,7 @@ def to_list(
         dropna: If True, removes None values from the result.
 
     Returns:
-        A list derived from the input, processed according to the specified options.
+        A list derived from the input, processed as specified.
 
     Examples:
         >>> to_list(1)
@@ -52,7 +51,7 @@ def to_list(
 @to_list.register(LionUndefined)
 @to_list.register(type(None))
 def _(input_: None | LionUndefined, /, **kwargs: Any) -> list[Any]:
-    """Handle None and LionUndefined inputs by returning an empty list."""
+    """Handle None and LionUndefined inputs."""
     return []
 
 
@@ -71,20 +70,24 @@ def _(
 @to_list.register(Sequence)
 @to_list.register(Iterable)
 def _(
-    input_: Sequence[T] | Iterable[T], /, *, flatten: bool = False, dropna: bool = False
+    input_: Sequence[T] | Iterable[T],
+    /,
+    *,
+    flatten: bool = False,
+    dropna: bool = False,
 ) -> list[T]:
-    """
-    Handle Sequence and Iterable inputs.
+    """Handle Sequence and Iterable inputs.
 
-    Converts the input to a list and optionally flattens and removes None values.
+    Converts the input to a list and optionally flattens and removes None
     """
     result = list(input_)
-    return _process_list(result, flatten, dropna) if flatten or dropna else result
+    return (
+        _process_list(result, flatten, dropna) if flatten or dropna else result
+    )
 
 
 def _process_list(lst: list[Any], flatten: bool, dropna: bool) -> list[Any]:
-    """
-    Process a list by optionally flattening and removing None values.
+    """Process a list by optionally flattening and removing None values.
 
     Args:
         lst: The list to process.
@@ -97,7 +100,7 @@ def _process_list(lst: list[Any], flatten: bool, dropna: bool) -> list[Any]:
     result = []
     for item in lst:
         if isinstance(item, Iterable) and not isinstance(
-            item, str | bytes | bytearray | Mapping
+            item, (str, bytes, bytearray, Mapping)
         ):
             if flatten:
                 result.extend(_process_list(list(item), flatten, dropna))

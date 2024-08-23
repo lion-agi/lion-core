@@ -24,15 +24,21 @@ def extract_request_plain_function_calling(
                 func_list.append(func_content)
             tool_count += 1
         return func_list
-    except:
+    except Exception as e:
         if not suppress:
             raise ValueError(
-                "Response message must be one of regular response or function calling"
-            )
+                "Response message must be one of regular response or "
+                "function calling"
+            ) from e
 
 
-def extract_request_from_content_code_block(content_: list[dict]) -> list[dict]:
+def extract_request_from_content_code_block(
+    content_: list[dict],
+) -> list[dict]:
     out = {}
+
+    def _f(x: str):
+        return x.replace("action_", "").replace("recipient_", "")
 
     def _inner(request_):
         if "recipient_name" in request_:
@@ -53,7 +59,6 @@ def extract_request_from_content_code_block(content_: list[dict]) -> list[dict]:
             elif (a := to_dict(_arg, str_type="xml")) is not None:
                 out["arguments"] = a
 
-        _f = lambda x: x.replace("action_", "").replace("recipient_", "")
         return {"func": _f(out["action"]), "arguments": out["arguments"]}
 
     return [_inner(i) for i in content_]
@@ -61,6 +66,10 @@ def extract_request_from_content_code_block(content_: list[dict]) -> list[dict]:
 
 def extract_action_request(content_: list[dict]) -> list[ActionRequest]:
     outs = []
+
+    def _f(x: str):
+        return x.replace("action_", "").replace("recipient_", "")
+
     for request_ in content_:
         if "recipient_name" in request_:
             request_["action"] = request_.pop("recipient_name").split(".")[1]
@@ -72,10 +81,8 @@ def extract_action_request(content_: list[dict]) -> list[ActionRequest]:
         elif "arguments" in request_:
             request_["arguments"] = request_["arguments"]
 
-        f = lambda x: x.replace("action_", "").replace("recipient_", "")
-
         msg = ActionRequest(
-            func=f(request_["action"]),
+            func=_f(request_["action"]),
             arguments=request_["arguments"],
         )
         outs.append(msg)

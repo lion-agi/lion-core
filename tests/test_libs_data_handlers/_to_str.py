@@ -48,7 +48,10 @@ def test_primitive_types(input_value, expected):
     ],
 )
 def test_string_input(input_value, strip_lower_flag, chars, expected):
-    assert to_str(input_value, strip_lower=strip_lower_flag, chars=chars) == expected
+    assert (
+        to_str(input_value, strip_lower=strip_lower_flag, chars=chars)
+        == expected
+    )
 
 
 @pytest.mark.parametrize(
@@ -79,7 +82,14 @@ def test_tuple_input():
 
 def test_set_input():
     result = to_str({1, 2, 3})
-    assert result in ["1, 2, 3", "1, 3, 2", "2, 1, 3", "2, 3, 1", "3, 1, 2", "3, 2, 1"]
+    assert result in [
+        "1, 2, 3",
+        "1, 3, 2",
+        "2, 1, 3",
+        "2, 3, 1",
+        "3, 1, 2",
+        "3, 2, 1",
+    ]
 
 
 @pytest.mark.parametrize(
@@ -274,7 +284,7 @@ def test_module():
 
 
 def test_file_object():
-    with open(__file__, "r") as f:
+    with open(__file__) as f:
         assert "file" in to_str(f).lower()
 
 
@@ -299,7 +309,9 @@ def test_strip_lower_with_unicode():
 
 
 def test_to_str_performance(benchmark):
-    large_nested = {"level1": {f"key{i}": list(range(100)) for i in range(100)}}
+    large_nested = {
+        "level1": {f"key{i}": list(range(100)) for i in range(100)}
+    }
     result = benchmark(to_str, large_nested)
     assert len(result) > 10000
 

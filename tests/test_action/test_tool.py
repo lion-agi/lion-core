@@ -94,8 +94,12 @@ def test_tool_serialization():
     assert deserialized["pre_processor"] == "sample_preprocessor"
     assert deserialized["post_processor"] == "sample_postprocessor"
     assert deserialized["parser"] == "sample_parser"
-    assert json.loads(deserialized["pre_processor_kwargs"]) == {"arg1": "value1"}
-    assert json.loads(deserialized["post_processor_kwargs"]) == {"arg2": "value2"}
+    assert json.loads(deserialized["pre_processor_kwargs"]) == {
+        "arg1": "value1"
+    }
+    assert json.loads(deserialized["post_processor_kwargs"]) == {
+        "arg2": "value2"
+    }
 
 
 # Test func_to_tool function
@@ -144,7 +148,9 @@ def test_func_to_tool_additional_kwargs():
 
 def test_func_to_tool_mismatched_parsers():
     with pytest.raises(ValueError):
-        func_to_tool([sample_function, async_sample_function], parser=[sample_parser])
+        func_to_tool(
+            [sample_function, async_sample_function], parser=[sample_parser]
+        )
 
 
 # Edge cases and additional tests
@@ -231,7 +237,8 @@ def test_tool_schema_generation():
     schema = tool.schema_["function"]
     assert schema["name"] == "typed_func"
     assert (
-        "An integer parameter" in schema["parameters"]["properties"]["a"]["description"]
+        "An integer parameter"
+        in schema["parameters"]["properties"]["a"]["description"]
     )
     assert schema["parameters"]["properties"]["a"]["type"] == "number"
     assert schema["parameters"]["properties"]["b"]["type"] == "string"

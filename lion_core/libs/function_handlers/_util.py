@@ -1,8 +1,9 @@
 import asyncio
 import logging
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache, wraps
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 from lion_core.libs.function_handlers._throttle import Throttle
 
@@ -12,7 +13,8 @@ ErrorHandler = Callable[[Exception], Any]
 
 def force_async(fn: Callable[..., T]) -> Callable[..., Callable[..., T]]:
     """
-    Convert a synchronous function to an asynchronous function using a thread pool.
+    Convert a synchronous function to an asynchronous function
+    using a thread pool.
 
     Args:
         fn: The synchronous function to convert.
@@ -44,7 +46,9 @@ def is_coroutine_func(func: Callable[..., Any]) -> bool:
     return asyncio.iscoroutinefunction(func)
 
 
-def custom_error_handler(error: Exception, error_map: dict[type, ErrorHandler]) -> None:
+def custom_error_handler(
+    error: Exception, error_map: dict[type, ErrorHandler]
+) -> None:
     """
     Handle errors based on a custom error map.
 
@@ -84,7 +88,9 @@ def max_concurrent(
     return wrapper
 
 
-def throttle(func: Callable[..., T], period: float) -> Callable[..., Callable[..., T]]:
+def throttle(
+    func: Callable[..., T], period: float
+) -> Callable[..., Callable[..., T]]:
     """
     Throttle function execution to limit the rate of calls.
 

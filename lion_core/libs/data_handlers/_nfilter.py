@@ -1,8 +1,10 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 
 def nfilter(
-    nested_structure: dict[Any, Any] | list[Any], condition: Callable[[Any], bool]
+    nested_structure: dict[Any, Any] | list[Any],
+    condition: Callable[[Any], bool],
 ) -> dict[Any, Any] | list[Any]:
     """
     Filter elements in a nested structure (dict or list) based on a condition.
@@ -23,7 +25,9 @@ def nfilter(
     elif isinstance(nested_structure, list):
         return _filter_list(nested_structure, condition)
     else:
-        raise TypeError("The nested_structure must be either a dict or a list.")
+        raise TypeError(
+            "The nested_structure must be either a dict or a list."
+        )
 
 
 def _filter_dict(
@@ -47,7 +51,9 @@ def _filter_dict(
     }
 
 
-def _filter_list(lst: list[Any], condition: Callable[[Any], bool]) -> list[Any]:
+def _filter_list(
+    lst: list[Any], condition: Callable[[Any], bool]
+) -> list[Any]:
     """
     Filter elements in a list based on a condition.
 

@@ -208,7 +208,9 @@ def test_instruction_with_empty_request_fields():
 
 
 def test_instruction_with_none_values():
-    instruction = Instruction("Test", context=None, images=None, request_fields=None)
+    instruction = Instruction(
+        "Test", context=None, images=None, request_fields=None
+    )
     assert "context" not in instruction.content.to_dict()
     assert "images" not in instruction.content.to_dict()
     assert "request_fields" not in instruction.content.to_dict()
@@ -269,7 +271,9 @@ def test_instruction_large_image():
 # Test instruction with all possible image details
 @pytest.mark.parametrize("image_detail", ["low", "high", "auto"])
 def test_instruction_all_image_details(image_detail):
-    instruction = Instruction("Test", images=["image1"], image_detail=image_detail)
+    instruction = Instruction(
+        "Test", images=["image1"], image_detail=image_detail
+    )
     assert instruction.content["image_detail"] == image_detail
 
 
@@ -283,7 +287,9 @@ def test_instruction_mixed_context_types():
 # Test updating context with various types
 def test_instruction_update_context_various_types():
     instruction = Instruction("Test")
-    instruction.update_context("string", 123, {"key": "value"}, ["list", "items"])
+    instruction.update_context(
+        "string", 123, {"key": "value"}, ["list", "items"]
+    )
     assert len(instruction.content["context"]) == 4
     assert isinstance(instruction.content["context"][1], int)
     assert isinstance(instruction.content["context"][2], dict)

@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Any
 
 from pydantic import Field, PrivateAttr
 
@@ -35,7 +35,7 @@ class Session(BaseSession):
     mail_transfer: Exchange | None = Field(None)
     mail_manager: MailManager | None = Field(None, exclude=True)
     conversations: Flow | None = Field(None)
-    branch_type: Type[Branch] = PrivateAttr(Branch)
+    branch_type: type[Branch] = PrivateAttr(Branch)
 
     async def new_branch(
         self,
@@ -85,7 +85,11 @@ class Session(BaseSession):
         branch = SysUtil.get_id(branch)
 
         if branch not in self.branches:
-            _s = str(branch) if len(str(branch)) < 10 else str(branch)[:10] + "..."
+            _s = (
+                str(branch)
+                if len(str(branch)) < 10
+                else str(branch)[:10] + "..."
+            )
             raise ItemNotFoundError(f"Branch {_s}.. does not exist.")
         branch: Branch = self.branches[branch]
 
@@ -161,7 +165,8 @@ class Session(BaseSession):
         Collect mail from specified branches.
 
         Args:
-            from_: The branches to collect mail from. If None, collect from all.
+            from_: The branches to collect mail from. If None, collect
+                from all.
 
         Raises:
             ValueError: If mail collection fails.

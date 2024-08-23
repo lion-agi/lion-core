@@ -1,6 +1,7 @@
 import asyncio
 import unittest
-from typing import Any, Callable, Dict
+from collections.abc import Callable
+from typing import Any, Dict
 from unittest.mock import AsyncMock, patch
 
 from lion_core.libs.function_handlers._lcall import alcall
@@ -30,7 +31,9 @@ class TestLCallFunction(unittest.IsolatedAsyncioTestCase):
 
     async def test_lcall_with_retries(self):
         inputs = [1, 2, 3]
-        results = await alcall(mock_func_with_error, inputs, retries=1, default=0)
+        results = await alcall(
+            mock_func_with_error, inputs, retries=1, default=0
+        )
         self.assertEqual(results, [1, 2, 0])
 
     async def test_lcall_with_timeout(self):
@@ -41,7 +44,9 @@ class TestLCallFunction(unittest.IsolatedAsyncioTestCase):
     async def test_lcall_with_error_handling(self):
         inputs = [1, 2, 3]
         error_map = {ValueError: mock_handler}
-        results = await alcall(mock_func_with_error, inputs, error_map=error_map)
+        results = await alcall(
+            mock_func_with_error, inputs, error_map=error_map
+        )
         self.assertEqual(results, [1, 2, "handled: mock error"])
 
     async def test_lcall_with_max_concurrent(self):

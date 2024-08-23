@@ -1,5 +1,6 @@
 import asyncio
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from lion_core.libs.function_handlers._ucall import ucall
 from lion_core.setting import LN_UNDEFINED
@@ -66,7 +67,12 @@ async def rcall(
             err_msg = f"Attempt {attempt + 1}/{retries + 1}: {error_msg or ''}"
             if timing:
                 result, duration = await _rcall(
-                    func, *args, err_msg=err_msg, timeout=timeout, timing=True, **kwargs
+                    func,
+                    *args,
+                    err_msg=err_msg,
+                    timeout=timeout,
+                    timing=True,
+                    **kwargs,
                 )
                 return result, duration
 
@@ -81,7 +87,8 @@ async def rcall(
             if attempt < retries:
                 if verbose:
                     print(
-                        f"Attempt {attempt + 1}/{retries + 1} failed: {e}, retrying..."
+                        f"Attempt {attempt + 1}/{retries + 1} failed: {e}, "
+                        "retrying..."
                     )
                 await asyncio.sleep(delay)
                 delay *= backoff_factor
@@ -99,7 +106,8 @@ async def rcall(
             else:
                 return handler(last_exception)
         raise RuntimeError(
-            f"{error_msg or ''} Operation failed after {retries + 1} attempts: {last_exception}"
+            f"{error_msg or ''} Operation failed after {retries + 1} "
+            f"attempts: {last_exception}"
         ) from last_exception
 
     raise RuntimeError(
@@ -159,7 +167,7 @@ async def _rcall(
             return (default, duration) if timing else default
         else:
             raise asyncio.TimeoutError(err_msg) from e
-    except Exception as e:
+    except Exception:
         if ignore_err:
             duration = SysUtil.time() - start_time
             return (default, duration) if timing else default

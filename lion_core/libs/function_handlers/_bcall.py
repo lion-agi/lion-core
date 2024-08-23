@@ -1,4 +1,5 @@
-from typing import Any, AsyncGenerator, Callable, TypeVar
+from collections.abc import AsyncGenerator, Callable
+from typing import Any, TypeVar
 
 from lion_core.libs.data_handlers import to_list
 from lion_core.libs.function_handlers._lcall import alcall
@@ -59,7 +60,7 @@ async def bcall(
     input_ = to_list(input_, flatten=True, dropna=True)
 
     for i in range(0, len(input_), batch_size):
-        batch = input_[i : i + batch_size]
+        batch = input_[i : i + batch_size]  # noqa: E203
         batch_results = await alcall(
             func=func,
             input_=batch,

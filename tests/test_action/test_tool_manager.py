@@ -122,7 +122,9 @@ async def test_invoke(tool_manager, sample_tool):
 @pytest.mark.asyncio
 async def test_invoke_async(tool_manager, sample_async_tool):
     tool_manager.register_tool(sample_async_tool)
-    result = await tool_manager.invoke(("async_mock_function", {"x": 1, "y": 2}))
+    result = await tool_manager.invoke(
+        ("async_mock_function", {"x": 1, "y": 2})
+    )
     assert result == 3
 
 

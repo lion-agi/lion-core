@@ -32,17 +32,15 @@ class BaseMail(Element):
     sender: str = Field(
         "N/A",
         title="Sender",
-        description=(
-            "The ID of the sender node, or 'system', 'user', " "or 'assistant'."
-        ),
+        description="The ID of the sender node, or 'system', 'user', "
+        "or 'assistant'.",
     )
 
     recipient: str = Field(
         "N/A",
         title="Recipient",
-        description=(
-            "The ID of the recipient node, or 'system', 'user', " "or 'assistant'."
-        ),
+        description="The ID of the recipient node, or 'system', 'user', "
+        "or 'assistant'.",
     )
 
     @field_validator("sender", "recipient", mode="before")

@@ -1,4 +1,4 @@
-from typing import Callable, Sequence
+from collections.abc import Callable, Sequence
 
 from lion_core.libs.algorithms.jaro_distance import jaro_winkler_similarity
 
@@ -32,7 +32,8 @@ def choose_most_similar(
         score_func = jaro_winkler_similarity
 
     scores = [
-        score_func(str(word), str(correct_word)) for correct_word in correct_words_list
+        score_func(str(word), str(correct_word))
+        for correct_word in correct_words_list
     ]
 
     max_score_index = max(enumerate(scores), key=lambda x: x[1])[0]

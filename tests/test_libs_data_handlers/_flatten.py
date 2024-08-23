@@ -52,14 +52,35 @@ from lion_core.libs.data_handlers._flatten import flatten, get_flattened_keys
             False,
         ),
         ({"a": {"b": {"c": {"d": 1}}}}, {"a|b|c|d": 1}, "|", None, False),
-        ({"a": [1, [2, [3]]]}, {"a|0": 1, "a|1|0": 2, "a|1|1|0": 3}, "|", None, False),
-        ({"a": 1, "b": (2, 3)}, {"a": 1, "b|0": 2, "b|1": 3}, "|", None, False),
-        ({"a": set([1, 2, 3])}, {"a": set([1, 2, 3])}, "|", None, False),
-        ({"a": frozenset([1, 2, 3])}, {"a": frozenset([1, 2, 3])}, "|", None, False),
+        (
+            {"a": [1, [2, [3]]]},
+            {"a|0": 1, "a|1|0": 2, "a|1|1|0": 3},
+            "|",
+            None,
+            False,
+        ),
+        (
+            {"a": 1, "b": (2, 3)},
+            {"a": 1, "b|0": 2, "b|1": 3},
+            "|",
+            None,
+            False,
+        ),
+        ({"a": {1, 2, 3}}, {"a": {1, 2, 3}}, "|", None, False),
+        (
+            {"a": frozenset([1, 2, 3])},
+            {"a": frozenset([1, 2, 3])},
+            "|",
+            None,
+            False,
+        ),
     ],
 )
 def test_flatten(data, expected, sep, max_depth, dict_only):
-    assert flatten(data, sep=sep, max_depth=max_depth, dict_only=dict_only) == expected
+    assert (
+        flatten(data, sep=sep, max_depth=max_depth, dict_only=dict_only)
+        == expected
+    )
 
 
 def test_flatten_in_place():
@@ -87,7 +108,8 @@ def test_flatten_none_data():
 
 def test_flatten_non_string_keys():
     with pytest.raises(
-        TypeError, match="Unsupported key type: int. Only string keys are acceptable."
+        TypeError,
+        match="Unsupported key type: int. Only string keys are acceptable.",
     ):
         flatten({1: "a", 2: "b"})
 
@@ -111,7 +133,13 @@ def test_flatten_non_string_keys():
         ),
         ({}, [], "|", None, False),
         ([], [], "|", None, False),
-        ({"a": 1, "b": {"c": 2, "d": {"e": 3}}}, ["a", "b|c", "b|d"], "|", 2, False),
+        (
+            {"a": 1, "b": {"c": 2, "d": {"e": 3}}},
+            ["a", "b|c", "b|d"],
+            "|",
+            2,
+            False,
+        ),
         (
             {"a": 1, "b": {"c": 2, "d": [3, {"e": 4}]}},
             ["a", "b|c", "b|d"],
@@ -123,7 +151,9 @@ def test_flatten_non_string_keys():
 )
 def test_get_flattened_keys(data, expected, sep, max_depth, dict_only):
     assert (
-        get_flattened_keys(data, sep=sep, max_depth=max_depth, dict_only=dict_only)
+        get_flattened_keys(
+            data, sep=sep, max_depth=max_depth, dict_only=dict_only
+        )
         == expected
     )
 

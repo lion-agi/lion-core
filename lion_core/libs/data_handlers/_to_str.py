@@ -84,14 +84,20 @@ def _(_: Any, /, **kwargs: Any) -> str:
 def _(input_: Mapping, /, **kwargs: Any) -> str:
     """Handle Mapping inputs."""
     try:
-        dict_input = to_dict(input_, use_model_dump=kwargs.get("use_model_dump", True))
-        json_kwargs = {k: v for k, v in kwargs.items() if k != "use_model_dump"}
+        dict_input = to_dict(
+            input_, use_model_dump=kwargs.get("use_model_dump", True)
+        )
+        json_kwargs = {
+            k: v for k, v in kwargs.items() if k != "use_model_dump"
+        }
         result = json.dumps(dict_input, **json_kwargs)
         return _process_string(
             result, kwargs.get("strip_lower", False), kwargs.get("chars")
         )
     except Exception as e:
-        raise ValueError(f"Failed to convert Mapping to string: {input_}") from e
+        raise ValueError(
+            f"Failed to convert Mapping to string: {input_}"
+        ) from e
 
 
 @to_str.register(Iterable)
@@ -100,14 +106,18 @@ def _(input_: Iterable, /, **kwargs: Any) -> str:
     try:
         input_list = list(input_)
         str_kwargs = {
-            k: v for k, v in kwargs.items() if k not in ["strip_lower", "chars"]
+            k: v
+            for k, v in kwargs.items()
+            if k not in ["strip_lower", "chars"]
         }
         result = ", ".join(to_str(item, **str_kwargs) for item in input_list)
         return _process_string(
             result, kwargs.get("strip_lower", False), kwargs.get("chars")
         )
     except Exception as e:
-        raise ValueError(f"Failed to convert Iterable to string: {input_}") from e
+        raise ValueError(
+            f"Failed to convert Iterable to string: {input_}"
+        ) from e
 
 
 @to_str.register(BaseModel)
@@ -169,7 +179,11 @@ def strip_lower(
         'hello world'
     """
     return to_str(
-        input_, strip_lower=True, chars=chars, use_model_dump=use_model_dump, **kwargs
+        input_,
+        strip_lower=True,
+        chars=chars,
+        use_model_dump=use_model_dump,
+        **kwargs,
     )
 
 

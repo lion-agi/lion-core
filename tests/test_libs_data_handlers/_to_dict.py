@@ -64,7 +64,10 @@ def test_list_of_dicts():
     "json_string, expected",
     [
         ('{"a": 1, "b": 2}', {"a": 1, "b": 2}),
-        ('{"x": [1, 2, 3], "y": {"z": true}}', {"x": [1, 2, 3], "y": {"z": True}}),
+        (
+            '{"x": [1, 2, 3], "y": {"z": true}}',
+            {"x": [1, 2, 3], "y": {"z": True}},
+        ),
     ],
 )
 def test_json_string(json_string, expected):
@@ -73,7 +76,9 @@ def test_json_string(json_string, expected):
 
 def test_xml_string():
     xml_string = "<root><a>1</a><b>2</b></root>"
-    assert to_dict(xml_string, str_type="xml") == {"root": {"a": "1", "b": "2"}}
+    assert to_dict(xml_string, str_type="xml") == {
+        "root": {"a": "1", "b": "2"}
+    }
 
 
 @pytest.mark.parametrize(
@@ -123,7 +128,9 @@ def test_custom_objects(input_value, expected):
 
 
 def test_model_dump():
-    assert to_dict(MockModelDump(), use_model_dump=True) == {"mock": "model_dump"}
+    assert to_dict(MockModelDump(), use_model_dump=True) == {
+        "mock": "model_dump"
+    }
 
 
 @pytest.mark.parametrize(

@@ -33,7 +33,7 @@ def validate_category(value: Any) -> PackageCategory:
 
 
 class Package(Observable, Temporal):
-    """a package in the Lion framework's communication system."""
+    """A package in the Lion framework's communication system."""
 
     def __init__(
         self,
@@ -41,8 +41,7 @@ class Package(Observable, Temporal):
         package: Any,
         request_source: Any = None,
     ):
-        """
-        Initialize a Package instance.
+        """Initialize a Package instance.
 
         Args:
             category: The category of the package.

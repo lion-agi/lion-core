@@ -173,7 +173,10 @@ def test_large_input():
 @pytest.mark.parametrize(
     "input_value, expected",
     [
-        ([1, "nested", [2, ["deep", "list"]]], [1, "nested", 2, "deep", "list"]),
+        (
+            [1, "nested", [2, ["deep", "list"]]],
+            [1, "nested", 2, "deep", "list"],
+        ),
     ],
 )
 def test_flatten_with_strings(input_value, expected):

@@ -1,6 +1,7 @@
 import inspect
 from abc import abstractmethod
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from pydantic import Field, PrivateAttr
 from typing_extensions import override
@@ -95,7 +96,9 @@ class Rule(Element, Condition, Action):
         value = to_list(value, dropna=True, flatten=True)
         for i in value:
             if not isinstance(i, str):
-                raise LionOperationError("exclude_fields must be a list of str")
+                raise LionOperationError(
+                    "exclude_fields must be a list of str"
+                )
 
         self.info["exclude_fields"] = value
 
@@ -118,7 +121,7 @@ class Rule(Element, Condition, Action):
         /,
         annotation: Any = None,
         check_func: Callable | Any = None,
-        **kwargs,  # additional kwargs for custom check func or self.rule_condition
+        **kwargs,
     ) -> bool:
         """
         Apply the rule to a specific field.
@@ -127,11 +130,14 @@ class Rule(Element, Condition, Action):
             field: The field to apply the rule to.
             value: The value of the field.
             form: The form containing the field.
-            apply_fields: Fields to apply the rule to (overrides instance setting).
-            exclude_fields: Fields to exclude from the rule (overrides instance setting).
+            apply_fields: Fields to apply the rule to
+                (overrides instance setting).
+            exclude_fields: Fields to exclude from the rule
+                (overrides instance setting).
             annotation: Field annotation for type-based rule application.
-            check_func: Custom function for condition checking.
-            **kwargs: Additional arguments for the check function.
+            check_func: Custom function for condition checking
+            **kwargs: Additional arguments for the check function or
+                self.rule_condition
 
         Returns:
             bool: True if the rule should be applied, False otherwise.
@@ -164,7 +170,9 @@ class Rule(Element, Condition, Action):
 
         if isinstance(annotation, dict) and field in annotation:
             annotation = annotation[field]
-        annotation = [annotation] if isinstance(annotation, str) else annotation
+        annotation = (
+            [annotation] if isinstance(annotation, str) else annotation
+        )
 
         if annotation and len(annotation) > 0:
             for i in annotation:
@@ -225,7 +233,7 @@ class Rule(Element, Condition, Action):
         /,
         form: BaseForm,
         check_func: Callable | Any = None,
-        **kwargs,  # additional kwargs for custom check func or self.rule_condition
+        **kwargs,  # additional kwargs for check func or self.rule_condition
     ) -> Any:
         if not await self.apply(
             field,

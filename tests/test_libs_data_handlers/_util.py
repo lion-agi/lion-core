@@ -71,7 +71,9 @@ def test_is_same_dtype(input_data, dtype, return_dtype, expected):
     ],
 )
 def test_is_structure_homogeneous(input_data, return_structure_type, expected):
-    assert is_structure_homogeneous(input_data, return_structure_type) == expected
+    assert (
+        is_structure_homogeneous(input_data, return_structure_type) == expected
+    )
 
 
 # Tests for deep_update function
@@ -163,7 +165,10 @@ def test_is_structure_homogeneous_with_empty_structures():
 def test_deep_update_with_complex_structures():
     original = {"a": [1, {"b": 2}], "c": {"d": [3, 4], "e": {"f": 5}}}
     update = {"a": [1, {"b": 3}], "c": {"d": [3, 5, 6], "e": {"g": 7}}}
-    expected = {"a": [1, {"b": 3}], "c": {"d": [3, 5, 6], "e": {"f": 5, "g": 7}}}
+    expected = {
+        "a": [1, {"b": 3}],
+        "c": {"d": [3, 5, 6], "e": {"f": 5, "g": 7}},
+    }
     assert deep_update(original, update) == expected
 
 
@@ -181,14 +186,18 @@ def test_deep_update_performance():
     large_dict = {
         f"key_{i}": {f"subkey_{j}": j for j in range(100)} for i in range(1000)
     }
-    update_dict = {f"key_{i}": {f"subkey_{50}": "updated"} for i in range(500, 1000)}
+    update_dict = {
+        f"key_{i}": {f"subkey_{50}": "updated"} for i in range(500, 1000)
+    }
 
     start_time = time.time()
     result = deep_update(large_dict, update_dict)
     end_time = time.time()
 
     assert result["key_750"]["subkey_50"] == "updated"
-    assert end_time - start_time < 1  # Assuming it should take less than 1 second
+    assert (
+        end_time - start_time < 1
+    )  # Assuming it should take less than 1 second
 
 
 def test_get_target_container_performance():
@@ -206,7 +215,9 @@ def test_get_target_container_performance():
     end_time = time.time()
 
     assert result == "deep"
-    assert end_time - start_time < 1  # Assuming it should take less than 1 second
+    assert (
+        end_time - start_time < 1
+    )  # Assuming it should take less than 1 second
 
 
 # File: tests/test_util.py

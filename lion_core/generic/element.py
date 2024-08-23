@@ -1,7 +1,13 @@
 from datetime import datetime
 from typing import Any, TypeVar
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+)
 from typing_extensions import override
 
 from lion_core._class_registry import LION_CLASS_REGISTRY, get_class
@@ -54,7 +60,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
     def _validate_id(cls, value: Any) -> str:
         try:
             return SysUtil.get_id(value)
-        except:
+        except Exception:
             raise LionIDError(f"Invalid lion id: {value}")
 
     @field_validator("timestamp", mode="before")
@@ -73,7 +79,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
 
     @classmethod
     def from_dict(cls, data: dict, **kwargs: Any) -> T:
-        """create an instance of the Element or its subclass from a dictionary."""
+        """create an instance of the Element or its subclass"""
         if "lion_class" in data:
             cls = get_class(data.pop("lion_class"))
         if cls.from_dict.__func__ != Element.from_dict.__func__:

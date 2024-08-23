@@ -1,7 +1,13 @@
-from typing_extensions import Any, override
+from typing import Any
+
+from typing_extensions import override
 
 from lion_core.communication.action_request import ActionRequest
-from lion_core.communication.message import MessageFlag, MessageRole, RoledMessage
+from lion_core.communication.message import (
+    MessageFlag,
+    MessageRole,
+    RoledMessage,
+)
 from lion_core.exceptions import LionValueError
 from lion_core.generic.note import Note
 
@@ -37,7 +43,7 @@ class ActionResponse(RoledMessage):
         Args:
             action_request: The original action request to respond to.
             sender: The sender of the action response.
-            func_output: The output from the function specified in the request.
+            func_output: The output from the function in the request.
             protected_init_params: Protected initialization parameters.
         """
         message_flags = [
@@ -83,12 +89,16 @@ class ActionResponse(RoledMessage):
         """Get the ID of the corresponding action request."""
         return self.content.get("action_request_id", None)
 
-    def update_request(self, action_request: ActionRequest, func_output: Any) -> None:
+    def update_request(
+        self,
+        action_request: ActionRequest,
+        func_output: Any,
+    ) -> None:
         """Update the action response with new request and output.
 
         Args:
             action_request: The original action request being responded to.
-            func_output: The output from the function specified in the request.
+            func_output: The output from the function in the request.
         """
         self.content = prepare_action_response_content(
             action_request=action_request,

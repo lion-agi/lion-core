@@ -1,4 +1,4 @@
-"""Provide utility for forcefully validating and converting inputs to boolean."""
+"""Provide utility for forcefully validating and converting to boolean."""
 
 from typing import Any
 

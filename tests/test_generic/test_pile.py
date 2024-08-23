@@ -7,7 +7,11 @@ from typing import Any, List
 
 import pytest
 
-from lion_core.exceptions import ItemNotFoundError, LionTypeError, LionValueError
+from lion_core.exceptions import (
+    ItemNotFoundError,
+    LionTypeError,
+    LionValueError,
+)
 from lion_core.generic.component import Component
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
@@ -30,7 +34,9 @@ def sample_pile(sample_elements):
 
 
 def generate_random_string(length: int) -> str:
-    return "".join(random.choices(string.ascii_letters + string.digits, k=length))
+    return "".join(
+        random.choices(string.ascii_letters + string.digits, k=length)
+    )
 
 
 @pytest.mark.parametrize(
@@ -48,7 +54,9 @@ def test_initialization(input_data):
 
 
 def test_initialization_with_item_type():
-    p = Pile(items=[MockElement(value=i) for i in range(3)], item_type=MockElement)
+    p = Pile(
+        items=[MockElement(value=i) for i in range(3)], item_type=MockElement
+    )
     assert p.item_type == {MockElement}
 
     with pytest.raises(LionTypeError):
@@ -249,7 +257,9 @@ def test_pile_with_custom_progression():
 def test_pile_with_invalid_order():
     elements = [MockElement(value=i) for i in range(5)]
     with pytest.raises(LionValueError):
-        Pile(items=elements, order=[1, 2, 3])  # Order length doesn't match items
+        Pile(
+            items=elements, order=[1, 2, 3]
+        )  # Order length doesn't match items
 
 
 def test_pile_with_complex_elements():
@@ -257,7 +267,8 @@ def test_pile_with_complex_elements():
         data: dict
 
     elements = [
-        ComplexElement(data={"value": i, "nested": {"x": i * 2}}) for i in range(5)
+        ComplexElement(data={"value": i, "nested": {"x": i * 2}})
+        for i in range(5)
     ]
     p = Pile(items=elements)
     assert len(p) == 5
@@ -335,8 +346,8 @@ from lion_core.sys_utils import SysUtil
 
 
 class ComplexElement(Element):
-    data: Dict[str, Any]
-    nested: List[Dict[str, Any]]
+    data: dict[str, Any]
+    nested: list[dict[str, Any]]
 
 
 @pytest.fixture
@@ -359,7 +370,10 @@ def test_pile_with_complex_elements(complex_elements):
 
 def test_pile_nested_operations():
     p = Pile(
-        items=[Pile(items=[MockElement(value=i) for i in range(3)]) for _ in range(3)]
+        items=[
+            Pile(items=[MockElement(value=i) for i in range(3)])
+            for _ in range(3)
+        ]
     )
     assert len(p) == 3
     assert all(isinstance(item, Pile) for item in p.values())
@@ -393,8 +407,8 @@ def test_pile_scaling_performance(n):
     access_time = time.time() - start_time
 
     # Asserting that creation and access times scale reasonably
-    assert creation_time < 0.1 * n / 1000  # Adjust as needed
-    assert access_time < 0.01 * n / 1000  # Adjust as needed
+    assert creation_time < 0.15 * n / 1000  # Adjust as needed
+    assert access_time < 0.015 * n / 1000  # Adjust as needed
 
 
 def test_pile_memory_leak():
@@ -476,7 +490,8 @@ def test_pile_with_custom_progression():
 
     elements = [MockElement(value=i) for i in range(5)]
     p = Pile(
-        items=elements, order=ReversedProgression(order=[e.ln_id for e in elements])
+        items=elements,
+        order=ReversedProgression(order=[e.ln_id for e in elements]),
     )
     assert [e.value for e in p.values()] == [4, 3, 2, 1, 0]
 

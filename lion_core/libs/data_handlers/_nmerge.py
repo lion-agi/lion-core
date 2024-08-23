@@ -1,6 +1,7 @@
 from collections import defaultdict
+from collections.abc import Callable, Sequence
 from itertools import chain
-from typing import Any, Callable, Sequence
+from typing import Any
 
 from lion_core.libs.data_handlers._util import is_homogeneous
 
@@ -51,7 +52,9 @@ def nmerge(
         )
 
 
-def _deep_merge_dicts(dict1: dict[str, Any], dict2: dict[str, Any]) -> dict[str, Any]:
+def _deep_merge_dicts(
+    dict1: dict[str, Any], dict2: dict[str, Any]
+) -> dict[str, Any]:
     """
     Recursively merges two dictionaries, combining values where keys overlap.
 

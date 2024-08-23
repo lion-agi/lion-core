@@ -38,10 +38,11 @@ class FunctionCallingRule(MappingRule):
         try:
             return await super().validate(value)
         except LionOperationError as e:
-            raise LionOperationError(f"Invalid action request: ") from e
+            raise LionOperationError("Invalid action request: ") from e
 
     # we do not attempt to fix the keys
-    # because if the keys are wrong, action is not safe to operate, and is meaningless
+    # because if the keys are wrong, action is not safe to operate, and
+    # is meaningless
     @override
     async def fix_value(self, value):
         corrected = []
@@ -57,6 +58,6 @@ class FunctionCallingRule(MappingRule):
                 elif not self.discard:
                     raise LionOperationError(f"Invalid action request: {i}")
         except Exception as e:
-            raise LionOperationError(f"Invalid action field: ") from e
+            raise LionOperationError("Invalid action field: ") from e
 
         return corrected

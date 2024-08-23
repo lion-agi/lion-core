@@ -1,6 +1,7 @@
 import json
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from pydantic import Field, field_serializer, field_validator
 from typing_extensions import override

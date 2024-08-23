@@ -1,5 +1,6 @@
 import contextlib
-from typing import Any, Iterator
+from collections.abc import Iterator
+from typing import Any
 
 from pydantic import Field, field_validator
 from typing_extensions import override
@@ -63,8 +64,9 @@ class Progression(Element, Ordering):
     def __getitem__(self, key: int | slice):
         """Get an item or slice of items from the progression."""
         if not isinstance(key, int | slice):
+            key_cls = key.__class__.__name__
             raise TypeError(
-                f"indices must be integers or slices, not {key.__class__.__name__}"
+                f"indices must be integers or slices, not {key_cls}"
             )
 
         try:
@@ -181,7 +183,9 @@ class Progression(Element, Ordering):
     def extend(self, item: Any) -> None:
         """Extend the progression from the right with anorher progression."""
         if not isinstance(item, Progression):
-            raise LionTypeError(expected_type=Progression, actual_type=type(item))
+            raise LionTypeError(
+                expected_type=Progression, actual_type=type(item)
+            )
         self.order.extend(item.order)
 
     def count(self, item: Any) -> int:
@@ -196,7 +200,7 @@ class Progression(Element, Ordering):
         return not self.is_empty()
 
     def __add__(self, other: Any) -> "Progression":
-        """returns a new progression with items added to the end of the progression."""
+        """returns a new progression with items added to the end"""
         other = validate_order(other)
         new_order = list(self)
         new_order.extend(other)

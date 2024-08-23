@@ -11,7 +11,7 @@ from lion_core.generic.exchange import Exchange
 
 
 class StartMail(Element, Signal):
-    """a start mail node that triggers the initiation of a process."""
+    """A start mail node that triggers the initiation of a process."""
 
     mailbox: Exchange = Field(
         default_factory=Exchange, description="The pending start mail"
@@ -24,8 +24,7 @@ class StartMail(Element, Signal):
         structure_id: str,
         executable_id: str,
     ) -> None:
-        """
-        Triggers the start mail by including it in the mailbox.
+        """Triggers the start mail by including it in the mailbox.
 
         Args:
             context: The context to be included in the start mail.

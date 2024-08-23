@@ -1,6 +1,13 @@
-from typing_extensions import Any, Callable, override
+from collections.abc import Callable
+from typing import Any
 
-from lion_core.communication.message import MessageFlag, MessageRole, RoledMessage
+from typing_extensions import override
+
+from lion_core.communication.message import (
+    MessageFlag,
+    MessageRole,
+    RoledMessage,
+)
 from lion_core.generic.note import Note
 from lion_core.libs import fuzzy_parse_json, to_dict, to_str
 
@@ -9,7 +16,6 @@ def prepare_action_request(
     func: str | Callable,
     arguments: dict,
 ) -> Note:
-
     def _prepare_arguments(_arg: Any) -> dict[str, Any]:
         if _arg is None:
             return {}
@@ -92,7 +98,7 @@ class ActionRequest(RoledMessage):
         Check if the action request has been responded to.
 
         Returns:
-            True if the action request has been responded to, otherwise False.
+            True if the action request has been responded to, else False.
         """
         return self.action_response_id is not None
 

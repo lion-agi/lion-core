@@ -94,7 +94,11 @@ def test_nfilter_with_custom_objects():
         def __init__(self, value):
             self.value = value
 
-    data = {"a": CustomObj(1), "b": CustomObj(2), "c": [CustomObj(3), CustomObj(4)]}
+    data = {
+        "a": CustomObj(1),
+        "b": CustomObj(2),
+        "c": [CustomObj(3), CustomObj(4)],
+    }
     condition = lambda x: isinstance(x, CustomObj) and x.value % 2 == 0
     expected = {"b": CustomObj(2), "c": [CustomObj(4)]}
     result = nfilter(data, condition)
@@ -111,7 +115,8 @@ def test_nfilter_with_none_values():
 
 def test_invalid_input():
     with pytest.raises(
-        TypeError, match="The nested_structure must be either a dict or a list."
+        TypeError,
+        match="The nested_structure must be either a dict or a list.",
     ):
         nfilter(42, lambda x: True)
 

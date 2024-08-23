@@ -1,10 +1,20 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from typing_extensions import override
 
 from lion_core.abc import Container
-from lion_core.libs import flatten, nfilter, nget, ninsert, nmerge, npop, nset, to_list
+from lion_core.libs import (
+    flatten,
+    nfilter,
+    nget,
+    ninsert,
+    nmerge,
+    npop,
+    nset,
+    to_list,
+)
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 
@@ -34,7 +44,7 @@ class Note(BaseModel, Container):
 
     @field_serializer("content")
     def _serialize_content(self, value: Any) -> dict[str, Any]:
-        """Serialize the content, handling special cases for BaseMail objects."""
+        """Serialize the content"""
         from lion_core.communication.base_mail import BaseMail
 
         output_dict = SysUtil.copy(value, deep=True)
@@ -52,18 +62,23 @@ class Note(BaseModel, Container):
             output_dict.update(info_dict)
         return output_dict
 
-    def pop(self, indices: INDICE_TYPE, default: Any = LN_UNDEFINED, /) -> Any:
+    def pop(
+        self,
+        indices: INDICE_TYPE,
+        default: Any = LN_UNDEFINED,
+        /,
+    ) -> Any:
         """Remove and return an item from the nested structure."""
         indices = to_list(indices, flatten=True, dropna=True)
         return npop(self.content, indices, default)
 
     def insert(self, indices: INDICE_TYPE, value: Any, /) -> None:
-        """Insert a value into the nested structure at the specified indices."""
+        """Insert a value into the nested structure at the specified indice"""
         indices = to_list(indices, flatten=True, dropna=True)
         ninsert(self.content, indices, value)
 
     def set(self, indices: INDICE_TYPE, value: Any, /) -> None:
-        """Set a value in the nested structure at the specified indices."""
+        """Set a value in the nested structure at the specified indice"""
         indices = to_list(indices, flatten=True, dropna=True)
 
         if self.get(indices, None) is None:
@@ -72,7 +87,7 @@ class Note(BaseModel, Container):
             nset(self.content, indices, value)
 
     def get(self, indices: INDICE_TYPE, default: Any = LN_UNDEFINED, /) -> Any:
-        """Get a value from the nested structure at the specified indices."""
+        """Get a value from the nested structure at the specified indice"""
         indices = to_list(indices, flatten=True, dropna=True)
         return nget(self.content, indices, default)
 
@@ -144,16 +159,20 @@ class Note(BaseModel, Container):
 
         default behavior is to mimic the behavior of dict.update().
         which is to overwrite existing keys.
-        Optionally, you can set overwrite to False, and by default, the subsequent
-        duplicated keys will have a postfix of '_1', '_2', '_3', etc to preserve
-        all data.
+        Optionally, you can set overwrite to False, and by default, the
+        subsequent duplicated keys will have a postfix of '_1', '_2', '_3',
+        etc to preserve all data.
         """
         if not indices:
             args = [self.content, *args]
         else:
             args = [self.content.get(indices, {}), *args]
 
-        args = [arg.content if isinstance(arg, self.__class__) else arg for arg in args]
+        def f_(x):
+            return x.content if isinstance(x, self.__class__) else x
+
+        args = [f_(arg) for arg in args]
+
         value = [nfilter(arg, filter) for arg in args] if filter else args
         value = nmerge(
             value,

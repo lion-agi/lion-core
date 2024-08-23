@@ -1,8 +1,8 @@
 import re
 from typing import Any
 
-# Comprehensive regex to capture decimal numbers, fractions, scientific notation,
-# and complex numbers
+# Comprehensive regex to capture decimal numbers, fractions, scientific
+# notation and complex numbers
 number_regex = re.compile(
     r"[-+]?\d+\.\d+|"  # Decimal numbers with optional sign
     r"[-+]?\d+/\d+|"  # Fractions
@@ -42,7 +42,7 @@ def to_num(
         lower_bound: The lower bound for the number. Raises ValueError if
             the number is below this bound.
         num_type: The type of the number (int, float, or complex).
-        precision: The number of decimal places to round to if num_type is float.
+        precision: The number of decimal places to round to
         num_count: The number of numeric values to return.
 
     Returns:
@@ -74,7 +74,9 @@ def to_num(
             raise ValueError(f"Invalid number type string: {num_type}")
         num_type = _type_map[num_type]
 
-    return str_to_num(str_, upper_bound, lower_bound, num_type, precision, num_count)
+    return str_to_num(
+        str_, upper_bound, lower_bound, num_type, precision, num_count
+    )
 
 
 def str_to_num(
@@ -95,7 +97,7 @@ def str_to_num(
         lower_bound: The lower bound for the number. Raises ValueError if
             the number is below this bound.
         num_type: The type of the number (int, float, or complex).
-        precision: The number of decimal places to round to if num_type is float.
+        precision: The number of decimal places to round to.
         num_count: The number of numeric values to return.
 
     Returns:
@@ -117,7 +119,10 @@ def str_to_num(
     if not number_strs:
         raise ValueError(f"No numeric values found in the string: {input_}")
 
-    numbers = [_convert_to_num(num_str, num_type, precision) for num_str in number_strs]
+    numbers = [
+        _convert_to_num(num_str, num_type, precision)
+        for num_str in number_strs
+    ]
 
     for number in numbers:
         if isinstance(number, int | float | complex):
@@ -163,7 +168,7 @@ def _convert_to_num(
     Args:
         number_str: The numeric string to convert.
         num_type: The type to convert the string to (int, float, or complex).
-        precision: The number of decimal places to round to if num_type is float.
+        precision: The number of decimal places to round to.
 
     Returns:
         The converted number.

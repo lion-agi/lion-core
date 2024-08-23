@@ -21,7 +21,11 @@ def test_nmerge_dicts(data, expected, overwrite):
 @pytest.mark.parametrize(
     "data, expected, dict_sequence",
     [
-        ([{"a": 1, "b": 2}, {"b": 3, "c": 4}], {"a": 1, "b": 2, "b1": 3, "c": 4}, True),
+        (
+            [{"a": 1, "b": 2}, {"b": 3, "c": 4}],
+            {"a": 1, "b": 2, "b1": 3, "c": 4},
+            True,
+        ),
     ],
 )
 def test_nmerge_dicts_with_sequence(data, expected, dict_sequence):
@@ -108,7 +112,7 @@ def test_nmerge_with_none_values():
 @pytest.mark.parametrize(
     "data, expected",
     [
-        ([{"a": set([1, 2])}, {"a": set([2, 3])}], {"a": [set([1, 2]), set([2, 3])]}),
+        ([{"a": {1, 2}}, {"a": {2, 3}}], {"a": [{1, 2}, {2, 3}]}),
         (
             [{"a": frozenset([1, 2])}, {"a": frozenset([2, 3])}],
             {"a": [frozenset([1, 2]), frozenset([2, 3])]},
@@ -236,7 +240,9 @@ def test_nmerge_sort_list_with_mixed_types():
 def test_nmerge_custom_sort_with_key_function():
     data = [["apple", "banana"], ["cherry", "date"]]
     expected = ["apple", "cherry", "banana", "date"]
-    assert nmerge(data, sort_list=True, custom_sort=lambda x: len(x)) == expected
+    assert (
+        nmerge(data, sort_list=True, custom_sort=lambda x: len(x)) == expected
+    )
 
 
 def test_nmerge_with_duplicate_keys_no_overwrite():
@@ -288,7 +294,11 @@ def test_nmerge_with_generator_input():
 def test_nmerge_with_all_python_basic_types():
     data = [
         {"int": 1, "float": 2.0, "complex": 1 + 2j},
-        {"str": "string", "bytes": b"bytes", "bytearray": bytearray(b"bytearray")},
+        {
+            "str": "string",
+            "bytes": b"bytes",
+            "bytearray": bytearray(b"bytearray"),
+        },
         {
             "list": [1, 2, 3],
             "tuple": (4, 5, 6),

@@ -1,4 +1,5 @@
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from lion_core.libs.data_handlers._to_list import to_list
 from lion_core.setting import LN_UNDEFINED
@@ -46,9 +47,11 @@ def npop(
                 raise KeyError(f"{key} is not found in {current}")
         elif isinstance(current, list) and isinstance(key, int):
             if key >= len(current):
-                raise KeyError(f"{key} exceeds the length of the list {current}")
+                raise KeyError(
+                    f"{key} exceeds the length of the list {current}"
+                )
             elif key < 0:
-                raise ValueError(f"list index cannot be negative")
+                raise ValueError("list index cannot be negative")
             current = current[key]
 
     last_key = indices[-1]

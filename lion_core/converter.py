@@ -61,8 +61,12 @@ class ConverterRegistry:
         Raises:
             ValueError: If the converter doesn't have required methods.
         """
-        if not hasattr(converter, "from_obj") or not hasattr(converter, "to_obj"):
-            raise ValueError("Converter must have 'from_obj' and 'to_obj' methods")
+        if not hasattr(converter, "from_obj") or not hasattr(
+            converter, "to_obj"
+        ):
+            raise ValueError(
+                "Converter must have 'from_obj' and 'to_obj' methods"
+            )
 
         cls._converters[key] = converter
 
@@ -83,7 +87,9 @@ class ConverterRegistry:
         try:
             return cls._converters[key]
         except KeyError:
-            raise KeyError(f"No converter found for {key}. Check if it is registered.")
+            raise KeyError(
+                f"No converter found for {key}. Check if it is registered."
+            )
 
     @classmethod
     def convert_from(

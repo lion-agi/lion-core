@@ -1,5 +1,6 @@
 import asyncio
-from typing import Any, Callable, Sequence, TypeVar
+from collections.abc import Callable, Sequence
+from typing import Any, TypeVar
 
 from lion_core.libs.data_handlers import to_list
 from lion_core.libs.function_handlers._lcall import alcall

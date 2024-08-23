@@ -1,4 +1,6 @@
-from ._characteristic import Observable, Temporal, Relational, Traversal
+"""The abstract base classes for the LION framework."""
+
+from ._characteristic import Observable, Relational, Temporal, Traversal
 from ._concept import (
     AbstractElement,
     AbstractObservation,
@@ -9,13 +11,12 @@ from ._observation import Action, Condition, Event, Signal
 from ._observer import (
     BaseEngine,
     BaseExecutor,
+    BaseiModel,
     BaseManager,
     BaseProcessor,
-    BaseiModel,
 )
+from ._record import BaseRecord, ImmutableRecord, MutableRecord
 from ._space import Collective, Container, Ordering, Structure
-from ._record import ImmutableRecord, BaseRecord, MutableRecord
-
 
 __all__ = [
     "AbstractElement",

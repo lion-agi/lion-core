@@ -16,7 +16,7 @@ class StringRule(Rule):
     @override
     async def check_value(self, value):
         if not isinstance(value, str):
-            raise ValueError(f"Invalid string field type.")
+            raise ValueError("Invalid string field type.")
 
     @override
     async def fix_value(self, value):
@@ -35,5 +35,9 @@ class StringRule(Rule):
         try:
             return to_str(value, **self.validation_kwargs)
         except Exception as e:
-            value = str(value)[30] + ".." if len(str(value)) > 30 else str(value)
-            raise ValueError(f"Failed to convert {value} into a string value") from e
+            value = (
+                str(value)[30] + ".." if len(str(value)) > 30 else str(value)
+            )
+            raise ValueError(
+                f"Failed to convert {value} into a string value"
+            ) from e

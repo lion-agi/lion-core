@@ -4,7 +4,11 @@ import pytest
 from pydantic import Field, ValidationError
 from pydantic_core import PydanticUndefined
 
-from lion_core.exceptions import LionOperationError, LionTypeError, LionValueError
+from lion_core.exceptions import (
+    LionOperationError,
+    LionTypeError,
+    LionValueError,
+)
 from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
 from lion_core.generic.component import Component
@@ -69,7 +73,9 @@ def test_form_work_fields():
 
 
 def test_form_required_fields():
-    form = create_sample_form(assignment="field1 -> field2", output_fields=["field3"])
+    form = create_sample_form(
+        assignment="field1 -> field2", output_fields=["field3"]
+    )
     assert set(form.required_fields) == {"field1", "field2", "field3"}
 
 
@@ -191,7 +197,9 @@ def test_form_from_form():
 
     # Test with form class
     FormClass = create_sample_form(assignment="field1 -> field2").__class__
-    form3 = Form.from_form(FormClass, assignment="field1 -> field2", field1="new_value")
+    form3 = Form.from_form(
+        FormClass, assignment="field1 -> field2", field1="new_value"
+    )
     assert form3.field1 == "new_value"
 
 
@@ -363,7 +371,9 @@ def test_form_strict_mode():
 
 # Test Form with none_as_valid_value
 def test_form_none_as_valid_value():
-    form = create_sample_form(assignment="field1 -> field2", none_as_valid_value=True)
+    form = create_sample_form(
+        assignment="field1 -> field2", none_as_valid_value=True
+    )
     form.field1 = None
     form.field2 = None
     assert form.is_completed()
@@ -548,7 +558,9 @@ def test_form_inheritance_chain():
     class FinalCustomForm(MiddleCustomForm):
         final_field: str = Field(default="final")
 
-    form = FinalCustomForm(assignment="base_field, middle_field -> final_field")
+    form = FinalCustomForm(
+        assignment="base_field, middle_field -> final_field"
+    )
     assert "base_field" in form.input_fields
     assert "middle_field" in form.input_fields
     assert "final_field" in form.request_fields
@@ -584,7 +596,9 @@ def test_form_custom_serialization():
 
         @classmethod
         def from_dict(cls, data):
-            if "date_field" in data and data["date_field"].startswith("Custom: "):
+            if "date_field" in data and data["date_field"].startswith(
+                "Custom: "
+            ):
                 data["date_field"] = data["date_field"][8:]
             return super().from_dict(data)
 

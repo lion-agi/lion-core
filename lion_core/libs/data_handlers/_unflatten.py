@@ -38,7 +38,9 @@ def unflatten(
                 current[parts[-1]] = value
 
         # Convert dictionary to list if keys are consecutive integers
-        if result and all(isinstance(key, str) and key.isdigit() for key in result):
+        if result and all(
+            isinstance(key, str) and key.isdigit() for key in result
+        ):
             return [result[str(i)] for i in range(len(result))]
         return result
 
@@ -56,7 +58,9 @@ def unflatten(
         unflattened_result = _unflatten(unflattened_dict)
         flat_dict.clear()
         if isinstance(unflattened_result, list):
-            flat_dict.update({str(i): v for i, v in enumerate(unflattened_result)})
+            flat_dict.update(
+                {str(i): v for i, v in enumerate(unflattened_result)}
+            )
         else:
             flat_dict.update(unflattened_result)
         return flat_dict

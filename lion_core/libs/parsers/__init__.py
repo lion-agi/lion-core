@@ -2,7 +2,10 @@ from lion_core.libs.parsers._as_readable_json import as_readable_json
 from lion_core.libs.parsers._choose_most_similar import choose_most_similar
 from lion_core.libs.parsers._extract_code_block import extract_code_block
 from lion_core.libs.parsers._extract_docstring import extract_docstring_details
-from lion_core.libs.parsers._fuzzy_parse_json import fix_json_string, fuzzy_parse_json
+from lion_core.libs.parsers._fuzzy_parse_json import (
+    fix_json_string,
+    fuzzy_parse_json,
+)
 from lion_core.libs.parsers._md_to_json import (
     escape_chars_in_json,
     extract_json_block,
