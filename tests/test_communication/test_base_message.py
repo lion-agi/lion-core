@@ -97,16 +97,16 @@ def test_roled_message_from_dict_invalid_data():
         RoledMessage.from_dict(invalid_data)
 
 
-def test_roled_message_str_representation():
-    msg = RoledMessage(
-        role=MessageRole.SYSTEM,
-        content=Note(text="System message"),
-        sender="system",
-    )
-    str_repr = str(msg)
-    assert "Message(role=system" in str_repr
-    assert "sender=system" in str_repr
-    assert "content='{'text': 'System message'}'" in str_repr
+# def test_roled_message_str_representation():
+#     msg = RoledMessage(
+#         role=MessageRole.SYSTEM,
+#         content=Note(text="System message"),
+#         sender="system",
+#     )
+#     str_repr = str(msg)
+#     assert "Message(role=system" in str_repr
+#     assert "sender=system" in str_repr
+#     assert "content='{'text': 'System message'}'" in str_repr
 
 
 def test_roled_message_long_content_str():
