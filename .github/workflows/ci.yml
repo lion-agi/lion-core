@@ -38,7 +38,7 @@ jobs:
       uses: pre-commit/action@v3.0.0
 
     - name: Run tests
-      run: pytest --maxfail=1 --disable-warnings tests/
+      run: pytest --asyncio-mode=auto --maxfail=1 --disable-warnings tests/
 
     - name: Check code style and compatibility
       run: |
