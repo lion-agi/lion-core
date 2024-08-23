@@ -4,21 +4,11 @@ from lion_core.abc._concept import AbstractObservation
 
 
 class Event(AbstractObservation):
-    """
-    Base class for LION events. Represents discrete occurrences or state
-    changes in complex systems. Inspired by event-driven architectures and
-    quantum state transitions, models deterministic and probabilistic processes.
-    """
-
-    pass
+    """discrete occurrences or state changes"""
 
 
 class Condition(Event):
-    """
-    Represents a checkable condition in LION. Embodies state evaluation
-    in complex systems, analogous to quantum observables. Checking may
-    influence system state, aligning with quantum measurement theory.
-    """
+    """Represents state evaluation in complex systems,"""
 
     @abstractmethod
     async def apply(self, *args, **kwargs):

@@ -4,24 +4,16 @@ from abc import ABC
 class Tao(ABC):
     """
     Foundational abstraction embodying interconnectedness and existence.
-    Root for all classes, reflecting Taoist unity and Category Theory relations.
+    Root for all classes, reflecting Taoist unity and Category Theory relations
     """
 
 
 class AbstractSpace(Tao):
-    """
-    Abstract space or context, aligning with Category Theory's categories.
-    Defines domain for elements and interactions, supporting system emergence.
-    Subclasses implement __contains__ for membership criteria.
-    """
+    """Abstract space or context"""
 
 
 class AbstractElement(Tao):
-    """
-    Observable entity within a space, reflecting Taoist individuality in unity.
-    Embodies Category Theory objects and Complex Systems components.
-    Capable of emergent behaviors through interactions.
-    """
+    """entity within a space"""
 
     @classmethod
     def class_name(cls) -> str:
@@ -30,11 +22,7 @@ class AbstractElement(Tao):
 
 
 class AbstractObserver(Tao):
-    """
-    Entity capable of observations, inspired by quantum mechanics and cognition.
-    Prepresents intentionality and observer effect in complex systems.
-    Subclasses implement specific observation mechanisms.
-    """
+    """Entity capable of observations, inspired by quantum mechanics"""
 
 
 class AbstractObservation(Tao):
