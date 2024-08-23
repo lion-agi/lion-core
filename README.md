@@ -1,6 +1,6 @@
 # 🦁 Lion-Core: Unleash the Power of AI Development
 
-[![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/lion-core?color=blue)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 ![Discord](https://img.shields.io/discord/1167495547670777866?color=7289da&label=discord&logo=discord)
@@ -170,8 +170,7 @@ pip install git+https://github.com/lion-agi/lion-core.git
 
 5. Run tests:
     ```bash
-    pytest --maxfail=1 --disable-warnings tests/
-    pytest_asyncio --maxfail=1 --disable-warnings tests/
+    pytest --asyncio-mode=auto --maxfail=1 --disable-warnings tests/
     ```
 
 6. Check code style:
