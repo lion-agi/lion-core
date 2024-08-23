@@ -1,5 +1,6 @@
 import asyncio
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from lion_core.libs.function_handlers._util import (
     custom_error_handler,

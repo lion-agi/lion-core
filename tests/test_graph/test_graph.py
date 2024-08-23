@@ -391,7 +391,10 @@ def test_graph_with_multiple_edge_types():
     assert len(graph.internal_edges) == 2
     edges = graph.find_node_edge(node1, direction="out")
     assert len(edges) == 2
-    assert set(edge.properties.get("label") for edge in edges) == {"TypeA", "TypeB"}
+    assert {edge.properties.get("label") for edge in edges} == {
+        "TypeA",
+        "TypeB",
+    }
 
 
 # Test graph operations with large number of nodes and edges
@@ -419,7 +422,9 @@ def test_graph_operations_with_large_data():
             pass  # Ignore if edge already exists
 
     assert len(graph.internal_nodes) == num_nodes
-    assert len(graph.internal_edges) <= num_edges  # May be less due to duplicates
+    assert (
+        len(graph.internal_edges) <= num_edges
+    )  # May be less due to duplicates
 
     # Test operations on large graph
     random_node = random.choice(nodes)
@@ -695,7 +700,10 @@ def test_graph_with_multi_edges():
 
     edges = graph.find_node_edge(node1, direction="out")
     assert len(edges) == 2
-    assert set(edge.properties.get("label") for edge in edges) == {"Edge1", "Edge2"}
+    assert {edge.properties.get("label") for edge in edges} == {
+        "Edge1",
+        "Edge2",
+    }
 
 
 def test_graph_with_large_property_values():
@@ -711,8 +719,14 @@ def test_graph_with_large_property_values():
 
     assert len(graph.internal_nodes) == 1
     assert len(graph.internal_edges) == 1
-    assert len(graph.internal_nodes[node.ln_id].content["large_property"]) == 1000000
-    assert len(graph.internal_edges[edge.ln_id].properties["large_property"]) == 1000000
+    assert (
+        len(graph.internal_nodes[node.ln_id].content["large_property"])
+        == 1000000
+    )
+    assert (
+        len(graph.internal_edges[edge.ln_id].properties["large_property"])
+        == 1000000
+    )
 
 
 # Test graph with nodes and edges of different types
@@ -763,14 +777,21 @@ def test_graph_dynamic_creation():
         graph.add_node(node)
 
         if i > 0:
-            prev_node = graph.internal_nodes[list(graph.internal_nodes.keys())[-2]]
+            prev_node = graph.internal_nodes[
+                list(graph.internal_nodes.keys())[-2]
+            ]
             edge = create_dynamic_edge(prev_node, node, i)
             graph.add_edge(edge)
 
     assert len(graph.internal_nodes) == 100
     assert len(graph.internal_edges) == 99
-    assert all("dynamic_name" in node.content for node in graph.internal_nodes.values())
-    assert all("weight" in edge.properties for edge in graph.internal_edges.values())
+    assert all(
+        "dynamic_name" in node.content
+        for node in graph.internal_nodes.values()
+    )
+    assert all(
+        "weight" in edge.properties for edge in graph.internal_edges.values()
+    )
 
 
 # Test graph with nested graphs as nodes
@@ -871,7 +892,9 @@ def test_graph_large_sparse():
                 pass  # Ignore if edge already exists
 
     assert len(graph.internal_nodes) == num_nodes
-    assert len(graph.internal_edges) <= num_edges  # May be less due to duplicates
+    assert (
+        len(graph.internal_edges) <= num_edges
+    )  # May be less due to duplicates
 
     # Test performance of operations on large graph
     start_time = time.time()
@@ -880,7 +903,9 @@ def test_graph_large_sparse():
     _ = graph.get_predecessors(random_node)
     operation_time = time.time() - start_time
 
-    assert operation_time < 1  # Operations should complete in less than 1 second
+    assert (
+        operation_time < 1
+    )  # Operations should complete in less than 1 second
 
 
 # Test graph with node and edge removal stress test
@@ -909,7 +934,9 @@ def test_graph_removal_stress():
         graph.remove_node(node)
 
     assert len(graph.internal_nodes) == num_initial_nodes // 2
-    assert len(graph.internal_edges) < num_initial_edges  # Should be significantly less
+    assert (
+        len(graph.internal_edges) < num_initial_edges
+    )  # Should be significantly less
 
     # Verify integrity of remaining graph
     for node in graph.internal_nodes.values():

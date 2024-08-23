@@ -46,7 +46,9 @@ class TestRCallFunction(unittest.IsolatedAsyncioTestCase):
 
     async def test_rcall_with_error_handling(self):
         error_map = {ValueError: mock_handler}
-        result = await rcall(async_func_with_error, 3, retries=1, error_map=error_map)
+        result = await rcall(
+            async_func_with_error, 3, retries=1, error_map=error_map
+        )
         self.assertEqual(result, "handled: mock error")
 
     async def test_rcall_with_timing(self):
@@ -82,8 +84,12 @@ class TestRCallFunction(unittest.IsolatedAsyncioTestCase):
 
     async def test_rcall_with_verbose(self):
         with patch("builtins.print") as mock_print:
-            await rcall(async_func_with_error, 3, retries=1, verbose=True, default=0)
-            mock_print.assert_any_call("Attempt 1/2 failed: mock error, retrying...")
+            await rcall(
+                async_func_with_error, 3, retries=1, verbose=True, default=0
+            )
+            mock_print.assert_any_call(
+                "Attempt 1/2 failed: mock error, retrying..."
+            )
 
 
 if __name__ == "__main__":

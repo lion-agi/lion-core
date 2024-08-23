@@ -21,7 +21,9 @@ def handle_action_request(
         if callable(func):
             func = func.__name__
         if not arguments:
-            raise ValueError("Error: please provide arguments for the function.")
+            raise ValueError(
+                "Error: please provide arguments for the function."
+            )
         return ActionRequest(
             func=func,
             arguments=arguments,
@@ -44,8 +46,8 @@ def handle_action_response(
                 "action response."
             )
 
-        # if action response is provided, we update the request with the response
-        # and return the response
+        # if action response is provided, we update the request with the
+        # response and return the response
         if isinstance(action_response, ActionResponse):
             action_response.update_request(
                 action_request=action_request,

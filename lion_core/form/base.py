@@ -1,5 +1,3 @@
-"""Base form class for the lion-core library."""
-
 from typing import Any, Literal
 
 from pydantic import Field, field_validator
@@ -13,42 +11,32 @@ from lion_core.setting import LN_UNDEFINED
 
 
 class BaseForm(Component, MutableRecord):
-    """
-    Base form class providing core functionality for form handling.
+    """Base form class providing core functionality for form handling.
 
-    This class serves as a foundation for creating custom forms within the lion-core
-    library. It includes methods for managing output fields, handling results, and
-    applying field annotations. The `BaseForm` class focuses on output fields, which
-    are fields that are presented as the result of form processing. Output fields can
-    include all, part, or none of the request fields and can be conditionally modified
-    by the process if the form is not set to be strict.
+    This class serves as a foundation for creating custom forms within the
+    lion-core library. It includes methods for managing output fields,
+    handling results, and applying field annotations.
+
+    The BaseForm class focuses on output fields, which are fields that are
+    presented as the result of form processing. Output fields can include all,
+    part, or none of the request fields and can be conditionally modified by
+    the process if the form is not set to be strict.
 
     Attributes:
-        assignment (str | None): The objective of the task, which may define how
-            input fields are processed into output fields. For example, "input1, input2 -> output".
-        template_name (str): The name of the form template. Defaults to "default_form".
-        output_fields (list[str]): A list of field names that are outputted and presented by the form.
-            These can include all, part, or none of the request fields.
-        none_as_valid_value (bool): Indicates whether to treat `None` as a valid value when
-            processing output fields. Defaults to `False`.
-
-    Methods:
-        get_results(suppress: bool = False, valid_only: bool = False) -> dict[str, Any]:
-            Retrieve the results of the form as a dictionary of field names and their values.
-
-    Properties:
-        work_fields (list[str]): Returns the list of fields that are outputted by the form.
-        work_dict (dict[str, Any]): Returns a dictionary of all work fields and their values.
-        required_fields (list[str]): Returns the list of fields that are required for the form.
-        required_dict (dict[str, Any]): Returns a dictionary of all required fields and their values.
-        display_dict (dict[str, Any]): Returns a dictionary of the required fields and their values
-            for display purposes.
+        assignment: The objective of the task, which may define how input
+            fields are processed into output fields.
+        template_name: The name of the form template.
+        output_fields: A list of field names that are outputted and presented
+            by the form.
+        none_as_valid_value: Indicates whether to treat None as a valid value
+            when processing output fields.
+        has_processed: Indicates if the task has been processed.
 
     Example:
         >>> form = BaseForm(
-                assignment="input1, input2 -> output",
-                output_fields=["output1", "output2"],
-            )
+        ...     assignment="input1, input2 -> output",
+        ...     output_fields=["output1", "output2"],
+        ... )
         >>> result = form.get_results()
         >>> print(result)
     """
@@ -58,21 +46,17 @@ class BaseForm(Component, MutableRecord):
         description="The objective of the task.",
         examples=["input1, input2 -> output"],
     )
-
     template_name: str = Field(
         default="default_form", description="Name of the form template"
     )
     output_fields: list[str] = Field(
         default_factory=list,
-        description=(
-            "Fields that are outputted and presented by the form. "
-            "These can include all, part, or none of the request fields."
-        ),
+        description="Fields that are outputted and presented by the form.",
     )
     none_as_valid_value: bool = Field(
-        default=False, description="Indicate whether to treat None as a valid value."
+        default=False,
+        description="Indicate whether to treat None as a valid value.",
     )
-
     has_processed: bool = Field(
         default=False,
         description="Indicates if the task has been processed.",
@@ -83,8 +67,7 @@ class BaseForm(Component, MutableRecord):
         self,
         handle_how: Literal["raise", "return_missing"] = "raise",
     ) -> list[str] | None:
-        """
-        Check if all required fields are completed.
+        """Check if all required fields are completed.
 
         Args:
             handle_how: How to handle incomplete fields.
@@ -97,7 +80,6 @@ class BaseForm(Component, MutableRecord):
             ValueError: If required fields are incomplete and handle_how
                 is "raise".
         """
-
         non_complete_request = []
         invalid_values = [LN_UNDEFINED, PydanticUndefined]
         if not self.none_as_valid_value:
@@ -109,13 +91,20 @@ class BaseForm(Component, MutableRecord):
 
         if non_complete_request:
             if handle_how == "raise":
-                raise ERR_MAP["assignment", "incomplete_request"](non_complete_request)
+                raise ERR_MAP["assignment", "incomplete_request"](
+                    non_complete_request,
+                )
             elif handle_how == "return_missing":
                 return non_complete_request
         else:
             self.has_processed = True
 
     def is_completed(self) -> bool:
+        """Check if the form is completed.
+
+        Returns:
+            True if the form is completed, False otherwise.
+        """
         try:
             self.check_is_completed(handle_how="raise")
             return True
@@ -125,6 +114,17 @@ class BaseForm(Component, MutableRecord):
     @field_validator("output_fields", mode="before")
     @classmethod
     def _validate_output(cls, value):
+        """Validate the output_fields attribute.
+
+        Args:
+            value: The value to validate.
+
+        Returns:
+            The validated value.
+
+        Raises:
+            LionValueError: If the value is invalid.
+        """
         if isinstance(value, str):
             return [value]
         if isinstance(value, list) and all(
@@ -137,31 +137,50 @@ class BaseForm(Component, MutableRecord):
 
     @property
     def work_fields(self) -> list[str]:
-        """Returns the list of fields that are outputted by the form."""
+        """Get the list of fields that are outputted by the form.
+
+        Returns:
+            A list of field names.
+        """
         return self.output_fields
 
     @property
     def work_dict(self) -> dict[str, Any]:
-        """Return a dictionary of all work fields and their values."""
+        """Get a dictionary of all work fields and their values.
+
+        Returns:
+            A dictionary of field names and their values.
+        """
         return {i: getattr(self, i, LN_UNDEFINED) for i in self.work_fields}
 
     @property
     def required_fields(self) -> list[str]:
-        """Return the list of required fields for the form."""
+        """Get the list of required fields for the form.
+
+        Returns:
+            A list of required field names.
+        """
         return self.output_fields
 
     @property
     def required_dict(self) -> dict[str, Any]:
-        """Return a dictionary of all work fields and their values."""
-        return {i: getattr(self, i, LN_UNDEFINED) for i in self.required_fields}
+        """Get a dictionary of all required fields and their values.
+
+        Returns:
+            A dictionary of required field names and their values.
+        """
+        dict_ = {}
+        for i in self.required_fields:
+            dict_[i] = getattr(self, i, LN_UNDEFINED)
+
+        return dict_
 
     def get_results(
         self,
         suppress: bool = False,
         valid_only: bool = False,
     ) -> dict[str, Any]:
-        """
-        Retrieve the results of the form.
+        """Retrieve the results of the form.
 
         Args:
             suppress: If True, suppress errors for missing fields.
@@ -192,12 +211,23 @@ class BaseForm(Component, MutableRecord):
             ]
             if not self.none_as_valid_value:
                 invalid_values.append(None)
-            result = {k: v for k, v in result.items() if v not in invalid_values}
+
+            res_ = {}
+            for k, v in result.items():
+                if v not in invalid_values:
+                    res_[k] = v
+            result = res_
+
         return result
 
     @property
     def display_dict(self) -> dict[str, Any]:
-        """Returns a dictionary of the required fields and their values for display purposes."""
+        """
+        Get a dictionary of the required fields and their values for display.
+
+        Returns:
+            A dictionary of required field names and their values.
+        """
         return self.required_dict
 
 

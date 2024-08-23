@@ -1,5 +1,6 @@
 import asyncio
-from typing import Any, Callable, Dict, List, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from lion_core.libs.data_handlers import to_list
 from lion_core.libs.function_handlers._ucall import ucall
@@ -12,7 +13,7 @@ ErrorHandler = Callable[[Exception], Any]
 def lcall(
     func: Callable[..., T],
     /,
-    input_: List[Any],
+    input_: list[Any],
     *,
     flatten: bool = False,
     dropna: bool = False,
@@ -20,13 +21,17 @@ def lcall(
 ) -> list[Any]:
     lst = to_list(input_)
     if len(to_list(func, flatten=True, dropna=True)) != 1:
-        raise ValueError("There must be one and only one function for list calling.")
-    return to_list([func(i, **kwargs) for i in lst], flatten=flatten, dropna=dropna)
+        raise ValueError(
+            "There must be one and only one function for list calling."
+        )
+    return to_list(
+        [func(i, **kwargs) for i in lst], flatten=flatten, dropna=dropna
+    )
 
 
 async def alcall(
     func: Callable[..., T],
-    input_: List[Any],
+    input_: list[Any],
     retries: int = 0,
     initial_delay: float = 0,
     delay: float = 0,
@@ -36,12 +41,12 @@ async def alcall(
     timing: bool = False,
     verbose: bool = True,
     error_msg: str | None = None,
-    error_map: Dict[type, ErrorHandler] | None = None,
+    error_map: dict[type, ErrorHandler] | None = None,
     max_concurrent: int | None = None,
     throttle_period: float | None = None,
     dropna: bool = False,
     **kwargs: Any,
-) -> List[T] | List[tuple[T, float]]:
+) -> list[T] | list[tuple[T, float]]:
     """
     Apply a function over a list of inputs asynchronously with options.
 
@@ -87,11 +92,15 @@ async def alcall(
             try:
                 if timing:
                     start_time = asyncio.get_event_loop().time()
-                    result = await asyncio.wait_for(ucall(func, i, **kwargs), timeout)
+                    result = await asyncio.wait_for(
+                        ucall(func, i, **kwargs), timeout
+                    )
                     end_time = asyncio.get_event_loop().time()
                     return index, result, end_time - start_time
                 else:
-                    result = await asyncio.wait_for(ucall(func, i, **kwargs), timeout)
+                    result = await asyncio.wait_for(
+                        ucall(func, i, **kwargs), timeout
+                    )
                     return index, result
             except asyncio.TimeoutError as e:
                 raise asyncio.TimeoutError(
@@ -108,7 +117,8 @@ async def alcall(
                 if attempts <= retries:
                     if verbose:
                         print(
-                            f"Attempt {attempts}/{retries + 1} failed: {e}, retrying..."
+                            f"Attempt {attempts}/{retries + 1} failed: {e}, "
+                            "retrying..."
                         )
                     await asyncio.sleep(current_delay)
                     current_delay *= backoff_factor
@@ -124,12 +134,16 @@ async def alcall(
         results.append(result)
         await asyncio.sleep(throttle_delay)
 
-    results.sort(key=lambda x: x[0])  # Sort results based on the original index
+    results.sort(
+        key=lambda x: x[0]
+    )  # Sort results based on the original index
 
     if timing:
         if dropna:
             return [
-                (result[1], result[2]) for result in results if result[1] is not None
+                (result[1], result[2])
+                for result in results
+                if result[1] is not None
             ]
         else:
             return [(result[1], result[2]) for result in results]

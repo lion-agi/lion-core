@@ -8,23 +8,7 @@ from lion_core.sys_utils import SysUtil
 
 
 def validate_sender_recipient(value: Any) -> str:
-    """
-    Validates the sender and recipient fields for mail-like communication in the LION system.
-
-    This function ensures that the provided value for sender or recipient is valid.
-    Valid values include predefined identifiers like 'system', 'user', 'assistant',
-    'N/A', or a valid ID returned by `SysUtil.get_id`.
-
-    Args:
-        value (Any): The value to validate, which can be a string identifier or an object
-                     that can be converted into an ID.
-
-    Returns:
-        str: The validated and standardized sender or recipient ID.
-
-    Raises:
-        LionValueError: If the value cannot be validated as a valid sender or recipient.
-    """
+    """Validate the sender and recipient fields for mail-like communication."""
     if value in ["system", "user", "N/A", "assistant"]:
         return value
 
@@ -38,54 +22,40 @@ def validate_sender_recipient(value: Any) -> str:
 
 
 class BaseMail(Element):
-    """
-    Base class for mail-like communication in the LION system.
-
-    The `BaseMail` class serves as a foundation for creating mail-like messages
-    within the LION system. It includes sender and recipient fields, which are
-    validated to ensure they conform to expected formats.
+    """Base class for mail-like communication in the LION system.
 
     Attributes:
-        sender (str): The ID of the sender node. Valid values include 'system',
-                      'user', 'assistant', or a valid node ID.
-        recipient (str): The ID of the recipient node. Valid values include 'system',
-                         'user', 'assistant', or a valid node ID.
+        sender: The ID of the sender node.
+        recipient: The ID of the recipient node.
     """
 
     sender: str = Field(
         "N/A",
         title="Sender",
-        description=(
-            "The ID of the sender node, or 'system', 'user', " "or 'assistant'."
-        ),
+        description="The ID of the sender node, or 'system', 'user', "
+        "or 'assistant'.",
     )
 
     recipient: str = Field(
         "N/A",
         title="Recipient",
-        description=(
-            "The ID of the recipient node, or 'system', 'user', " "or 'assistant'."
-        ),
+        description="The ID of the recipient node, or 'system', 'user', "
+        "or 'assistant'.",
     )
 
     @field_validator("sender", "recipient", mode="before")
     @classmethod
     def _validate_sender_recipient(cls, value: Any) -> str:
-        """
-        Validate the sender and recipient fields.
-
-        This method ensures that the `sender` and `recipient` fields of a `BaseMail`
-        instance are valid. It uses the `validate_sender_recipient` function to
-        perform the validation.
+        """Validate the sender and recipient fields.
 
         Args:
-            value (Any): The value to validate for the sender or recipient.
+            value: The value to validate for the sender or recipient.
 
         Returns:
-            str: The validated sender or recipient ID.
+            The validated sender or recipient ID.
 
         Raises:
-            LionValueError: If the value cannot be validated as a valid sender or recipient.
+            LionValueError: If the value is not a valid sender or recipient.
         """
         return validate_sender_recipient(value)
 

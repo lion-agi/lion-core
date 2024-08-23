@@ -1,4 +1,5 @@
-from typing import Any, Callable, Literal
+from collections.abc import Callable
+from typing import Any, Literal
 
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.action_response import ActionResponse
@@ -42,7 +43,11 @@ def create_message(
 
     if (
         len(
-            [i for i in [instruction, system, assistant_response] if i is not None],
+            [
+                i
+                for i in [instruction, system, assistant_response]
+                if i is not None
+            ],
         )
         != 1
     ):

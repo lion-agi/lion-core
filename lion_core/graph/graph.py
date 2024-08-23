@@ -20,7 +20,8 @@ class Graph(Node):
     Attributes:
         internal_nodes (Pile): The internal nodes of the graph.
         internal_edges (Pile): The internal edges of the graph.
-        node_edge_mapping (Note): The mapping of nodes to edges for search purposes.
+        node_edge_mapping (Note): The mapping of nodes to edges for
+                search purposes.
     """
 
     internal_nodes: Pile = Field(
@@ -65,7 +66,9 @@ class Graph(Node):
         """
         try:
             if not isinstance(node, Node):
-                raise LionRelationError("Failed to add node: Invalid node type.")
+                raise LionRelationError(
+                    "Failed to add node: Invalid node type."
+                )
             _id = SysUtil.get_id(node)
             self.internal_nodes.insert(len(self.internal_nodes), node)
             self.node_edge_mapping.insert(_id, {"in": {}, "out": {}})
@@ -85,13 +88,16 @@ class Graph(Node):
         """
         try:
             if not isinstance(edge, Edge):
-                raise LionRelationError("Failed to add edge: Invalid edge type.")
+                raise LionRelationError(
+                    "Failed to add edge: Invalid edge type."
+                )
             if (
                 edge.head not in self.internal_nodes
                 or edge.tail not in self.internal_nodes
             ):
                 raise LionRelationError(
-                    "Failed to add edge: Either edge head or tail node does not exist in the graph."
+                    "Failed to add edge: Either edge head or tail node does"
+                    " not exist in the graph."
                 )
             self.internal_edges.insert(len(self.internal_edges), edge)
             self.node_edge_mapping[edge.head, "out", edge.ln_id] = edge.tail
@@ -113,7 +119,9 @@ class Graph(Node):
         """
         _id = SysUtil.get_id(node)
         if _id not in self.internal_nodes:
-            raise LionRelationError(f"Node {node} not found in the graph nodes.")
+            raise LionRelationError(
+                f"Node {node} not found in the graph nodes."
+            )
 
         in_edges = self.node_edge_mapping[_id, "in"]
         for edge_id, node_id in in_edges.items():
@@ -140,7 +148,9 @@ class Graph(Node):
         """
         _id = SysUtil.get_id(edge)
         if _id not in self.internal_edges:
-            raise LionRelationError(f"Edge {edge} not found in the graph edges.")
+            raise LionRelationError(
+                f"Edge {edge} not found in the graph edges."
+            )
 
         edge = self.internal_edges[_id]
         self.node_edge_mapping[edge.head, "out"].pop(_id)
@@ -162,7 +172,8 @@ class Graph(Node):
                 Defaults to "both".
 
         Returns:
-            Pile[Edge]: A Pile of edges connected to the node in the specified direction.
+            Pile[Edge]: A Pile of edges connected to the node in the
+                specified direction.
 
         Raises:
             LionRelationError: If the node is not found in the graph.
@@ -173,7 +184,9 @@ class Graph(Node):
 
         _id = SysUtil.get_id(node)
         if _id not in self.internal_nodes:
-            raise LionRelationError(f"Node {node} not found in the graph nodes.")
+            raise LionRelationError(
+                f"Node {node} not found in the graph nodes."
+            )
 
         result = []
 

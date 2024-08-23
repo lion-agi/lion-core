@@ -1,4 +1,5 @@
-from typing import Any, Protocol, Sequence, Type, TypeVar, runtime_checkable
+from collections.abc import Sequence
+from typing import Any, Protocol, TypeVar, runtime_checkable
 
 from lion_core.exceptions import LionTypeError, LionValueError
 
@@ -20,7 +21,7 @@ class PileLoaderRegistry:
     _loaders: dict[str, PileLoader] = {}
 
     @classmethod
-    def register(cls, key: str, loader: PileLoader | Type[PileLoader]) -> None:
+    def register(cls, key: str, loader: PileLoader | type[PileLoader]) -> None:
         """Register a PileLoader class with the given key."""
         if issubclass(loader, PileLoader):
             cls._loaders[key] = loader()
@@ -28,11 +29,12 @@ class PileLoaderRegistry:
             cls._loaders[key] = loader
         else:
             raise LionTypeError(
-                f"Invalid loader class provided. Must be a subclass of PileLoader."
+                "Invalid loader class provided. Must be a subclass of "
+                "PileLoader."
             )
 
     @classmethod
-    def get(cls, key: str) -> Type[PileLoader]:
+    def get(cls, key: str) -> type[PileLoader]:
         if key not in cls._loaders:
             raise KeyError(f"No loader registered for key: {key}")
         return cls._loaders[key]

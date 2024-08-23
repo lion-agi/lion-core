@@ -1,4 +1,4 @@
-from typing import List, Literal
+from typing import Literal
 
 from pydantic import Field
 from typing_extensions import override
@@ -13,7 +13,7 @@ from lion_core.generic.progression import Progression, prog
 
 class Exchange(Element, Container):
     """
-    Item exchange system designed to handle incoming and outgoing flows of items.
+    Item exchange system designed to handle incoming and outgoing flows.
 
     Attributes:
         pile (Pile): The pile of items in the exchange.
@@ -54,7 +54,7 @@ class Exchange(Element, Container):
         return item in self.pile
 
     @property
-    def senders(self) -> List[str]:
+    def senders(self) -> list[str]:
         """
         Get the list of senders for the pending incoming items.
 
@@ -65,12 +65,14 @@ class Exchange(Element, Container):
 
     def include(self, item: BaseMail, direction: Literal["in", "out"]):
         if not isinstance(item, BaseMail):
-            raise LionValueError("Invalid item to include. Item must be a mail.")
+            raise LionValueError(
+                "Invalid item to include. Item must be a mail.",
+            )
         if item in self.pile:
             raise ItemExistsError(f"{item} is already pending in the exchange")
         if direction not in ["in", "out"]:
             raise LionValueError(
-                f"Invalid direction value. Please specify either 'in' or 'out'."
+                "Invalid direction value. Specify either 'in' or 'out'."
             )
         self.pile.include(item)
 

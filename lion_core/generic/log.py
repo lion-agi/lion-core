@@ -40,7 +40,7 @@ class BaseLog(Element, ImmutableRecord):
             return data
         except Exception as e:
             raise LionAccessError(
-                f"Log can only be loaded from a previously saved log entries.",
+                "Log can only be loaded from a previously saved log entries.",
             ) from e
 
     @classmethod

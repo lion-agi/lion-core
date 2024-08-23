@@ -19,7 +19,8 @@ from lion_core.generic.progression import Progression, prog
 from lion_core.sys_utils import SysUtil
 
 sample_progressions = [
-    prog([Component(content=i) for i in range(3)], name=f"prog_{j}") for j in range(3)
+    prog([Component(content=i) for i in range(3)], name=f"prog_{j}")
+    for j in range(3)
 ]
 
 sample_flow = Flow(progressions=sample_progressions, default_name="main")
@@ -28,14 +29,18 @@ sample_flow = Flow(progressions=sample_progressions, default_name="main")
 def test_flow_with_generator_input():
     def gen_progressions():
         for i in range(5):
-            yield prog([Component(content=j) for j in range(i)], name=f"gen_prog_{i}")
+            yield prog(
+                [Component(content=j) for j in range(i)], name=f"gen_prog_{i}"
+            )
 
     gen_flow = Flow(progressions=list(gen_progressions()))
     assert len(gen_flow) == 5
     assert gen_flow.get("gen_prog_4").size() == 4
 
 
-@pytest.mark.parametrize("n_progs, prog_size", [(10, 100), (100, 10), (1000, 1)])
+@pytest.mark.parametrize(
+    "n_progs, prog_size", [(10, 100), (100, 10), (1000, 1)]
+)
 def test_flow_performance_scaling(n_progs, prog_size):
     import random
     import time
@@ -45,7 +50,8 @@ def test_flow_performance_scaling(n_progs, prog_size):
     large_flow = Flow(
         progressions=[
             prog(
-                [Component(content=i) for i in range(prog_size)], name=f"perf_prog_{j}"
+                [Component(content=i) for i in range(prog_size)],
+                name=f"perf_prog_{j}",
             )
             for j in range(n_progs)
         ]
@@ -66,22 +72,41 @@ def test_flow_performance_scaling(n_progs, prog_size):
 
 @pytest.mark.parametrize("op", ["union", "intersection", "difference"])
 def test_flow_set_operations(op):
-    flow1 = Flow([prog([Component(content=i) for i in range(5)], name="set_op_1")])
-    flow2 = Flow([prog([Component(content=i) for i in range(3, 8)], name="set_op_2")])
+    flow1 = Flow(
+        [prog([Component(content=i) for i in range(5)], name="set_op_1")]
+    )
+    flow2 = Flow(
+        [prog([Component(content=i) for i in range(3, 8)], name="set_op_2")]
+    )
 
     if op == "union":
         result = Flow(
-            [prog(set(flow1["set_op_1"]) | set(flow2["set_op_2"]), name="union")]
+            [
+                prog(
+                    set(flow1["set_op_1"]) | set(flow2["set_op_2"]),
+                    name="union",
+                )
+            ]
         )
         assert result["union"].size() == 10
     elif op == "intersection":
         result = Flow(
-            [prog(set(flow1["set_op_1"]) & set(flow2["set_op_2"]), name="intersection")]
+            [
+                prog(
+                    set(flow1["set_op_1"]) & set(flow2["set_op_2"]),
+                    name="intersection",
+                )
+            ]
         )
         assert result["intersection"].size() == 0
     elif op == "difference":
         result = Flow(
-            [prog(set(flow1["set_op_1"]) - set(flow2["set_op_2"]), name="difference")]
+            [
+                prog(
+                    set(flow1["set_op_1"]) - set(flow2["set_op_2"]),
+                    name="difference",
+                )
+            ]
         )
         assert result["difference"].size() == 5
 
@@ -97,7 +122,9 @@ def test_sys_util_get_id_with_invalid_input():
 
 
 def test_flow_with_proper_id_handling():
-    flow = Flow(progressions=[prog(name="test_prog_1"), prog(name="test_prog_2")])
+    flow = Flow(
+        progressions=[prog(name="test_prog_1"), prog(name="test_prog_2")]
+    )
     assert SysUtil.is_id(flow.registry["test_prog_1"])
     assert SysUtil.is_id(flow.registry["test_prog_2"])
 

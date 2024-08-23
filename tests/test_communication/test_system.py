@@ -3,7 +3,11 @@ from datetime import datetime
 import pytest
 
 from lion_core.communication.message import MessageFlag, MessageRole
-from lion_core.communication.system import DEFAULT_SYSTEM, System, format_system_content
+from lion_core.communication.system import (
+    DEFAULT_SYSTEM,
+    System,
+    format_system_content,
+)
 from lion_core.generic.note import Note
 from lion_core.sys_utils import SysUtil
 
@@ -43,7 +47,9 @@ def test_system_init_default():
 
 def test_system_init_custom():
     custom_message = "Custom system message"
-    system = System(custom_message, sender=SysUtil.id(), recipient=SysUtil.id())
+    system = System(
+        custom_message, sender=SysUtil.id(), recipient=SysUtil.id()
+    )
     assert system.system_info == custom_message
 
 

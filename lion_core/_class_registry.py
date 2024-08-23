@@ -1,10 +1,10 @@
 import os
-from typing import Type, TypeVar
+from typing import TypeVar
 
 from lion_core.libs._helper import get_class_file_registry, get_class_objects
 
 T = TypeVar("T")
-LION_CLASS_REGISTRY: dict[str, Type[T]] = {}
+LION_CLASS_REGISTRY: dict[str, type[T]] = {}
 LION_CLASS_FILE_REGISTRY: dict[str, str] = {}
 
 pattern_list = [
@@ -20,7 +20,9 @@ if not LION_CLASS_FILE_REGISTRY:
     script_path = os.path.abspath(__file__)
     script_dir = os.path.dirname(script_path)
 
-    LION_CLASS_FILE_REGISTRY = get_class_file_registry(script_dir, pattern_list)
+    LION_CLASS_FILE_REGISTRY = get_class_file_registry(
+        script_dir, pattern_list
+    )
 
 
 def get_class(class_name: str) -> type:

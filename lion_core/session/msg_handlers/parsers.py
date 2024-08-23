@@ -1,7 +1,12 @@
 import re
 
 from lion_core.generic.note import note
-from lion_core.libs import extract_json_block, fuzzy_parse_json, md_to_json, to_dict
+from lion_core.libs import (
+    extract_json_block,
+    fuzzy_parse_json,
+    md_to_json,
+    to_dict,
+)
 
 identifier = [
     "tool_uses",
@@ -30,7 +35,7 @@ patterns = note(**_patterns)
 def _force_parse_json(s_: str) -> tuple:
     for idx, i in enumerate(identifier):
         cp = ["json", i]
-        match = re.search(patterns[*cp], s_, re.DOTALL)
+        match = re.search(patterns[cp], s_, re.DOTALL)
         action_block = match.group(1) if match else None
 
         if action_block is not None:
@@ -63,7 +68,7 @@ def _force_parse_xml(s_: str) -> tuple:
     for idx, i in enumerate(identifier):
         cp = ["xml", i]
 
-        match = re.search(patterns[*cp], s_, re.DOTALL)
+        match = re.search(patterns[cp], s_, re.DOTALL)
         action_block = match.group(1) if match else None
         if action_block is not None:
             out = to_dict(

@@ -1,11 +1,11 @@
 from collections import deque
 from functools import singledispatchmethod
-from typing import Any, ClassVar, Type, TypeVar
+from typing import Annotated, Any, ClassVar, TypeVar
 
 from pydantic import Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
-from typing_extensions import Annotated, override
+from typing_extensions import override
 
 from lion_core._class_registry import get_class
 from lion_core.converter import Converter
@@ -20,10 +20,10 @@ from lion_core.sys_utils import SysUtil
 T = TypeVar("T", bound=Element)
 
 DEFAULT_SERIALIZATION_INCLUDE: set[str] = {
-    "metadata",
-    "content",
     "ln_id",
     "timestamp",
+    "metadata",
+    "content",
     "embedding",
 }
 
@@ -55,7 +55,10 @@ class Component(Element):
         return value.to_dict()
 
     @field_serializer("extra_fields")
-    def _serialize_extra_fields(self, value: dict[str, FieldInfo]) -> dict[str, Any]:
+    def _serialize_extra_fields(
+        self,
+        value: dict[str, FieldInfo],
+    ) -> dict[str, Any]:
         """Custom serializer for extra fields."""
         output_dict = {}
         for k in value.keys():
@@ -68,7 +71,12 @@ class Component(Element):
         """Custom validator for extra fields."""
         if not isinstance(value, dict):
             raise LionValueError("Extra fields must be a dictionary")
-        return {k: Field(**v) if isinstance(v, dict) else v for k, v in value.items()}
+
+        out_ = {}
+        for k, v in value.items():
+            out_[k] = Field(**v) if isinstance(v, dict) else v
+
+        return out_
 
     @property
     def all_fields(self) -> dict[str, FieldInfo]:
@@ -93,9 +101,9 @@ class Component(Element):
 
         Args:
             field_name: The name of the field to add.
-            value: The value of the field. Defaults to `LN_UNDEFINED`.
-            annotation: Type annotation for the field. Defaults to `LN_UNDEFINED`.
-            field_obj: A pre-configured FieldInfo object. Defaults to `LN_UNDEFINED`.
+            value: The value of the field.
+            annotation: Type annotation for the field.
+            field_obj: A pre-configured FieldInfo object.
             **kwargs: Additional keyword arguments for Field configuration.
 
         Raises:
@@ -113,8 +121,9 @@ class Component(Element):
         )
 
     # when updating field, we do not check the validity of annotation
-    # meaning current value will not get validated, and can lead to errors when storing and loading
-    # if you change annotation to a type that is not compatible with the current value
+    # meaning current value will not get validated, and can lead to
+    # errors when storing and loading if you change annotation to a type
+    # that is not compatible with the current value
     def update_field(
         self,
         field_name: NAMED_FIELD,
@@ -128,13 +137,14 @@ class Component(Element):
 
         Args:
             field_name: The name of the field to update or create.
-            value: The new value for the field. Defaults to LN_UNDEFINED.
-            annotation: Type annotation for the field. Defaults to LN_UNDEFINED.
-            field_obj: A pre-configured FieldInfo object. Defaults to LN_UNDEFINED.
+            value: The new value for the field.
+            annotation: Type annotation for the field.
+            field_obj: A pre-configured FieldInfo object.
             **kwargs: Additional keyword arguments for Field configuration.
 
         Raises:
-            ValueError: If both 'default' and 'default_factory' are provided in kwargs.
+            ValueError: If both 'default' and 'default_factory' are
+                        provided in kwargs.
         """
 
         # pydanitc Field object cannot have both default and default_factory
@@ -147,7 +157,7 @@ class Component(Element):
         if field_obj is not LN_UNDEFINED:
             if not isinstance(field_obj, FieldInfo):
                 raise ValueError(
-                    "Invalid field_obj. It should be a pydantic FieldInfo object.",
+                    "Invalid field_obj, should be a pydantic FieldInfo object"
                 )
             self.extra_fields[field_name] = field_obj
 
@@ -262,13 +272,14 @@ class Component(Element):
     @override
     def __getattr__(self, field_name: str) -> Any:
         if field_name in self.extra_fields:
-            return (
-                self.extra_fields[field_name].default
-                if self.extra_fields[field_name].default is not PydanticUndefined
-                else LN_UNDEFINED
-            )
+            default_ = self.extra_fields[field_name].default
+            if default_ is not PydanticUndefined:
+                return default_
+            return LN_UNDEFINED
+
+        cls_name = self.__class__.__name__
         raise AttributeError(
-            f"'{self.__class__.__name__}' object has no attribute '{field_name}'"
+            f"'{cls_name}' object has no attribute '{field_name}'",
         )
 
     @override
@@ -287,7 +298,7 @@ class Component(Element):
         )
 
         for i, j in self.model_dump().items():
-            if i not in ["ln_id", "timestamp", "metadata", "content", "embedding"]:
+            if i not in DEFAULT_SERIALIZATION_INCLUDE:
                 if isinstance(j, dict):
                     output_str += f"{i}={list(j.keys())}, "
                 elif isinstance(j, str):
@@ -338,7 +349,7 @@ class Component(Element):
         )
 
         for i, j in dict_.items():
-            if i not in ["ln_id", "timestamp", "metadata", "content", "embedding"]:
+            if i not in DEFAULT_SERIALIZATION_INCLUDE:
                 if isinstance(j, dict):
                     repr_str += f"{i}={truncate_dict(j)}, "
                 elif isinstance(j, str):
@@ -361,12 +372,12 @@ class Component(Element):
         return cls._converter_registry
 
     def convert_to(self, key: str = "dict", /, **kwargs: Any) -> Any:
-        """Convert the component to a specified type using the ConverterRegistry."""
+        """Convert the component to a specified type"""
         return self.get_converter_registry().convert_to(self, key, **kwargs)
 
     @classmethod
     def convert_from(cls, obj: Any, key: str = "dict", /, **kwargs: Any) -> T:
-        """Convert data to create a new component instance using the ConverterRegistry."""
+        """Convert data to create a new component instance"""
         data = cls.get_converter_registry().convert_from(cls, obj, key)
         return cls.from_dict(data, **kwargs)
 
@@ -374,9 +385,9 @@ class Component(Element):
     def register_converter(
         cls,
         key: str,
-        converter: Type[Converter],
+        converter: type[Converter],
     ) -> None:
-        """Register a new converter. Can be used for both a class and/or an instance."""
+        """Register a new converter."""
         cls.get_converter_registry().register(key, converter)
 
     # field management methods
@@ -390,7 +401,7 @@ class Component(Element):
         """Set the value of a field attribute."""
         all_fields = self.all_fields
         if field_name not in all_fields:
-            raise KeyError(f"Field {field_name} not found in object all fields.")
+            raise KeyError(f"Field {field_name} not found in object fields.")
         field_obj = all_fields[field_name]
         if hasattr(field_obj, attr):
             setattr(field_obj, attr, value)
@@ -408,7 +419,7 @@ class Component(Element):
         """Check if a field has a specific attribute."""
         all_fields = self.all_fields
         if field_name not in all_fields:
-            raise KeyError(f"Field {field_name} not found in object all fields.")
+            raise KeyError(f"Field {field_name} not found in object fields.")
         field_obj = all_fields[field_name]
         if hasattr(field_obj, attr):
             return True
@@ -431,17 +442,18 @@ class Component(Element):
 
         all_fields = self.all_fields
         if field_name not in all_fields:
-            raise KeyError(f"Field {field_name} not found in object all fields.")
+            raise KeyError(f"Field {field_name} not found in object fields.")
         field_obj = all_fields[field_name]
 
         # check fieldinfo attr
-        if (value := getattr(field_obj, attr, LN_UNDEFINED)) is not LN_UNDEFINED:
+
+        value = getattr(field_obj, attr, LN_UNDEFINED)
+        if value is not LN_UNDEFINED:
             return value
         else:
             if isinstance(field_obj.json_schema_extra, dict):
-                if (
-                    value := field_obj.json_schema_extra.get(attr, LN_UNDEFINED)
-                ) is not LN_UNDEFINED:
+                value = field_obj.json_schema_extra.get(attr, LN_UNDEFINED)
+                if value is not LN_UNDEFINED:
                     return value
 
         # undefined attr

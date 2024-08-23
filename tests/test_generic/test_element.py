@@ -41,7 +41,9 @@ def test_initialization(custom_id, custom_timestamp):
 
 def test_created_datetime_property(custom_timestamp):
     element = Element(timestamp=custom_timestamp)
-    expected_datetime = datetime.fromtimestamp(custom_timestamp, tz=timezone.utc)
+    expected_datetime = datetime.fromtimestamp(
+        custom_timestamp, tz=timezone.utc
+    )
     assert element.created_datetime == expected_datetime
     assert element.created_datetime.tzinfo == timezone.utc
 
@@ -172,7 +174,9 @@ def test_element_large_batch_creation():
     elements = [Element() for _ in range(batch_size)]
 
     assert len(elements) == batch_size
-    assert len(set(e.ln_id for e in elements)) == batch_size  # All IDs should be unique
+    assert (
+        len({e.ln_id for e in elements}) == batch_size
+    )  # All IDs should be unique
 
     timestamps = [e.timestamp for e in elements]
     assert (

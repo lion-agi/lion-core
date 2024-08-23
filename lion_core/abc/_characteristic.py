@@ -3,84 +3,79 @@ from lion_core.abc._concept import Tao
 
 class Characteristic(Tao):
     """
-    Base class for Lion framework characteristics. Represents fundamental
-    properties of Nodes, inspired by property dualism. Forms building blocks
-    for modeling complex systems and emergent behaviors.
-    """
+    Base class for Lion framework characteristics.
 
-    pass
+    Represents fundamental properties of Nodes, inspired by property dualism.
+    Forms building blocks for modeling complex systems and emergent behaviors.
+    """
 
 
 class Observable(Characteristic):
-    """
-    Defines observable entities in quantum-inspired computation and
-    cognitive modeling. Rooted in quantum measurement theory, represents
-    elements perceivable by AbstractObserver.
+    """Defines observable entities.
+
+    Rooted in quantum measurement theory, represents elements perceivable
+    by AbstractObserver. Must have an 'ln_id' attribute.
     """
 
-    # must have ln_id
-    pass
+    ln_id: str
 
 
 class Temporal(Characteristic):
     """
-    Represents time-evolving properties or behaviors. Inspired by
-    dynamical systems theory, essential for modeling time-dependent
-    processes and state changes in complex systems.
+    Represents time-evolving properties or behaviors.
+
+    Inspired by dynamical systems theory, essential for modeling
+    time-dependent processes and state changes in complex systems. Must
+    have a 'timestamp' attribute.
     """
 
-    # must have timestamp
-    pass
+    timestamp: float
 
 
 class Quantum(Characteristic):
     """
     Embodies quantum concepts like superposition and entanglement.
+
     Enables modeling of non-classical behaviors in cognitive and
     computational processes, key to quantum-inspired approaches.
     """
 
-    pass
-
 
 class Probabilistic(Characteristic):
     """
-    Represents entities with inherent uncertainty. Grounded in
-    probability theory and stochastic processes, crucial for modeling
-    decision-making and multi-outcome systems.
-    """
+    Represents entities with inherent uncertainty.
 
-    pass
+    Grounded in probability theory and stochastic processes, crucial for
+    modeling decision-making and multi-outcome systems.
+    """
 
 
 class Stochastic(Probabilistic, Temporal):
     """
-    Combines probabilistic and time-dependent aspects. Integrates
-    stochastic processes and time series analysis for modeling systems
-    with evolving randomness, like financial markets or biological processes.
-    """
+    Combines probabilistic and time-dependent aspects.
 
-    pass
+    Integrates stochastic processes and time series analysis for modeling
+    systems with evolving randomness, like financial markets or biological
+    processes.
+    """
 
 
 class Relational(Observable):
     """
-    Represents inherently connected or related entities. Fundamental
-    for modeling networked systems, social interactions, and complex
-    relationships across various domains.
-    """
+    Represents inherently connected or related entities.
 
-    pass
+    Fundamental for modeling networked systems, social interactions, and
+    complex relationships across various domains.
+    """
 
 
 class Traversal(Observable):
     """
-    Represents traversable or explorable entities. Inspired by graph
-    theory and network science, essential for modeling paths, connections,
-    and information flow in complex networked systems.
-    """
+    Represents traversable or explorable entities.
 
-    pass
+    Inspired by graph theory and network science, essential for modeling
+    paths, connections, and information flow in complex networked systems.
+    """
 
 
 __all__ = [
@@ -93,4 +88,4 @@ __all__ = [
     # "Stochastic",
 ]
 
-# File: lion_core/abc/characteristic.py
+# File: lion_core/abc/_characteristic.py

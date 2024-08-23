@@ -36,17 +36,24 @@ def nget(
             and last_index < len(target_container)
         ):
             return target_container[last_index]
-        elif isinstance(target_container, dict) and last_index in target_container:
+        elif (
+            isinstance(target_container, dict)
+            and last_index in target_container
+        ):
             return target_container[last_index]
         elif default is not LN_UNDEFINED:
             return default
         else:
-            raise LookupError("Target not found and no default value provided.")
+            raise LookupError(
+                "Target not found and no default value provided."
+            )
     except (IndexError, KeyError, TypeError):
         if default is not LN_UNDEFINED:
             return default
         else:
-            raise LookupError("Target not found and no default value provided.")
+            raise LookupError(
+                "Target not found and no default value provided."
+            )
 
 
 # Path: lion_core/libs/data_handlers/_nget.py

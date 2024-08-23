@@ -17,11 +17,11 @@ class BooleanRule(Rule):
     async def check_value(self, value, /) -> bool:
         if isinstance(value, bool):
             return value
-        raise ValueError(f"Invalid boolean value.")
+        raise ValueError("Invalid boolean value.")
 
     @override
     async def fix_value(self, value) -> bool:
         try:
             return validate_boolean(value)
         except ValueError as e:
-            raise LionOperationError(f"Failed to validate field: ") from e
+            raise LionOperationError("Failed to validate field: ") from e

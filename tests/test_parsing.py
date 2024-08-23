@@ -43,9 +43,7 @@ class TestChooseMostSimilar(unittest.TestCase):
 
 class TestExtractCodeBlocks(unittest.TestCase):
     def test_extract_python_code(self):
-        input_text = (
-            "Here is some Python code:\n```python\nprint('Hello, world!')\n```\n"
-        )
+        input_text = "Here is some Python code:\n```python\nprint('Hello, world!')\n```\n"
         expected_output = "print('Hello, world!')"
         self.assertEqual(extract_code_block(input_text), expected_output)
 
@@ -65,7 +63,9 @@ class TestExtractCodeBlocks(unittest.TestCase):
         self.assertEqual(extract_code_block(input_text), expected_output)
 
     def test_extract_ruby_code(self):
-        input_text = "Here is some Ruby code:\n```ruby\nputs 'Hello, world!'\n```\n"
+        input_text = (
+            "Here is some Ruby code:\n```ruby\nputs 'Hello, world!'\n```\n"
+        )
         expected_output = "puts 'Hello, world!'"
         self.assertEqual(extract_code_block(input_text), expected_output)
 
@@ -86,7 +86,10 @@ class TestExtractDocstringDetails(unittest.TestCase):
         self.assertEqual(description, "Sample function.")
         self.assertDictEqual(
             params,
-            {"param1": "Description of param1.", "param2": "Description of param2."},
+            {
+                "param1": "Description of param1.",
+                "param2": "Description of param2.",
+            },
         )
 
     def test_extract_reST_style(self):
@@ -105,7 +108,10 @@ class TestExtractDocstringDetails(unittest.TestCase):
         self.assertEqual(description, "Sample function.")
         self.assertDictEqual(
             params,
-            {"param1": "Description of param1.", "param2": "Description of param2."},
+            {
+                "param1": "Description of param1.",
+                "param2": "Description of param2.",
+            },
         )
 
     def test_google_style(self):
@@ -125,7 +131,10 @@ class TestExtractDocstringDetails(unittest.TestCase):
         self.assertEqual(description, "Example function.")
         self.assertEqual(
             params,
-            {"param1": "The first parameter.", "param2": "The second parameter."},
+            {
+                "param1": "The first parameter.",
+                "param2": "The second parameter.",
+            },
         )
 
     def test_rest_style(self):
@@ -140,11 +149,16 @@ class TestExtractDocstringDetails(unittest.TestCase):
             """
             pass
 
-        description, params = extract_docstring_details(example_function, style="rest")
+        description, params = extract_docstring_details(
+            example_function, style="rest"
+        )
         self.assertEqual(description, "Example function.")
         self.assertEqual(
             params,
-            {"param1": "The first parameter.", "param2": "The second parameter."},
+            {
+                "param1": "The first parameter.",
+                "param2": "The second parameter.",
+            },
         )
 
     def test_no_docstring(self):
@@ -186,7 +200,9 @@ class TestExtractDocstringDetails(unittest.TestCase):
             example_function, style="google"
         )
         self.assertEqual(description, "Example function.")
-        self.assertEqual(params, {"param1": "The first parameter.", "param2": ""})
+        self.assertEqual(
+            params, {"param1": "The first parameter.", "param2": ""}
+        )
 
 
 class TestForceValidateBoolean(unittest.TestCase):
@@ -276,13 +292,17 @@ class TestForceValidateKeys(unittest.TestCase):
         keys = ["name", "age", "location"]
         dict_ = {"name": "John", "age": 30, "loc": "NYC"}
         result = validate_keys(dict_, keys)
-        self.assertEqual(result, {"name": "John", "age": 30, "location": "NYC"})
+        self.assertEqual(
+            result, {"name": "John", "age": 30, "location": "NYC"}
+        )
 
     def test_superset_mode(self):
         keys = ["name", "age"]
         dict_ = {"name": "John", "age": 30, "location": "NYC"}
         result = validate_keys(dict_, keys)
-        self.assertEqual(result, {"name": "John", "age": 30, "location": "NYC"})
+        self.assertEqual(
+            result, {"name": "John", "age": 30, "location": "NYC"}
+        )
 
     def test_subset_mode(self):
         keys = ["name", "age", "location"]
@@ -294,7 +314,9 @@ class TestForceValidateKeys(unittest.TestCase):
         keys = ["name", "age"]
         dict_ = {"name": "John", "age": 30, "location": "NYC"}
         result = validate_keys(dict_, keys, handle_unmatched="ignore")
-        self.assertEqual(result, {"name": "John", "age": 30, "location": "NYC"})
+        self.assertEqual(
+            result, {"name": "John", "age": 30, "location": "NYC"}
+        )
 
     def test_handle_unmatched_force(self):
         keys = ["name", "age", "location"]
@@ -302,7 +324,9 @@ class TestForceValidateKeys(unittest.TestCase):
         result = validate_keys(
             dict_, keys, handle_unmatched="force", fill_value="Unknown"
         )
-        self.assertEqual(result, {"name": "John", "age": 30, "location": "Unknown"})
+        self.assertEqual(
+            result, {"name": "John", "age": 30, "location": "Unknown"}
+        )
 
     def test_handle_unmatched_remove(self):
         keys = ["name", "age"]
@@ -322,7 +346,9 @@ class TestForceValidateKeys(unittest.TestCase):
         result = validate_keys(
             dict_, keys, handle_unmatched="fill", fill_value="Unknown"
         )
-        self.assertEqual(result, {"name": "John", "age": 30, "location": "Unknown"})
+        self.assertEqual(
+            result, {"name": "John", "age": 30, "location": "Unknown"}
+        )
 
     def test_empty_dict(self):
         keys = ["name", "age", "location"]
@@ -331,14 +357,17 @@ class TestForceValidateKeys(unittest.TestCase):
             dict_, keys, handle_unmatched="fill", fill_value="Unknown"
         )
         self.assertEqual(
-            result, {"name": "Unknown", "age": "Unknown", "location": "Unknown"}
+            result,
+            {"name": "Unknown", "age": "Unknown", "location": "Unknown"},
         )
 
     def test_empty_keys(self):
         keys = []
         dict_ = {"name": "John", "age": 30, "location": "NYC"}
         result = validate_keys(dict_, keys)
-        self.assertEqual(result, {"name": "John", "age": 30, "location": "NYC"})
+        self.assertEqual(
+            result, {"name": "John", "age": 30, "location": "NYC"}
+        )
 
     def test_custom_score_func(self):
         def custom_score_func(a, b):
@@ -347,7 +376,9 @@ class TestForceValidateKeys(unittest.TestCase):
         keys = ["name", "age", "location"]
         dict_ = {"name": "John", "age": 30, "loc": "NYC"}
         result = validate_keys(dict_, keys, score_func=custom_score_func)
-        self.assertEqual(result, {"name": "John", "age": 30, "location": "NYC"})
+        self.assertEqual(
+            result, {"name": "John", "age": 30, "location": "NYC"}
+        )
 
     def test_no_matching_keys(self):
         keys = ["gender", "nationality"]
@@ -355,10 +386,15 @@ class TestForceValidateKeys(unittest.TestCase):
 
         try:
             result = validate_keys(
-                dict_, keys, handle_unmatched="force", fill_value="Unknown", strict=True
+                dict_,
+                keys,
+                handle_unmatched="force",
+                fill_value="Unknown",
+                strict=True,
             )
             self.assertEqual(
-                result, {"gender": 30, "nationality": "John", "location": "NYC"}
+                result,
+                {"gender": 30, "nationality": "John", "location": "NYC"},
             )
         except Exception as e:
             self.assertIsInstance(e, ValueError)
@@ -367,7 +403,9 @@ class TestForceValidateKeys(unittest.TestCase):
         keys = {"name": str, "age": int, "location": str}
         dict_ = {"name": "John", "age": 30, "loc": "NYC"}
         result = validate_keys(dict_, keys)
-        self.assertEqual(result, {"name": "John", "age": 30, "location": "NYC"})
+        self.assertEqual(
+            result, {"name": "John", "age": 30, "location": "NYC"}
+        )
 
     def test_fill_value_with_different_types(self):
         keys = ["name", "age", "is_student"]
@@ -376,17 +414,25 @@ class TestForceValidateKeys(unittest.TestCase):
         result = validate_keys(
             dict_, keys, handle_unmatched="fill", fill_mapping=fill_mapping
         )
-        self.assertEqual(result, {"name": "John", "age": 0, "is_student": False})
+        self.assertEqual(
+            result, {"name": "John", "age": 0, "is_student": False}
+        )
 
     def test_case_insensitive_matching(self):
         keys = ["Name", "Age", "Location"]
         dict_ = {"name": "John", "age": 30, "location": "NYC"}
         result = validate_keys(dict_, keys)
-        self.assertEqual(result, {"Name": "John", "Age": 30, "Location": "NYC"})
+        self.assertEqual(
+            result, {"Name": "John", "Age": 30, "Location": "NYC"}
+        )
 
     def test_special_characters(self):
         keys = ["name", "age", "email"]
-        dict_ = {"name": "John", "age": 30, "email_address": "john@example.com"}
+        dict_ = {
+            "name": "John",
+            "age": 30,
+            "email_address": "john@example.com",
+        }
         result = validate_keys(dict_, keys)
         self.assertEqual(
             result, {"name": "John", "age": 30, "email": "john@example.com"}
@@ -429,7 +475,8 @@ class TestMdToJson(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             md_to_json(md_content, expected_keys=["missing_key"])
         self.assertEqual(
-            str(cm.exception), "Missing expected keys in JSON object: missing_key"
+            str(cm.exception),
+            "Missing expected keys in JSON object: missing_key",
         )
 
     def test_custom_parser(self):
@@ -441,7 +488,9 @@ class TestMdToJson(unittest.TestCase):
         {"key": "value"}
         ```
         """
-        self.assertEqual(md_to_json(md_content, parser=custom_parser), {"parsed": True})
+        self.assertEqual(
+            md_to_json(md_content, parser=custom_parser), {"parsed": True}
+        )
 
     def test_no_json_block(self):
         md_content = """
@@ -450,7 +499,8 @@ class TestMdToJson(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             md_to_json(md_content)
         self.assertEqual(
-            str(cm.exception), "No JSON code block found in the Markdown content."
+            str(cm.exception),
+            "No JSON code block found in the Markdown content.",
         )
 
 
@@ -495,7 +545,8 @@ class TestExtractJsonBlock(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             extract_json_block(md_content)
         self.assertEqual(
-            str(cm.exception), "No JSON code block found in the Markdown content."
+            str(cm.exception),
+            "No JSON code block found in the Markdown content.",
         )
 
     def test_malformed_json_block(self):
@@ -529,10 +580,14 @@ class TestExtractJsonBlock(unittest.TestCase):
 
 class TestFuzzyParseJson(unittest.TestCase):
     def test_valid_json(self):
-        self.assertEqual(fuzzy_parse_json('{"key": "value"}'), {"key": "value"})
+        self.assertEqual(
+            fuzzy_parse_json('{"key": "value"}'), {"key": "value"}
+        )
 
     def test_single_quotes(self):
-        self.assertEqual(fuzzy_parse_json("{'key': 'value'}"), {"key": "value"})
+        self.assertEqual(
+            fuzzy_parse_json("{'key': 'value'}"), {"key": "value"}
+        )
 
     def test_fix_brackets(self):
         self.assertEqual(fuzzy_parse_json('{"key": "value"'), {"key": "value"})
@@ -550,7 +605,9 @@ class TestFuzzyParseJson(unittest.TestCase):
             fuzzy_parse_json('{"key": ')
 
     def test_array_json(self):
-        self.assertEqual(fuzzy_parse_json('["value1", "value2"]'), ["value1", "value2"])
+        self.assertEqual(
+            fuzzy_parse_json('["value1", "value2"]'), ["value1", "value2"]
+        )
 
     def test_nested_json(self):
         self.assertEqual(
@@ -571,7 +628,9 @@ class TestFuzzyParseJson(unittest.TestCase):
             fuzzy_parse_json('{"key": [1, 2, 3}')
 
     def test_strict_mode(self):
-        self.assertEqual(fuzzy_parse_json("{'key': 'value'}"), {"key": "value"})
+        self.assertEqual(
+            fuzzy_parse_json("{'key': 'value'}"), {"key": "value"}
+        )
 
     def test_basic_json_parsing(self):
         """Test parsing of correctly formatted JSON strings."""

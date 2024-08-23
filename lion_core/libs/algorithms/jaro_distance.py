@@ -80,7 +80,9 @@ def jaro_distance(s: str, t: str) -> float:
 
     # Compute Jaro distance
     return (
-        matches / s_len + matches / t_len + (matches - transpositions) / matches
+        matches / s_len
+        + matches / t_len
+        + (matches - transpositions) / matches
     ) / 3.0
 
 

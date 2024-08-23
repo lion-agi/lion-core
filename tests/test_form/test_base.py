@@ -185,7 +185,9 @@ def test_base_form_large_number_of_fields():
 
     results = form.get_results()
     assert len(results) == num_fields
-    assert all(results[f"field_{i}"] == f"value_{i}" for i in range(num_fields))
+    assert all(
+        results[f"field_{i}"] == f"value_{i}" for i in range(num_fields)
+    )
 
 
 # Test BaseForm performance

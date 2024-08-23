@@ -1,5 +1,5 @@
 import re
-from typing import Any, Union
+from typing import Any
 
 
 def xml_to_dict(xml_string: str, suppress=False) -> dict[str, Any]:
@@ -44,10 +44,12 @@ class XMLParser:
         """Parse a single XML element and its children."""
         self._skip_whitespace()
         if self.xml_string[self.index] != "<":
-            raise ValueError(f"Expected '<', found '{self.xml_string[self.index]}'")
+            raise ValueError(
+                f"Expected '<', found '{self.xml_string[self.index]}'"
+            )
 
         tag, attributes = self._parse_opening_tag()
-        children: dict[str, Union[str, list, dict]] = {}
+        children: dict[str, str | list | dict] = {}
         text = ""
 
         while self.index < len(self.xml_string):
@@ -55,7 +57,9 @@ class XMLParser:
             if self.xml_string.startswith("</", self.index):
                 closing_tag = self._parse_closing_tag()
                 if closing_tag != tag:
-                    raise ValueError(f"Mismatched tags: '{tag}' and '{closing_tag}'")
+                    raise ValueError(
+                        f"Mismatched tags: '{tag}' and '{closing_tag}'"
+                    )
                 break
             elif self.xml_string.startswith("<", self.index):
                 child = self._parse_element()
@@ -82,7 +86,8 @@ class XMLParser:
     def _parse_opening_tag(self) -> tuple[str, dict[str, str]]:
         """Parse an opening XML tag and its attributes."""
         match = re.match(
-            r'<(\w+)((?:\s+\w+="[^"]*")*)\s*/?>', self.xml_string[self.index :]
+            r'<(\w+)((?:\s+\w+="[^"]*")*)\s*/?>',
+            self.xml_string[self.index :],  # noqa
         )
         if not match:
             raise ValueError("Invalid opening tag")
@@ -93,7 +98,7 @@ class XMLParser:
 
     def _parse_closing_tag(self) -> str:
         """Parse a closing XML tag."""
-        match = re.match(r"</(\w+)>", self.xml_string[self.index :])
+        match = re.match(r"</(\w+)>", self.xml_string[self.index :])  # noqa
         if not match:
             raise ValueError("Invalid closing tag")
         self.index += match.end()
@@ -102,15 +107,19 @@ class XMLParser:
     def _parse_text(self) -> str:
         """Parse text content between XML tags."""
         start = self.index
-        while self.index < len(self.xml_string) and self.xml_string[self.index] != "<":
+        while (
+            self.index < len(self.xml_string)
+            and self.xml_string[self.index] != "<"
+        ):
             self.index += 1
-        return self.xml_string[start : self.index]
+        return self.xml_string[start : self.index]  # noqa
 
     def _skip_whitespace(self) -> None:
         """Skip any whitespace characters at the current parsing position."""
-        self.index += len(self.xml_string[self.index :]) - len(
-            self.xml_string[self.index :].lstrip()
-        )
+        p_ = len(self.xml_string[self.index :])  # noqa
+        m_ = len(self.xml_string[self.index :].lstrip())  # noqa
+
+        self.index += p_ - m_
 
 
 # File: lion_core/parsers/_xml_parser.py

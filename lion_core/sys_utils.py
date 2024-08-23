@@ -33,11 +33,14 @@ class SysUtil:
             tz: Timezone for the time (default: TIME_CONFIG["tz"]).
             type_: Type of time to return (default: "timestamp").
                 Options: "timestamp", "datetime", "iso", "custom".
-            iso: If True, returns ISO format string (deprecated, use type_="iso").
+            iso: If True, returns ISO format string (deprecated,
+                    use type_="iso").
             sep: Separator for ISO format (default: "T").
             timespec: Timespec for ISO format (default: "auto").
-            custom_format: Custom strftime format string for type_="custom".
-            custom_sep: Custom separator for type_="custom", replaces "-", ":", ".".
+            custom_format: Custom strftime format string for
+                type_="custom".
+            custom_sep: Custom separator for type_="custom",
+                replaces "-", ":", ".".
 
         Returns:
             Current time in the specified format.
@@ -59,11 +62,15 @@ class SysUtil:
 
         if type_ == "custom":
             if not custom_format:
-                raise ValueError("custom_format must be provided when type_='custom'")
+                raise ValueError(
+                    "custom_format must be provided when type_='custom'"
+                )
             formatted_time = now.strftime(custom_format)
             if custom_sep is not None:
                 for old_sep in ("-", ":", "."):
-                    formatted_time = formatted_time.replace(old_sep, custom_sep)
+                    formatted_time = formatted_time.replace(
+                        old_sep, custom_sep
+                    )
             return formatted_time
 
         raise ValueError(
@@ -78,7 +85,8 @@ class SysUtil:
 
         Args:
             obj: The object to be copied.
-            deep: If True, create a deep copy. Otherwise, create a shallow copy.
+            deep: If True, create a deep copy. Otherwise, create a shallow
+                copy.
             num: The number of copies to create.
 
         Returns:
@@ -91,7 +99,9 @@ class SysUtil:
             raise ValueError("Number of copies must be at least 1")
 
         copy_func = copy.deepcopy if deep else copy.copy
-        return [copy_func(obj) for _ in range(num)] if num > 1 else copy_func(obj)
+        return (
+            [copy_func(obj) for _ in range(num)] if num > 1 else copy_func(obj)
+        )
 
     @staticmethod
     def id(
@@ -181,7 +191,9 @@ class SysUtil:
             len(item) == 32  # for backward compatibility
         ):
             return item
-        raise LionIDError("Item must be observable and contain a valid Lion ID.")
+        raise LionIDError(
+            "Item must be observable and contain a valid Lion ID."
+        )
 
     @staticmethod
     def is_id(item: Any, /, *, config: dict = LION_ID_CONFIG) -> bool:

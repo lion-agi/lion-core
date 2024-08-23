@@ -1,9 +1,12 @@
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from pydantic import ValidationError
 
-from lion_core.communication.action_request import ActionRequest, prepare_action_request
+from lion_core.communication.action_request import (
+    ActionRequest,
+    prepare_action_request,
+)
 from lion_core.communication.message import MessageFlag, MessageRole
 from lion_core.generic.note import Note
 from lion_core.sys_utils import SysUtil
@@ -19,7 +22,10 @@ def test_prepare_action_request_with_str_func():
     result = prepare_action_request("test_func", {"arg1": 1, "arg2": 2})
     assert isinstance(result, Note)
     assert result.get(["action_request", "function"]) == "test_func"
-    assert result.get(["action_request", "arguments"]) == {"arg1": 1, "arg2": 2}
+    assert result.get(["action_request", "arguments"]) == {
+        "arg1": 1,
+        "arg2": 2,
+    }
 
 
 def test_prepare_action_request_with_callable():
@@ -35,24 +41,37 @@ def test_prepare_action_request_invalid_arguments():
 
 def test_prepare_action_request_json_arguments():
     result = prepare_action_request("test_func", "{'arg1': 1, 'arg2': 2}")
-    assert result.get(["action_request", "arguments"]) == {"arg1": 1, "arg2": 2}
+    assert result.get(["action_request", "arguments"]) == {
+        "arg1": 1,
+        "arg2": 2,
+    }
 
 
 def test_prepare_action_request_xml_arguments():
     xml_args = "<root><arg1>1</arg1><arg2>2</arg2></root>"
     result = prepare_action_request("test_func", xml_args)
-    assert result.get(["action_request", "arguments"]) == {"arg1": "1", "arg2": "2"}
+    assert result.get(["action_request", "arguments"]) == {
+        "arg1": "1",
+        "arg2": "2",
+    }
 
 
 # Tests for ActionRequest class
 def test_action_request_init():
-    request = ActionRequest("test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id())
+    request = ActionRequest(
+        "test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id()
+    )
     assert request.role == MessageRole.ASSISTANT
-    assert request.request_dict == {"function": "test_func", "arguments": {"arg1": 1}}
+    assert request.request_dict == {
+        "function": "test_func",
+        "arguments": {"arg1": 1},
+    }
 
 
 def test_action_request_init_with_callable():
-    request = ActionRequest(dummy_func, {"x": 1, "y": 2}, SysUtil.id(), SysUtil.id())
+    request = ActionRequest(
+        dummy_func, {"x": 1, "y": 2}, SysUtil.id(), SysUtil.id()
+    )
     assert request.request_dict["function"] == "dummy_func"
 
 
@@ -90,8 +109,13 @@ def test_action_request_is_responded():
 
 
 def test_action_request_request_dict():
-    request = ActionRequest("test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id())
-    assert request.request_dict == {"function": "test_func", "arguments": {"arg1": 1}}
+    request = ActionRequest(
+        "test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id()
+    )
+    assert request.request_dict == {
+        "function": "test_func",
+        "arguments": {"arg1": 1},
+    }
 
 
 def test_action_request_action_response_id():
@@ -119,13 +143,17 @@ def test_action_request_with_complex_arguments():
         "list": [{"x": 1}, {"y": 2}],
         "tuple": (1, 2, 3),
     }
-    request = ActionRequest("test_func", complex_args, SysUtil.id(), SysUtil.id())
+    request = ActionRequest(
+        "test_func", complex_args, SysUtil.id(), SysUtil.id()
+    )
     assert request.request_dict["arguments"] == complex_args
 
 
 def test_action_request_unicode():
     unicode_args = {"arg": "你好世界"}
-    request = ActionRequest("test_func", unicode_args, SysUtil.id(), SysUtil.id())
+    request = ActionRequest(
+        "test_func", unicode_args, SysUtil.id(), SysUtil.id()
+    )
     assert request.request_dict["arguments"] == unicode_args
 
 
@@ -228,7 +256,9 @@ def test_action_request_with_various_callables():
 # Test with maximum possible arguments
 def test_action_request_max_arguments():
     max_args = {f"arg{i}": i for i in range(1000)}  # 1000 arguments
-    request = ActionRequest("max_args_func", max_args, SysUtil.id(), SysUtil.id())
+    request = ActionRequest(
+        "max_args_func", max_args, SysUtil.id(), SysUtil.id()
+    )
     assert len(request.request_dict["arguments"]) == 1000
 
 
@@ -244,5 +274,7 @@ def test_action_request_various_data_types():
         "none": None,
         "bytes": b"bytes",
     }
-    request = ActionRequest("data_types_func", args, SysUtil.id(), SysUtil.id())
+    request = ActionRequest(
+        "data_types_func", args, SysUtil.id(), SysUtil.id()
+    )
     assert request.request_dict["arguments"] == args

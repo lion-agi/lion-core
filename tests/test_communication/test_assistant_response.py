@@ -7,7 +7,9 @@ from lion_core.sys_utils import SysUtil
 
 # Basic functionality tests
 def test_assistant_response_init():
-    response = AssistantResponse({"content": "Test response"}, "assistant", "user")
+    response = AssistantResponse(
+        {"content": "Test response"}, "assistant", "user"
+    )
     assert response.role == MessageRole.ASSISTANT
     assert response.sender == "assistant"
     assert response.recipient == "user"
@@ -37,7 +39,9 @@ def test_assistant_response_init_with_message_load():
 
 def test_assistant_response_init_with_message_clone():
     response = AssistantResponse(
-        MessageFlag.MESSAGE_CLONE, MessageFlag.MESSAGE_CLONE, MessageFlag.MESSAGE_CLONE
+        MessageFlag.MESSAGE_CLONE,
+        MessageFlag.MESSAGE_CLONE,
+        MessageFlag.MESSAGE_CLONE,
     )
     assert response.role == MessageRole.ASSISTANT
 
@@ -55,29 +59,37 @@ def test_assistant_response_missing_content():
 
 def test_assistant_response_none_content():
     response = AssistantResponse(None, "assistant", "user")
-    assert response.response is ""
+    assert response.response == ""
 
 
 def test_assistant_response_very_long_content():
     long_content = "a" * 10000
-    response = AssistantResponse({"content": long_content}, "assistant", "user")
+    response = AssistantResponse(
+        {"content": long_content}, "assistant", "user"
+    )
     assert len(response.response) == 10000
 
 
 def test_assistant_response_with_special_characters():
     special_chars = "!@#$%^&*()_+{}[]|\\:;\"'<>,.?/~`"
-    response = AssistantResponse({"content": special_chars}, "assistant", "user")
+    response = AssistantResponse(
+        {"content": special_chars}, "assistant", "user"
+    )
     assert response.response == special_chars
 
 
 def test_assistant_response_with_unicode():
     unicode_content = "你好世界 - Hello World - こんにちは世界"
-    response = AssistantResponse({"content": unicode_content}, "assistant", "user")
+    response = AssistantResponse(
+        {"content": unicode_content}, "assistant", "user"
+    )
     assert response.response == unicode_content
 
 
 def test_assistant_response_serialization():
-    response = AssistantResponse({"content": "Test response"}, "assistant", "user")
+    response = AssistantResponse(
+        {"content": "Test response"}, "assistant", "user"
+    )
     serialized = response.to_dict()
     deserialized = AssistantResponse.from_dict(serialized)
     assert deserialized.response == response.response
@@ -85,7 +97,9 @@ def test_assistant_response_serialization():
 
 
 def test_assistant_response_clone():
-    original = AssistantResponse({"content": "Original response"}, "assistant", "user")
+    original = AssistantResponse(
+        {"content": "Original response"}, "assistant", "user"
+    )
     cloned = original.clone()
     assert cloned.response == original.response
     assert cloned.ln_id != original.ln_id
@@ -152,7 +166,9 @@ def test_assistant_response_memory_usage():
     initial_size = sys.getsizeof(
         AssistantResponse({"content": "Test"}, "assistant", "user")
     )
-    large_response = AssistantResponse({"content": "a" * 1000000}, "assistant", "user")
+    large_response = AssistantResponse(
+        {"content": "a" * 1000000}, "assistant", "user"
+    )
     large_size = sys.getsizeof(large_response)
     assert (
         large_size - initial_size < 2000000

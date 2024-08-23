@@ -58,7 +58,7 @@ SERILIATION_CONFIG = {
     "exclude_defaults": False,
     "exclude_none": False,
     "round_trip": False,
-    "warnings": True,  #  bool | Literal['none', 'warn', 'error']
+    "warnings": True,
     "serialize_as_any": False,
 }
 

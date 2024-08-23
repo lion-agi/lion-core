@@ -1,11 +1,16 @@
 import contextlib
-from typing import Any, Iterator
+from collections.abc import Iterator
+from typing import Any
 
 from pydantic import Field
 from pydantic_core import PydanticUndefined
 
 from lion_core.abc import Collective
-from lion_core.exceptions import ItemNotFoundError, LionTypeError, LionValueError
+from lion_core.exceptions import (
+    ItemNotFoundError,
+    LionTypeError,
+    LionValueError,
+)
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import Progression, prog
@@ -97,18 +102,23 @@ class Flow(Element):
 
     def __contains__(self, item: Any) -> bool:
         """Check if an item is in any progression or in the registry."""
-        return (
-            item in self.registry or item in self.progressions or item in self.unique()
-        )
+        check = item in self.registry
+        if check is False:
+            check = item in self.progressions
+        if check is False:
+            check = item in self.unique()
+        return check
 
     def shape(self) -> tuple[int, list[int]]:
         """
         Get the shape of the Flow.
 
         Returns:
-            A tuple containing the number of progressions and a list of their lengths.
+            A tuple containing the number of progressions and a list of
+            their lengths.
         """
-        return (len(self.all_orders()), [len(i) for i in self.all_orders()])
+        ao = self.all_orders()
+        return (len(ao), [len(i) for i in ao])
 
     def size(self) -> int:
         """
@@ -142,7 +152,10 @@ class Flow(Element):
         Returns:
             True if the inclusion was successful, False otherwise.
         """
-        _sequence = self._find_prog(prog_, None) or self._find_prog(name, None)
+        _sequence = self._find_prog(prog_, None)
+        if _sequence is None:
+            _sequence = self._find_prog(name, None)
+
         if not _sequence:
             if not item and not name:
                 """None is not in the registry or sequencees."""
@@ -222,7 +235,7 @@ class Flow(Element):
             ValueError: If the name already exists in the registry.
         """
         if not isinstance(prog_, Progression):
-            raise LionTypeError(f"Sequence must be of type Progression.")
+            raise LionTypeError("Sequence must be of type Progression.")
 
         name = name or prog_.name
         if not name:
@@ -279,11 +292,6 @@ class Flow(Element):
         prog_ = self._find_prog(prog_)
         return self.progressions[prog_].popleft()
 
-    def shape(self):
-        return {
-            key: len(self.progressions[value]) for key, value in self.registry.items()
-        }
-
     def get(
         self,
         prog_: Progression | str | None = None,
@@ -300,7 +308,8 @@ class Flow(Element):
             The requested Progression or the default value.
 
         Raises:
-            ItemNotFoundError: If no progression is found and no default is provided.
+            ItemNotFoundError: If no progression is found and no default
+                is provided.
         """
         prog_ = getattr(prog_, "ln_id", None) or prog_
 
@@ -326,7 +335,8 @@ class Flow(Element):
 
         Args:
             item: The item to remove.
-            prog_: The progression to remove from, or "all" for all progressions.
+            prog_: The progression to remove from, or "all" for all
+                    progressions.
         """
         if prog_ == "all":
             for seq in self.progressions:
@@ -346,7 +356,9 @@ class Flow(Element):
         return next(self.__iter__())
 
     def _find_prog(
-        self, prog_: str | Progression | None = None, default: Any = LN_UNDEFINED
+        self,
+        prog_: str | Progression | None = None,
+        default: Any = LN_UNDEFINED,
     ):
         if not prog_:
             if self.default_name in self.registry:
@@ -374,7 +386,8 @@ class Flow(Element):
 
 
 def flow(
-    progressions: Pile[Progression] | None = None, default_name: str | None = None
+    progressions: Pile[Progression] | None = None,
+    default_name: str | None = None,
 ):
     return Flow(progressions, default_name)
 

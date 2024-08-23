@@ -79,9 +79,9 @@ def test_to_num_complex(input_str, expected):
     ],
 )
 def test_to_num_precision(input_str, precision, expected):
-    assert to_num(input_str, num_type=float, precision=precision) == pytest.approx(
-        expected
-    )
+    assert to_num(
+        input_str, num_type=float, precision=precision
+    ) == pytest.approx(expected)
 
 
 @pytest.mark.parametrize(
@@ -225,7 +225,12 @@ def test_to_num_different_fraction_formats():
 
 
 def test_to_num_mixed_case_scientific_notation():
-    assert to_num("1e3 1E3 1e+3 1E-3", num_count=4) == [1000.0, 1000.0, 1000.0, 0.001]
+    assert to_num("1e3 1E3 1e+3 1E-3", num_count=4) == [
+        1000.0,
+        1000.0,
+        1000.0,
+        0.001,
+    ]
 
 
 def test_to_num_complex_with_spaces():

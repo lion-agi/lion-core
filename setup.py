@@ -11,11 +11,11 @@ with open(os.path.join(here, "lion_core/version.py")) as fp:
 __version__ = version["__version__"]
 
 # Read the contents of the README file
-with open("README.md", "r", encoding="utf-8") as fh:
+with open("README.md", encoding="utf-8") as fh:
     long_description = fh.read()
 
 # Read the contents of the requirements file
-with open("requirements.txt", "r", encoding="utf-8") as fh:
+with open("requirements.txt", encoding="utf-8") as fh:
     requirements = fh.read().splitlines()
 
 setup(
@@ -33,7 +33,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.11",
+    python_requires=">=3.10",
     install_requires=requirements,
     include_package_data=True,
     package_data={

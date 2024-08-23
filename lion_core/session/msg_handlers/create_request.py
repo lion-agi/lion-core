@@ -29,7 +29,9 @@ def create_action_request(response: str | dict) -> list[ActionRequest] | None:
         if "action_request" in _content:
             content_ = _content["action_request"]
         if isinstance(content_, str):
-            content_ = to_dict(content_, parser=fuzzy_parse_json, suppress=True)
+            content_ = to_dict(
+                content_, parser=fuzzy_parse_json, suppress=True
+            )
         if isinstance(content_, dict):
             content_ = [content_]
         if isinstance(content_, list):

@@ -11,14 +11,15 @@ class ChoiceRule(Rule):
 
     @override
     async def check_value(self, value, /) -> str:
-        if not value in self.keys:
+        if value not in self.keys:
             raise ValueError(f"{value} is not in chocies {self.keys}")
         return value
 
     @override
     async def fix_value(self, value) -> str:
         """
-        Suggest a fix for a value that is not within the set of predefined choices.
+        Suggest a fix for a value that is not within the set of predefined
+        choices.
 
         Args:
             value (str): The value to suggest a fix for.

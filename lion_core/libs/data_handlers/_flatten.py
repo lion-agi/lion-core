@@ -1,4 +1,5 @@
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 
 from lion_core.libs.data_handlers._to_dict import to_dict
 from lion_core.libs.data_handlers._to_list import to_list
@@ -36,11 +37,14 @@ def flatten(
     """
     if not isinstance(parent_key, str):
         raise TypeError(
-            f"Unsupported key type: {type(parent_key).__name__}. Only string keys are acceptable."
+            f"Unsupported key type: {type(parent_key).__name__}. "
+            "Only string keys are acceptable.",
         )
     if inplace:
         if not isinstance(nested_structure, dict):
-            raise ValueError("Object must be a dictionary when 'inplace' is True.")
+            raise ValueError(
+                "Object must be a dictionary when 'inplace' is True."
+            )
         _dynamic_flatten_in_place(
             nested_structure,
             parent_key=parent_key,
@@ -86,11 +90,20 @@ def get_flattened_keys(
     if not inplace:
         return to_list(
             flatten(
-                nested_structure, sep=sep, max_depth=max_depth, dict_only=dict_only
+                nested_structure,
+                sep=sep,
+                max_depth=max_depth,
+                dict_only=dict_only,
             ).keys()
         )
     obj_copy = SysUtil.create_copy(nested_structure, num=1)
-    flatten(obj_copy, sep=sep, max_depth=max_depth, inplace=True, dict_only=dict_only)
+    flatten(
+        obj_copy,
+        sep=sep,
+        max_depth=max_depth,
+        inplace=True,
+        dict_only=dict_only,
+    )
     return to_list(obj_copy.keys())
 
 
@@ -120,16 +133,21 @@ def _dynamic_flatten_in_place(
     """
     if isinstance(nested_structure, dict):
         keys_to_delete = []
-        items = list(nested_structure.items())  # Create a copy of the dictionary
+        items = list(
+            nested_structure.items()
+        )  # Create a copy of the dictionary
 
         for k, v in items:
             if not isinstance(k, str):
                 raise TypeError(
-                    f"Unsupported key type: {type(k).__name__}. Only string keys are acceptable."
+                    f"Unsupported key type: {type(k).__name__}. "
+                    "Only string keys are acceptable.",
                 )
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
 
-            if isinstance(v, dict) and (max_depth is None or current_depth < max_depth):
+            if isinstance(v, dict) and (
+                max_depth is None or current_depth < max_depth
+            ):
                 _dynamic_flatten_in_place(
                     v,
                     parent_key=new_key,
@@ -181,7 +199,8 @@ def _dynamic_flatten_generator(
         for k, v in nested_structure.items():
             if not isinstance(k, str):
                 raise TypeError(
-                    f"Unsupported key type: {type(k).__name__}. Only string keys are acceptable."
+                    f"Unsupported key type: {type(k).__name__}. "
+                    "Only string keys are acceptable."
                 )
             new_key = parent_key + (k,)
             yield from _dynamic_flatten_generator(

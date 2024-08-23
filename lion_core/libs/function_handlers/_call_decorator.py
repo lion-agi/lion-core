@@ -1,11 +1,15 @@
 import asyncio
+from collections.abc import Callable, Sequence
 from functools import wraps
-from typing import Any, Callable, Sequence, TypeVar
+from typing import Any, TypeVar
 
 from lion_core.libs.function_handlers._rcall import rcall
 from lion_core.libs.function_handlers._throttle import Throttle
 from lion_core.libs.function_handlers._ucall import ucall
-from lion_core.libs.function_handlers._util import force_async, is_coroutine_func
+from lion_core.libs.function_handlers._util import (
+    force_async,
+    is_coroutine_func,
+)
 from lion_core.setting import LN_UNDEFINED
 
 T = TypeVar("T")
@@ -14,10 +18,7 @@ ErrorHandler = Callable[[Exception], None]
 
 
 class CallDecorator:
-    """
-    A collection of decorators to enhance function calls with features
-    like retries, throttling, concurrency limits, composition, and caching.
-    """
+    """A collection of decorators to enhance function calls."""
 
     @staticmethod
     def retry(
@@ -32,8 +33,7 @@ class CallDecorator:
         error_msg: str | None = None,
         error_map: dict[type, ErrorHandler] | None = None,
     ) -> Callable[[F], F]:
-        """
-        Decorator to automatically retry a function call on failure.
+        """Decorator to automatically retry a function call on failure.
 
         Args:
             retries: Number of retry attempts.
@@ -76,8 +76,7 @@ class CallDecorator:
 
     @staticmethod
     def throttle(period: float) -> Callable[[F], F]:
-        """
-        Decorator to limit the execution frequency of a function.
+        """Decorator to limit the execution frequency of a function.
 
         Args:
             period: Minimum time in seconds between function calls.
@@ -102,8 +101,7 @@ class CallDecorator:
 
     @staticmethod
     def max_concurrent(limit: int) -> Callable[[F], F]:
-        """
-        Decorator to limit the maximum number of concurrent executions.
+        """Decorator to limit the maximum number of concurrent executions.
 
         Args:
             limit: Maximum number of concurrent executions.
@@ -128,8 +126,7 @@ class CallDecorator:
 
     @staticmethod
     def compose(*functions: Callable[[T], T]) -> Callable[[F], F]:
-        """
-        Decorator to compose multiple functions, applying them in sequence.
+        """Decorator to compose multiple functions, applying in sequence.
 
         Args:
             functions: Functions to apply in sequence.
@@ -146,7 +143,9 @@ class CallDecorator:
                     try:
                         value = await ucall(function, value)
                     except Exception as e:
-                        raise ValueError(f"Error in function {function.__name__}: {e}")
+                        raise ValueError(
+                            f"Error in function {function.__name__}: {e}"
+                        )
                 return value
 
             return async_wrapper
@@ -162,16 +161,15 @@ class CallDecorator:
         postprocess_args: Sequence[Any] = (),
         postprocess_kwargs: dict[str, Any] = {},
     ) -> Callable[[F], F]:
-        """
-        Decorator to apply pre-processing and post-processing functions.
+        """Decorator to apply pre-processing and post-processing functions.
 
         Args:
             preprocess: Function to apply before the main function.
             postprocess: Function to apply after the main function.
-            preprocess_args: Arguments to pass to the preprocess function.
-            preprocess_kwargs: Keyword arguments for the preprocess function.
-            postprocess_args: Arguments to pass to the postprocess function.
-            postprocess_kwargs: Keyword arguments for the postprocess function.
+            preprocess_args: Arguments for the preprocess function.
+            preprocess_kwargs: Keyword arguments for preprocess function.
+            postprocess_args: Arguments for the postprocess function.
+            postprocess_kwargs: Keyword arguments for postprocess function.
 
         Returns:
             The decorated function.
@@ -183,7 +181,10 @@ class CallDecorator:
                 preprocessed_args = (
                     [
                         await ucall(
-                            preprocess, arg, *preprocess_args, **preprocess_kwargs
+                            preprocess,
+                            arg,
+                            *preprocess_args,
+                            **preprocess_kwargs,
                         )
                         for arg in args
                     ]
@@ -193,18 +194,26 @@ class CallDecorator:
                 preprocessed_kwargs = (
                     {
                         k: await ucall(
-                            preprocess, v, *preprocess_args, **preprocess_kwargs
+                            preprocess,
+                            v,
+                            *preprocess_args,
+                            **preprocess_kwargs,
                         )
                         for k, v in kwargs.items()
                     }
                     if preprocess
                     else kwargs
                 )
-                result = await ucall(func, *preprocessed_args, **preprocessed_kwargs)
+                result = await ucall(
+                    func, *preprocessed_args, **preprocessed_kwargs
+                )
 
                 return (
                     await ucall(
-                        postprocess, result, *postprocess_args, **postprocess_kwargs
+                        postprocess,
+                        result,
+                        *postprocess_args,
+                        **postprocess_kwargs,
                     )
                     if postprocess
                     else result
@@ -216,33 +225,24 @@ class CallDecorator:
 
     @staticmethod
     def map(function: Callable[[Any], Any]) -> Callable:
-        """
-        Decorates an asynchronous function to apply a specified mapping function to
-        each element in the list returned by the decorated function. This is
-        particularly useful for post-processing the results of asynchronous operations,
-        such as transforming data fetched from an API or processing items in a
-        collection concurrently.
+        """Decorator to map a function over async function results.
 
-        The mapping function is applied to each input_ in the output list of the
-        decorated function, enabling patterned modifications or transformations to be
-        succinctly applied to a collection of asynchronous results.
+        Applies a mapping function to each element in the list returned
+        by the decorated function. Useful for post-processing results of
+        asynchronous operations, such as transforming data fetched from
+        an API or processing items in a collection concurrently.
 
         Args:
-                function (Callable[[Any], Any]):
-                        A mapping function to apply to each element of the list returned by the
-                        decorated function.
+            function: Mapping function to apply to each element.
 
         Returns:
-                Callable:
-                        A decorated asynchronous function whose results are transformed by the
-                        specified mapping function.
+            Decorated async function with transformed results.
 
         Examples:
-                >>> @CallDecorator.map(lambda x: x.upper())
-                ... async def get_names():
-                ...     # Asynchronously fetches a list of names
-                ...     return ["alice", "bob", "charlie"]
-                ... # `get_names` now returns ["ALICE", "BOB", "CHARLIE"]
+            >>> @CallDecorator.map(lambda x: x.upper())
+            ... async def get_names():
+            ...     return ["alice", "bob", "charlie"]
+            ... # `get_names` now returns ["ALICE", "BOB", "CHARLIE"]
         """
 
         def decorator(func: Callable[..., list[Any]]) -> Callable:
@@ -266,4 +266,4 @@ class CallDecorator:
         return decorator
 
 
-# Path: lion_core/libs/function_handlers/_call_decorator.py
+# File: lion_core/libs/function_handlers/_call_decorator.py

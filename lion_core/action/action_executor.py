@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Any
 
 from lion_core.abc import BaseExecutor
 from lion_core.action.action_processor import ActionProcessor
@@ -16,8 +16,8 @@ class ActionExecutor(BaseExecutor):
     their status, and processing them using a specified processor class.
 
     Attributes:
-        processor_config (dict): Configuration for initializing the processor class.
-        processor_class (Type[ActionProcessor]): The class used to process actions.
+        processor_config (dict): Configuration for initializing the processor.
+        processor_class (Type[ActionProcessor]): Class used to process actions.
         pile (Pile): A collection of actions managed by the executor.
         pending (Progression): A progression tracking the pending actions.
 
@@ -29,9 +29,9 @@ class ActionExecutor(BaseExecutor):
         **kwargs: Additional keyword arguments passed to the processor class.
     """
 
-    processor_class: Type[ActionProcessor] = ActionProcessor
+    processor_class: type[ActionProcessor] = ActionProcessor
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """
         Initializes the ActionExecutor with the provided configuration.
 
@@ -39,7 +39,7 @@ class ActionExecutor(BaseExecutor):
             **kwargs: Configuration parameters for initializing the processor.
         """
         self.processor_config = kwargs
-        self.pile: Pile = pile(item_type={ObservableAction})
+        self.pile: Pile[ObservableAction] = pile(item_type={ObservableAction})
         self.pending: Progression = prog()
         self.processor: ActionProcessor = None
 
@@ -67,7 +67,7 @@ class ActionExecutor(BaseExecutor):
             [i for i in self.pile if i.status == ActionStatus.COMPLETED],
         )
 
-    async def append(self, action: ObservableAction):
+    async def append(self, action: ObservableAction) -> None:
         """
         Appends a new action to the executor.
 
@@ -77,16 +77,18 @@ class ActionExecutor(BaseExecutor):
         await self.pile.ainclude(action)
         self.pending.include(action)
 
-    async def create_processor(self):
+    async def create_processor(self) -> None:
         """
         Creates the processor for handling actions.
 
         This method initializes the processor using the configuration provided
         during the instantiation of the executor.
         """
-        self.processor = await self.processor_class.create(**self.processor_config)
+        self.processor = await self.processor_class.create(
+            **self.processor_config,
+        )
 
-    async def start(self):
+    async def start(self) -> None:
         """
         Starts the action processor.
 
@@ -97,7 +99,7 @@ class ActionExecutor(BaseExecutor):
             await self.create_processor()
         await self.processor.start()
 
-    async def stop(self):
+    async def stop(self) -> None:
         """
         Stops the action processor.
 
@@ -106,25 +108,25 @@ class ActionExecutor(BaseExecutor):
         if self.processor:
             await self.processor.stop()
 
-    async def forward(self):
+    async def forward(self) -> None:
         """
         Forwards pending actions to the processor.
 
-        This method dequeues pending actions and enqueues them into the processor
-        for processing. After all pending actions are forwarded, the processor
-        processes them.
+        This method dequeues pending actions and enqueues them into the
+        processor for processing. After all pending actions are forwarded,
+        the processor processes them.
         """
         while len(self.pending) > 0:
             action = self.pile[self.pending.popleft()]
             await self.processor.enqueue(action)
         await self.processor.process()
 
-    def __contains__(self, action: ObservableAction):
+    def __contains__(self, action: ObservableAction | str) -> bool:
         """
         Checks if an action is present in the pile.
 
         Args:
-            action (ObservableAction): The action to check.
+            action (ObservableAction | str): The action to check.
 
         Returns:
             bool: True if the action is in the pile, False otherwise.

@@ -1,7 +1,5 @@
-"""Form class extending BaseTaskForm with additional functionality."""
-
 import inspect
-from typing import Any, Literal, Type
+from typing import Any, Literal
 
 from pydantic import Field, model_validator
 from pydantic.fields import FieldInfo
@@ -21,44 +19,41 @@ class Form(BaseForm):
     """
     Base task form class extending BaseForm with task-specific functionality.
 
-    This class builds on `BaseForm` to introduce concepts specific to task-based forms,
-    including input fields, request fields, and task-related attributes. It is designed
-    for tasks that require filling in fields through an intelligent process, providing
-    the necessary framework for managing and validating these fields.
+    This class builds on BaseForm to introduce concepts specific to task-based
+    forms, including input fields, request fields, and task-related attributes
+    It is designed for tasks that require filling in fields through an
+    intelligent process, providing the necessary framework for managing and
+    validating these fields.
 
     Key Concepts:
-    - `input_fields`: Fields required to obtain the request fields.
-    - `request_fields`: Fields that need to be filled by an intelligent process.
-    - `output_fields`: Fields for presentation, which may include all, some, or none
-      of the request fields. These can be conditionally modified if the form is not strict.
+    - input_fields: Fields required to obtain the request fields.
+    - request_fields: Fields that need to be filled by an intelligent process.
+    - output_fields: Fields for presentation, which may include all, some, or
+      none of the request fields. These can be conditionally modified if the
+      form is not strict.
+
+    The Form class provides methods for field management, validation, and
+    task instruction generation. It supports both strict and flexible modes
+    of operation, allowing for immutable fields and assignments when needed.
 
     Attributes:
-        strict (bool): Indicates whether the form's fields and assignment are immutable.
-            If set to True, the fields and assignments cannot be modified.
-        guidance (str | dict[str, Any] | None): High-level task guidance that can be
-            optimized by AI or provided as instructions.
+        strict (bool): If True, form fields and assignment are immutable.
+        guidance (str | dict[str, Any] | None): High-level task guidance that
+            can be optimized by AI or provided as instructions.
         input_fields (list[str]): Fields needed to obtain the requested fields.
-        request_fields (list[str]): Fields that need to be filled by an intelligent process.
-        task (Any): The work to be done, including any custom instructions or guidance.
-        task_description (str | None): A detailed description of the task to be performed.
-        init_input_kwargs (dict[str, Any]): Initial keyword arguments for input fields.
-        has_processed (bool): Indicates whether the task has been processed.
-
-    Properties:
-        work_fields (list[str]): Return a list of all fields involved in the task.
-        required_fields (list[str]): Return a list of all unique required fields.
-        validation_kwargs (dict): Get validation keyword arguments for each work field.
-        instruction_dict (dict[str, Any]): Return a dictionary with task instruction information.
-        instruction_context (str): Generate a description of the form's input fields.
-        instruction_prompt (str): Generate a task instruction prompt for the form.
-        instruction_request_fields (dict[str, str]): Get descriptions of the form's requested fields.
+        request_fields (list[str]): Fields to be filled by an intelligent
+            process.
+        task (Any): The work to be done, including custom instructions.
+        task_description (str | None): A detailed description of the task.
+        init_input_kwargs (dict[str, Any]): Initial keyword arguments for
+            input fields.
 
     Example:
         >>> form = Form(
-                assignment="input1, input2 -> output",
-                strict=True,
-                guidance="Complete the task with the given inputs.",
-            )
+        ...     assignment="input1, input2 -> output",
+        ...     strict=True,
+        ...     guidance="Complete the task with the given inputs."
+        ... )
         >>> form.fill_input_fields(input1="value1", input2="value2")
         >>> print(form.get_results())
     """
@@ -88,14 +83,16 @@ class Form(BaseForm):
         default_factory=str,
         description="Detailed description of the task",
     )
-    init_input_kwargs: dict[str, Any] = Field(default_factory=dict, exclude=True)
+    init_input_kwargs: dict[str, Any] = Field(
+        default_factory=dict,
+        exclude=True,
+    )
 
     def check_is_completed(
         self,
         handle_how: Literal["return_missing", "raise"] = "raise",
     ) -> list[str] | None:
-        """
-        Check if all required fields are completed.
+        """Check if all required fields are completed.
 
         Args:
             handle_how: How to handle incomplete fields.
@@ -115,23 +112,17 @@ class Form(BaseForm):
     @model_validator(mode="before")
     @classmethod
     def check_input_output_list_omitted(cls, data: Any) -> dict[str, Any]:
-        """
-        Validate and process the input data before model creation.
-
-        This method ensures that the input data does not explicitly contain input
-        or request fields, and correctly parses the `assignment` field to derive
-        these fields.
+        """Validate and process the input data before model creation.
 
         Args:
-            data (Any): The input data for model creation.
+            data: The input data for model creation.
 
         Returns:
-            dict[str, Any]: The validated and processed input data.
+            The validated and processed input data.
 
         Raises:
-            ValueError: If the input data is invalid or missing required fields.
+            ValueError: If the input data is invalid or missing required fields
         """
-
         if isinstance(data, Note):
             data = data.to_dict()
 
@@ -150,7 +141,8 @@ class Form(BaseForm):
         if "task" in data:
             raise ERR_MAP["assignment", "explicit_task"]
 
-        input_fields, request_fields = get_input_output_fields(data.get("assignment"))
+        fields = get_input_output_fields(data.get("assignment"))
+        input_fields, request_fields = fields
 
         if not input_fields or input_fields == [""]:
             raise ERR_MAP["assignment", "missing_input"]
@@ -178,18 +170,16 @@ class Form(BaseForm):
         """
         Validate and process input and output fields after model creation.
 
-        This method ensures that the fields listed in `input_fields` and `request_fields`
-        are correctly set up as form fields, adding them if necessary.
-
         Returns:
-            Form: The validated `Form` instance.
+            The validated Form instance.
         """
         for i in self.input_fields:
             if i in self.model_fields:
                 self.init_input_kwargs[i] = getattr(self, i)
             else:
                 self.add_field(
-                    field_name=i, value=self.init_input_kwargs.get(i, LN_UNDEFINED)
+                    field_name=i,
+                    value=self.init_input_kwargs.get(i, LN_UNDEFINED),
                 )
 
         for i in self.request_fields:
@@ -201,57 +191,28 @@ class Form(BaseForm):
     @override
     @property
     def work_fields(self) -> list[str]:
-        """
-        Return a list of all fields involved in the task.
-
-        This property combines `input_fields` and `request_fields` to
-        provide a comprehensive list of fields that are part of the task.
-
-        Returns:
-            list[str]: The list of work fields.
-        """
+        """Return a list of all fields involved in the task."""
         return self.input_fields + self.request_fields
 
     @override
     @property
     def required_fields(self) -> list[str]:
-        """
-        Return a list of all unique required fields.
-
-        This property returns a list that includes all `input_fields`, `request_fields`,
-        and `output_fields` without duplicates.
-
-        Returns:
-            list[str]: The list of required fields.
-        """
-        return list(set(self.input_fields + self.request_fields + self.output_fields))
+        """Return a list of all unique required fields."""
+        return list(
+            set(self.input_fields + self.request_fields + self.output_fields),
+        )
 
     @property
     def validation_kwargs(self):
-        """
-        Get validation keyword arguments for each work field.
-
-        This property returns a dictionary where the keys are field names and the
-        values are dictionaries containing validation keyword arguments for those fields.
-
-        Returns:
-            dict[str, dict]: The validation keyword arguments for work fields.
-        """
-        return {
-            i: self.field_getattr(i, "validation_kwargs", {}) for i in self.work_fields
-        }
+        """Get validation keyword arguments for each work field."""
+        dict_ = {}
+        for i in self.work_fields:
+            dict_[i] = self.field_getattr(i, "validation_kwargs", {})
+        return dict_
 
     @property
     def instruction_dict(self) -> dict[str, Any]:
-        """
-        Return a dictionary with task instruction information.
-
-        This property provides the necessary information to generate a task
-        instruction, including the context, prompt, and request fields.
-
-        Returns:
-            dict[str, Any]: The task instruction information.
-        """
+        """Return a dictionary with task instruction information."""
         return {
             "context": self.instruction_context,
             "instruction": self.instruction_prompt,
@@ -261,10 +222,8 @@ class Form(BaseForm):
     @property
     def instruction_context(self) -> str:
         """Generate a description of the form's input fields."""
-
         a = self.all_fields
-
-        context = f"### Input Fields:\n"
+        context = "### Input Fields:\n"
         for idx, i in enumerate(self.input_fields):
             context += f"Input No.{idx+1}: {i}\n"
             if getattr(a[i], "description", None):
@@ -275,15 +234,16 @@ class Form(BaseForm):
     @property
     def instruction_prompt(self) -> str:
         """Generate a task instruction prompt for the form."""
-
         a = self.all_fields
         prompt = ""
         if "guidance" in a:
             prompt += f"### Overall Guidance:\n{getattr(self, 'guidance')}.\n"
 
+        in_fields = ", ".join(self.input_fields)
+        out_fields = ", ".join(self.output_fields)
         prompt += "### Task Instructions:\n"
-        prompt += f"1. Provided Input Fields: {', '.join(self.input_fields)}.\n"
-        prompt += f"2. Requested Output Fields: {', '.join(self.request_fields)}.\n"
+        prompt += f"1. Provided Input Fields: {in_fields}.\n"
+        prompt += f"2. Requested Output Fields: {out_fields}.\n"
         prompt += f"3. Your task:\n{self.task}.\n"
 
         return prompt
@@ -291,10 +251,9 @@ class Form(BaseForm):
     @property
     def instruction_request_fields(self) -> dict[str, str]:
         """Get descriptions of the form's requested fields."""
-
         a = self.all_fields
 
-        context = f"### Output Fields:\n"
+        context = "### Output Fields:\n"
         for idx, i in enumerate(self.request_fields):
             context += f"Input No.{idx+1}: {i}\n"
             if getattr(a[i], "description", None):
@@ -313,19 +272,17 @@ class Form(BaseForm):
         field_obj: FieldInfo | Any = LN_UNDEFINED,
         **kwargs: Any,
     ) -> None:
-        """
-        Update a field in the form.
+        """Update a field in the form.
 
-        Extends the base `update_field` method to also update the `init_input_kwargs`
-        dictionary. This ensures that any changes to the fields are reflected in the
-        initial input settings.
+        Extends the base update_field method to also update the
+        init_input_kwargs dictionary.
 
         Args:
-            field_name (str): The name of the field to update.
-            value (Any): The value to assign to the field.
-            annotation (Any): The type annotation for the field.
-            field_obj (FieldInfo | Any): The field object containing metadata.
-            **kwargs (Any): Additional keyword arguments for field configuration.
+            field_name: The name of the field to update.
+            value: The value to assign to the field.
+            annotation: The type annotation for the field.
+            field_obj: The field object containing metadata.
+            **kwargs: Additional keyword arguments for field configuration.
         """
         super().update_field(
             field_name=field_name,
@@ -338,16 +295,18 @@ class Form(BaseForm):
 
     @override
     def __setattr__(self, field_name: str, value: Any) -> None:
-        """
-        Set an attribute of the form.
+        """Set an attribute of the form.
 
-        This method enforces the `strict` attribute, preventing modifications
-        to certain fields when strict mode is enabled. It also updates the
-        `init_input_kwargs` dictionary as necessary.
+        This method enforces the strict attribute, preventing modifications
+        to certain fields when strict mode is enabled.
 
         Args:
-            field_name (str): The name of the attribute to set.
-            value (Any): The value to assign to the attribute.
+            field_name: The name of the attribute to set.
+            value: The value to assign to the attribute.
+
+        Raises:
+            ValueError: If attempting to modify a restricted field
+                        in strict mode.
         """
         if self.strict and field_name in {
             "assignment",
@@ -365,7 +324,8 @@ class Form(BaseForm):
         super().__setattr__(field_name, value)
         self._fill_init_input_kwargs(field_name)
 
-    def _fill_init_input_kwargs(self, field_name):
+    def _fill_init_input_kwargs(self, field_name: str) -> None:
+        """Update init_input_kwargs if the field is an input field."""
         if field_name in self.input_fields:
             self.init_input_kwargs[field_name] = getattr(self, field_name)
 
@@ -373,22 +333,18 @@ class Form(BaseForm):
         self,
         handle_how: Literal["raise", "return_missing"] = "raise",
     ) -> list[str] | None:
-        """
-        Check if all input fields are filled and the form is workable.
-
-        This method ensures that all input fields required for the task are
-        filled out. If any are missing, it can either raise an error or return
-        a list of missing fields based on the `handle_how` argument.
+        """Check if all input fields are filled and the form is workable.
 
         Args:
-            handle_how (Literal["raise", "return_missing"]): How to handle missing inputs.
+            handle_how: How to handle missing inputs.
 
         Returns:
-            list[str] | None: A list of missing inputs if `handle_how` is "return_missing",
-            otherwise None.
+            List of missing inputs if handle_how is "return_missing",
+            None otherwise.
 
         Raises:
-            ValueError: If input fields are missing and `handle_how` is "raise".
+            ValueError: If input fields are missing and handle_how is
+                        "raise".
         """
         if self.strict and self.has_processed:
             raise ERR_MAP["assignment", "strict_processed"]
@@ -409,15 +365,7 @@ class Form(BaseForm):
                 return missing_inputs
 
     def is_completed(self) -> bool:
-        """
-        Determine if the form has been completed.
-
-        This method checks if all required fields are filled, indicating that
-        the form is complete.
-
-        Returns:
-            bool: True if the form is complete, otherwise False.
-        """
+        """Check if the form has been completed."""
         try:
             self.check_is_completed(handle_how="raise")
             return True
@@ -425,32 +373,21 @@ class Form(BaseForm):
             return False
 
     def is_workable(self) -> bool:
-        """
-        Determine if the form is workable.
-
-        This method checks if all input fields are filled, allowing the task to proceed.
-
-        Returns:
-            bool: True if the form is workable, otherwise False.
-        """
+        """Check if the form is workable."""
         try:
             self.check_is_workable(handle_how="raise")
             return True
         except Exception:
             return False
 
-    def to_dict(self, *, valid_only=False):
-        """
-        Convert the form to a dictionary.
-
-        This method returns a dictionary representation of the form. If `valid_only`
-        is True, it filters out fields with invalid values.
+    def to_dict(self, *, valid_only: bool = False) -> dict[str, Any]:
+        """Convert the form to a dictionary.
 
         Args:
-            valid_only (bool): Whether to include only valid fields in the output.
+            valid_only: Whether to include only valid fields in the output.
 
         Returns:
-            dict[str, Any]: A dictionary representation of the form.
+            A dictionary representation of the form.
         """
         _dict = super().to_dict()
         if not valid_only:
@@ -464,19 +401,14 @@ class Form(BaseForm):
     @override
     @classmethod
     def from_dict(cls, data: dict, **kwargs) -> T:
-        """
-        Create a `Form` instance from a dictionary.
-
-        This method initializes a `Form` object from a dictionary of values,
-        setting fields based on the input data and handling additional fields
-        and metadata.
+        """Create a Form instance from a dictionary.
 
         Args:
-            data (dict): The input data for creating the form.
+            data: The input data for creating the form.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            Form: The created `Form` instance.
+            The created Form instance.
         """
         input_data = SysUtil.copy(data)
 
@@ -506,16 +438,15 @@ class Form(BaseForm):
         self,
         form: BaseForm | Any = None,
         **value_kwargs,
-    ):
-        """
-        Fill the form's input fields with values.
-
-        This method populates the form's input fields with values either
-        from another form or from the provided keyword arguments.
+    ) -> None:
+        """Fill the form's input fields with values.
 
         Args:
-            form (BaseForm | Any): A form to copy values from.
+            form: A form to copy values from.
             **value_kwargs: Values to use for filling the input fields.
+
+        Raises:
+            TypeError: If the provided form is not a BaseForm instance.
         """
         if form is not None and not isinstance(form, BaseForm):
             raise ERR_MAP["type", "not_form_instance"](form)
@@ -541,16 +472,15 @@ class Form(BaseForm):
         self,
         form: BaseForm = None,
         **value_kwargs,
-    ):
-        """
-        Fill the form's request fields with values.
-
-        This method populates the form's request fields with values either
-        from another form or from the provided keyword arguments.
+    ) -> None:
+        """Fill the form's request fields with values.
 
         Args:
-            form (BaseForm): A form to copy values from.
+            form: A form to copy values from.
             **value_kwargs: Values to use for filling the request fields.
+
+        Raises:
+            TypeError: If the provided form is not a BaseForm instance.
         """
         if form is not None and not isinstance(form, BaseForm):
             raise ERR_MAP["type", "not_form_instance"](form)
@@ -575,7 +505,7 @@ class Form(BaseForm):
     @classmethod
     def from_form(
         cls,
-        form: BaseForm | Type[BaseForm],
+        form: BaseForm | type[BaseForm],
         guidance: str | dict[str, Any] | None = None,
         assignment: str | None = None,
         strict: bool = False,
@@ -585,28 +515,30 @@ class Form(BaseForm):
         output_fields: list[str] | None = None,
         same_form_output_fields: bool = False,
         **input_value_kwargs,
-    ):
-        """
-        Create a `Form` instance from another form.
-
-        This method allows the creation of a `Form` instance by copying
-        values and fields from another form, with options to customize
-        the new form's settings.
+    ) -> "Form":
+        """Create a Form instance from another form.
 
         Args:
-            form (BaseForm | Type[BaseForm]): The form to copy from.
-            guidance (str | dict[str, Any] | None): Guidance for the new form.
-            assignment (str | None): The assignment for the new form.
-            strict (bool): Whether the new form should be strict.
-            task_description (str | None): A description of the task.
-            fill_inputs (bool): Whether to fill input fields.
-            none_as_valid_value (bool): Whether to treat `None` as a valid value.
-            output_fields (list[str] | None): Output fields for the new form.
-            same_form_output_fields (bool): Whether to copy output fields from the original form.
-            **input_value_kwargs: Values for filling the new form's input fields.
+            form: The form to copy from.
+            guidance: Guidance for the new form.
+            assignment: The assignment for the new form.
+            strict: Whether the new form should be strict.
+            task_description: A description of the task.
+            fill_inputs: Whether to fill input fields.
+            none_as_valid_value: Whether to treat None as a valid value.
+            output_fields: Output fields for the new form.
+            same_form_output_fields: Whether to copy output fields from the
+                original form.
+            **input_value_kwargs: Values for filling the new form's input
+                                fields.
 
         Returns:
-            Form: The created `Form` instance.
+            The created Form instance.
+
+        Raises:
+            TypeError: If the provided form is not a BaseForm or its subclass.
+            ValueError: If both output_fields and same_form_output_fields are
+                        provided.
         """
         if inspect.isclass(form):
             if not issubclass(form, BaseForm):
@@ -658,12 +590,8 @@ class Form(BaseForm):
 
         return obj
 
-    def remove_request_from_output(self):
-        """
-        Remove the request fields from the output fields.
-
-        This method removes any fields listed in `request_fields` from the `output_fields` list.
-        """
+    def remove_request_from_output(self) -> None:
+        """Remove the request fields from the output fields."""
         for i in self.request_fields:
             if i in self.output_fields:
                 self.output_fields.remove(i)
@@ -676,21 +604,22 @@ class Form(BaseForm):
         annotation: Any = LN_UNDEFINED,
         field_obj: FieldInfo | Any = LN_UNDEFINED,
         **kwargs,
-    ):
-        """
-        Append a field to one of the field lists.
-
-        This method adds a field to either the input, output, or request fields list,
-        updating the form's assignment and configurations as needed.
+    ) -> None:
+        """Append a field to one of the field lists.
 
         Args:
-            field_name (str): The name of the field to append.
-            field_type (Literal["input", "output", "request"]): The type of field to append.
-            value (Any): The value of the field.
-            annotation (Any): The type annotation for the field.
-            field_obj (FieldInfo | Any): The field object containing metadata.
+            field_name: The name of the field to append.
+            field_type: The type of field to append.
+            value: The value of the field.
+            annotation: The type annotation for the field.
+            field_obj: The field object containing metadata.
             **kwargs: Additional keyword arguments for field configuration.
+
+        Raises:
+            ValueError: If the field type is invalid or if appending to
+                input or request fields in strict mode.
         """
+
         if self.strict and field_type in {"input", "request"}:
             raise ERR_MAP["assignment", "strict"](field_type)
 
@@ -744,18 +673,17 @@ class Form(BaseForm):
         field_obj: FieldInfo | Any = LN_UNDEFINED,
         **kwargs,
     ) -> None:
-        """
-        Append a field to the input fields.
-
-        This method adds a field to the `input_fields` list, with options to configure
-        the field's value, annotation, and other properties.
+        """Append a field to the input fields.
 
         Args:
-            field_name (str): The name of the field to append.
-            value (Any): The value of the field.
-            annotation (Any): The type annotation for the field.
-            field_obj (FieldInfo | Any): The field object containing metadata.
+            field_name: The name of the field to append.
+            value: The value of the field.
+            annotation: The type annotation for the field.
+            field_obj: The field object containing metadata.
             **kwargs: Additional keyword arguments for field configuration.
+
+        Raises:
+            ValueError: If appending the field fails.
         """
         try:
             self._append_to_one(
@@ -779,18 +707,17 @@ class Form(BaseForm):
         field_obj: FieldInfo | Any = LN_UNDEFINED,
         **kwargs,
     ) -> None:
-        """
-        Append a field to the output fields.
-
-        This method adds a field to the `output_fields` list, with options to configure
-        the field's value, annotation, and other properties.
+        """Append a field to the output fields.
 
         Args:
-            field_name (str): The name of the field to append.
-            value (Any): The value of the field.
-            annotation (Any): The type annotation for the field.
-            field_obj (FieldInfo | Any): The field object containing metadata.
+            field_name: The name of the field to append.
+            value: The value of the field.
+            annotation: The type annotation for the field.
+            field_obj: The field object containing metadata.
             **kwargs: Additional keyword arguments for field configuration.
+
+        Raises:
+            ValueError: If appending the field fails.
         """
 
         try:
@@ -814,18 +741,17 @@ class Form(BaseForm):
         field_obj: FieldInfo | Any = LN_UNDEFINED,
         **kwargs,
     ) -> None:
-        """
-        Append a field to the request fields.
-
-        This method adds a field to the `request_fields` list, ensuring no value
-        is provided for request fields. The method allows for configuration
-        through annotations and other properties.
+        """Append a field to the request fields.
 
         Args:
-            field_name (str): The name of the field to append.
-            annotation (Any): The type annotation for the field.
-            field_obj (FieldInfo | Any): The field object containing metadata.
+            field_name: The name of the field to append.
+            value: The value of the field.
+            annotation: The type annotation for the field.
+            field_obj: The field object containing metadata.
             **kwargs: Additional keyword arguments for field configuration.
+
+        Raises:
+            ValueError: If appending the field fails.
         """
         if "value" in kwargs:
             raise LionValueError("Cannot provide value to request fields.")

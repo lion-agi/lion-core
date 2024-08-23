@@ -1,5 +1,6 @@
 import re
-from typing import Any, Callable, Literal, Sequence, TypedDict
+from collections.abc import Callable, Sequence
+from typing import Any, Literal, TypedDict
 
 from lion_core.libs.parsers._fuzzy_parse_json import fuzzy_parse_json
 from lion_core.libs.parsers._md_to_json import md_to_json
@@ -92,7 +93,9 @@ def validate_mapping(
                 fuzzy_match=fuzzy_match,
             )
         except Exception as e:
-            raise ValueError(f"Failed to force_validate_dict for input: {d_}") from e
+            raise ValueError(
+                f"Failed to force_validate_dict for input: {d_}"
+            ) from e
 
     raise ValueError(f"Failed to force_validate_dict for input: {d_}")
 

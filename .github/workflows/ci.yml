@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.11','3.12']
+        python-version: ['3.10','3.11','3.12']
 
     steps:
     - uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e .[dev]
-        pip install pytest-asyncio
+        pip install pytest-asyncio flake8
 
     - name: Run pre-commit hooks
       uses: pre-commit/action@v3.0.0
@@ -44,6 +44,7 @@ jobs:
       run: |
         black --check .
         isort --check-only .
+        flake8 lion_core/ --max-line-length=79
 
   publish:
     needs: test

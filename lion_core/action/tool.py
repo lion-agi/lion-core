@@ -1,8 +1,7 @@
-"""Defines the Tool class for callable tools with processing capabilities."""
-
 import json
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from pydantic import Field, field_serializer, field_validator
 from typing_extensions import override
@@ -12,21 +11,20 @@ from lion_core.libs import function_to_schema, to_list
 
 
 class Tool(Element):
-    """
-    Represents a callable tool with pre/post-processing capabilities.
+    """Represents a callable tool with pre/post-processing capabilities.
 
-    This class encapsulates a function with its metadata, schema, and processing
-    functions. It provides a structured way to manage and execute functions
-    within the system.
+    This class encapsulates a function with its metadata, schema, and
+    processing functions. It provides a structured way to manage and execute
+    functions within the system.
 
     Attributes:
-        function (Callable[..., Any]): The callable function of the tool.
-        schema_ (dict[str, Any] | None): Schema of the function in OpenAI format.
-        pre_processor (Callable[..., dict[str, Any]] | None): Function to preprocess input arguments.
-        pre_processor_kwargs (dict[str, Any] | None): Keyword arguments for the pre-processor.
-        post_processor (Callable[..., Any] | None): Function to post-process the result.
-        post_processor_kwargs (dict[str, Any] | None): Keyword arguments for the post-processor.
-        parser (Callable[[Any], Any] | None): Function to parse the result to JSON serializable format.
+        function: The callable function of the tool.
+        schema_: Schema of the function in OpenAI format.
+        pre_processor: Function to preprocess input arguments.
+        pre_processor_kwargs: Keyword arguments for the pre-processor.
+        post_processor: Function to post-process the result.
+        post_processor_kwargs: Keyword arguments for the post-processor.
+        parser: Function to parse the result to JSON serializable format.
     """
 
     function: Callable[..., Any] = Field(
@@ -60,8 +58,7 @@ class Tool(Element):
 
     @override
     def __init__(self, **data: Any) -> None:
-        """
-        Initialize a Tool instance.
+        """Initialize a Tool instance.
 
         If no schema is provided, it generates one from the function.
 
@@ -89,8 +86,7 @@ class Tool(Element):
         "post_processor_kwargs",
     )
     def serialize_field(self, v: Any) -> str | None:
-        """
-        Serialize various fields of the Tool class.
+        """Serialize various fields of the Tool class.
 
         Args:
             v: The value to serialize.
@@ -106,8 +102,7 @@ class Tool(Element):
 
     @property
     def function_name(self) -> str:
-        """
-        Get the name of the function from the schema.
+        """Get the name of the function from the schema.
 
         Returns:
             The name of the function.
@@ -116,8 +111,7 @@ class Tool(Element):
 
     @override
     def __str__(self) -> str:
-        """
-        Return a string representation of the Tool.
+        """Return a string representation of the Tool.
 
         Returns:
             A string representation of the Tool.
@@ -138,8 +132,7 @@ def func_to_tool(
     docstring_style: Literal["google", "rest"] = "google",
     **kwargs,
 ) -> list[Tool]:
-    """
-    Convert functions to Tool objects.
+    """Convert functions to Tool objects.
 
     This function takes one or more callable functions and converts them into
     Tool objects, optionally associating parsers with each function.
@@ -152,6 +145,10 @@ def func_to_tool(
 
     Returns:
         A list of Tool objects created from the provided function(s).
+
+    Raises:
+        ValueError: If the number of parsers doesn't match the number of
+            functions.
     """
     funcs = to_list(func_)
     parsers = to_list(parser)
@@ -172,12 +169,5 @@ def func_to_tool(
     return tools
 
 
-ToolType = bool | Tool | str | list[Tool | str | dict[str, Any]] | dict[str, Any]
-
-
-__all__ = [
-    "Tool",
-    "func_to_tool",
-    "ToolType",
-]
+__all__ = ["Tool", "func_to_tool"]
 # File: lion_core/action/tool.py

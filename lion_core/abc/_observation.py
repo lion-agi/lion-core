@@ -1,67 +1,80 @@
 from abc import abstractmethod
+from typing import Any
 
 from lion_core.abc._concept import AbstractObservation
 
 
 class Event(AbstractObservation):
     """
-    Base class for LION events. Represents discrete occurrences or state
-    changes in complex systems. Inspired by event-driven architectures and
-    quantum state transitions, models deterministic and probabilistic processes.
-    """
+    Represents discrete occurrences or state changes in the system.
 
-    pass
+    This class serves as a base for more specific event types.
+    """
 
 
 class Condition(Event):
     """
-    Represents a checkable condition in LION. Embodies state evaluation
-    in complex systems, analogous to quantum observables. Checking may
-    influence system state, aligning with quantum measurement theory.
+    Represents state evaluation in complex systems.
+
+    This class defines a condition that can be checked or applied.
     """
 
     @abstractmethod
-    async def apply(self, *args, **kwargs):
+    async def apply(self, *args: Any, **kwargs: Any) -> Any:
         """
-        Asynchronously evaluates the condition, potentially altering
-        system state. Enables non-blocking operations for modeling parallel
-        processes in complex and quantum-inspired systems.
+        Apply the condition asynchronously.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Any: The result of applying the condition.
         """
         pass
 
 
 class Signal(Event):
     """
-    Represents a triggerable signal in LION. Analogous to quantum state
-    broadcasts or information propagation in complex networks. Facilitates
-    inter-system communication, enabling emergent behaviors.
+    Represents a triggerable signal in the system.
+
+    This class defines a signal that can be triggered.
     """
 
     @abstractmethod
-    async def trigger(self, *args, **kwargs):
+    async def trigger(self, *args: Any, **kwargs: Any) -> Any:
         """
-        Asynchronously triggers the signal, potentially causing cascading
-        effects. Models concurrent signal propagation, mirroring quantum
-        state evolution or information diffusion in complex networks.
+        Trigger the signal asynchronously.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Any: The result of triggering the signal.
         """
         pass
 
 
 class Action(Event):
     """
-    Represents an invokable action in LION. Embodies executable processes
-    modifying system state. Analogous to quantum operators or state transition
-    functions in complex adaptive systems.
+    Represents an invokable action in the system.
+
+    This class defines an action that can be invoked. Actions must have a
+    status.
     """
 
-    # action must have status
-
     @abstractmethod
-    async def invoke(self, *args, **kwargs):
+    async def invoke(self, *args: Any, **kwargs: Any) -> Any:
         """
-        Asynchronously executes the action, potentially transforming
-        system state. Models concurrent operations and time-evolving
-        processes, aligning with quantum and complex system dynamics.
+        Invoke the action asynchronously.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Any: The result of invoking the action.
         """
         pass
 
@@ -69,4 +82,4 @@ class Action(Event):
 __all__ = ["Event", "Condition", "Signal", "Action"]
 
 
-# File: lion_core/abc/observation.py
+# File: lion_core/abc/_observation.py

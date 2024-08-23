@@ -13,7 +13,9 @@ from lion_core.sys_utils import SysUtil
 
 # Tests for prepare_action_response_content function
 def test_prepare_action_response_content():
-    request = ActionRequest("test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id())
+    request = ActionRequest(
+        "test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id()
+    )
     content = prepare_action_response_content(request, "result")
     assert isinstance(content, Note)
     assert content.get("action_request_id") == request.ln_id
@@ -31,7 +33,9 @@ def test_prepare_action_response_content_already_responded():
 
 # Tests for ActionResponse class
 def test_action_response_init():
-    request = ActionRequest("test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id())
+    request = ActionRequest(
+        "test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id()
+    )
     response = ActionResponse(request, SysUtil.id(), "result")
     assert response.role == MessageRole.ASSISTANT
     assert response.func_output == "result"
@@ -55,7 +59,9 @@ def test_action_response_init_with_message_load():
 
 def test_action_response_init_with_message_clone():
     response = ActionResponse(
-        MessageFlag.MESSAGE_CLONE, MessageFlag.MESSAGE_CLONE, MessageFlag.MESSAGE_CLONE
+        MessageFlag.MESSAGE_CLONE,
+        MessageFlag.MESSAGE_CLONE,
+        MessageFlag.MESSAGE_CLONE,
     )
     assert response.role == MessageRole.ASSISTANT
 
@@ -67,7 +73,9 @@ def test_action_response_func_output():
 
 
 def test_action_response_response_dict():
-    request = ActionRequest("test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id())
+    request = ActionRequest(
+        "test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id()
+    )
     response = ActionResponse(request, SysUtil.id(), "result")
     assert response.response_dict == {
         "function": "test_func",
@@ -121,7 +129,9 @@ def test_action_response_update_with_different_argument_structure():
     request1 = ActionRequest("func1", {"arg1": 1}, SysUtil.id(), SysUtil.id())
     response = ActionResponse(request1, SysUtil.id(), "result1")
 
-    request2 = ActionRequest("func2", {"arg2": [1, 2, 3]}, SysUtil.id(), SysUtil.id())
+    request2 = ActionRequest(
+        "func2", {"arg2": [1, 2, 3]}, SysUtil.id(), SysUtil.id()
+    )
     response.update_request(request2, {"complex": "output"})
 
     assert response.response_dict["arguments"] == {"arg2": [1, 2, 3]}
@@ -142,7 +152,9 @@ def test_action_response_serialization():
     response_json = json.dumps(response.to_dict())
 
     # Deserialize
-    reconstructed_response = ActionResponse.from_dict(json.loads(response_json))
+    reconstructed_response = ActionResponse.from_dict(
+        json.loads(response_json)
+    )
 
     assert reconstructed_response.response_dict == response.response_dict
 
@@ -171,7 +183,9 @@ def test_action_response_thread_safety():
             SysUtil.id(),
         )
         ActionResponse(
-            request, SysUtil.id(), f"Response from thread {threading.get_ident()}"
+            request,
+            SysUtil.id(),
+            f"Response from thread {threading.get_ident()}",
         )
 
     threads = [threading.Thread(target=create_response) for _ in range(100)]
@@ -205,7 +219,9 @@ def test_action_response_with_very_long_function_name():
 
 def test_action_response_with_maximum_arguments():
     max_args = {f"arg{i}": i for i in range(1000)}  # 1000 arguments
-    request = ActionRequest("max_args_func", max_args, SysUtil.id(), SysUtil.id())
+    request = ActionRequest(
+        "max_args_func", max_args, SysUtil.id(), SysUtil.id()
+    )
     response = ActionResponse(request, SysUtil.id(), "result")
     assert len(response.response_dict["arguments"]) == 1000
 
@@ -226,7 +242,9 @@ def test_action_response_update_request_idempotency():
 
 def test_action_response_with_very_large_request_and_response():
     large_args = {"arg": "a" * 1000000}  # 1MB of arguments
-    request = ActionRequest("large_func", large_args, SysUtil.id(), SysUtil.id())
+    request = ActionRequest(
+        "large_func", large_args, SysUtil.id(), SysUtil.id()
+    )
     large_output = "b" * 1000000  # 1MB of output
     response = ActionResponse(request, SysUtil.id(), large_output)
 
@@ -252,7 +270,9 @@ def test_action_response_update_with_different_types():
     request1 = ActionRequest("func1", {"arg1": 1}, SysUtil.id(), SysUtil.id())
     response = ActionResponse(request1, SysUtil.id(), "result1")
 
-    request2 = ActionRequest("func2", {"arg2": "string"}, SysUtil.id(), SysUtil.id())
+    request2 = ActionRequest(
+        "func2", {"arg2": "string"}, SysUtil.id(), SysUtil.id()
+    )
     response.update_request(request2, 42)
 
     assert response.func_output == 42

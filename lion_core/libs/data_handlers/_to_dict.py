@@ -1,7 +1,7 @@
 import json
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from functools import singledispatch
-from typing import Any, Callable, Literal, TypeVar
+from typing import Any, Literal, TypeVar
 
 from lion_core.setting import LionUndefined
 
@@ -99,7 +99,7 @@ def _(
     str_type: Literal["json", "xml"] = "json",
     parser: Callable[[str], dict[str, Any]] | None = None,
     **kwargs: Any,
-) -> dict[str, Any]:
+) -> dict[str, Any] | list[dict[str, Any]]:
     """Handle string inputs."""
     if not input_:
         return {}
@@ -112,7 +112,7 @@ def _(
                 else parser(input_, **kwargs)
             )
         except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse JSON string") from e
+            raise ValueError("Failed to parse JSON string") from e
 
     if str_type == "xml":
         try:
@@ -122,7 +122,7 @@ def _(
                 return xml_to_dict(input_)
             return parser(input_, **kwargs)
         except Exception as e:
-            raise ValueError(f"Failed to parse XML string") from e
+            raise ValueError("Failed to parse XML string") from e
 
     raise ValueError(f"Unsupported string type: {str_type}")
 
@@ -139,7 +139,8 @@ def _(
     out = [
         (
             to_dict(item, **kwargs)
-            if isinstance(item, Mapping | Sequence) and not isinstance(item, str)
+            if isinstance(item, Mapping | Sequence)
+            and not isinstance(item, str)
             else item
         )
         for item in input_

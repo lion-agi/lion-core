@@ -1,53 +1,49 @@
+from collections.abc import Callable
 from functools import singledispatchmethod
-from typing import Any, Callable
+from typing import Any
 
 from lion_core.abc import BaseManager
 from lion_core.action.function_calling import FunctionCalling
-from lion_core.action.tool import Tool, ToolType, func_to_tool
+from lion_core.action.tool import Tool, func_to_tool
 from lion_core.communication.action_request import ActionRequest
 from lion_core.libs import fuzzy_parse_json, to_list
+
+REGISTERABLE_TOOL = Tool | Callable[..., Any]
+FINDABLE_TOOL = REGISTERABLE_TOOL | str
+INPUTTABLE_TOOL = dict[str, Any] | bool | FINDABLE_TOOL
+TOOL_TYPE = FINDABLE_TOOL | list[FINDABLE_TOOL] | INPUTTABLE_TOOL
 
 
 class ToolManager(BaseManager):
     """
     Manages tools in the system.
 
-    The `ToolManager` class is responsible for managing a registry of tools,
-    which can be functions or callable objects. It provides methods to register
-    tools, match function calls to tools, and invoke tools asynchronously.
+    Responsible for managing a registry of tools, which can be functions or
+    callable objects. Provides methods to register tools, match function
+    calls to tools, and invoke tools asynchronously.
 
     Attributes:
-        registry (dict[str, Tool]): A dictionary mapping tool names to Tool objects.
-
-    Methods:
-        __contains__(tool): Checks if a tool is registered.
-        register_tool(tool, update): Registers a single tool in the registry.
-        register_tools(tools): Registers multiple tools in the registry.
-        match_tool(func_call): Matches a function call to a registered tool.
-        invoke(func_call): Invokes a tool based on the provided function call.
-        schema_list: Lists all tool schemas currently registered in the ToolManager.
-        get_tool_schema(tools, **kwargs): Retrieves the schema for specific tools or all tools.
+        registry: Mapping of tool names to Tool objects.
     """
 
     def __init__(self, registry: dict[str, Tool] | None = None) -> None:
-        """
-        Initializes the ToolManager instance.
+        """Initialize the ToolManager instance.
 
         Args:
-            registry (dict[str, Tool], optional): A dictionary of tools to initialize the registry with.
-                Defaults to an empty dictionary if not provided.
+            registry: Optional dictionary of pre-registered tools.
+                      Keys are tool names, values are Tool objects.
         """
         self.registry: dict[str, Tool] = registry or {}
 
-    def __contains__(self, tool: Tool | str | Callable[..., Any]) -> bool:
-        """
-        Checks if a tool is registered in the registry.
+    def __contains__(self, tool: FINDABLE_TOOL) -> bool:
+        """Check if a tool is registered in the registry.
 
         Args:
-            tool (Tool | str | Callable[..., Any]): The tool, tool name, or callable to check.
+            tool: The tool to check. Can be a Tool object, a string
+                  (tool name), or a callable.
 
         Returns:
-            bool: True if the tool is registered, False otherwise.
+            True if the tool is registered, False otherwise.
         """
         if isinstance(tool, Tool):
             return tool.function_name in self.registry
@@ -59,24 +55,23 @@ class ToolManager(BaseManager):
 
     def register_tool(
         self,
-        tool: Tool | Callable[..., Any],
+        tool: REGISTERABLE_TOOL,
         update: bool = False,
-    ):
-        """
-        Registers a single tool in the registry.
+    ) -> None:
+        """Register a single tool in the registry.
 
         Args:
-            tool (Tool | Callable[..., Any]): The tool or callable to register.
-            update (bool, optional): Whether to update an existing tool. Defaults to False.
+            tool: The tool to register. Can be a Tool object or a callable.
+            update: If True, update the tool if it's already registered.
+                    If False, raise an error if already registered.
 
         Raises:
-            ValueError: If the tool is already registered and update is False.
+            ValueError: If tool is already registered and update is False.
             TypeError: If the provided tool is not a Tool object or callable.
         """
         if not update and tool in self:
-            raise ValueError(
-                f"Tool {getattr(tool, 'function_name', tool)} is already registered."
-            )
+            func_name = getattr(tool, "function_name", tool)
+            raise ValueError(f"Tool {func_name} is already registered.")
 
         if callable(tool):
             tool = func_to_tool(tool)[0]
@@ -87,17 +82,17 @@ class ToolManager(BaseManager):
 
     def register_tools(
         self,
-        tools: list[Tool | Callable[..., Any]] | Tool | Callable[..., Any],
-    ):
-        """
-        Registers multiple tools in the registry.
+        tools: list[REGISTERABLE_TOOL] | REGISTERABLE_TOOL,
+    ) -> None:
+        """Register multiple tools in the registry.
 
         Args:
-            tools (list[Tool | Callable[..., Any]] | Tool | Callable[..., Any]): The tools to register.
+            tools: A single tool or a list of tools to register.
+                   Each tool can be a Tool object or a callable.
 
         Raises:
-            ValueError: If a tool is already registered and update is False.
-            TypeError: If the element tool is not a Tool object or callable.
+            ValueError: If any tool is already registered.
+            TypeError: If any provided tool is not a Tool object or callable.
         """
         tools_list = tools if isinstance(tools, list) else [tools]
         [
@@ -107,100 +102,68 @@ class ToolManager(BaseManager):
 
     @singledispatchmethod
     def match_tool(self, func_call: Any) -> FunctionCalling:
-        """
-        Matches a function call to a registered tool.
+        """Match a function call to a registered tool.
+
+        This method uses single dispatch to handle different input types.
 
         Args:
-            func_call (Any): The function call to match.
+            func_call: The function call to match. Can be a tuple, dict,
+                       ActionRequest, or string.
 
         Returns:
-            FunctionCalling: An object representing the matched tool and arguments.
+            A FunctionCalling object representing the matched tool.
 
         Raises:
-            TypeError: If the func_call type is not supported.
-            ValueError: If the function is not registered or the call format is invalid.
+            TypeError: If the input type is not supported.
+            ValueError: If function is not registered or call format invalid.
         """
         raise TypeError(f"Unsupported type {type(func_call)}")
 
-    @match_tool.register(tuple)
+    @match_tool.register
     def _(self, func_call: tuple) -> FunctionCalling:
-        """
-        Matches a function call tuple to a registered tool.
-
-        Args:
-            func_call (tuple): A tuple containing the function name and arguments.
-
-        Returns:
-            FunctionCalling: An object representing the matched tool and arguments.
-
-        Raises:
-            ValueError: If the function is not registered or the tuple format is invalid.
-        """
+        """Match a function call tuple to a registered tool."""
         if len(func_call) == 2:
             function_name = func_call[0]
             arguments = func_call[1]
             tool = self.registry.get(function_name)
             if not tool:
-                raise ValueError(f"Function {function_name} is not registered.")
+                raise ValueError(f"Function {function_name} is not registered")
             return FunctionCalling(func_tool=tool, arguments=arguments)
         else:
             raise ValueError(f"Invalid function call {func_call}")
 
-    @match_tool.register(dict)
-    def _(self, func_call: dict[str, Any]) -> FunctionCalling:
-        """
-        Matches a function call dictionary to a registered tool.
-
-        Args:
-            func_call (dict[str, Any]): A dictionary containing the function name and arguments.
-
-        Returns:
-            FunctionCalling: An object representing the matched tool and arguments.
-
-        Raises:
-            ValueError: If the function is not registered or the dictionary format is invalid.
-        """
-        if len(func_call) == 2 and ({"function", "arguments"} <= func_call.keys()):
+    @match_tool.register
+    def _(self, func_call: dict) -> FunctionCalling:
+        """Match a function call dictionary to a registered tool."""
+        if len(func_call) == 2 and (
+            {
+                "function",
+                "arguments",
+            }
+            <= func_call.keys()
+        ):
             function_name = func_call["function"]
             tool = self.registry.get(function_name)
             if not tool:
-                raise ValueError(f"Function {function_name} is not registered.")
-            return FunctionCalling(func_tool=tool, arguments=func_call["arguments"])
+                raise ValueError(f"Function {function_name} is not registered")
+            return FunctionCalling(
+                func_tool=tool,
+                arguments=func_call["arguments"],
+            )
         raise ValueError(f"Invalid function call {func_call}")
 
-    @match_tool.register(ActionRequest)
+    @match_tool.register
     def _(self, func_call: ActionRequest) -> FunctionCalling:
-        """
-        Matches an ActionRequest to a registered tool.
-
-        Args:
-            func_call (ActionRequest): The ActionRequest to match.
-
-        Returns:
-            FunctionCalling: An object representing the matched tool and arguments.
-
-        Raises:
-            ValueError: If the function is not registered.
-        """
+        """Match an ActionRequest to a registered tool."""
         tool = self.registry.get(func_call.function)
         if not tool:
-            raise ValueError(f"Function {func_call.function} is not registered.")
+            func_ = func_call.function
+            raise ValueError(f"Function {func_} is not registered.")
         return FunctionCalling(func_tool=tool, arguments=func_call.arguments)
 
-    @match_tool.register(str)
+    @match_tool.register
     def _(self, func_call: str) -> FunctionCalling:
-        """
-        Parses a string and matches it to a registered tool.
-
-        Args:
-            func_call (str): The function call in string format.
-
-        Returns:
-            FunctionCalling: An object representing the matched tool and arguments.
-
-        Raises:
-            ValueError: If the string cannot be parsed or the function is not registered.
-        """
+        """Parse a string and match it to a registered tool."""
         _call = None
         try:
             _call = fuzzy_parse_json(func_call)
@@ -211,47 +174,50 @@ class ToolManager(BaseManager):
             return self.match_tool(_call)
         raise ValueError(f"Invalid function call {func_call}")
 
-    async def invoke(self, func_call: Any) -> Any:
-        """
-        Invokes a tool based on the provided function call.
+    async def invoke(self, func_call: dict | str | ActionRequest) -> Any:
+        """Invoke a tool based on the provided function call.
 
         Args:
-            func_call (Any): The function call to invoke.
+            func_call: The function call to invoke. Can be a dictionary,
+                       string, or ActionRequest object.
 
         Returns:
-            Any: The result of the function call.
+            The result of invoking the matched tool.
+
+        Raises:
+            ValueError: If function call can't be matched to registered tool.
         """
         function_calling = self.match_tool(func_call)
         return await function_calling.invoke()
 
     @property
     def schema_list(self) -> list[dict[str, Any]]:
-        """
-        Lists all tool schemas currently registered in the ToolManager.
+        """List all tool schemas currently registered in the ToolManager.
 
         Returns:
-            list[dict[str, Any]]: A list of tool schemas.
+            A list of schema dictionaries for all registered tools.
         """
         return [tool.schema_ for tool in self.registry.values()]
 
     def get_tool_schema(
         self,
-        tools: ToolType = False,
+        tools: TOOL_TYPE = False,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        """
-        Retrieves the schema for specific tools or all tools.
+        """Retrieve the schema for specific tools or all tools.
 
         Args:
-            tools (ToolType, optional): Specification of which tools to retrieve schemas for. Defaults to False.
-            **kwargs: Additional keyword arguments.
+            tools: Specification of which tools to retrieve schemas for.
+                   If True, return all tools. If False, return empty dict.
+                   Can also be a specific tool or list of tools.
+            **kwargs: Additional keyword arguments to include in output.
+
+        Returns:
+            A dictionary containing tool schemas and additional kwargs.
 
         Raises:
             ValueError: If a specified tool is not registered.
             TypeError: If an unsupported tool type is provided.
-
-        Returns:
-            dict[str, Any]: The schema(s) for the specified tools.
         """
         if isinstance(tools, bool):
             if tools:
@@ -266,19 +232,7 @@ class ToolManager(BaseManager):
         self,
         tool: Any,
     ) -> dict[str, Any] | list[dict[str, Any]]:
-        """
-        Retrieves the schema for a specific tool.
-
-        Args:
-            tool (Any): The tool to retrieve the schema for.
-
-        Returns:
-            dict[str, Any] | list[dict[str, Any]]: The schema for the specified tool.
-
-        Raises:
-            ValueError: If the tool is not registered.
-            TypeError: If the provided tool type is unsupported.
-        """
+        """Retrieve the schema for a specific tool."""
         if isinstance(tool, dict):
             return tool
         elif isinstance(tool, Tool) or isinstance(tool, str):

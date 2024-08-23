@@ -1,4 +1,5 @@
-from typing import Any, Callable, ClassVar, Literal
+from collections.abc import Callable
+from typing import Any, ClassVar, Literal
 
 from pydantic import Field, model_validator
 from typing_extensions import override
@@ -134,7 +135,9 @@ class Branch(BaseSession):
         )
 
         if isinstance(_msg, System):
-            _msg.recipient = self.ln_id  # the branch itself, system is to the branch
+            _msg.recipient = (
+                self.ln_id
+            )  # the branch itself, system is to the branch
             self._change_system(
                 system=_msg,
                 delete_previous_system=delete_previous_system,
@@ -178,7 +181,8 @@ class Branch(BaseSession):
 
         Args:
             system: The new system message.
-            delete_previous_system: If True, delete the previous system message.
+            delete_previous_system: If True, delete the previous system
+                message.
         """
         old_system = self.system
         self.system = system
@@ -228,12 +232,13 @@ class Branch(BaseSession):
 
         Args:
             sender (str): The ID of the sender.
-            message (bool, optional): Whether to process message mails. Defaults to True.
-            tool (bool, optional): Whether to process tool mails. Defaults to True.
-            imodel (bool, optional): Whether to process imodel mails. Defaults to True.
+            message (bool, optional): Whether to process message mails.
+            tool (bool, optional): Whether to process tool mails.
+            imodel (bool, optional): Whether to process imodel mails.
 
         Raises:
-            ValueError: If the sender does not exist or the mail category is invalid.
+            ValueError: If the sender does not exist or the mail category
+                is invalid.
         """
         skipped_requests = prog()
         if sender not in self.mailbox.pending_ins.keys():

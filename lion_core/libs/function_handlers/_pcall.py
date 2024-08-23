@@ -1,5 +1,6 @@
 import asyncio
-from typing import Any, Callable, Sequence, TypeVar
+from collections.abc import Callable, Sequence
+from typing import Any, TypeVar
 
 from lion_core.libs.function_handlers._ucall import ucall
 from lion_core.libs.function_handlers._util import is_coroutine_func
@@ -68,11 +69,15 @@ async def pcall(
             try:
                 if timing:
                     start_time = asyncio.get_event_loop().time()
-                    result = await asyncio.wait_for(ucall(func, **kwargs), timeout)
+                    result = await asyncio.wait_for(
+                        ucall(func, **kwargs), timeout
+                    )
                     end_time = asyncio.get_event_loop().time()
                     return index, result, end_time - start_time
                 else:
-                    result = await asyncio.wait_for(ucall(func, **kwargs), timeout)
+                    result = await asyncio.wait_for(
+                        ucall(func, **kwargs), timeout
+                    )
                     return index, result
             except asyncio.TimeoutError as e:
                 raise asyncio.TimeoutError(
@@ -89,7 +94,8 @@ async def pcall(
                 if attempts <= retries:
                     if verbose:
                         print(
-                            f"Attempt {attempts}/{retries + 1} failed: {e}, retrying..."
+                            f"Attempt {attempts}/{retries + 1} failed: {e}, "
+                            "retrying..."
                         )
                     await asyncio.sleep(current_delay)
                     current_delay *= backoff_factor
@@ -105,7 +111,9 @@ async def pcall(
         results.append(result)
         await asyncio.sleep(throttle_delay)
 
-    results.sort(key=lambda x: x[0])  # Sort results based on the original index
+    results.sort(
+        key=lambda x: x[0]
+    )  # Sort results based on the original index
 
     if timing:
         return [(result[1], result[2]) for result in results]
