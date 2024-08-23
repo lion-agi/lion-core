@@ -11,23 +11,15 @@ from lion_core.libs import rcall
 
 
 class FunctionCalling(ObservableAction):
-    """
-    Represents an action that calls a function with specified arguments.
+    """Represents an action that calls a function with specified arguments.
 
-    The `FunctionCalling` class encapsulates a function call, including
-    any pre-processing, invocation, and post-processing steps. It is designed
-    to be executed asynchronously.
+    Encapsulates a function call, including pre-processing, invocation,
+    and post-processing steps. Designed to be executed asynchronously.
 
     Attributes:
-        func_tool (Tool): The tool containing the function to be invoked, along
-            with optional pre- and post-processing logic.
-        arguments (dict[str, Any]): The arguments to be passed to the function
-            during invocation.
-
-    Methods:
-        invoke(): Asynchronously invokes the function with the stored arguments.
-        __str__(): Returns a string representation of the function call.
-        __repr__(): Returns a detailed string representation of the function call.
+        func_tool (Tool): Tool containing the function to be invoked.
+        arguments (dict[str, Any]): Arguments for the function invocation.
+        function_name (str | None): Name of the function to be called.
     """
 
     func_tool: Tool | None = Field(None, exclude=True)
@@ -48,20 +40,16 @@ class FunctionCalling(ObservableAction):
 
     @override
     async def invoke(self):
-        """
-        Asynchronously invokes the function with the stored arguments.
+        """Asynchronously invokes the function with stored arguments.
 
-        This method handles the invocation of the function stored in `func_tool`,
-        applying any pre-processing or post-processing steps as defined in
-        the tool. If a parser is defined in the tool, it is applied to the
-        result before returning.
+        Handles function invocation, applying pre/post-processing steps.
+        If a parser is defined, it's applied to the result before returning.
 
         Returns:
-            Any: The result of the function call, possibly processed through
-            a post-processor and/or parser.
+            Any: Result of the function call, possibly processed.
 
         Raises:
-            Exception: If the function call or any processing step fails.
+            Exception: If function call or processing steps fail.
         """
 
         @cd.pre_post_process(
@@ -99,21 +87,11 @@ class FunctionCalling(ObservableAction):
             await self.alog()
 
     def __str__(self) -> str:
-        """
-        Returns a string representation of the function call.
-
-        Returns:
-            str: A string representing the function name and its arguments.
-        """
+        """Returns a string representation of the function call."""
         return f"{self.func_tool.function_name}({self.arguments})"
 
     def __repr__(self) -> str:
-        """
-        Returns a detailed string representation of the function call.
-
-        Returns:
-            str: A string with the function name and its arguments for detailed representation.
-        """
+        """Returns a detailed string representation of the function call."""
         return (
             f"FunctionCalling(function={self.func_tool.function_name}, "
             f"arguments={self.arguments})"

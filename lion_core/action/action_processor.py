@@ -1,6 +1,7 @@
 import asyncio
+from typing import Any
 
-from typing_extensions import Any, override
+from typing_extensions import override
 
 from lion_core.abc import BaseProcessor
 from lion_core.action.base import ObservableAction
@@ -16,12 +17,12 @@ class ActionProcessor(BaseProcessor):
     actions from enqueuing to processing and stopping.
 
     Attributes:
-        capacity (int): The maximum number of actions that can be processed concurrently.
-        queue (asyncio.Queue): The queue holding the actions to be processed.
-        _stop_event (asyncio.Event): An event to signal stopping the processing.
+        capacity (int): Max number of actions processed concurrently.
+        queue (asyncio.Queue): Queue holding actions to be processed.
+        _stop_event (asyncio.Event): Event to signal stopping the processing.
         available_capacity (int): The remaining processing capacity.
-        execution_mode (bool): A flag indicating if the processor is currently executing actions.
-        refresh_time (float): The time interval between processing cycles.
+        execution_mode (bool): Flag indicating if processor is executing.
+        refresh_time (float): Time interval between processing cycles.
     """
 
     def __init__(self, capacity: int, refresh_time: float):
@@ -29,11 +30,11 @@ class ActionProcessor(BaseProcessor):
         Initializes an ActionProcessor instance.
 
         Args:
-            capacity (int): The maximum number of actions that can be processed concurrently.
-            refresh_time (float): The time interval between processing cycles.
+            capacity: Max number of actions processed concurrently.
+            refresh_time: Time interval between processing cycles.
 
         Raises:
-            ValueError: If capacity is less than 0 or refresh_time is negative.
+            ValueError: If capacity < 0 or refresh_time is negative.
         """
         if capacity < 0:
             raise ValueError("initial capacity must be >= 0")
@@ -52,7 +53,7 @@ class ActionProcessor(BaseProcessor):
         Enqueues an action to the processor queue.
 
         Args:
-            action (Action): The action to be added to the queue.
+            action: The action to be added to the queue.
         """
         await self.queue.put(action)
 
@@ -61,26 +62,20 @@ class ActionProcessor(BaseProcessor):
         Dequeues an action from the processor queue.
 
         Returns:
-            Action: The next action in the queue.
+            The next action in the queue.
         """
         return await self.queue.get()
 
     async def join(self) -> None:
-        """
-        Blocks until all items in the queue have been processed.
-        """
+        """Blocks until all items in the queue have been processed."""
         await self.queue.join()
 
     async def stop(self) -> None:
-        """
-        Signals the processor to stop processing actions.
-        """
+        """Signals the processor to stop processing actions."""
         self._stop_event.set()
 
     async def start(self) -> None:
-        """
-        Clears the stop event, allowing the processor to start or continue processing.
-        """
+        """Allows the processor to start or continue processing."""
         self._stop_event.clear()
 
     @property
@@ -89,7 +84,7 @@ class ActionProcessor(BaseProcessor):
         Indicates whether the processor has been stopped.
 
         Returns:
-            bool: True if the processor has been stopped, otherwise False.
+            True if the processor has been stopped, otherwise False.
         """
         return self._stop_event.is_set()
 
@@ -98,9 +93,8 @@ class ActionProcessor(BaseProcessor):
         """
         Processes the work items in the queue.
 
-        This method processes items in the queue up to the available capacity.
-        Each action is marked as `PROCESSING` before it is executed asynchronously.
-        After processing, the available capacity is reset.
+        Processes items up to the available capacity. Each action is marked as
+        `PROCESSING` before execution. After processing, capacity is reset.
         """
         tasks = set()
         prev, next = None, None
@@ -126,9 +120,8 @@ class ActionProcessor(BaseProcessor):
         """
         Executes the processor, continuously processing actions until stopped.
 
-        The processor runs in a loop, processing actions from the queue and
-        respecting the refresh time between cycles. The loop exits when the
-        processor is signaled to stop.
+        Runs in a loop, processing actions and respecting the refresh time
+        between cycles. Exits when signaled to stop.
         """
         self.execution_mode = True
         await self.start()
@@ -147,7 +140,7 @@ class ActionProcessor(BaseProcessor):
             **kwargs: Arguments passed to the ActionProcessor constructor.
 
         Returns:
-            ActionProcessor: A new instance of ActionProcessor.
+            A new instance of ActionProcessor.
         """
         processor = cls(**kwargs)
         return processor
@@ -160,7 +153,7 @@ class ActionProcessor(BaseProcessor):
             **kwargs: Arbitrary keyword arguments for requesting permission.
 
         Returns:
-            bool: Always returns True, indicating permission is granted.
+            Always returns True, indicating permission is granted.
         """
         return True
 
