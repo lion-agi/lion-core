@@ -4,49 +4,24 @@ from lion_core.abc._concept import AbstractObserver
 
 
 class BaseManager(AbstractObserver):
-    """
-    High-level observers coordinating other observers and system
-    components. Embodies emergent control in complex systems, where global
-    behaviors arise from local interactions and observations.
-    """
-
-    pass
+    """coordinating other observers and system components"""
 
 
 class BaseExecutor(AbstractObserver):
-    """
-    Active observers performing tasks based on observations. Inspired by
-    measurement-induced state changes in quantum mechanics, where observation
-    directly influences system state.
-    """
+    """Active observers performing tasks based on observations"""
 
     @abstractmethod
     async def forward(self, *args, **kwargs):
-        """
-        Asynchronously executes the observer's task, potentially altering
-        system state. Models concurrent operations and parallel processing
-        in complex, distributed systems.
-        """
+        """executes the observer's task"""
         pass
 
 
 class BaseProcessor(AbstractObserver):
-    """
-    Specialized observers for information transformation and analysis.
-    Embodies information processing in complex systems, paralleling quantum
-    information theory and cognitive processing models.
-    """
+    """observers for information transformation and analysis."""
 
     @abstractmethod
     async def process(self, *args, **kwargs):
-        """
-        Asynchronously processes information based on observations.
-        Encapsulates core information processing functionality, supporting
-        continuous, real-time processing in dynamic systems.
-        """
         pass
-
-    # engine must have processor or executor
 
 
 class BaseEngine(AbstractObserver):

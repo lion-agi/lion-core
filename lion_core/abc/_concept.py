@@ -2,10 +2,7 @@ from abc import ABC
 
 
 class Tao(ABC):
-    """
-    Foundational abstraction embodying interconnectedness and existence.
-    Root for all classes, reflecting Taoist unity and Category Theory relations
-    """
+    """Foundational abstraction embodying existence."""
 
 
 class AbstractSpace(Tao):
@@ -26,10 +23,7 @@ class AbstractObserver(Tao):
 
 
 class AbstractObservation(Tao):
-    """
-    Act of observing, integrating phenomenology and information theory.
-    Captures information exchange and meaning construction in complex systems.
-    """
+    """Act of observing"""
 
 
 __all__ = [

@@ -14,6 +14,7 @@ from ._observer import (
     BaseiModel,
 )
 from ._space import Collective, Container, Ordering, Structure
+from ._record import ImmutableRecord, BaseRecord, MutableRecord
 
 
 __all__ = [
@@ -38,4 +39,7 @@ __all__ = [
     "Structure",
     "Temporal",
     "Traversal",
+    "ImmutableRecord",
+    "BaseRecord",
+    "MutableRecord",
 ]
