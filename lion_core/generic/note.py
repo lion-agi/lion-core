@@ -198,7 +198,7 @@ class Note(BaseModel, Container):
         """Return a detailed string representation of the Note's content."""
         return repr(self.content)
 
-    def __getitem__(self, *indices: INDICE_TYPE) -> Any:
+    def __getitem__(self, indices: INDICE_TYPE) -> Any:
         """Get an item from the Note using index notation."""
         indices = to_list(indices, flatten=True, dropna=True)
         return self.get(indices)

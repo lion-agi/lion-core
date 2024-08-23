@@ -99,7 +99,7 @@ def _(
     str_type: Literal["json", "xml"] = "json",
     parser: Callable[[str], dict[str, Any]] | None = None,
     **kwargs: Any,
-) -> dict[str, Any]:
+) -> dict[str, Any] | list[dict[str, Any]]:
     """Handle string inputs."""
     if not input_:
         return {}
