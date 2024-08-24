@@ -31,6 +31,7 @@ def lcall(
 
 async def alcall(
     func: Callable[..., T],
+    /,
     input_: list[Any],
     retries: int = 0,
     initial_delay: float = 0,

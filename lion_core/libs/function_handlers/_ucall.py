@@ -14,6 +14,7 @@ ErrorHandler = Callable[[Exception], Any]
 
 async def ucall(
     func: Callable[..., T],
+    /,
     *args: Any,
     error_map: dict[type, ErrorHandler] | None = None,
     **kwargs: Any,

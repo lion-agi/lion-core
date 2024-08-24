@@ -12,6 +12,7 @@ ErrorHandler = Callable[[Exception], Any]
 
 async def pcall(
     funcs: Sequence[Callable[..., T]],
+    /,
     retries: int = 0,
     initial_delay: float = 0,
     delay: float = 0,
