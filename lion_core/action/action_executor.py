@@ -1,9 +1,8 @@
 from typing import Any
 
-from lion_core.abc import BaseExecutor
+from lion_core.abc import BaseExecutor, EventStatus
 from lion_core.action.action_processor import ActionProcessor
 from lion_core.action.base import ObservableAction
-from lion_core.action.status import ActionStatus
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import Progression, prog
 
@@ -56,7 +55,7 @@ class ActionExecutor(BaseExecutor):
             Pile: A collection of actions that are still pending.
         """
         return pile(
-            [i for i in self.pile if i.status == ActionStatus.PENDING],
+            [i for i in self.pile if i.status == EventStatus.PENDING],
         )
 
     @property
@@ -68,7 +67,7 @@ class ActionExecutor(BaseExecutor):
             Pile: A collection of actions that have been completed.
         """
         return pile(
-            [i for i in self.pile if i.status == ActionStatus.COMPLETED],
+            [i for i in self.pile if i.status == EventStatus.COMPLETED],
         )
 
     async def append(self, action: ObservableAction) -> None:

@@ -3,8 +3,7 @@ from typing import Any
 from pydantic import Field
 
 from lion_core import event_log_manager
-from lion_core.abc import Action
-from lion_core.action.status import ActionStatus
+from lion_core.abc import Action, EventStatus
 from lion_core.generic.element import Element
 from lion_core.generic.log import BaseLog
 
@@ -19,7 +18,7 @@ class ObservableAction(Element, Action):
     that can be used to check for permission before the action is performed.
 
     Attributes:
-        status (ActionStatus): The current status of the action.
+        status (EventStatus): The current status of the action.
         execution_time (float): The time taken to execute the action.
         response (Any): The response from the action execution.
         error (str): Any error message associated with the action.
@@ -27,7 +26,7 @@ class ObservableAction(Element, Action):
         content_fields (list): Fields to include in the content of the log.
     """
 
-    status: ActionStatus = ActionStatus.PENDING
+    status: EventStatus = EventStatus.PENDING
     execution_time: float = None
     response: Any = None
     error: str = None

@@ -3,8 +3,8 @@ from typing import Any
 from pydantic import Field
 from typing_extensions import override
 
+from lion_core.abc import EventStatus
 from lion_core.action.base import ObservableAction
-from lion_core.action.status import ActionStatus
 from lion_core.action.tool import Tool
 from lion_core.libs import CallDecorator as cd
 from lion_core.libs import rcall
@@ -73,7 +73,7 @@ class FunctionCalling(ObservableAction):
             result, elp = await _inner(**self.arguments)
             self.response = result
             self.execution_time = elp
-            self.status = ActionStatus.COMPLETED
+            self.status = EventStatus.COMPLETED
 
             if self.func_tool.parser is not None:
                 result = self.func_tool.parser(result)
@@ -82,7 +82,7 @@ class FunctionCalling(ObservableAction):
             return result
 
         except Exception as e:
-            self.status = ActionStatus.FAILED
+            self.status = EventStatus.FAILED
             self.error = str(e)
             await self.alog()
 
