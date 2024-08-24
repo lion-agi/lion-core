@@ -2,6 +2,7 @@ from typing import Any
 
 from pydantic import Field, PrivateAttr
 
+from lion_core.abc import BaseiModel
 from lion_core.action.tool_manager import ToolManager
 from lion_core.communication.mail_manager import MailManager
 from lion_core.communication.message import RoledMessage
@@ -11,7 +12,6 @@ from lion_core.generic.flow import Flow
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import Progression, prog
 from lion_core.generic.utils import to_list_type
-from lion_core.imodel.imodel import iModel
 from lion_core.session.base import BaseSession
 from lion_core.session.branch import Branch
 from lion_core.setting import LN_UNDEFINED
@@ -44,7 +44,7 @@ class Session(BaseSession):
         system_datetime: Any = None,
         user: str | None = None,
         name: str | None = None,
-        imodel: iModel | None = None,
+        imodel: BaseiModel | None = None,
         messages: Pile | None = None,
         progress: Progression | None = None,
         tool_manager: ToolManager | None = None,

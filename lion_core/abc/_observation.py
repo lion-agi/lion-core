@@ -1,7 +1,16 @@
 from abc import abstractmethod
+from enum import Enum
 from typing import Any
 
 from lion_core.abc._concept import AbstractObservation
+from lion_core.exceptions import LionAccessError
+
+
+class EventStatus(str, Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
 
 
 class Event(AbstractObservation):
@@ -10,6 +19,37 @@ class Event(AbstractObservation):
 
     This class serves as a base for more specific event types.
     """
+
+    status: EventStatus
+
+    @property
+    def request(self) -> Any:
+        """
+        Retrieve the request associated with the event.
+
+        Returns:
+            Any: The request associated with the event.
+        """
+        return self._request()
+
+    def _request(self) -> Any:
+        """override this method in child class."""
+        return {}
+
+    @classmethod
+    def from_dict(cls, data: Any):
+        """
+        Class method to create an instance from a dictionary.
+
+        Args:
+            data: The dictionary data to create an instance from.
+
+        Raises:
+            LionAccessError: Always raised as actions cannot be recreated.
+        """
+        raise LionAccessError(
+            "An event cannot be recreated. Once it's done, it's done."
+        )
 
 
 class Condition(Event):

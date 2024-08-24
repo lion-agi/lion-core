@@ -43,7 +43,11 @@ class TestBCallFunction(unittest.IsolatedAsyncioTestCase):
         inputs = [1, 2, 3, 4, 5]
         batches = []
         async for batch in bcall(
-            inputs, async_func_with_error, batch_size=2, retries=1, default=0
+            inputs,
+            async_func_with_error,
+            batch_size=2,
+            num_retries=1,
+            retry_default=0,
         ):
             batches.append(batch)
         self.assertEqual(batches, [[2, 4], [0, 8], [10]])
@@ -52,7 +56,7 @@ class TestBCallFunction(unittest.IsolatedAsyncioTestCase):
         inputs = [1, 2, 3]
         with self.assertRaises(asyncio.TimeoutError):
             async for batch in bcall(
-                inputs, async_func, batch_size=2, timeout=0.05
+                inputs, async_func, batch_size=2, retry_timeout=0.05
             ):
                 pass
 

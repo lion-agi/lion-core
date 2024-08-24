@@ -7,7 +7,7 @@ from ._concept import (
     AbstractObserver,
     AbstractSpace,
 )
-from ._observation import Action, Condition, Event, Signal
+from ._observation import Action, Condition, Event, EventStatus, Signal
 from ._observer import (
     BaseEngine,
     BaseExecutor,
@@ -33,6 +33,7 @@ __all__ = [
     "Container",
     "Collective",
     "Event",
+    "EventStatus",
     "Observable",
     "Ordering",
     "Relational",

@@ -6,7 +6,7 @@ The `ActionProcessor` class handles the execution of actions in the Lion framewo
 ```mermaid
 classDiagram
     class ObservableAction {
-        +status: ActionStatus
+        +status: EventStatus
         +execution_time: float
         +response: Any
         +error: str
