@@ -8,6 +8,7 @@ from lion_core.action.base import ObservableAction
 from lion_core.action.tool import Tool
 from lion_core.libs import CallDecorator as cd
 from lion_core.libs import rcall
+from lion_core.setting import RetryConfig
 
 
 class FunctionCalling(ObservableAction):
@@ -31,7 +32,7 @@ class FunctionCalling(ObservableAction):
         self,
         func_tool: Tool,
         arguments: dict[str, Any],
-        retry_config: dict[str, Any] | None = None,
+        retry_config: RetryConfig | None = None,
     ):
         super().__init__(retry_config=retry_config)
         self.func_tool: Tool = func_tool
@@ -57,7 +58,7 @@ class FunctionCalling(ObservableAction):
             preprocess_kwargs=self.func_tool.pre_processor_kwargs,
         )
         async def _inner(**kwargs):
-            config = {**self.retry_config, **kwargs}
+            config = {**self.retry_config.to_dict(), **kwargs}
             config["retry_timing"] = True
             result, elp = await rcall(self.func_tool.function, **config)
             if self.func_tool.post_processor:
@@ -71,7 +72,7 @@ class FunctionCalling(ObservableAction):
 
         try:
             result, elp = await _inner(**self.arguments)
-            self.response = result
+            self.execution_response = result
             self.execution_time = elp
             self.status = EventStatus.COMPLETED
 
@@ -83,7 +84,7 @@ class FunctionCalling(ObservableAction):
 
         except Exception as e:
             self.status = EventStatus.FAILED
-            self.error = str(e)
+            self.execution_error = str(e)
             await self.alog()
 
     def __str__(self) -> str:

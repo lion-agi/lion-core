@@ -1,11 +1,12 @@
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from lion_core import event_log_manager
 from lion_core.abc import Action, EventStatus
 from lion_core.generic.element import Element
 from lion_core.generic.log import BaseLog
+from lion_core.setting import RetryConfig
 
 
 class ObservableAction(Element, Action):
@@ -28,14 +29,16 @@ class ObservableAction(Element, Action):
 
     status: EventStatus = EventStatus.PENDING
     execution_time: float = None
-    response: Any = None
-    error: str = None
-    retry_config: dict = Field(default_factory=dict, exclude=True)
-    content_fields: list = ["response"]
+    execution_response: Any = None
+    execution_error: str = None
+    retry_config: RetryConfig = Field(
+        default_factory=RetryConfig, exclude=True
+    )
+    _content_fields: list = PrivateAttr(["execution_response"])
 
-    def __init__(self, retry_config: dict = None):
+    def __init__(self, retry_config: RetryConfig = None):
         super().__init__()
-        self.retry_config = retry_config or {}
+        self.retry_config = retry_config or RetryConfig()
 
     async def alog(self) -> BaseLog:
         """Log the action asynchronously."""
@@ -49,8 +52,8 @@ class ObservableAction(Element, Action):
             BaseLog: A log entry representing the action.
         """
         dict_ = self.to_dict()
-        content = {k: dict_[k] for k in self.content_fields if k in dict_}
-        loginfo = {k: dict_[k] for k in dict_ if k not in self.content_fields}
+        content = {k: dict_[k] for k in self._content_fields if k in dict_}
+        loginfo = {k: dict_[k] for k in dict_ if k not in self._content_fields}
         return BaseLog(content=content, loginfo=loginfo)
 
 
