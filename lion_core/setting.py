@@ -1,6 +1,6 @@
 from datetime import timezone
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class LionUndefined:
@@ -24,6 +24,8 @@ LN_UNDEFINED = LionUndefined()
 
 
 class SchemaModel(BaseModel):
+
+    schema_version: int | float | str | None = Field(None, exclude=True)
 
     def to_dict(self):
         return self.model_dump()
@@ -62,14 +64,14 @@ class LionIDConfig(SchemaModel):
 
 
 class RetryConfig(SchemaModel):
-    num_retries: int = 3
+    num_retries: int = 0
     initial_delay: int = 0
-    retry_delay: int = 1
-    backoff_factor: int = 2
+    retry_delay: int = 0
+    backoff_factor: int = 1
     retry_default: str = LN_UNDEFINED
-    retry_timeout: int = 180
+    retry_timeout: int | None = None
     retry_timing: bool = False
-    verbose_retry: bool = True
+    verbose_retry: bool = False
     error_msg: str = None
     error_map: dict = None
 
