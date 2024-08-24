@@ -1,5 +1,4 @@
 import os
-import re
 from collections import defaultdict
 
 def analyze_file(file_path):
@@ -97,6 +96,12 @@ def print_analysis(total_stats, file_stats):
         print(f"  {file}: {stats['code_lines']} code lines")
 
 if __name__ == "__main__":
+    print("-----codebase-----")
     package_path = "./lion_core"  # Replace with your package path
+    total_stats, file_stats = analyze_package(package_path)
+    print_analysis(total_stats, file_stats)
+
+    print("-----tests-----")
+    package_path = "./tests"  # Replace with your package path
     total_stats, file_stats = analyze_package(package_path)
     print_analysis(total_stats, file_stats)
