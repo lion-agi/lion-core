@@ -37,11 +37,6 @@ class Note(BaseModel, Container):
         super().__init__()
         self.content = kwargs
 
-    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
-        """Initialize subclass and register update method."""
-        super().__pydantic_init_subclass__(**kwargs)
-        cls.update.register(cls, cls._update_with_note)
-
     @field_serializer("content")
     def _serialize_content(self, value: Any) -> dict[str, Any]:
         """Serialize the content"""
