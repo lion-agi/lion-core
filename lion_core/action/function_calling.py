@@ -58,11 +58,11 @@ class FunctionCalling(ObservableAction):
         )
         async def _inner(**kwargs):
             config = {**self.retry_config, **kwargs}
-            config["timing"] = True
+            config["retry_timing"] = True
             result, elp = await rcall(self.func_tool.function, **config)
             if self.func_tool.post_processor:
                 kwargs = self.func_tool.post_processor_kwargs or {}
-                kwargs["timing"] = True
+                kwargs["retry_timing"] = True
                 result, elp2 = await rcall(
                     self.func_tool.post_processor, result, **kwargs
                 )

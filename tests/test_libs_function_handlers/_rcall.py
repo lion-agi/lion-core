@@ -33,26 +33,28 @@ async def mock_handler(e: Exception) -> str:
 
 class TestRCallFunction(unittest.IsolatedAsyncioTestCase):
     async def test_rcall_basic(self):
-        result = await rcall(async_func, 1, retries=2)
+        result = await rcall(async_func, 1, num_retries=2)
         self.assertEqual(result, 2)
 
     async def test_rcall_with_retries(self):
-        result = await rcall(async_func_with_error, 3, retries=1, default=0)
+        result = await rcall(
+            async_func_with_error, 3, num_retries=1, retry_default=0
+        )
         self.assertEqual(result, 0)
 
     async def test_rcall_with_timeout(self):
         with self.assertRaises(RuntimeError):
-            await rcall(async_func, 1, timeout=0.05)
+            await rcall(async_func, 1, retry_timeout=0.05)
 
     async def test_rcall_with_error_handling(self):
         error_map = {ValueError: mock_handler}
         result = await rcall(
-            async_func_with_error, 3, retries=1, error_map=error_map
+            async_func_with_error, 3, num_retries=1, error_map=error_map
         )
         self.assertEqual(result, "handled: mock error")
 
     async def test_rcall_with_timing(self):
-        result, duration = await rcall(async_func, 1, timing=True)
+        result, duration = await rcall(async_func, 1, retry_timing=True)
         self.assertEqual(result, 2)
         self.assertTrue(duration > 0)
 
@@ -66,10 +68,10 @@ class TestRCallFunction(unittest.IsolatedAsyncioTestCase):
             await rcall(
                 async_func_with_error,
                 3,
-                retries=2,
-                delay=0.1,
+                num_retries=2,
+                retry_delay=0.1,
                 backoff_factor=2,
-                default=0,
+                retry_default=0,
             )
             mock_sleep.assert_any_call(0.1)
             mock_sleep.assert_any_call(0.2)
@@ -79,13 +81,17 @@ class TestRCallFunction(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(0.1)
             return x + add
 
-        result = await rcall(async_func_with_kwargs, 1, retries=2, add=2)
+        result = await rcall(async_func_with_kwargs, 1, num_retries=2, add=2)
         self.assertEqual(result, 3)
 
     async def test_rcall_with_verbose(self):
         with patch("builtins.print") as mock_print:
             await rcall(
-                async_func_with_error, 3, retries=1, verbose=True, default=0
+                async_func_with_error,
+                3,
+                num_retries=1,
+                verbose_retry=True,
+                retry_default=0,
             )
             mock_print.assert_any_call(
                 "Attempt 1/2 failed: mock error, retrying..."
