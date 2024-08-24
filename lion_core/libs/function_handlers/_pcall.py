@@ -13,14 +13,14 @@ ErrorHandler = Callable[[Exception], Any]
 async def pcall(
     funcs: Sequence[Callable[..., T]],
     /,
-    retries: int = 0,
+    num_retries: int = 0,
     initial_delay: float = 0,
-    delay: float = 0,
+    retry_delay: float = 0,
     backoff_factor: float = 1,
-    default: Any = LN_UNDEFINED,
-    timeout: float | None = None,
-    timing: bool = False,
-    verbose: bool = True,
+    retry_default: Any = LN_UNDEFINED,
+    retry_timeout: float | None = None,
+    retry_timing: bool = False,
+    verbose_retry: bool = True,
     error_msg: str | None = None,
     error_map: dict[type, ErrorHandler] | None = None,
     max_concurrent: int | None = None,
@@ -65,24 +65,25 @@ async def pcall(
 
     async def _execute_task(func: Callable[..., Any], index: int) -> Any:
         attempts = 0
-        current_delay = delay
+        current_delay = retry_delay
         while True:
             try:
-                if timing:
+                if retry_timing:
                     start_time = asyncio.get_event_loop().time()
                     result = await asyncio.wait_for(
-                        ucall(func, **kwargs), timeout
+                        ucall(func, **kwargs), retry_timeout
                     )
                     end_time = asyncio.get_event_loop().time()
                     return index, result, end_time - start_time
                 else:
                     result = await asyncio.wait_for(
-                        ucall(func, **kwargs), timeout
+                        ucall(func, **kwargs), retry_timeout
                     )
                     return index, result
             except asyncio.TimeoutError as e:
                 raise asyncio.TimeoutError(
-                    f"{error_msg or ''} Timeout {timeout} seconds exceeded"
+                    f"{error_msg or ''} Timeout {retry_timeout} seconds "
+                    "exceeded"
                 ) from e
             except Exception as e:
                 if error_map and type(e) in error_map:
@@ -92,17 +93,17 @@ async def pcall(
                     else:
                         return index, handler(e)
                 attempts += 1
-                if attempts <= retries:
-                    if verbose:
+                if attempts <= num_retries:
+                    if verbose_retry:
                         print(
-                            f"Attempt {attempts}/{retries + 1} failed: {e}, "
-                            "retrying..."
+                            f"Attempt {attempts}/{num_retries + 1} failed: {e}"
+                            ", retrying..."
                         )
                     await asyncio.sleep(current_delay)
                     current_delay *= backoff_factor
                 else:
-                    if default is not LN_UNDEFINED:
-                        return index, default
+                    if retry_default is not LN_UNDEFINED:
+                        return index, retry_default
                     raise e
 
     tasks = [_task(func, index) for index, func in enumerate(funcs)]
@@ -116,7 +117,7 @@ async def pcall(
         key=lambda x: x[0]
     )  # Sort results based on the original index
 
-    if timing:
+    if retry_timing:
         return [(result[1], result[2]) for result in results]
     else:
         return [result[1] for result in results]

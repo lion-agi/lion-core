@@ -32,14 +32,14 @@ class TestLCallFunction(unittest.IsolatedAsyncioTestCase):
     async def test_lcall_with_retries(self):
         inputs = [1, 2, 3]
         results = await alcall(
-            mock_func_with_error, inputs, retries=1, default=0
+            mock_func_with_error, inputs, num_retries=1, retry_default=0
         )
         self.assertEqual(results, [1, 2, 0])
 
     async def test_lcall_with_timeout(self):
         inputs = [1, 2, 3]
         with self.assertRaises(asyncio.TimeoutError):
-            await alcall(mock_func, inputs, timeout=0.05)
+            await alcall(mock_func, inputs, retry_timeout=0.05)
 
     async def test_lcall_with_error_handling(self):
         inputs = [1, 2, 3]
@@ -61,7 +61,7 @@ class TestLCallFunction(unittest.IsolatedAsyncioTestCase):
 
     async def test_lcall_with_timing(self):
         inputs = [1, 2, 3]
-        results = await alcall(mock_func, inputs, timing=True)
+        results = await alcall(mock_func, inputs, retry_timing=True)
         self.assertEqual(len(results), 3)
         for result in results:
             self.assertIsInstance(result, tuple)
@@ -88,10 +88,10 @@ class TestLCallFunction(unittest.IsolatedAsyncioTestCase):
             await alcall(
                 mock_func_with_error,
                 inputs,
-                retries=2,
-                delay=0.1,
+                num_retries=2,
+                retry_delay=0.1,
                 backoff_factor=2,
-                default=0,
+                retry_default=0,
             )
             mock_sleep.assert_any_call(0.1)
             mock_sleep.assert_any_call(0.2)

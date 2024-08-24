@@ -52,13 +52,13 @@ class TestMCallFunction(unittest.IsolatedAsyncioTestCase):
     async def test_mcall_with_retries(self):
         inputs = [1, 2, 3, 4, 5]
         funcs = [async_func_with_error] * 5
-        results = await mcall(inputs, funcs, retries=1, default=0)
+        results = await mcall(inputs, funcs, num_retries=1, retry_default=0)
         self.assertEqual(results, [2, 4, 0, 8, 10])
 
     async def test_mcall_with_timeout(self):
         inputs = [1, 2, 3]
         with self.assertRaises(RuntimeError):
-            await mcall(inputs, async_func, timeout=0.05)
+            await mcall(inputs, async_func, retry_timeout=0.05)
 
     async def test_mcall_with_error_handling(self):
         error_map = {ValueError: mock_handler}

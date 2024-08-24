@@ -52,14 +52,14 @@ async def test_tcall_sync_func():
 
 @pytest.mark.asyncio
 async def test_tcall_async_func_with_timing():
-    result, duration = await tcall(async_func, 1, timing=True)
+    result, duration = await tcall(async_func, 1, retry_timing=True)
     assert result == 2
     assert duration > 0
 
 
 @pytest.mark.asyncio
 async def test_tcall_sync_func_with_timing():
-    result, duration = await tcall(sync_func, 1, timing=True)
+    result, duration = await tcall(sync_func, 1, retry_timing=True)
     assert result == 2
     assert duration > 0
 
@@ -94,13 +94,13 @@ async def test_tcall_with_initial_delay():
 @pytest.mark.asyncio
 async def test_tcall_with_timeout():
     with pytest.raises(asyncio.TimeoutError):
-        await tcall(async_func, 1, timeout=0.05)
+        await tcall(async_func, 1, retry_timeout=0.05)
 
 
 @pytest.mark.asyncio
 async def test_tcall_with_suppress_err():
     result = await tcall(
-        async_func_with_error, 3, suppress_err=True, default=0
+        async_func_with_error, 3, suppress_err=True, retry_default=0
     )
     assert result == 0
 
