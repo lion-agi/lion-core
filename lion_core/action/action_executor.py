@@ -30,6 +30,7 @@ class ActionExecutor(BaseExecutor):
     """
 
     processor_class: type[ActionProcessor] = ActionProcessor
+    strict: bool = True
 
     def __init__(self, **kwargs: Any) -> None:
         """
@@ -38,10 +39,13 @@ class ActionExecutor(BaseExecutor):
         Args:
             **kwargs: Configuration parameters for initializing the processor.
         """
-        self.processor_config = kwargs
-        self.pile: Pile[ObservableAction] = pile(item_type={ObservableAction})
+        super().__init__(**kwargs)
+        self.pile: Pile[ObservableAction] = pile(
+            item_type={self.processor_class.event_type},
+            strict=self.strict,
+        )
         self.pending: Progression = prog()
-        self.processor: ActionProcessor = None
+        self.processor: self.processor_class = None
 
     @property
     def pending_action(self) -> Pile:
@@ -76,37 +80,6 @@ class ActionExecutor(BaseExecutor):
         """
         await self.pile.ainclude(action)
         self.pending.include(action)
-
-    async def create_processor(self) -> None:
-        """
-        Creates the processor for handling actions.
-
-        This method initializes the processor using the configuration provided
-        during the instantiation of the executor.
-        """
-        self.processor = await self.processor_class.create(
-            **self.processor_config,
-        )
-
-    async def start(self) -> None:
-        """
-        Starts the action processor.
-
-        This method ensures that the processor is created if it doesn't already
-        exist and then starts processing actions.
-        """
-        if not self.processor:
-            await self.create_processor()
-        await self.processor.start()
-
-    async def stop(self) -> None:
-        """
-        Stops the action processor.
-
-        This method stops the processor if it is currently running.
-        """
-        if self.processor:
-            await self.processor.stop()
 
     async def forward(self) -> None:
         """

@@ -5,7 +5,6 @@ from pydantic import Field
 from lion_core import event_log_manager
 from lion_core.abc import Action
 from lion_core.action.status import ActionStatus
-from lion_core.exceptions import LionAccessError
 from lion_core.generic.element import Element
 from lion_core.generic.log import BaseLog
 
@@ -39,16 +38,6 @@ class ObservableAction(Element, Action):
         super().__init__()
         self.retry_config = retry_config or {}
 
-    @property
-    def request(self) -> dict:
-        """
-        The request to get permission for, if any.
-
-        Returns:
-            dict: A dictionary containing the request details.
-        """
-        return {}
-
     async def alog(self) -> BaseLog:
         """Log the action asynchronously."""
         await event_log_manager.alog(self.to_log())
@@ -64,21 +53,6 @@ class ObservableAction(Element, Action):
         content = {k: dict_[k] for k in self.content_fields if k in dict_}
         loginfo = {k: dict_[k] for k in dict_ if k not in self.content_fields}
         return BaseLog(content=content, loginfo=loginfo)
-
-    @classmethod
-    def from_dict(cls, data: Any):
-        """
-        Class method to create an instance from a dictionary.
-
-        Args:
-            data: The dictionary data to create an instance from.
-
-        Raises:
-            LionAccessError: Always raised as actions cannot be recreated.
-        """
-        raise LionAccessError(
-            "An action cannot be recreated. Once it's done, it's done."
-        )
 
 
 __all__ = ["ObservableAction"]
