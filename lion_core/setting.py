@@ -1,5 +1,7 @@
 from datetime import timezone
 
+from pydantic import BaseModel
+
 
 class LionUndefined:
     def __init__(self):
@@ -19,21 +21,44 @@ class LionUndefined:
 
 
 LN_UNDEFINED = LionUndefined()
-# UNDEFINED = [None, LN_UNDEFINED]
 
 
-LION_ID_CONFIG = {
-    "n": 42,
-    "random_hyphen": True,
-    "num_hyphens": 4,
-    "hyphen_start_index": 6,
-    "hyphen_end_index": -6,
-    "prefix": "ln",
-    "postfix": "",
-}
+class SchemaModel(BaseModel):
+
+    def to_dict(self):
+        return self.model_dump()
+
+    @classmethod
+    def from_dict(cls, **data):
+        return cls(**data)
 
 
-BASE_LION_FIELDS = [
+class LionIDConfig(SchemaModel):
+    n: int = 42
+    random_hyphen: bool = True
+    num_hyphens: int = 4
+    hyphen_start_index: int = 6
+    hyphen_end_index: int = -6
+    prefix: str = "ln"
+    postfix: str = ""
+
+
+class RetryConfig(SchemaModel):
+    num_retries: int = 3
+    initial_delay: int = 0
+    retry_delay: int = 1
+    backoff_factor: int = 2
+    retry_default: str = LN_UNDEFINED
+    retry_timeout: int = 180
+    retry_timing: bool = False
+    verbose_retry: bool = True
+    error_msg: str = None
+    error_map: dict = None
+
+
+LION_ID_CONFIG = LionIDConfig().to_dict()
+
+BASE_LION_FIELDS = {
     "ln_id",
     "timestamp",
     "metadata",
@@ -41,7 +66,7 @@ BASE_LION_FIELDS = [
     "content",
     "created",
     "embedding",
-]
+}
 
 TIME_CONFIG = {
     "tz": timezone.utc,
