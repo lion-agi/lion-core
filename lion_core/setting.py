@@ -32,6 +32,24 @@ class SchemaModel(BaseModel):
     def from_dict(cls, **data):
         return cls(**data)
 
+    @classmethod
+    def schema_keys(cls) -> set:
+        return set(cls.model_fields.keys())
+
+    def update(self, new_schema_obj: bool = False, **kwargs):
+        _schema = self.to_dict()
+        for k, v in kwargs.items():
+            if k in _schema:
+                if not new_schema_obj:
+                    setattr(self, k, v)
+                else:
+                    _schema[k] = v
+        if new_schema_obj:
+            return self.from_dict(**_schema)
+
+    def copy(self):
+        return self.model_copy()
+
 
 class LionIDConfig(SchemaModel):
     n: int = 42
