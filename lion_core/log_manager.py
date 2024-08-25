@@ -4,10 +4,10 @@ import os
 from typing import Any, TypeVar
 
 from lion_core.abc._observer import BaseManager
-from lion_core.generic.log import BaseLog
+from lion_core.generic.log import Log
 from lion_core.generic.pile import Pile, pile
 
-T = TypeVar("T", bound=BaseLog)
+T = TypeVar("T", bound=Log)
 
 
 class LogManager(BaseManager):
@@ -19,7 +19,7 @@ class LogManager(BaseManager):
         subfolder=None,
         file_prefix: str = None,
     ):
-        self.logs: Pile[T] = pile(logs or {}, {BaseLog})
+        self.logs: Pile[T] = pile(logs or {}, {Log})
         self.persist_dir = persist_dir
         self.persist_path = persist_path
         self.file_prefix = file_prefix
