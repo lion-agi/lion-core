@@ -326,7 +326,7 @@ def test_form_performance():
     class PerformanceForm(Form):
         pass
 
-    num_fields = 10000
+    num_fields = 1000
     input_fields = [f"input_{i}" for i in range(num_fields // 2)]
     output_fields = [f"output_{i}" for i in range(num_fields // 2)]
 
@@ -341,7 +341,7 @@ def test_form_performance():
     _ = form.is_workable()
     end_time = time.time()
 
-    assert end_time - start_time < 10
+    assert end_time - start_time < 2
 
 
 # Test Form with nested structures

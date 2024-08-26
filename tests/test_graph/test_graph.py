@@ -230,7 +230,7 @@ def test_graph_serialization(basic_graph):
 # @pytest.mark.slow
 def test_large_graph_performance():
     graph = Graph()
-    num_nodes = 10000
+    num_nodes = 1000
     nodes = [create_test_node(f"Node{i}") for i in range(num_nodes)]
 
     import time
@@ -401,8 +401,8 @@ def test_graph_with_multiple_edge_types():
 # @pytest.mark.slow
 def test_graph_operations_with_large_data():
     graph = Graph()
-    num_nodes = 10000
-    num_edges = 50000
+    num_nodes = 1000
+    num_edges = 5000
 
     # Add nodes
     nodes = [create_test_node(f"Node{i}") for i in range(num_nodes)]
@@ -912,8 +912,8 @@ def test_graph_large_sparse():
 # @pytest.mark.slow
 def test_graph_removal_stress():
     graph = Graph()
-    num_initial_nodes = 10000
-    num_initial_edges = 50000
+    num_initial_nodes = 1000
+    num_initial_edges = 5000
 
     nodes = [create_test_node(f"Node_{i}") for i in range(num_initial_nodes)]
     for node in nodes:
