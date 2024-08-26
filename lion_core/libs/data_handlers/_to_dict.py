@@ -79,6 +79,10 @@ def to_dict(
 def _(
     input_: LionUndefined | None,
     /,
+    *,
+    use_model_dump: bool = False,
+    str_type: Literal["json", "xml"] | None = None,
+    parser: Callable[[str], dict[str, Any]] | None = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Handle LionUndefined and None inputs."""
@@ -96,7 +100,8 @@ def _(
     input_: str,
     /,
     *,
-    str_type: Literal["json", "xml"] = "json",
+    use_model_dump: bool = False,
+    str_type: Literal["json", "xml"] | None = "json",
     parser: Callable[[str], dict[str, Any]] | None = None,
     **kwargs: Any,
 ) -> dict[str, Any] | list[dict[str, Any]]:
