@@ -169,7 +169,7 @@ class Instruction(RoledMessage):
 
     def update_context(self, *args, **kwargs) -> None:
         """Add new context to the instruction."""
-        self.content["context"] = self.content.get("context", default=[])
+        self.content["context"] = self.content.get("context", [])
         if args:
             self.content["context"].extend(args)
         if kwargs:

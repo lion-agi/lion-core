@@ -177,7 +177,7 @@ class ConverterRegistry:
         Raises:
             ValueError: If the converter is not a subclass of Converter.
         """
-        if not issubclass(converter, Converter):
+        if not isinstance(converter, type(Converter)):
             err_msg = (
                 "In order to register the converter, it needs to be a "
                 "subclass of the `Converter` protocol. "

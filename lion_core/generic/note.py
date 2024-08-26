@@ -1,10 +1,10 @@
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from typing_extensions import override
 
-from lion_core.abc import Container
+from lion_core.abc import Communicatable, Container
 from lion_core.libs import (
     flatten,
     nfilter,
@@ -40,12 +40,11 @@ class Note(BaseModel, Container):
     @field_serializer("content")
     def _serialize_content(self, value: Any) -> dict[str, Any]:
         """Serialize the content"""
-        from lion_core.communication.base_mail import BaseMail
 
         output_dict = SysUtil.copy(value, deep=True)
         origin_obj = output_dict.pop("clone_from", None)
 
-        if origin_obj and isinstance(origin_obj, BaseMail):
+        if origin_obj and isinstance(origin_obj, Communicatable):
             info_dict = {
                 "clone_from_info": {
                     "original_ln_id": origin_obj.ln_id,
@@ -60,8 +59,8 @@ class Note(BaseModel, Container):
     def pop(
         self,
         indices: INDICE_TYPE,
-        default: Any = LN_UNDEFINED,
         /,
+        default: Any = LN_UNDEFINED,
     ) -> Any:
         """Remove and return an item from the nested structure."""
         indices = to_list(indices, flatten=True, dropna=True)
@@ -81,7 +80,12 @@ class Note(BaseModel, Container):
         else:
             nset(self.content, indices, value)
 
-    def get(self, indices: INDICE_TYPE, default: Any = LN_UNDEFINED, /) -> Any:
+    def get(
+        self,
+        indices: INDICE_TYPE,
+        /,
+        default: Any = LN_UNDEFINED,
+    ) -> Any:
         """Get a value from the nested structure at the specified indice"""
         indices = to_list(indices, flatten=True, dropna=True)
         return nget(self.content, indices, default)
@@ -194,11 +198,11 @@ class Note(BaseModel, Container):
         """Return the length of the Note's content."""
         return len(self.content)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """Return an iterator over the Note's content."""
         return iter(self.content)
 
-    def __next__(self):
+    def __next__(self) -> str:
         """Return the next item in the Note's content."""
         return next(iter(self.content))
 

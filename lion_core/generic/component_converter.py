@@ -5,6 +5,6 @@ class ComponentConverterRegistry(ConverterRegistry):
     pass
 
 
-ComponentConverterRegistry.register("json", JsonConverter())
+ComponentConverterRegistry.register(JsonConverter)
 
 __all__ = ["ComponentConverterRegistry"]
