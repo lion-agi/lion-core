@@ -223,7 +223,7 @@ class Component(Element):
 
     @override
     @classmethod
-    def from_dict(cls, data: dict, **kwargs: Any) -> T:
+    def from_dict(cls, data: dict, /, **kwargs: Any) -> T:
         """
         Create a component instance from a dictionary.
 
@@ -371,24 +371,30 @@ class Component(Element):
             cls._converter_registry = cls._converter_registry()
         return cls._converter_registry
 
-    def convert_to(self, key: str = "dict", /, **kwargs: Any) -> Any:
+    def convert_to(self, object_key: str, /, **kwargs: Any) -> Any:
         """Convert the component to a specified type"""
-        return self.get_converter_registry().convert_to(self, key, **kwargs)
+        return self.get_converter_registry().convert_to(
+            subject=self,
+            object_key=object_key,
+            **kwargs,
+        )
 
     @classmethod
-    def convert_from(cls, obj: Any, key: str = "dict", /, **kwargs: Any) -> T:
+    def convert_from(
+        cls, object_: Any, object_key: str = None, /, **kwargs: Any
+    ) -> T:
         """Convert data to create a new component instance"""
-        data = cls.get_converter_registry().convert_from(cls, obj, key)
+        data = cls.get_converter_registry().convert_from(
+            subject_class=cls,
+            object_=object_,
+            object_key=object_key,
+        )
         return cls.from_dict(data, **kwargs)
 
     @classmethod
-    def register_converter(
-        cls,
-        key: str,
-        converter: type[Converter],
-    ) -> None:
+    def register_converter(cls, converter: type[Converter]) -> None:
         """Register a new converter."""
-        cls.get_converter_registry().register(key, converter)
+        cls.get_converter_registry().register(converter=converter)
 
     # field management methods
     def field_setattr(
