@@ -38,7 +38,7 @@ class LogManager(BaseManager):
         self.subfolder = subfolder
         atexit.register(self.save_at_exit)
 
-    async def alog(self, log_: Log) -> None:
+    async def alog(self, log_: Log, /) -> None:
         """Asynchronously add a log to the pile.
 
         Args:
