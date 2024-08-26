@@ -79,7 +79,7 @@ class SysUtil:
         )
 
     @staticmethod
-    def copy(obj: T, deep: bool = True, num: int = 1) -> T | list[T]:
+    def copy(obj: T, /, *, deep: bool = True, num: int = 1) -> T | list[T]:
         """
         Create one or more copies of an object.
 
