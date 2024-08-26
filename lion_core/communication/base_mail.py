@@ -2,6 +2,7 @@ from typing import Any
 
 from pydantic import Field, field_validator
 
+from lion_core.abc import Communicatable
 from lion_core.exceptions import LionIDError, LionValueError
 from lion_core.generic.element import Element
 from lion_core.sys_utils import SysUtil
@@ -21,7 +22,7 @@ def validate_sender_recipient(value: Any, /) -> str:
         raise LionValueError("Invalid sender or recipient") from e
 
 
-class BaseMail(Element):
+class BaseMail(Element, Communicatable):
     """Base class for mail-like communication in the LION system.
 
     Attributes:

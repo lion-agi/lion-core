@@ -32,6 +32,13 @@ class Temporal(Characteristic):
     timestamp: float
 
 
+class Communicatable(Observable, Temporal):
+    """Represents entities that can be communicated."""
+
+    sender: str
+    recipient: str
+
+
 class Quantum(Characteristic):
     """
     Embodies quantum concepts like superposition and entanglement.
@@ -83,6 +90,7 @@ __all__ = [
     "Temporal",
     "Relational",
     "Traversal",
+    "Communicatable",
     # "Quantum",
     # "Probabilistic",
     # "Stochastic",
