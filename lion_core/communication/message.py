@@ -5,7 +5,6 @@ from typing import Any
 from pydantic import Field, field_validator
 from typing_extensions import override
 
-from lion_core import message_log_manager
 from lion_core._class_registry import get_class
 from lion_core.abc import Relational
 from lion_core.communication.base_mail import BaseMail
@@ -150,9 +149,6 @@ class RoledMessage(Relational, Component, BaseMail):
             loginfo=dict_,
         )
         return _log
-
-    async def alog(self) -> None:
-        await message_log_manager.alog(self.to_log())
 
 
 # File: lion_core/communication/message.py
