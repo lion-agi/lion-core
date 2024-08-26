@@ -78,7 +78,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
             raise ValueError(f"Unsupported type for time_attr: {type(value)}")
 
     @classmethod
-    def from_dict(cls, data: dict, **kwargs: Any) -> T:
+    def from_dict(cls, data: dict, /, **kwargs: Any) -> T:
         """create an instance of the Element or its subclass"""
         if "lion_class" in data:
             cls = get_class(data.pop("lion_class"))
