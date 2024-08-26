@@ -11,7 +11,7 @@ from lion_core.generic.note import Note
 from lion_core.libs import to_dict
 
 
-class BaseLog(Element, ImmutableRecord):
+class Log(Element, ImmutableRecord):
     content: Note = Field(
         default_factory=Note,
         title="Log Content",
@@ -44,7 +44,7 @@ class BaseLog(Element, ImmutableRecord):
             ) from e
 
     @classmethod
-    def from_dict(cls, data: dict) -> "BaseLog":
+    def from_dict(cls, data: dict) -> "Log":
         data = cls._validate_load_data(data)
         self = cls(**data)
         self._immutable = True
@@ -82,5 +82,5 @@ class BaseLog(Element, ImmutableRecord):
         return Note(**self.to_dict())
 
 
-__all__ = ["BaseLog"]
+__all__ = ["Log"]
 # File: lion_core/generic/log.py

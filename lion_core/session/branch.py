@@ -287,22 +287,23 @@ class Branch(BaseSession):
     @classmethod
     def convert_from(
         cls,
-        obj: Any,
-        key: str = "DataFrame",
+        object_: Any,
+        object_key: str,
         **kwargs,
     ) -> "Branch":
         p = cls.get_converter_registry().convert_from(
-            target_class=obj,
-            key=key,
+            subject_class=cls,
+            object_=object_,
+            object_key=object_key,
             **kwargs,
         )
         return cls(messages=p, **kwargs)
 
     @override
-    def convert_to(self, key: str, /, **kwargs: Any) -> Any:
+    def convert_to(self, object_key: str, /, **kwargs: Any) -> Any:
         return self.get_converter_registry().convert_to(
-            obj=self,
-            key=key,
+            subject=self,
+            object_key=object_key,
             **kwargs,
         )
 

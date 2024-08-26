@@ -10,7 +10,7 @@ from lion_core._class_registry import get_class
 from lion_core.abc import Relational
 from lion_core.communication.base_mail import BaseMail
 from lion_core.generic.component import Component
-from lion_core.generic.log import BaseLog
+from lion_core.generic.log import Log
 from lion_core.generic.note import Note
 from lion_core.sys_utils import SysUtil
 
@@ -103,7 +103,7 @@ class RoledMessage(Relational, Component, BaseMail):
 
     @override
     @classmethod
-    def from_dict(cls, data: dict, **kwargs) -> "RoledMessage":
+    def from_dict(cls, data: dict, /, **kwargs: Any) -> "RoledMessage":
         """Loads a RoledMessage object from a dictionary."""
         data = SysUtil.copy(data)
         if "lion_class" in data:
@@ -142,16 +142,16 @@ class RoledMessage(Relational, Component, BaseMail):
             f"content='{content_preview}')"
         )
 
-    def to_log(self):
+    def to_log(self) -> Log:
         dict_ = self.to_dict()
         content = dict_.pop("content")
-        _log = BaseLog(
+        _log = Log(
             content=content,
             loginfo=dict_,
         )
         return _log
 
-    async def alog(self):
+    async def alog(self) -> None:
         await message_log_manager.alog(self.to_log())
 
 

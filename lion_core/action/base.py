@@ -5,7 +5,7 @@ from pydantic import Field, PrivateAttr
 from lion_core import event_log_manager
 from lion_core.abc import Action, EventStatus
 from lion_core.generic.element import Element
-from lion_core.generic.log import BaseLog
+from lion_core.generic.log import Log
 from lion_core.setting import RetryConfig
 
 
@@ -40,11 +40,11 @@ class ObservableAction(Element, Action):
         super().__init__()
         self.retry_config = retry_config or RetryConfig()
 
-    async def alog(self) -> BaseLog:
+    async def alog(self) -> Log:
         """Log the action asynchronously."""
         await event_log_manager.alog(self.to_log())
 
-    def to_log(self) -> BaseLog:
+    def to_log(self) -> Log:
         """
         Convert the action to a log entry.
 
@@ -54,7 +54,7 @@ class ObservableAction(Element, Action):
         dict_ = self.to_dict()
         content = {k: dict_[k] for k in self._content_fields if k in dict_}
         loginfo = {k: dict_[k] for k in dict_ if k not in self._content_fields}
-        return BaseLog(content=content, loginfo=loginfo)
+        return Log(content=content, loginfo=loginfo)
 
 
 __all__ = ["ObservableAction"]

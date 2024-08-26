@@ -1133,10 +1133,10 @@ class Pile(Element, Collective, Generic[T]):
             return item
 
     @async_synchronized
-    async def adump(self, clear: bool = True) -> dict:
-        self.dump(clear)
+    async def adump(self, clear: bool = False) -> dict:
+        self.dump(clear=clear)
 
-    def dump(self, clear: bool = True) -> dict:
+    def dump(self, clear: bool = False) -> dict:
         result = self.to_dict()
         if clear:
             self.clear()
