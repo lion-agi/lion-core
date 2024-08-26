@@ -19,7 +19,7 @@ class AssistantResponse(RoledMessage):
         sender: Any | MessageFlag,
         recipient: Any | MessageFlag,
         protected_init_params: dict | None = None,
-    ):
+    ) -> None:
         """Initialize an AssistantResponse instance.
 
         Args:

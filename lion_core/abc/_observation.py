@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from enum import Enum
-from typing import Any
+from typing import Any, NoReturn
 
 from lion_core.abc._concept import AbstractObservation
 from lion_core.exceptions import LionAccessError
@@ -37,7 +37,7 @@ class Event(AbstractObservation):
         return {}
 
     @classmethod
-    def from_dict(cls, data: Any):
+    def from_dict(cls, data: Any, /, **kwargs: Any) -> NoReturn:
         """
         Class method to create an instance from a dictionary.
 

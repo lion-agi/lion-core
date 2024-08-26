@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from typing import Any
 
 from lion_core.abc import BaseExecutor, EventStatus
@@ -105,7 +106,7 @@ class ActionExecutor(BaseExecutor):
         """
         return action in self.pile
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ObservableAction]:
         """
         Returns an iterator over the actions in the pile.
 
