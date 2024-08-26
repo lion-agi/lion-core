@@ -1,20 +1,11 @@
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from typing_extensions import override
 
 from lion_core.abc import Communicatable, Container
-from lion_core.libs import (
-    flatten,
-    nfilter,
-    nget,
-    ninsert,
-    nmerge,
-    npop,
-    nset,
-    to_list,
-)
+from lion_core.libs import flatten, nget, ninsert, npop, nset, to_list
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 
@@ -145,45 +136,35 @@ class Note(BaseModel, Container):
     def update(
         self,
         indices: INDICE_TYPE,
-        *args: list[Any],
-        filter: Callable[[Any], bool] | None = None,
-        overwrite: bool = True,
-        dict_sequence: bool = True,
-        sort_list: bool = False,
-        custom_sort: Callable[[Any], Any] | None = None,
-    ):
-        """
-        update the content of the Note with a number of dictionaries or Notes.
-        optionally filter the values, overwrite existing keys, and sort lists.
-
-        default behavior is to mimic the behavior of dict.update().
-        which is to overwrite existing keys.
-        Optionally, you can set overwrite to False, and by default, the
-        subsequent duplicated keys will have a postfix of '_1', '_2', '_3',
-        etc to preserve all data.
-        """
+        value: Any,
+    ) -> None:
+        existing = None
         if not indices:
-            args = [self.content, *args]
+            existing = self.content
         else:
-            args = [self.content.get(indices, {}), *args]
+            existing = self.get(indices, None)
 
-        def f_(x):
-            return x.content if isinstance(x, self.__class__) else x
-
-        args = [f_(arg) for arg in args]
-
-        value = [nfilter(arg, filter) for arg in args] if filter else args
-        value = nmerge(
-            value,
-            overwrite=overwrite,
-            dict_sequence=dict_sequence,
-            sort_list=sort_list,
-            custom_sort=custom_sort,
-        )
-        if not indices:
-            self.content = value
-        else:
+        if existing is None:
+            if not isinstance(value, (list, dict)):
+                value = [value]
             self.set(indices, value)
+
+        if isinstance(existing, list):
+            if isinstance(value, list):
+                existing.extend(value)
+            else:
+                existing.append(value)
+
+        elif isinstance(existing, dict):
+            if isinstance(value, self.__class__):
+                value = value.content
+
+            if isinstance(value, dict):
+                existing.update(value)
+            else:
+                raise ValueError(
+                    "Cannot update a dictionary with a non-dictionary value."
+                )
 
     @classmethod
     def from_dict(cls, kwargs: Any) -> "Note":
