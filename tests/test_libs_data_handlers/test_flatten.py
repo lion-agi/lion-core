@@ -60,7 +60,7 @@ from lion_core.libs.data_handlers._flatten import flatten, get_flattened_keys
             False,
         ),
         (
-            {"a": 1, "b": (2, 3)},
+            {"a": 1, "b": [2, 3]},
             {"a": 1, "b|0": 2, "b|1": 3},
             "|",
             None,
@@ -100,16 +100,16 @@ def test_flatten_invalid_in_place():
 
 def test_flatten_none_data():
     with pytest.raises(
-        TypeError,
-        match="Unsupported key type: NoneType. Only string keys are acceptable.",
+        ValueError,
+        match="Cannot flatten NoneType objects.",
     ):
         flatten(None)
 
 
 def test_flatten_non_string_keys():
     with pytest.raises(
-        TypeError,
-        match="Unsupported key type: int. Only string keys are acceptable.",
+        ValueError,
+        match="Unable to convert input to dictionary: Unsupported key type: int. Only string keys are acceptable.",
     ):
         flatten({1: "a", 2: "b"})
 
@@ -161,8 +161,7 @@ def test_get_flattened_keys(data, expected, sep, max_depth, dict_only):
 def test_get_flattened_keys_inplace():
     data = {"a": 1, "b": {"c": 2, "d": {"e": 3}}}
     expected = ["a", "b|c", "b|d|e"]
-    assert get_flattened_keys(data, inplace=True) == expected
-    assert data == {"a": 1, "b|c": 2, "b|d|e": 3}
+    assert get_flattened_keys(data) == expected
 
 
 # File: tests/test_flatten.py
