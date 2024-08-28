@@ -75,10 +75,11 @@ class SysUtil:
                         )
                 return formatted_time
 
-        raise ValueError(
-            f"Invalid type_: {type_}. "
-            "Must be 'timestamp', 'datetime', 'iso', or 'custom'."
-        )
+            case _:
+                raise ValueError(
+                    f"Invalid value <{type_}> for `type_`, must be"
+                    " one of 'timestamp', 'datetime', 'iso', or 'custom'."
+                )
 
     @staticmethod
     def copy(obj: T, /, *, deep: bool = True, num: int = 1) -> T | list[T]:
@@ -230,9 +231,9 @@ class SysUtil:
         ) or (len(item) == 32):
             return item
         raise LionIDError(
-            f"input object {type(item).__name__} does not contain or is "
-            "not a valid Lion ID. Item must be an instance of `Observable` "
-            "or a valid `ln_id`."
+            f"The input object of type <{type(item).__name__}> does "
+            "not contain or is not a valid Lion ID. Item must be an instance"
+            " of `Observable` or a valid `ln_id`."
         )
 
     @staticmethod
