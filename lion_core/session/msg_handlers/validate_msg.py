@@ -5,7 +5,7 @@ from typing import Any
 from lion_core.communication.message import RoledMessage
 from lion_core.generic.pile import Pile
 from lion_core.libs import to_dict, to_list
-from lion_core.setting import LionUndefined
+from lion_core.setting import LionUndefinedType
 
 
 @singledispatch
@@ -13,7 +13,7 @@ def validate_message(messages: Any) -> list[RoledMessage] | RoledMessage:
     raise NotImplementedError(f"Invalid messages type: {type(messages)}")
 
 
-@to_dict.register(LionUndefined)
+@to_dict.register(LionUndefinedType)
 @to_dict.register(type(None))
 def _(messages):
     """Handle None or LionUndefined inputs."""
