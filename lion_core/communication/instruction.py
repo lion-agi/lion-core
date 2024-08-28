@@ -22,7 +22,7 @@ def prepare_request_response_format(request_fields: dict) -> str:
     ).strip()
 
 
-def _f(idx: str, x: str) -> dict[str, Any]:
+def _f(idx: str, x: str, /) -> dict[str, Any]:
     """Create an image_url dict for content formatting."""
     return {
         "type": "image_url",
@@ -69,7 +69,7 @@ def prepare_instruction_content(
     if request_fields:
         out_["request_fields"] = request_fields
         out_["request_response_format"] = prepare_request_response_format(
-            request_fields
+            request_fields=request_fields
         )
 
     return note(
@@ -92,7 +92,7 @@ class Instruction(RoledMessage):
         request_fields: dict | MessageFlag = None,
         image_detail: Literal["low", "high", "auto"] | MessageFlag = None,
         protected_init_params: dict | None = None,
-    ):
+    ) -> None:
         """Initialize an Instruction instance."""
         message_flags = [
             instruction,
@@ -140,7 +140,7 @@ class Instruction(RoledMessage):
         self,
         images: list | str,
         image_detail: Literal["low", "high", "auto"] = None,
-    ):
+    ) -> None:
         """Add new images and update the image detail level."""
         images = images if isinstance(images, list) else [images]
         _ima: list = self.content.get(["images"], [])
@@ -150,7 +150,7 @@ class Instruction(RoledMessage):
         if image_detail:
             self.content["image_detail"] = image_detail
 
-    def update_guidance(self, guidance: str):
+    def update_guidance(self, guidance: str) -> None:
         """Update the guidance content of the instruction."""
         if guidance and isinstance(guidance, str):
             self.content["guidance"] = guidance
@@ -159,7 +159,7 @@ class Instruction(RoledMessage):
             "Invalid guidance. Guidance must be a string.",
         )
 
-    def update_request_fields(self, request_fields: dict):
+    def update_request_fields(self, request_fields: dict) -> None:
         """Update the requested fields in the instruction."""
         self.content["request_fields"].update(request_fields)
         format_ = prepare_request_response_format(
@@ -167,7 +167,7 @@ class Instruction(RoledMessage):
         )
         self.content["request_response_format"] = format_
 
-    def update_context(self, *args, **kwargs):
+    def update_context(self, *args, **kwargs) -> None:
         """Add new context to the instruction."""
         self.content["context"] = self.content.get("context", [])
         if args:
@@ -188,9 +188,9 @@ class Instruction(RoledMessage):
             content.pop("image_detail")
             text_content = str(content)
             content = format_image_content(
-                text_content,
-                self.content.get(["images"]),
-                self.content.get(["image_detail"]),
+                text_content=text_content,
+                images=self.content.get(["images"]),
+                image_detail=self.content.get(["image_detail"]),
             )
             _msg["content"] = content
             return _msg

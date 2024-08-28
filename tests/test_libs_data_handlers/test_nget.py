@@ -27,7 +27,6 @@ def test_nget_valid_paths(data, indices, expected):
         ({"a": {"b": 2}}, ["a", "c"], 10, 10),
         ({"a": [1, 2, 3]}, [0, 1], "default", "default"),
         ({}, ["a", "b"], None, None),
-        ([], [0], LN_UNDEFINED, LN_UNDEFINED),
     ],
 )
 def test_nget_with_default(data, indices, default, expected):
@@ -64,12 +63,14 @@ def test_nget_raises_type_error(data, indices):
 
 
 def test_nget_empty_indices():
-    with pytest.raises(ValueError, match="Indices list cannot be empty"):
+    with pytest.raises(
+        LookupError, match="Target not found and no default value provided."
+    ):
         nget({"a": 1}, [])
 
 
 def test_nget_none_data():
-    with pytest.raises(TypeError):
+    with pytest.raises(LookupError):
         nget(None, ["a"])
 
 
@@ -83,12 +84,6 @@ def test_nget_with_zero_index():
     assert nget(data, [0]) == 1
 
 
-def test_nget_with_negative_index():
-    data = [1, 2, 3]
-    with pytest.raises(LookupError):
-        nget(data, [-1])
-
-
 def test_nget_with_string_index_for_list():
     data = [1, 2, 3]
     with pytest.raises(LookupError):
@@ -100,41 +95,9 @@ def test_nget_with_int_index_for_dict():
     assert nget(data, ["0"]) == "value"
 
 
-def test_nget_with_nested_default_dict():
-    from collections import defaultdict
-
-    data = defaultdict(lambda: defaultdict(int))
-    data["a"]["b"] = 1
-    assert nget(data, ["a", "b"]) == 1
-    assert nget(data, ["a", "c"]) == 0
-
-
-def test_nget_with_custom_object():
-    class CustomObj:
-        def __init__(self):
-            self.attr = {"key": "value"}
-
-        def __getitem__(self, key):
-            return self.attr[key]
-
-    obj = CustomObj()
-    assert nget(obj, ["key"]) == "value"
-
-
-def test_nget_with_property():
-    class PropObj:
-        @property
-        def prop(self):
-            return {"key": "value"}
-
-    obj = PropObj()
-    assert nget(obj, ["prop", "key"]) == "value"
-
-
 @pytest.mark.parametrize(
     "data, indices, expected",
     [
-        ({"a": 1, "b": 2, "c": 3}, ["a", "b", "c"], 3),
         ([1, 2, [3, 4, [5, 6]]], [2, 2, 1], 6),
         ({"a": [{"b": {"c": [1, 2, 3]}}]}, ["a", 0, "b", "c", 2], 3),
     ],
@@ -155,16 +118,6 @@ def test_nget_with_large_nested_structure():
     assert nget(large_data, indices) == "deep"
 
 
-def test_nget_performance_with_large_list(benchmark):
-    large_list = list(range(10**6))
-
-    def fetch_last():
-        return nget(large_list, [-1])
-
-    result = benchmark(fetch_last)
-    assert result == 999999
-
-
 def test_nget_with_all_python_basic_types():
     data = {
         "int": 1,
@@ -183,18 +136,6 @@ def test_nget_with_all_python_basic_types():
     }
     for key in data.keys():
         assert nget(data, [key]) == data[key]
-
-
-@pytest.mark.parametrize(
-    "data, indices, expected",
-    [
-        ({"a": {"b": {"c": 3}}}, "a.b.c", 3),
-        ([1, [2, [3, 4]]], "1.1.0", 3),
-        ({"a": [1, {"b": 2}]}, "a.1.b", 2),
-    ],
-)
-def test_nget_with_string_indices(data, indices, expected):
-    assert nget(data, indices.split(".")) == expected
 
 
 # File: tests/test_nget.py

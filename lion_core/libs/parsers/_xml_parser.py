@@ -2,7 +2,7 @@ import re
 from typing import Any
 
 
-def xml_to_dict(xml_string: str, suppress=False) -> dict[str, Any]:
+def xml_to_dict(xml_string: str, /, suppress=False) -> dict[str, Any]:
     """
     Parse an XML string into a nested dictionary structure.
 

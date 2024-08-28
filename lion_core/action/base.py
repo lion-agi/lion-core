@@ -1,47 +1,49 @@
-from typing import Any
+from typing import Any, NoReturn
 
-from pydantic import Field
+from pydantic import PrivateAttr
+from typing_extensions import override
 
 from lion_core import event_log_manager
 from lion_core.abc import Action, EventStatus
+from lion_core.exceptions import LionAccessError
 from lion_core.generic.element import Element
-from lion_core.generic.log import BaseLog
+from lion_core.generic.log import Log
+from lion_core.setting import (
+    DEFAULT_TIMED_FUNC_CALL_CONFIG,
+    TimedFuncCallConfig,
+)
 
 
 class ObservableAction(Element, Action):
-    """
-    Represents an action that can be observed, with a trackable status.
-
-    The `ObservableAction` class extends `Action` and `Element` to provide a
-    structure for actions whose status can be monitored. It includes a status
-    field to indicate the current state of the action, and a request property
-    that can be used to check for permission before the action is performed.
-
-    Attributes:
-        status (EventStatus): The current status of the action.
-        execution_time (float): The time taken to execute the action.
-        response (Any): The response from the action execution.
-        error (str): Any error message associated with the action.
-        retry_config (dict): Configuration for retry attempts.
-        content_fields (list): Fields to include in the content of the log.
-    """
 
     status: EventStatus = EventStatus.PENDING
-    execution_time: float = None
-    response: Any = None
-    error: str = None
-    retry_config: dict = Field(default_factory=dict, exclude=True)
-    content_fields: list = ["response"]
+    execution_time: float | None = None
+    execution_response: Any = None
+    execution_error: str | None = None
+    timed_config: TimedFuncCallConfig | None = None
+    _content_fields: list = PrivateAttr(["execution_response"])
 
-    def __init__(self, retry_config: dict = None):
+    @override
+    def __init__(
+        self, timed_config: dict | TimedFuncCallConfig | None, **kwargs: Any
+    ) -> None:
         super().__init__()
-        self.retry_config = retry_config or {}
+        if timed_config is None:
+            self.timed_config = DEFAULT_TIMED_FUNC_CALL_CONFIG
 
-    async def alog(self) -> BaseLog:
+        else:
+            if isinstance(timed_config, TimedFuncCallConfig):
+                timed_config = timed_config.to_dict()
+            if isinstance(timed_config, dict):
+                timed_config = {**timed_config, **kwargs}
+            timed_config = TimedFuncCallConfig(**timed_config)
+            self.timed_config = timed_config
+
+    async def alog(self) -> Log:
         """Log the action asynchronously."""
         await event_log_manager.alog(self.to_log())
 
-    def to_log(self) -> BaseLog:
+    def to_log(self) -> Log:
         """
         Convert the action to a log entry.
 
@@ -49,9 +51,16 @@ class ObservableAction(Element, Action):
             BaseLog: A log entry representing the action.
         """
         dict_ = self.to_dict()
-        content = {k: dict_[k] for k in self.content_fields if k in dict_}
-        loginfo = {k: dict_[k] for k in dict_ if k not in self.content_fields}
-        return BaseLog(content=content, loginfo=loginfo)
+        content = {k: dict_[k] for k in self._content_fields if k in dict_}
+        loginfo = {k: dict_[k] for k in dict_ if k not in self._content_fields}
+        return Log(content=content, loginfo=loginfo)
+
+    @classmethod
+    def from_dict(cls, data: dict, /, **kwargs: Any) -> NoReturn:
+        """Event cannot be re-created."""
+        raise LionAccessError(
+            "An event cannot be recreated. Once it's done, it's done."
+        )
 
 
 __all__ = ["ObservableAction"]

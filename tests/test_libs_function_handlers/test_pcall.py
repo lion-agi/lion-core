@@ -35,20 +35,20 @@ class TestPCallFunction(unittest.IsolatedAsyncioTestCase):
 
     async def test_pcall_with_timing(self):
         funcs = [async_func for _ in range(5)]
-        result = await pcall(funcs, timing=True)
+        result = await pcall(funcs, retry_timing=True)
         for res, duration in result:
             self.assertTrue(duration > 0)
         self.assertEqual([res for res, duration in result], [2, 2, 2, 2, 2])
 
     async def test_pcall_with_retries(self):
         funcs = [async_func_with_error for _ in range(5)]
-        result = await pcall(funcs, retries=1, default=0)
+        result = await pcall(funcs, num_retries=1, retry_default=0)
         self.assertEqual(result, [0, 0, 0, 0, 0])
 
     async def test_pcall_with_timeout(self):
         funcs = [async_func for _ in range(5)]
         with self.assertRaises(asyncio.TimeoutError):
-            await pcall(funcs, timeout=0.05)
+            await pcall(funcs, retry_timeout=0.05)
 
     async def test_pcall_with_error_handling(self):
         error_map = {ValueError: mock_handler}

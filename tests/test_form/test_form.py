@@ -13,7 +13,7 @@ from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
 from lion_core.generic.component import Component
 from lion_core.generic.note import Note
-from lion_core.setting import LN_UNDEFINED, LionUndefined
+from lion_core.setting import LN_UNDEFINED, LionUndefinedType
 
 
 # Helper functions and classes
@@ -326,7 +326,7 @@ def test_form_performance():
     class PerformanceForm(Form):
         pass
 
-    num_fields = 10000
+    num_fields = 1000
     input_fields = [f"input_{i}" for i in range(num_fields // 2)]
     output_fields = [f"output_{i}" for i in range(num_fields // 2)]
 
@@ -341,7 +341,7 @@ def test_form_performance():
     _ = form.is_workable()
     end_time = time.time()
 
-    assert end_time - start_time < 10
+    assert end_time - start_time < 2
 
 
 # Test Form with nested structures
@@ -385,7 +385,7 @@ def test_form_comprehensive():
     class ComprehensiveForm(Form):
         input_field: str | None = Field(default=LN_UNDEFINED)
         process_field: int | None = Field(default=LN_UNDEFINED)
-        output_field: list | LionUndefined = Field(default=LN_UNDEFINED)
+        output_field: list | LionUndefinedType = Field(default=LN_UNDEFINED)
 
     form = ComprehensiveForm(
         assignment="input_field -> process_field, output_field",

@@ -3,7 +3,6 @@ from typing import Any
 
 from lion_core.libs.data_handlers._to_dict import to_dict
 from lion_core.libs.data_handlers._to_list import to_list
-from lion_core.sys_utils import SysUtil
 
 
 def flatten(
@@ -72,7 +71,6 @@ def get_flattened_keys(
     sep: str = "|",
     max_depth: int | None = None,
     dict_only: bool = False,
-    inplace: bool = False,
 ) -> list[str]:
     """
     Get all keys from a flattened representation of a nested structure.
@@ -87,24 +85,14 @@ def get_flattened_keys(
     Returns:
         A list of flattened keys.
     """
-    if not inplace:
-        return to_list(
-            flatten(
-                nested_structure,
-                sep=sep,
-                max_depth=max_depth,
-                dict_only=dict_only,
-            ).keys()
-        )
-    obj_copy = SysUtil.create_copy(nested_structure, num=1)
-    flatten(
-        obj_copy,
-        sep=sep,
-        max_depth=max_depth,
-        inplace=True,
-        dict_only=dict_only,
+    return to_list(
+        flatten(
+            nested_structure,
+            sep=sep,
+            max_depth=max_depth,
+            dict_only=dict_only,
+        ).keys()
     )
-    return to_list(obj_copy.keys())
 
 
 def _dynamic_flatten_in_place(
@@ -194,6 +182,9 @@ def _dynamic_flatten_generator(
     if max_depth is not None and current_depth >= max_depth:
         yield sep.join(parent_key), nested_structure
         return
+
+    if nested_structure is None:
+        raise ValueError("Cannot flatten NoneType objects.")
 
     if isinstance(nested_structure, dict):
         for k, v in nested_structure.items():

@@ -1,6 +1,12 @@
 """The abstract base classes for the LION framework."""
 
-from ._characteristic import Observable, Relational, Temporal, Traversal
+from ._characteristic import (
+    Communicatable,
+    Observable,
+    Relational,
+    Temporal,
+    Traversal,
+)
 from ._concept import (
     AbstractElement,
     AbstractObservation,
@@ -44,4 +50,5 @@ __all__ = [
     "ImmutableRecord",
     "BaseRecord",
     "MutableRecord",
+    "Communicatable",
 ]

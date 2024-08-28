@@ -3,7 +3,7 @@
 import logging
 
 from .log_manager import LogManager
-from .setting import BASE_LION_FIELDS, LION_ID_CONFIG, LN_UNDEFINED
+from .setting import BASE_LION_FIELDS, DEFAULT_LION_ID_CONFIG, LN_UNDEFINED
 from .version import __version__
 
 event_log_manager = LogManager(
@@ -11,17 +11,11 @@ event_log_manager = LogManager(
     subfolder="events",
     file_prefix="event_",
 )
-message_log_manager = LogManager(
-    persist_dir="./data/logs",
-    subfolder="messages",
-    file_prefix="message_",
-)
 
 __all__ = [
-    "LN_UNDEFINED",
-    "LION_ID_CONFIG",
     "BASE_LION_FIELDS",
-    "message_log_manager",
+    "DEFAULT_LION_ID_CONFIG",
+    "LN_UNDEFINED",
     "event_log_manager",
     "__version__",
 ]

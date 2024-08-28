@@ -1,17 +1,56 @@
 from collections.abc import Iterable, Mapping, Sequence
-from functools import singledispatch
-from typing import Any, TypeVar
+from typing import Any, TypeVar, overload
 
 from pydantic import BaseModel
+from pydantic_core import PydanticUndefined, PydanticUndefinedType
 
-from lion_core.setting import LionUndefined
+from lion_core.setting import LN_UNDEFINED, LionUndefinedType
 
 T = TypeVar("T")
 
 
-@singledispatch
+@overload
 def to_list(
-    input_: Any, /, *, flatten: bool = False, dropna: bool = False
+    input_: None | LionUndefinedType | PydanticUndefinedType, /
+) -> list[Any]: ...
+
+
+@overload
+def to_list(
+    input_: str | bytes | bytearray | Mapping | BaseModel,
+    /,
+) -> list[Any]: ...
+
+
+@overload
+def to_list(
+    input_: Sequence[T] | Iterable[T],
+    /,
+    *,
+    flatten: bool = False,
+    dropna: bool = False,
+    unique: bool = False,
+) -> list[T]: ...
+
+
+@overload
+def to_list(
+    input_: Any,
+    /,
+    *,
+    flatten: bool = False,
+    dropna: bool = False,
+    unique: bool = False,
+) -> list[Any]: ...
+
+
+def to_list(
+    input_: Any,
+    /,
+    *,
+    flatten: bool = False,
+    dropna: bool = False,
+    unique: bool = False,
 ) -> list[Any]:
     """Convert various input types to a list.
 
@@ -45,48 +84,54 @@ def to_list(
         >>> to_list([1, None, 2], dropna=True)
         [1, 2]
     """
+    return _dispatch_to_list(
+        input_,
+        flatten=flatten,
+        dropna=dropna,
+        unique=unique,
+    )
+
+
+def _dispatch_to_list(input_: Any, /, **kwargs: Any) -> list[Any]:
+
+    if input_ in [LN_UNDEFINED, PydanticUndefined, None, [], {}]:
+        return []
+
+    if isinstance(input_, str | bytes | bytearray | Mapping | BaseModel):
+        return [input_]
+
+    if isinstance(input_, Sequence | Iterable):
+        return _process_iterable(input_, **kwargs)
+
     return [input_]
 
 
-@to_list.register(LionUndefined)
-@to_list.register(type(None))
-def _(input_: None | LionUndefined, /, **kwargs: Any) -> list[Any]:
-    """Handle None and LionUndefined inputs."""
-    return []
-
-
-@to_list.register(str)
-@to_list.register(bytes)
-@to_list.register(bytearray)
-@to_list.register(Mapping)
-@to_list.register(BaseModel)
-def _(
-    input_: str | bytes | bytearray | Mapping | BaseModel, /, **kwargs: Any
-) -> list[Any]:
-    """Handle string-like, Mapping, and BaseModel inputs."""
-    return [input_]
-
-
-@to_list.register(Sequence)
-@to_list.register(Iterable)
-def _(
+def _process_iterable(
     input_: Sequence[T] | Iterable[T],
     /,
     *,
-    flatten: bool = False,
-    dropna: bool = False,
+    flatten: bool,
+    dropna: bool,
+    unique: bool,
 ) -> list[T]:
     """Handle Sequence and Iterable inputs.
 
     Converts the input to a list and optionally flattens and removes None
     """
     result = list(input_)
-    return (
-        _process_list(result, flatten, dropna) if flatten or dropna else result
-    )
+    if any((flatten, dropna, unique)):
+        return _process_list(
+            lst=result,
+            flatten=flatten,
+            dropna=dropna,
+            unique=unique,
+        )
+    return result
 
 
-def _process_list(lst: list[Any], flatten: bool, dropna: bool) -> list[Any]:
+def _process_list(
+    lst: list[Any], flatten: bool, dropna: bool, unique: bool
+) -> list[Any]:
     """Process a list by optionally flattening and removing None values.
 
     Args:
@@ -103,12 +148,26 @@ def _process_list(lst: list[Any], flatten: bool, dropna: bool) -> list[Any]:
             item, (str, bytes, bytearray, Mapping)
         ):
             if flatten:
-                result.extend(_process_list(list(item), flatten, dropna))
+                result.extend(
+                    _process_list(
+                        lst=list(item),
+                        flatten=flatten,
+                        dropna=dropna,
+                        unique=unique,
+                    )
+                )
             else:
-                result.append(_process_list(list(item), flatten, dropna))
+                result.append(
+                    _process_list(
+                        lst=list(item),
+                        flatten=flatten,
+                        dropna=dropna,
+                        unique=unique,
+                    )
+                )
         elif not dropna or item is not None:
             result.append(item)
-    return result
+    return list(set(result)) if unique else result
 
 
 # File: lion_core/libs/data_handlers/_to_list.py

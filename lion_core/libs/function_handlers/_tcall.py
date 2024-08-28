@@ -12,9 +12,9 @@ async def tcall(
     initial_delay: float = 0,
     error_msg: str | None = None,
     suppress_err: bool = False,
-    timing: bool = False,
-    timeout: float | None = None,
-    default: Any = None,
+    retry_timing: bool = False,
+    retry_timeout: float | None = None,
+    retry_default: Any = None,
     error_map: dict[type, ErrorHandler] | None = None,
     **kwargs: Any,
 ) -> T | tuple[T, float]:
@@ -52,30 +52,32 @@ async def tcall(
 
         if asyncio.iscoroutinefunction(func):
             # Asynchronous function
-            if timeout is None:
+            if retry_timeout is None:
                 result = await func(*args, **kwargs)
             else:
                 result = await asyncio.wait_for(
-                    func(*args, **kwargs), timeout=timeout
+                    func(*args, **kwargs), timeout=retry_timeout
                 )
         else:
             # Synchronous function
-            if timeout is None:
+            if retry_timeout is None:
                 result = func(*args, **kwargs)
             else:
                 result = await asyncio.wait_for(
                     asyncio.shield(asyncio.to_thread(func, *args, **kwargs)),
-                    timeout=timeout,
+                    timeout=retry_timeout,
                 )
 
         duration = asyncio.get_event_loop().time() - start
-        return (result, duration) if timing else result
+        return (result, duration) if retry_timing else result
 
     except asyncio.TimeoutError as e:
-        error_msg = f"{error_msg or ''} Timeout {timeout} seconds exceeded"
+        error_msg = (
+            f"{error_msg or ''} Timeout {retry_timeout} seconds exceeded"
+        )
         if suppress_err:
             duration = asyncio.get_event_loop().time() - start
-            return (default, duration) if timing else default
+            return (retry_default, duration) if retry_timing else retry_default
         else:
             raise asyncio.TimeoutError(error_msg) from e
 
@@ -83,7 +85,7 @@ async def tcall(
         if error_map and type(e) in error_map:
             error_map[type(e)](e)
             duration = asyncio.get_event_loop().time() - start
-            return (None, duration) if timing else None
+            return (None, duration) if retry_timing else None
         error_msg = (
             f"{error_msg} Error: {e}"
             if error_msg
@@ -91,7 +93,7 @@ async def tcall(
         )
         if suppress_err:
             duration = asyncio.get_event_loop().time() - start
-            return (default, duration) if timing else default
+            return (retry_default, duration) if retry_timing else retry_default
         else:
             raise RuntimeError(error_msg) from e
 

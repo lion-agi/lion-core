@@ -1,11 +1,10 @@
-from lion_core.converter import ConverterRegistry, DictConverter, JsonConverter
+from lion_core.converter import ConverterRegistry, JsonConverter
 
 
 class ComponentConverterRegistry(ConverterRegistry):
     pass
 
 
-ComponentConverterRegistry.register("dict", DictConverter())
-ComponentConverterRegistry.register("json", JsonConverter())
+ComponentConverterRegistry.register(JsonConverter)
 
-__all__ = ["ComponentConverterRegistry", "DictConverter", "JsonConverter"]
+__all__ = ["ComponentConverterRegistry"]

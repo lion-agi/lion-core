@@ -37,7 +37,7 @@ class ActionResponse(RoledMessage):
         sender: Any | MessageFlag,
         func_output: Any | MessageFlag,
         protected_init_params: dict | None = None,
-    ):
+    ) -> None:
         """Initialize an ActionResponse instance.
 
         Args:

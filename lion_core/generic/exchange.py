@@ -3,8 +3,7 @@ from typing import Literal
 from pydantic import Field
 from typing_extensions import override
 
-from lion_core.abc._space import Container
-from lion_core.communication.base_mail import BaseMail
+from lion_core.abc import Communicatable, Container
 from lion_core.exceptions import ItemExistsError, LionValueError
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
@@ -23,7 +22,7 @@ class Exchange(Element, Container):
     """
 
     pile: Pile = Field(
-        default_factory=lambda: pile(item_type={BaseMail}),
+        default_factory=lambda: pile(item_type={Communicatable}),
         description="The pile of items in the exchange.",
         title="pending items",
     )
@@ -41,7 +40,7 @@ class Exchange(Element, Container):
         title="pending outgoing items",
     )
 
-    def __contains__(self, item: BaseMail) -> bool:
+    def __contains__(self, item: Communicatable) -> bool:
         """
         Check if an item is in the pile.
 
@@ -63,8 +62,8 @@ class Exchange(Element, Container):
         """
         return list(self.pending_ins.keys())
 
-    def include(self, item: BaseMail, direction: Literal["in", "out"]):
-        if not isinstance(item, BaseMail):
+    def include(self, item: Communicatable, direction: Literal["in", "out"]):
+        if not isinstance(item, Communicatable):
             raise LionValueError(
                 "Invalid item to include. Item must be a mail.",
             )
@@ -83,7 +82,7 @@ class Exchange(Element, Container):
         elif direction == "out":
             self.pending_outs.include(item)
 
-    def exclude(self, item: BaseMail):
+    def exclude(self, item: Communicatable):
         self.pile.exclude(item)
         self.pending_outs.exclude(item)
         for v in self.pending_ins.values():

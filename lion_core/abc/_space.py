@@ -1,37 +1,26 @@
 from abc import abstractmethod
+from collections.abc import Iterable
+from typing import Any
 
 from lion_core.abc._characteristic import Traversal
 from lion_core.abc._concept import AbstractElement, AbstractSpace
 
 
 class Container(AbstractSpace, AbstractElement):
-    """
-    Abstract container or storage space. Subclasses should implement
-    __contains__ to define membership criteria.
-    """
-
-    @abstractmethod
-    def __contains__(self, item) -> bool:
-        """
-        Check if an item is in the container.
-
-        Args:
-            item: The item to check.
-
-        Returns:
-            bool: True if the item is in the container, False otherwise.
-        """
+    """Container for items."""
 
 
 class Ordering(Container):
     """Container with a defined order. Subclass must have order attribute."""
+
+    order: list[str]
 
 
 class Collective(Container):
     """Container representing a collection of items."""
 
     @abstractmethod
-    def items(self):
+    def items(self) -> Iterable[Any]:
         """
         Get the items in the collective.
 
@@ -41,10 +30,7 @@ class Collective(Container):
 
 
 class Structure(Container, Traversal):
-    """
-    Container with traversable structure, combining Container and Traversal
-    characteristics.
-    """
+    """Traversable container structure"""
 
 
 __all__ = ["Container", "Ordering", "Collective", "Structure"]

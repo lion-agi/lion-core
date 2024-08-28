@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Any
 
 from lion_core.abc._concept import AbstractObservation
-from lion_core.exceptions import LionAccessError
 
 
 class EventStatus(str, Enum):
@@ -14,109 +13,42 @@ class EventStatus(str, Enum):
 
 
 class Event(AbstractObservation):
-    """
-    Represents discrete occurrences or state changes in the system.
-
-    This class serves as a base for more specific event types.
-    """
+    """Discrete occurrences or state changes."""
 
     status: EventStatus
 
     @property
-    def request(self) -> Any:
-        """
-        Retrieve the request associated with the event.
-
-        Returns:
-            Any: The request associated with the event.
-        """
+    def request(self) -> dict:
+        """Retrieve the permission request payload."""
         return self._request()
 
-    def _request(self) -> Any:
+    def _request(self) -> dict:
         """override this method in child class."""
         return {}
 
-    @classmethod
-    def from_dict(cls, data: Any):
-        """
-        Class method to create an instance from a dictionary.
-
-        Args:
-            data: The dictionary data to create an instance from.
-
-        Raises:
-            LionAccessError: Always raised as actions cannot be recreated.
-        """
-        raise LionAccessError(
-            "An event cannot be recreated. Once it's done, it's done."
-        )
-
 
 class Condition(Event):
-    """
-    Represents state evaluation in complex systems.
-
-    This class defines a condition that can be checked or applied.
-    """
+    """State evaluation."""
 
     @abstractmethod
-    async def apply(self, *args: Any, **kwargs: Any) -> Any:
-        """
-        Apply the condition asynchronously.
-
-        Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-            Any: The result of applying the condition.
-        """
-        pass
+    async def apply(self, *args: Any, **kwargs: Any) -> bool:
+        """Apply the condition asynchronously."""
 
 
 class Signal(Event):
-    """
-    Represents a triggerable signal in the system.
-
-    This class defines a signal that can be triggered.
-    """
+    """a triggerable signal."""
 
     @abstractmethod
     async def trigger(self, *args: Any, **kwargs: Any) -> Any:
-        """
-        Trigger the signal asynchronously.
-
-        Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-            Any: The result of triggering the signal.
-        """
-        pass
+        """Trigger the signal asynchronously."""
 
 
 class Action(Event):
-    """
-    Represents an invokable action in the system.
-
-    This class defines an action that can be invoked. Actions must have a
-    status.
-    """
+    """An invokable action"""
 
     @abstractmethod
     async def invoke(self, *args: Any, **kwargs: Any) -> Any:
-        """
-        Invoke the action asynchronously.
-
-        Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-            Any: The result of invoking the action.
-        """
-        pass
+        """Invoke the action asynchronously."""
 
 
 __all__ = ["Event", "Condition", "Signal", "Action"]

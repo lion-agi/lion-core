@@ -13,10 +13,6 @@ from lion_core.libs import function_to_schema, to_list
 class Tool(Element):
     """Represents a callable tool with pre/post-processing capabilities.
 
-    This class encapsulates a function with its metadata, schema, and
-    processing functions. It provides a structured way to manage and execute
-    functions within the system.
-
     Attributes:
         function: The callable function of the tool.
         schema_: Schema of the function in OpenAI format.
@@ -59,8 +55,6 @@ class Tool(Element):
     @override
     def __init__(self, **data: Any) -> None:
         """Initialize a Tool instance.
-
-        If no schema is provided, it generates one from the function.
 
         Args:
             **data: Keyword arguments to initialize the Tool instance.
@@ -133,9 +127,6 @@ def func_to_tool(
     **kwargs,
 ) -> list[Tool]:
     """Convert functions to Tool objects.
-
-    This function takes one or more callable functions and converts them into
-    Tool objects, optionally associating parsers with each function.
 
     Args:
         func_: The function(s) to convert into tool(s).
