@@ -13,7 +13,7 @@ from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
 from lion_core.generic.component import Component
 from lion_core.generic.note import Note
-from lion_core.setting import LN_UNDEFINED, LionUndefined
+from lion_core.setting import LN_UNDEFINED, LionUndefinedType
 
 
 # Helper functions and classes
@@ -385,7 +385,7 @@ def test_form_comprehensive():
     class ComprehensiveForm(Form):
         input_field: str | None = Field(default=LN_UNDEFINED)
         process_field: int | None = Field(default=LN_UNDEFINED)
-        output_field: list | LionUndefined = Field(default=LN_UNDEFINED)
+        output_field: list | LionUndefinedType = Field(default=LN_UNDEFINED)
 
     form = ComprehensiveForm(
         assignment="input_field -> process_field, output_field",

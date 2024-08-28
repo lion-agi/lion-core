@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from lion_core.libs.data_handlers._to_dict import LionUndefined, to_dict
+from lion_core.libs.data_handlers._to_dict import LionUndefinedType, to_dict
 
 
 class MockToDict:
@@ -85,7 +85,7 @@ def test_xml_string():
     "input_value, expected",
     [
         (None, {}),
-        (LionUndefined(), {}),
+        (LionUndefinedType(), {}),
     ],
 )
 def test_none_and_undefined_input(input_value, expected):

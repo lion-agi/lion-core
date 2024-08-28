@@ -4,7 +4,7 @@ import pytest
 from pydantic import BaseModel
 
 from lion_core.libs.data_handlers._to_list import to_list
-from lion_core.setting import LionUndefined
+from lion_core.setting import LionUndefinedType
 
 
 class CustomIterable:
@@ -28,7 +28,7 @@ class TestModel(BaseModel):
     "input_value, expected",
     [
         (None, []),
-        (LionUndefined(), []),
+        (LionUndefinedType(), []),
     ],
 )
 def test_none_and_undefined_input(input_value, expected):
