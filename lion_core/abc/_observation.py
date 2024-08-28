@@ -1,9 +1,8 @@
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, NoReturn
+from typing import Any
 
 from lion_core.abc._concept import AbstractObservation
-from lion_core.exceptions import LionAccessError
 
 
 class EventStatus(str, Enum):
@@ -26,13 +25,6 @@ class Event(AbstractObservation):
     def _request(self) -> dict:
         """override this method in child class."""
         return {}
-
-    @classmethod
-    def from_dict(cls, data: dict, /, **kwargs: Any) -> NoReturn:
-        """Event cannot be re-created."""
-        raise LionAccessError(
-            "An event cannot be recreated. Once it's done, it's done."
-        )
 
 
 class Condition(Event):
