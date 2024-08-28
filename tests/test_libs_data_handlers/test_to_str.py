@@ -4,7 +4,7 @@ import pytest
 from pydantic import BaseModel
 
 from lion_core.libs.data_handlers._to_str import strip_lower, to_str
-from lion_core.setting import LionUndefined
+from lion_core.setting import LionUndefinedType
 
 
 class CustomModel(BaseModel):
@@ -20,7 +20,7 @@ class CustomObject:
     "input_value, expected",
     [
         (None, ""),
-        (LionUndefined(), ""),
+        (LionUndefinedType(), ""),
     ],
 )
 def test_none_and_undefined_input(input_value, expected):
