@@ -1,6 +1,8 @@
 from collections.abc import Iterator
 from typing import Any
 
+from typing_extensions import override
+
 from lion_core.abc import BaseExecutor, EventStatus
 from lion_core.action.action_processor import ActionProcessor
 from lion_core.action.base import ObservableAction
@@ -20,18 +22,12 @@ class ActionExecutor(BaseExecutor):
         processor_class (Type[ActionProcessor]): Class used to process actions.
         pile (Pile): A collection of actions managed by the executor.
         pending (Progression): A progression tracking the pending actions.
-
-    Args:
-        capacity (int): The capacity of the action processor.
-        refresh_time (int): The refresh interval for processing actions.
-        processor_class (Type[ActionProcessor], optional): The processor class
-            used to process actions. Defaults to ActionProcessor.
-        **kwargs: Additional keyword arguments passed to the processor class.
     """
 
     processor_class: type[ActionProcessor] = ActionProcessor
     strict: bool = True
 
+    @override
     def __init__(self, **kwargs: Any) -> None:
         """
         Initializes the ActionExecutor with the provided configuration.
@@ -79,40 +75,22 @@ class ActionExecutor(BaseExecutor):
             action (ObservableAction): The action to be added to the pile.
         """
         await self.pile.ainclude(action)
-        self.pending.include(action)
+        self.pending.include(item=action)
 
+    @override
     async def forward(self) -> None:
-        """
-        Forwards pending actions to the processor.
-
-        This method dequeues pending actions and enqueues them into the
-        processor for processing. After all pending actions are forwarded,
-        the processor processes them.
-        """
+        """Forwards pending actions to the processor."""
         while len(self.pending) > 0:
             action = self.pile[self.pending.popleft()]
             await self.processor.enqueue(action)
         await self.processor.process()
 
     def __contains__(self, action: ObservableAction | str) -> bool:
-        """
-        Checks if an action is present in the pile.
-
-        Args:
-            action (ObservableAction | str): The action to check.
-
-        Returns:
-            bool: True if the action is in the pile, False otherwise.
-        """
+        """Checks if an action is present in the pile."""
         return action in self.pile
 
     def __iter__(self) -> Iterator[ObservableAction]:
-        """
-        Returns an iterator over the actions in the pile.
-
-        Returns:
-            Iterator: An iterator over the actions in the pile.
-        """
+        """Returns an iterator over the actions in the pile."""
         return iter(self.pile)
 
 
