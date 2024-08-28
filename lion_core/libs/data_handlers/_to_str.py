@@ -1,20 +1,56 @@
 import json
 from collections.abc import Iterable, Mapping
-from functools import singledispatch
-from typing import Any
+from typing import Any, TypeVar, overload
 
 from pydantic import BaseModel
+from pydantic_core import PydanticUndefined, PydanticUndefinedType
 
 from lion_core.libs.data_handlers._to_dict import to_dict
-from lion_core.setting import LionUndefined
+from lion_core.setting import LN_UNDEFINED, LionUndefinedType
+
+T = TypeVar("T")
 
 
-@singledispatch
+@overload
+def to_str(
+    input_: None | LionUndefinedType | PydanticUndefinedType,
+) -> str: ...
+
+
+@overload
+def to_str(input_: str) -> str: ...
+
+
+@overload
+def to_str(input_: BaseModel, **kwargs: Any) -> str: ...
+
+
+@overload
+def to_str(input_: Mapping, **kwargs: Any) -> str: ...
+
+
+@overload
+def to_str(input_: bytes | bytearray) -> str: ...
+
+
+@overload
+def to_str(input_: Iterable, **kwargs: Any) -> str: ...
+
+
+@overload
+def to_str(
+    input_: Any,
+    *,
+    strip_lower: bool = False,
+    chars: str | None = None,
+    **kwargs: Any,
+) -> str: ...
+
+
 def to_str(
     input_: Any,
     /,
     *,
-    use_model_dump: bool = True,
     strip_lower: bool = False,
     chars: str | None = None,
     **kwargs: Any,
@@ -48,111 +84,79 @@ def to_str(
         '{"a": 1, "b": 2}'
     """
     try:
-        result = str(input_)
-        return _process_string(result, strip_lower, chars)
-    except Exception as e:
-        raise ValueError(f"Could not convert to string: {input_}") from e
-
-
-@to_str.register(str)
-def _(input_: str, /, **kwargs: Any) -> str:
-    """Handle string inputs."""
-    return _process_string(
-        input_, kwargs.get("strip_lower", False), kwargs.get("chars")
-    )
-
-
-@to_str.register(bytes)
-@to_str.register(bytearray)
-def _(input_: bytes | bytearray, /, **kwargs: Any) -> str:
-    """Handle bytes and bytearray inputs."""
-    return _process_string(
-        input_.decode("utf-8", errors="replace"),
-        kwargs.get("strip_lower", False),
-        kwargs.get("chars"),
-    )
-
-
-@to_str.register(type(None))
-@to_str.register(LionUndefined)
-def _(_: Any, /, **kwargs: Any) -> str:
-    """Handle None and LionUndefined inputs."""
-    return ""
-
-
-@to_str.register(Mapping)
-def _(input_: Mapping, /, **kwargs: Any) -> str:
-    """Handle Mapping inputs."""
-    try:
-        dict_input = to_dict(
-            input_, use_model_dump=kwargs.get("use_model_dump", True)
-        )
-        json_kwargs = {
-            k: v for k, v in kwargs.items() if k != "use_model_dump"
-        }
-        result = json.dumps(dict_input, **json_kwargs)
-        return _process_string(
-            result, kwargs.get("strip_lower", False), kwargs.get("chars")
-        )
+        str_ = _dispatch_to_str(input_, **kwargs)
+        return _process_string(s=str_, strip_lower=strip_lower, chars=chars)
     except Exception as e:
         raise ValueError(
-            f"Failed to convert Mapping to string: {input_}"
+            f"Could not convert input of type <{type(input_).__name__}> to "
+            "string"
         ) from e
 
 
-@to_str.register(Iterable)
-def _(input_: Iterable, /, **kwargs: Any) -> str:
-    """Handle Iterable inputs."""
+def _pydantic_to_str(input_: BaseModel, /, **kwargs: Any) -> str:
+
+    if hasattr(input_, "to_dict"):
+        input_ = input_.to_dict()
+    else:
+        input_ = input_.model_dump()
+
+    return json.dumps(input_, **kwargs)
+
+
+def _dict_to_str(input_: Mapping, /, **kwargs: Any) -> str:
+    input_ = dict(input_)
+    return json.dumps(input_, **kwargs)
+
+
+def _byte_to_str(input_: bytes | bytearray, /) -> str:
+    return input_.decode("utf-8", errors="replace")
+
+
+def _dispatch_to_str(input_: Any, /, **kwargs: Any) -> str:
+    if isinstance(input_, str):
+        return input_
+
+    if input_ in [LN_UNDEFINED, PydanticUndefined, None, [], {}]:
+        return ""
+
+    if isinstance(input_, BaseModel):
+        return _pydantic_to_str(input_, **kwargs)
+
+    if isinstance(input_, Mapping):
+        return _dict_to_str(input_, **kwargs)
+
+    if isinstance(input_, (bytes, bytearray)):
+        return _byte_to_str(input_)
+
+    if isinstance(input_, Iterable):
+        return _iterable_to_str(input_, **kwargs)
+
     try:
-        input_list = list(input_)
-        str_kwargs = {
-            k: v
-            for k, v in kwargs.items()
-            if k not in ["strip_lower", "chars"]
-        }
-        result = ", ".join(to_str(item, **str_kwargs) for item in input_list)
-        return _process_string(
-            result, kwargs.get("strip_lower", False), kwargs.get("chars")
-        )
-    except Exception as e:
-        raise ValueError(
-            f"Failed to convert Iterable to string: {input_}"
-        ) from e
+        dict_ = to_dict(input_)
+        return _dict_to_str(dict_, **kwargs)
+    except Exception:
+        return str(object=input_)
 
 
-@to_str.register(BaseModel)
-def _(input_: BaseModel, /, **kwargs: Any) -> str:
-    """Handle Pydantic BaseModel inputs."""
-    use_model_dump = kwargs.get("use_model_dump", True)
-    if use_model_dump:
-        return to_str(input_.model_dump(), **kwargs)
-    return _process_string(
-        str(input_), kwargs.get("strip_lower", False), kwargs.get("chars")
-    )
+def _iterable_to_str(input_: Iterable, /, **kwargs: Any) -> str:
+    input_ = list(input_)
+    return ", ".join(_dispatch_to_str(item, **kwargs) for item in input_)
 
 
 def _process_string(s: str, strip_lower: bool, chars: str | None) -> str:
-    """
-    Process the resulting string based on strip_lower and chars parameters.
+    if s in [LN_UNDEFINED, PydanticUndefined, None, [], {}]:
+        return ""
 
-    Args:
-        s: The string to process.
-        strip_lower: If True, convert to lowercase and strip.
-        chars: Characters to strip from the result.
-
-    Returns:
-        The processed string.
-    """
     if strip_lower:
         s = s.lower()
-    return s.strip(chars) if chars is not None else s.strip()
+        s = s.strip(chars) if chars is not None else s.strip()
+    return s
 
 
 def strip_lower(
     input_: Any,
     /,
     *,
-    use_model_dump: bool = True,
     chars: str | None = None,
     **kwargs: Any,
 ) -> str:
@@ -182,7 +186,6 @@ def strip_lower(
         input_,
         strip_lower=True,
         chars=chars,
-        use_model_dump=use_model_dump,
         **kwargs,
     )
 
