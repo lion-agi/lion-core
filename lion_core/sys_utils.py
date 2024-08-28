@@ -20,7 +20,6 @@ class SysUtil:
     def time(
         tz: timezone = TIME_CONFIG["tz"],
         type_: Literal["timestamp", "datetime", "iso", "custom"] = "timestamp",
-        iso: bool = False,
         sep: str | None = "T",
         timespec: str | None = "auto",
         custom_format: str | None = None,
@@ -51,27 +50,28 @@ class SysUtil:
         """
         now = datetime.now(tz=tz)
 
-        if type_ == "iso" or iso:
-            return now.isoformat(sep=sep, timespec=timespec)
+        match type_:
+            case "iso":
+                return now.isoformat(sep=sep, timespec=timespec)
 
-        if type_ == "timestamp":
-            return now.timestamp()
+            case "timestamp":
+                return now.timestamp()
 
-        if type_ == "datetime":
-            return now
+            case "datetime":
+                return now
 
-        if type_ == "custom":
-            if not custom_format:
-                raise ValueError(
-                    "custom_format must be provided when type_='custom'"
-                )
-            formatted_time = now.strftime(custom_format)
-            if custom_sep is not None:
-                for old_sep in ("-", ":", "."):
-                    formatted_time = formatted_time.replace(
-                        old_sep, custom_sep
+            case "custom":
+                if not custom_format:
+                    raise ValueError(
+                        "custom_format must be provided when type_='custom'"
                     )
-            return formatted_time
+                formatted_time = now.strftime(custom_format)
+                if custom_sep is not None:
+                    for old_sep in ("-", ":", "."):
+                        formatted_time = formatted_time.replace(
+                            old_sep, custom_sep
+                        )
+                return formatted_time
 
         raise ValueError(
             f"Invalid type_: {type_}. "
