@@ -172,11 +172,14 @@ class SysUtil:
         Raises:
             LionIDError: If the item does not contain a valid Lion ID.
         """
+        item_id = None
         if isinstance(item, Sequence) and len(item) == 1:
             item = item[0]
 
         if isinstance(item, Observable):
             item_id: str = item.ln_id
+        else:
+            item_id = item
 
         id_len = (
             (len(config.prefix) if config.prefix else 0)
@@ -221,15 +224,17 @@ class SysUtil:
         length_check = len(item_id) == id_len
 
         if all(
-            isinstance(item, str),
-            hyphen_check,
-            hypen_start_check,
-            hypen_end_check,
-            prefix_check,
-            postfix_check,
-            length_check,
-        ) or (len(item) == 32):
-            return item
+            (
+                isinstance(item_id, str),
+                hyphen_check,
+                hypen_start_check,
+                hypen_end_check,
+                prefix_check,
+                postfix_check,
+                length_check,
+            )
+        ) or (len(item_id) == 32):
+            return item_id
         raise LionIDError(
             f"The input object of type <{type(item).__name__}> does "
             "not contain or is not a valid Lion ID. Item must be an instance"

@@ -2,11 +2,11 @@ from datetime import timezone
 from enum import Enum
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Self
 
 
-class LionUndefined:
+class LionUndefinedType(str):
     def __init__(self) -> None:
         self.undefined = True
 
@@ -23,10 +23,12 @@ class LionUndefined:
     __slots__ = ["undefined"]
 
 
-LN_UNDEFINED = LionUndefined()
+LN_UNDEFINED = LionUndefinedType()
 
 
 class SchemaModel(BaseModel):
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     schema_version: int | float | str | None = Field(
         default=None, exclude=True
@@ -54,17 +56,26 @@ class LionIDConfig(SchemaModel):
     postfix: str = ""
 
 
+class TimedFuncCallConfig(SchemaModel):
+    initial_delay: int = 0
+    retry_default: str | LionUndefinedType = LN_UNDEFINED
+    retry_timeout: int | None = None
+    retry_timing: bool = False
+    error_msg: str | None = None
+    error_map: dict | None = None
+
+
 class RetryConfig(SchemaModel):
     num_retries: int = 0
     initial_delay: int = 0
     retry_delay: int = 0
     backoff_factor: int = 1
-    retry_default: str = LN_UNDEFINED
+    retry_default: str | LionUndefinedType = LN_UNDEFINED
     retry_timeout: int | None = None
     retry_timing: bool = False
     verbose_retry: bool = False
-    error_msg: str = None
-    error_map: dict = None
+    error_msg: str | None = None
+    error_map: dict | None = None
 
 
 class BaseLionFields(str, Enum):
@@ -79,9 +90,9 @@ class BaseLionFields(str, Enum):
 
 class PydanticSerializationConfig(SchemaModel):
     mode: str = "python"
-    include: set = None
-    exclude: set = None
-    context: dict = None
+    include: set | None = None
+    exclude: set | None = None
+    context: dict | None = None
     by_alias: bool = False
     exclude_unset: bool = False
     exclude_defaults: bool = False
@@ -101,6 +112,15 @@ DEFAULT_LION_ID_CONFIG = LionIDConfig(
     postfix="",
 )
 
+DEFAULT_TIMED_FUNC_CALL_CONFIG = TimedFuncCallConfig(
+    initial_delay=0,
+    retry_default=LN_UNDEFINED,
+    retry_timeout=None,
+    retry_timing=False,
+    error_msg=None,
+    error_map=None,
+)
+
 DEFAULT_RETRY_CONFIG = RetryConfig(
     num_retries=0,
     initial_delay=0,
@@ -113,6 +133,7 @@ DEFAULT_RETRY_CONFIG = RetryConfig(
     error_msg=None,
     error_map=None,
 )
+
 
 DEFAULT_TIMEZONE = timezone.utc
 BASE_LION_FIELDS = set(BaseLionFields.__members__.values())
