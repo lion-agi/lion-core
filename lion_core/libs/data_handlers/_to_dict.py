@@ -1,14 +1,53 @@
 import json
 from collections.abc import Callable, Mapping, Sequence
-from functools import singledispatch
-from typing import Any, Literal, TypeVar
+from typing import Any, Literal, TypeVar, overload
 
-from lion_core.setting import LionUndefined
+from pydantic_core import PydanticUndefined, PydanticUndefinedType
+
+from lion_core.setting import LN_UNDEFINED, LionUndefinedType
 
 T = TypeVar("T", bound=dict[str, Any] | list[dict[str, Any]])
 
 
-@singledispatch
+@overload
+def to_dict(
+    input_: None | LionUndefinedType | PydanticUndefinedType, /
+) -> dict[str, Any]: ...
+
+
+@overload
+def to_dict(input_: Mapping, /) -> dict[str, Any]: ...
+
+
+@overload
+def to_dict(
+    input_: str,
+    /,
+    *,
+    str_type: Literal["json", "xml"] | None = None,
+    parser: Callable[[str], dict[str, Any]] | None = None,
+    **kwargs: Any,
+) -> dict[str, Any] | list[dict[str, Any]]: ...
+
+
+@overload
+def to_dict(
+    input_: Sequence,
+    /,
+    **kwargs: Any,
+) -> list[dict[str, Any]] | dict[str, Any]: ...
+
+
+@overload
+def to_dict(
+    input_: Any,
+    /,
+    *,
+    use_model_dump: bool = False,
+    **kwargs: Any,
+) -> dict[str, Any]: ...
+
+
 def to_dict(
     input_: Any,
     /,
@@ -53,54 +92,67 @@ def to_dict(
     Raises:
         ValueError: If the input cannot be converted to a dictionary.
     """
-    if use_model_dump and hasattr(input_, "model_dump"):
-        return input_.model_dump(**kwargs)
 
-    for method in ["to_dict", "dict", "json", "to_json"]:
-        if hasattr(input_, method):
-            result = getattr(input_, method)(**kwargs)
-            return (
-                json.loads(result)
-                if method == "json" and isinstance(result, str)
-                else result
-            )
-
-    if hasattr(input_, "__dict__"):
-        return input_.__dict__
-
-    try:
-        return dict(input_)
-    except Exception as e:
-        raise ValueError(f"Unable to convert input to dictionary: {e}")
+    return _dispatch_from_dict(
+        input_,
+        use_model_dump=use_model_dump,
+        str_type=str_type,
+        parser=parser,
+        **kwargs,
+    )
 
 
-@to_dict.register(LionUndefined)
-@to_dict.register(type(None))
-def _(
-    input_: LionUndefined | None,
+def _dispatch_from_dict(
+    input_: Any,
     /,
     *,
     use_model_dump: bool = False,
     str_type: Literal["json", "xml"] | None = None,
     parser: Callable[[str], dict[str, Any]] | None = None,
     **kwargs: Any,
-) -> dict[str, Any]:
-    """Handle LionUndefined and None inputs."""
-    return {}
+) -> T:
+
+    if input_ in [LN_UNDEFINED, PydanticUndefined, None, [], {}]:
+        return {}
+
+    if isinstance(input_, Mapping):
+        return dict(input_)
+
+    if isinstance(input_, str):
+        return _str_to_dict(input_, str_type=str_type, parser=parser, **kwargs)
+
+    if isinstance(input_, Sequence):
+        return _sequence_to_dict(input_, **kwargs)
+
+    return _generic_type_to_dict(
+        input_, use_model_dump=use_model_dump, **kwargs
+    )
 
 
-@to_dict.register(Mapping)
-def _(input_: Mapping, /, **kwargs: Any) -> dict[str, Any]:
-    """Handle Mapping inputs."""
-    return dict(input_)
+def _sequence_to_dict(
+    input_: Sequence,
+    /,
+    **kwargs: Any,
+) -> list[dict[str, Any]] | dict[str, Any]:
+    """Handle Sequence inputs."""
+    if not input_:
+        return []
+    out = [
+        (
+            to_dict(item, **kwargs)
+            if isinstance(item, Mapping | Sequence)
+            and not isinstance(item, str)
+            else item
+        )
+        for item in input_
+    ]
+    return out[0] if len(out) == 1 and isinstance(out[0], dict) else out
 
 
-@to_dict.register(str)
-def _(
+def _str_to_dict(
     input_: str,
     /,
     *,
-    use_model_dump: bool = False,
     str_type: Literal["json", "xml"] | None = "json",
     parser: Callable[[str], dict[str, Any]] | None = None,
     **kwargs: Any,
@@ -132,25 +184,32 @@ def _(
     raise ValueError(f"Unsupported string type: {str_type}")
 
 
-@to_dict.register(Sequence)
-def _(
-    input_: Sequence,
+def _generic_type_to_dict(
+    input_,
     /,
+    *,
+    use_model_dump: bool,
     **kwargs: Any,
-) -> list[dict[str, Any]] | dict[str, Any]:
-    """Handle Sequence inputs."""
-    if not input_:
-        return []
-    out = [
-        (
-            to_dict(item, **kwargs)
-            if isinstance(item, Mapping | Sequence)
-            and not isinstance(item, str)
-            else item
-        )
-        for item in input_
-    ]
-    return out[0] if len(out) == 1 and isinstance(out[0], dict) else out
+) -> dict[str, Any]:
+    if use_model_dump and hasattr(input_, "model_dump"):
+        return input_.model_dump(**kwargs)
+
+    for method in ["to_dict", "dict", "json", "to_json"]:
+        if hasattr(input_, method):
+            result = getattr(input_, method)(**kwargs)
+            return (
+                json.loads(result)
+                if method == "json" and isinstance(result, str)
+                else result
+            )
+
+    if hasattr(input_, "__dict__"):
+        return input_.__dict__
+
+    try:
+        return dict(input_)
+    except Exception as e:
+        raise ValueError(f"Unable to convert input to dictionary: {e}")
 
 
 # File: lion_core/libs/data_handlers/_to_dict.py
