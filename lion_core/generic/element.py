@@ -1,42 +1,20 @@
 from datetime import datetime
 from typing import Any, TypeVar
 
-from pydantic import (
-    AliasChoices,
-    BaseModel,
-    ConfigDict,
-    Field,
-    field_validator,
-)
+from pydantic import ConfigDict, field_validator
 from typing_extensions import override
 
 from lion_core._class_registry import LION_CLASS_REGISTRY, get_class
-from lion_core.abc._characteristic import Observable, Temporal
-from lion_core.abc._concept import AbstractElement
 from lion_core.exceptions import LionIDError
-from lion_core.setting import TIME_CONFIG
+from lion_core.generic.base import ObservableElement
+from lion_core.setting import DEFAULT_TIMEZONE
 from lion_core.sys_utils import SysUtil
 
 T = TypeVar("T", bound="Element")
 
 
-class Element(BaseModel, AbstractElement, Observable, Temporal):
+class Element(ObservableElement):
     """Base class in the Lion framework."""
-
-    ln_id: str = Field(
-        default_factory=SysUtil.id,
-        title="Lion ID",
-        description="Unique identifier for the element",
-        frozen=True,
-        validation_alias=AliasChoices("id", "id_", "ID", "ID_"),
-    )
-
-    timestamp: float = Field(
-        default_factory=lambda: SysUtil.time(type_="timestamp"),
-        title="Creation Timestamp",
-        frozen=True,
-        alias="created",
-    )
 
     model_config = ConfigDict(
         extra="forbid",
@@ -54,7 +32,7 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
     @property
     def created_datetime(self) -> datetime:
         """Get the creation datetime of the Element."""
-        return datetime.fromtimestamp(self.timestamp, tz=TIME_CONFIG["tz"])
+        return datetime.fromtimestamp(self.timestamp, tz=DEFAULT_TIMEZONE)
 
     @field_validator("ln_id", mode="before")
     def _validate_id(cls, value: Any) -> str:
@@ -77,15 +55,17 @@ class Element(BaseModel, AbstractElement, Observable, Temporal):
         else:
             raise ValueError(f"Unsupported type for time_attr: {type(value)}")
 
+    @override
     @classmethod
     def from_dict(cls, data: dict, /, **kwargs: Any) -> T:
         """create an instance of the Element or its subclass"""
         if "lion_class" in data:
-            cls = get_class(data.pop("lion_class"))
+            cls = get_class(class_name=data.pop("lion_class"))
         if cls.from_dict.__func__ != Element.from_dict.__func__:
             return cls.from_dict(data, **kwargs)
         return cls.model_validate(data, **kwargs)
 
+    @override
     def to_dict(self, **kwargs: Any) -> dict:
         """Convert the Element to a dictionary representation."""
         dict_ = self.model_dump(**kwargs)
