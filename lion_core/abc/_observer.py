@@ -7,25 +7,15 @@ from lion_core.abc._observation import Event
 
 
 class BaseManager(AbstractObserver):
-    """
-    Coordinates other observers and system components.
-
-    This class serves as a base for managing and orchestrating
-    various system elements.
-    """
+    """Coordinates other system components."""
 
 
 class BaseProcessor(AbstractObserver):
-    """
-    Observers for information transformation and analysis.
-
-    This class represents observers that process and analyze
-    information.
-    """
+    """Observers for information transformation and analysis."""
 
     event_type: type[Event]
 
-    def __init__(self, capacity: int, refresh_time: float):
+    def __init__(self, capacity: int, refresh_time: float) -> None:
         """
         Initializes an ActionProcessor instance.
 
@@ -50,19 +40,19 @@ class BaseProcessor(AbstractObserver):
 
     async def enqueue(self, event: Event) -> None:
         """
-        Enqueues an action to the processor queue.
+        Enqueues an event to the processor queue.
 
         Args:
-            action: The action to be added to the queue.
+            event: The event to be added to the queue.
         """
-        await self.queue.put(event)
+        await self.queue.put(item=event)
 
     async def dequeue(self) -> Event:
         """
-        Dequeues an action from the processor queue.
+        Dequeues an event from the processor queue.
 
         Returns:
-            The next action in the queue.
+            The next event in the queue.
         """
         return await self.queue.get()
 
@@ -78,8 +68,7 @@ class BaseProcessor(AbstractObserver):
         """Allows the processor to start or continue processing."""
         self._stop_event.clear()
 
-    @property
-    def stopped(self) -> bool:
+    def is_stopped(self) -> bool:
         """
         Indicates whether the processor has been stopped.
 
@@ -109,7 +98,7 @@ class BaseProcessor(AbstractObserver):
 
     async def request_permission(self, **kwargs: Any) -> bool:
         """
-        Placeholder method to request permission before processing an action.
+        Placeholder method to request permission before processing an event.
 
         Args:
             **kwargs: Arbitrary keyword arguments for requesting permission.
@@ -119,7 +108,7 @@ class BaseProcessor(AbstractObserver):
         """
         return True
 
-    async def execute(self):
+    async def execute(self) -> None:
         """
         Executes the processor, continuously processing actions until stopped.
 
@@ -129,19 +118,14 @@ class BaseProcessor(AbstractObserver):
         self.execution_mode = True
         await self.start()
 
-        while not self.stopped:
+        while not self.is_stopped():
             await self.process()
             await asyncio.sleep(self.refresh_time)
         self.execution_mode = False
 
 
 class BaseExecutor(AbstractObserver):
-    """
-    Active observers performing tasks based on observations.
-
-    This class represents observers that execute actions in response
-    to observations.
-    """
+    """Performing tasks with `processor`."""
 
     processor_class: type[BaseProcessor]
     strict: bool = True
@@ -157,100 +141,39 @@ class BaseExecutor(AbstractObserver):
 
     @abstractmethod
     async def forward(self, *args: Any, **kwargs: Any) -> Any:
-        """
-        Execute the observer's task asynchronously.
-
-        Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-            Any: The result of executing the task.
-        """
+        """Move onto the next step."""
 
     async def create_processor(self) -> None:
-        """
-        Creates the processor for handling actions.
-
-        This method initializes the processor using the configuration provided
-        during the instantiation of the executor.
-        """
+        """Factory method the processor creation"""
         self.processor = await self.processor_class.create(
             **self.processor_config,
         )
 
     async def start(self) -> None:
-        """
-        Starts the action processor.
-
-        This method ensures that the processor is created if it doesn't
-        already exist and then starts processing actions.
-        """
+        """Starts the event processor."""
         if not self.processor:
             await self.create_processor()
         await self.processor.start()
 
     async def stop(self) -> None:
-        """
-        Stops the action processor.
-
-        This method stops the processor if it is currently running.
-        """
+        """Stops the event processor."""
         if self.processor:
             await self.processor.stop()
 
 
 class BaseEngine(AbstractObserver):
-    """
-    Base class for engine components in the framework.
-
-    This class represents the core engine functionality.
-    """
 
     @abstractmethod
     async def run(self, *args: Any, **kwargs: Any) -> Any:
-        """
-        Asynchronously runs the engine's core functionality.
-
-        Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-            Any: The result of running the engine.
-        """
-        pass
+        """Asynchronously runs the engine"""
 
 
+# subclass must have access to intelligent models
 class BaseiModel(AbstractObserver):
-    """
-    Base class for intelligent models in the framework.
-
-    This class represents intelligent models with core functionality.
-    Subclasses must have access to the intelligent model implementation.
-    """
 
     @abstractmethod
     async def call(self, *args: Any, **kwargs: Any) -> Any:
-        """
-        Asynchronously calls the model's core functionality.
-
-        Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-            Any: The result of calling the model's functionality.
-        """
-        pass
-
-    async def structure(self, *args, **kwargs):
-        """raise error, or return structured output"""
-        raise NotImplementedError
-
-    async def chat(self, *args, **kwargs):
-        """raise error, or return chat output"""
-        raise NotImplementedError
+        """Asynchronously calls the model's core functionality."""
 
 
 __all__ = [
