@@ -4,11 +4,15 @@ import random
 from collections.abc import Sequence
 from datetime import datetime, timezone
 from hashlib import sha256
-from typing import Any, Literal, TypeVar
+from typing import Literal, TypeVar
 
 from lion_core.abc import Observable
 from lion_core.exceptions import LionIDError
-from lion_core.setting import LION_ID_CONFIG, TIME_CONFIG
+from lion_core.setting import (
+    DEFAULT_LION_ID_CONFIG,
+    DEFAULT_TIMEZONE,
+    LionIDConfig,
+)
 
 T = TypeVar("T")
 
@@ -18,7 +22,7 @@ class SysUtil:
 
     @staticmethod
     def time(
-        tz: timezone = TIME_CONFIG["tz"],
+        tz: timezone = DEFAULT_TIMEZONE,
         type_: Literal["timestamp", "datetime", "iso", "custom"] = "timestamp",
         sep: str | None = "T",
         timespec: str | None = "auto",
@@ -29,11 +33,9 @@ class SysUtil:
         Get current time in various formats.
 
         Args:
-            tz: Timezone for the time (default: TIME_CONFIG["tz"]).
+            tz: Timezone for the time (default: utc).
             type_: Type of time to return (default: "timestamp").
                 Options: "timestamp", "datetime", "iso", "custom".
-            iso: If True, returns ISO format string (deprecated,
-                    use type_="iso").
             sep: Separator for ISO format (default: "T").
             timespec: Timespec for ISO format (default: "auto").
             custom_format: Custom strftime format string for
@@ -105,13 +107,15 @@ class SysUtil:
 
     @staticmethod
     def id(
-        n: int = LION_ID_CONFIG["n"],
-        prefix: str | None = LION_ID_CONFIG["prefix"],
-        postfix: str | None = LION_ID_CONFIG["postfix"],
-        random_hyphen: bool = LION_ID_CONFIG["random_hyphen"],
-        num_hyphens: int | None = LION_ID_CONFIG["num_hyphens"],
-        hyphen_start_index: int | None = LION_ID_CONFIG["hyphen_start_index"],
-        hyphen_end_index: int | None = LION_ID_CONFIG["hyphen_end_index"],
+        n: int = DEFAULT_LION_ID_CONFIG.n,
+        prefix: str | None = DEFAULT_LION_ID_CONFIG.prefix,
+        postfix: str | None = DEFAULT_LION_ID_CONFIG.postfix,
+        random_hyphen: bool = DEFAULT_LION_ID_CONFIG.random_hyphen,
+        num_hyphens: int | None = DEFAULT_LION_ID_CONFIG.num_hyphens,
+        hyphen_start_index: (
+            int | None
+        ) = DEFAULT_LION_ID_CONFIG.hyphen_start_index,
+        hyphen_end_index: int | None = DEFAULT_LION_ID_CONFIG.hyphen_end_index,
     ) -> str:
         """
         Generate a unique identifier.
@@ -128,7 +132,7 @@ class SysUtil:
         Returns:
             A unique identifier string.
         """
-        _t = SysUtil.time(iso=True).encode()
+        _t = SysUtil.time(type_="iso").encode()
         _r = os.urandom(16)
         _id = sha256(_t + _r).hexdigest()[:n]
 
@@ -148,7 +152,12 @@ class SysUtil:
         return _id
 
     @staticmethod
-    def get_id(item: Any, /, *, config: dict = LION_ID_CONFIG) -> str:
+    def get_id(
+        item: Sequence[Observable] | Observable | str,
+        /,
+        *,
+        config: LionIDConfig = DEFAULT_LION_ID_CONFIG,
+    ) -> str:
         """
         Get the Lion ID of an item.
 
@@ -165,38 +174,74 @@ class SysUtil:
         if isinstance(item, Sequence) and len(item) == 1:
             item = item[0]
 
-        if hasattr(item, "ln_id") and isinstance(item, Observable):
-            item = item.ln_id
-
-        prefix = config["prefix"]
-        n = int(config["n"])
-        n_hyphens = int(config["num_hyphens"])
-        postfix = config.get("postfix", "")
+        if isinstance(item, Observable):
+            item_id: str = item.ln_id
 
         id_len = (
-            (len(prefix) if prefix else 0)
-            + n
-            + n_hyphens
-            + (len(postfix) if postfix else 0)
+            (len(config.prefix) if config.prefix else 0)
+            + config.n
+            + config.num_hyphens
+            + (len(config.postfix) if config.postfix else 0)
         )
 
-        if all(
-            (
-                isinstance(item, str),
-                (False if prefix and not item.startswith(prefix) else True),
-                (False if postfix and not item.endswith(postfix) else True),
-                len(item) == id_len,
+        hyphen_check = (
+            False
+            if (config.num_hyphens and config.num_hyphens)
+            != item_id.count("-")
+            else True
+        )
+        hypen_start_check = (
+            False
+            if (
+                config.hyphen_start_index
+                and "-" in item_id[: config.hyphen_start_index]
             )
-        ) or (
-            len(item) == 32  # for backward compatibility
-        ):
+            else True
+        )
+        hypen_end_check = (
+            False
+            if (
+                config.hyphen_end_index
+                and "-" in item_id[config.hyphen_end_index :]  # noqa
+            )
+            else True
+        )
+
+        prefix_check = (
+            False
+            if (config.prefix and not item_id.startswith(config.prefix))
+            else True
+        )
+        postfix_check = (
+            False
+            if (config.postfix and not item_id.endswith(config.postfix))
+            else True
+        )
+        length_check = len(item_id) == id_len
+
+        if all(
+            isinstance(item, str),
+            hyphen_check,
+            hypen_start_check,
+            hypen_end_check,
+            prefix_check,
+            postfix_check,
+            length_check,
+        ) or (len(item) == 32):
             return item
         raise LionIDError(
-            "Item must be observable and contain a valid Lion ID."
+            f"input object {type(item).__name__} does not contain or is "
+            "not a valid Lion ID. Item must be an instance of `Observable` "
+            "or a valid `ln_id`."
         )
 
     @staticmethod
-    def is_id(item: Any, /, *, config: dict = LION_ID_CONFIG) -> bool:
+    def is_id(
+        item: Sequence[Observable] | Observable | str,
+        /,
+        *,
+        config: LionIDConfig = DEFAULT_LION_ID_CONFIG,
+    ) -> bool:
         """
         Check if an item is a valid Lion ID.
 
