@@ -1,14 +1,14 @@
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 from typing_extensions import override
 
 from lion_core.abc import EventStatus
 from lion_core.action.base import ObservableAction
 from lion_core.action.tool import Tool
 from lion_core.libs import CallDecorator as cd
-from lion_core.libs import rcall
-from lion_core.setting import RetryConfig
+from lion_core.libs import tcall
+from lion_core.setting import TimedFuncCallConfig
 
 
 class FunctionCalling(ObservableAction):
@@ -23,24 +23,30 @@ class FunctionCalling(ObservableAction):
         function_name (str | None): Name of the function to be called.
     """
 
-    func_tool: Tool | None = Field(None, exclude=True)
+    func_tool: Tool | None = Field(default=None, exclude=True)
+    _content_fields: list = PrivateAttr(
+        default=["execution_response", "arguments", "function_name"]
+    )
     arguments: dict[str, Any] | None = None
-    content_fields: list = ["response", "arguments", "function_name"]
     function_name: str | None = None
 
     def __init__(
         self,
         func_tool: Tool,
         arguments: dict[str, Any],
-        retry_config: RetryConfig | None = None,
-    ):
-        super().__init__(retry_config=retry_config)
-        self.func_tool: Tool = func_tool
-        self.arguments: dict[str, Any] = arguments or {}
-        self.function_name = func_tool.function_name
+        timed_config: dict | TimedFuncCallConfig | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        kwargs for timed config
+        """
+        super().__init__(timed_config=timed_config, **kwargs)
+        self.func_tool = func_tool
+        self.arguments = arguments or {}
+        self.function_name = self.func_tool.function_name
 
     @override
-    async def invoke(self):
+    async def invoke(self) -> Any | None:
         """Asynchronously invokes the function with stored arguments.
 
         Handles function invocation, applying pre/post-processing steps.
@@ -57,14 +63,17 @@ class FunctionCalling(ObservableAction):
             preprocess=self.func_tool.pre_processor,
             preprocess_kwargs=self.func_tool.pre_processor_kwargs,
         )
-        async def _inner(**kwargs):
-            config = {**self.retry_config.to_dict(), **kwargs}
-            config["retry_timing"] = True
-            result, elp = await rcall(self.func_tool.function, **config)
+        async def _inner(**kwargs) -> tuple[Any, Any | float]:
+            kwargs["retry_timing"] = True
+            result, elp = await tcall(self.func_tool.function, **kwargs)
             if self.func_tool.post_processor:
                 kwargs = self.func_tool.post_processor_kwargs or {}
-                kwargs["retry_timing"] = True
-                result, elp2 = await rcall(
+                kwargs = {
+                    **kwargs,
+                    **self.timed_config.to_dict(),
+                    "retry_timing": True,
+                }
+                result, elp2 = await tcall(
                     self.func_tool.post_processor, result, **kwargs
                 )
                 elp += elp2
