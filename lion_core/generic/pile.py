@@ -1113,7 +1113,7 @@ class Pile(Element, Collective, Generic[T]):
         self.pile_.update(item_dict)
 
     @field_serializer("pile_")
-    def _(self, value: dict[str, T]) -> dict[str, dict]:
+    def _(self, value: dict[str, T]):
         return [i.to_dict() for i in value.values()]
 
     class AsyncPileIterator:
