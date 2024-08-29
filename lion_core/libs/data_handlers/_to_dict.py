@@ -59,6 +59,9 @@ def to_dict(
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Convert various input types to a dictionary."""
+    if isinstance(input_, dict):
+        return input_
+
     if isinstance(
         input_, type(None) | LionUndefinedType | PydanticUndefinedType
     ):
