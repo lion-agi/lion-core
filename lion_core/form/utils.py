@@ -4,7 +4,6 @@ from lion_core.exceptions import (
     LionValueError,
 )
 from lion_core.generic.note import note
-from lion_core.libs import strip_lower
 
 RESTRICTED_FIELDS = {
     "input_fields",
@@ -106,8 +105,7 @@ def get_input_output_fields(str_: str) -> tuple[list[str], list[str]]:
         )
 
     inputs, outputs = str_.split("->")
-
-    input_fields = [strip_lower(i) for i in inputs.split(",")]
-    request_fields = [strip_lower(o) for o in outputs.split(",")]
+    input_fields = [str(i).strip().lower() for i in inputs.split(",")]
+    request_fields = [str(o).strip().lower() for o in outputs.split(",")]
 
     return input_fields, request_fields
