@@ -78,9 +78,9 @@ def nset(
         ensure_list_index(target_container, last_index)
         target_container[last_index] = value
     elif isinstance(target_container, dict):
-        if isinstance(last_index, int):
+        if not isinstance(last_index, str):
             raise TypeError(
-                f"Unsupported key type: {type(index).__name__}. "
+                f"Unsupported key type: {type(last_index).__name__}. "
                 "Only string keys are acceptable."
             )
         target_container[last_index] = value
