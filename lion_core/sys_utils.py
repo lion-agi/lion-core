@@ -22,6 +22,7 @@ class SysUtil:
 
     @staticmethod
     def time(
+        *,
         tz: timezone = DEFAULT_TIMEZONE,
         type_: Literal["timestamp", "datetime", "iso", "custom"] = "timestamp",
         sep: str | None = "T",
