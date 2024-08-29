@@ -1,17 +1,17 @@
 import json
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any, Literal, TypeVar, overload
 
-from pydantic_core import PydanticUndefined, PydanticUndefinedType
+from pydantic_core import PydanticUndefinedType
 
-from lion_core.setting import LN_UNDEFINED, LionUndefinedType
+from lion_core.setting import LionUndefinedType
 
 T = TypeVar("T", bound=dict[str, Any] | list[dict[str, Any]])
 
 
 @overload
 def to_dict(
-    input_: None | LionUndefinedType | PydanticUndefinedType, /
+    input_: type[None] | LionUndefinedType | PydanticUndefinedType, /
 ) -> dict[str, Any]: ...
 
 
@@ -24,18 +24,18 @@ def to_dict(
     input_: str,
     /,
     *,
-    str_type: Literal["json", "xml"] | None = None,
+    str_type: Literal["json", "xml"] | None = "json",
     parser: Callable[[str], dict[str, Any]] | None = None,
     **kwargs: Any,
-) -> dict[str, Any] | list[dict[str, Any]]: ...
+) -> dict[str, Any]: ...
 
 
 @overload
-def to_dict(
-    input_: Sequence,
-    /,
-    **kwargs: Any,
-) -> list[dict[str, Any]] | dict[str, Any]: ...
+def to_dict(input_: set, /) -> dict[Any, Any]: ...
+
+
+@overload
+def to_dict(input_: Sequence, /) -> dict[str, Any]: ...
 
 
 @overload
@@ -53,100 +53,51 @@ def to_dict(
     /,
     *,
     use_model_dump: bool = False,
-    str_type: Literal["json", "xml"] | None = None,
+    suppress: bool = False,
+    str_type: Literal["json", "xml"] | None = "json",
     parser: Callable[[str], dict[str, Any]] | None = None,
     **kwargs: Any,
-) -> T:
-    """
-    Convert various input types to a dictionary or list of dictionaries.
-
-    Accepted input types and their behaviors:
-    1. None or LionUndefined: Returns an empty dictionary {}.
-    2. Mapping (dict, OrderedDict, etc.): Returns a dict representation.
-    3. Sequence (list, tuple, etc.):
-       - Returns a list of converted items.
-       - If the sequence contains only one dict, returns that dict.
-    4. set: Converts to a list.
-    5. str:
-       - If empty, returns {}.
-       - If str_type is "json", attempts to parse as JSON.
-       - If str_type is "xml", attempts to parse as XML.
-       - For invalid JSON, returns the original string.
-    6. Objects with .model_dump() method (if use_model_dump is True):
-       Calls .model_dump() and returns the result.
-    7. Objects with .to_dict(), .dict(), or .json() methods:
-       Calls the respective method and returns the result.
-    8. Objects with .__dict__ attribute: Returns the .__dict__.
-    9. Any other object that can be converted to a dict.
-
-    Args:
-        input_: The input to be converted.
-        use_model_dump: If True, use model_dump method when available.
-        str_type: The type of string to parse ("json" or "xml").
-        parser: A custom parser function for string inputs.
-        **kwargs: Additional keyword arguments for conversion methods.
-
-    Returns:
-        A dictionary, list of dictionaries, or list, depending on the input.
-
-    Raises:
-        ValueError: If the input cannot be converted to a dictionary.
-    """
-
-    return _dispatch_from_dict(
-        input_,
-        use_model_dump=use_model_dump,
-        str_type=str_type,
-        parser=parser,
-        **kwargs,
-    )
-
-
-def _dispatch_from_dict(
-    input_: Any,
-    /,
-    *,
-    use_model_dump: bool = False,
-    str_type: Literal["json", "xml"] | None = None,
-    parser: Callable[[str], dict[str, Any]] | None = None,
-    **kwargs: Any,
-) -> T:
-
-    if input_ in [LN_UNDEFINED, PydanticUndefined, None, [], {}]:
-        return {}
-
+) -> dict[str, Any]:
+    """Convert various input types to a dictionary."""
+    if isinstance(
+        input_, type(None) | LionUndefinedType | PydanticUndefinedType
+    ):
+        return _undefined_to_dict(input_)
     if isinstance(input_, Mapping):
-        return dict(input_)
+        return _mapping_to_dict(input_)
 
     if isinstance(input_, str):
-        return _str_to_dict(input_, str_type=str_type, parser=parser, **kwargs)
+        try:
+            return _str_to_dict(
+                input_,
+                str_type=str_type,
+                parser=parser,
+                **kwargs,
+            )
+        except Exception as e:
+            if suppress:
+                return {}
+            raise ValueError("Failed to convert string to dictionary") from e
 
-    if isinstance(input_, Sequence):
-        return _sequence_to_dict(input_, **kwargs)
+    if isinstance(input_, set):
+        return _set_to_dict(input_)
+    if isinstance(input_, Iterable):
+        return _iterable_to_dict(input_)
 
     return _generic_type_to_dict(
         input_, use_model_dump=use_model_dump, **kwargs
     )
 
 
-def _sequence_to_dict(
-    input_: Sequence,
+def _undefined_to_dict(
+    input_: type[None] | LionUndefinedType | PydanticUndefinedType,
     /,
-    **kwargs: Any,
-) -> list[dict[str, Any]] | dict[str, Any]:
-    """Handle Sequence inputs."""
-    if not input_:
-        return []
-    out = [
-        (
-            to_dict(item, **kwargs)
-            if isinstance(item, Mapping | Sequence)
-            and not isinstance(item, str)
-            else item
-        )
-        for item in input_
-    ]
-    return out[0] if len(out) == 1 and isinstance(out[0], dict) else out
+) -> dict:
+    return {}
+
+
+def _mapping_to_dict(input_: Mapping, /) -> dict:
+    return dict(input_)
 
 
 def _str_to_dict(
@@ -181,7 +132,18 @@ def _str_to_dict(
         except Exception as e:
             raise ValueError("Failed to parse XML string") from e
 
-    raise ValueError(f"Unsupported string type: {str_type}")
+    raise ValueError(
+        f"Unsupported string type for `to_dict`: {str_type}, it should "
+        "be 'json' or 'xml'."
+    )
+
+
+def _set_to_dict(input_: set, /) -> dict:
+    return {value: value for value in input_}
+
+
+def _iterable_to_dict(input_: Iterable, /) -> dict:
+    return {idx: v for idx, v in enumerate(input_)}
 
 
 def _generic_type_to_dict(
