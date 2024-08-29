@@ -66,13 +66,9 @@ def _flatten_iterative(
 ) -> dict[tuple | str, Any]:
     stack = deque([(obj, parent_key, 0)])
     result = {}
-    last_obj = None
-    last_key = None
 
     while stack:
         current_obj, current_key, depth = stack.pop()
-        last_obj = current_obj
-        last_key = current_key
 
         if max_depth is not None and depth >= max_depth:
             result[_format_key(current_key, sep, coerce_keys)] = current_obj
@@ -111,8 +107,6 @@ def _flatten_iterative(
         else:
             result[_format_key(current_key, sep, coerce_keys)] = current_obj
 
-    if last_obj == {} and last_key:
-        result[_format_key(last_key, sep, coerce_keys)] = last_obj
     return result
 
 
