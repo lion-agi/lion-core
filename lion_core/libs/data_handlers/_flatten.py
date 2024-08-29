@@ -1,4 +1,5 @@
-from collections.abc import Generator
+from collections import deque
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from lion_core.libs.data_handlers._to_dict import to_dict
@@ -9,202 +10,187 @@ def flatten(
     nested_structure: Any,
     /,
     *,
-    parent_key: str = "",
+    parent_key: tuple = (),
     sep: str = "|",
+    coerce_keys: bool = True,
+    dynamic: bool = False,
+    coerce_sequence_to_list: bool = False,
+    coerce_sequence_to_dict: bool = False,
     max_depth: int | None = None,
     inplace: bool = False,
-    dict_only: bool = False,
-) -> dict[str, Any] | None:
-    """
-    Flatten a nested dictionary or list into a single-level dictionary.
-
-    Args:
-        nested_structure: The nested structure to flatten.
-        parent_key: The base key for flattened keys. Defaults to "".
-        sep: The separator for joining keys. Defaults to "|".
-        max_depth: The maximum depth to flatten. Defaults to None.
-        inplace: If True, modifies the original structure. Defaults to False.
-        dict_only: If True, only flattens dictionaries. Defaults to False.
-
-    Returns:
-        The flattened dictionary if inplace is False, otherwise None.
-
-    Raises:
-        TypeError: If parent_key is not a string.
-        ValueError: If inplace is True and nested_structure is not a
-            dictionary.
-    """
-    if not isinstance(parent_key, str):
-        raise TypeError(
-            f"Unsupported key type: {type(parent_key).__name__}. "
-            "Only string keys are acceptable.",
+) -> dict[tuple | str, Any] | None:
+    if coerce_sequence_to_list and coerce_sequence_to_dict:
+        raise ValueError(
+            "coerce_sequence_to_list and coerce_sequence_to_dict cannot both "
+            "be True"
         )
+
     if inplace:
         if not isinstance(nested_structure, dict):
             raise ValueError(
-                "Object must be a dictionary when 'inplace' is True."
+                "Inplace flattening is only supported for dictionaries"
             )
-        _dynamic_flatten_in_place(
-            nested_structure,
+        _flatten_inplace(
+            d=nested_structure,
             parent_key=parent_key,
             sep=sep,
+            coerce_keys=coerce_keys,
+            dynamic=dynamic,
+            coerce_sequence_to_list=coerce_sequence_to_list,
+            coerce_sequence_to_dict=coerce_sequence_to_dict,
             max_depth=max_depth,
-            dict_only=dict_only,
         )
-    else:
-        parent_key_tuple = tuple(parent_key.split(sep)) if parent_key else ()
-        return to_dict(
-            _dynamic_flatten_generator(
-                nested_structure,
-                parent_key=parent_key_tuple,
-                sep=sep,
-                max_depth=max_depth,
-                dict_only=dict_only,
-            )
-        )
+        return None
 
-
-def get_flattened_keys(
-    nested_structure: Any,
-    /,
-    *,
-    sep: str = "|",
-    max_depth: int | None = None,
-    dict_only: bool = False,
-) -> list[str]:
-    """
-    Get all keys from a flattened representation of a nested structure.
-
-    Args:
-        nested_structure: The nested structure to process.
-        sep: The separator for joining keys. Defaults to "|".
-        max_depth: The maximum depth to flatten. Defaults to None.
-        dict_only: If True, only flattens dictionaries. Defaults to False.
-        inplace: If True, modifies the original structure. Defaults to False.
-
-    Returns:
-        A list of flattened keys.
-    """
-    return to_list(
-        flatten(
-            nested_structure,
-            sep=sep,
-            max_depth=max_depth,
-            dict_only=dict_only,
-        ).keys()
+    return _flatten_iterative(
+        obj=nested_structure,
+        parent_key=parent_key,
+        sep=sep,
+        coerce_keys=coerce_keys,
+        dynamic=dynamic,
+        coerce_sequence_to_list=coerce_sequence_to_list,
+        coerce_sequence_to_dict=coerce_sequence_to_dict,
+        max_depth=max_depth,
     )
 
 
-def _dynamic_flatten_in_place(
-    nested_structure: Any,
-    /,
-    *,
-    parent_key: str = "",
-    sep: str = "|",
-    max_depth: int | None = None,
-    current_depth: int = 0,
-    dict_only: bool = False,
+def _flatten_iterative(
+    obj: Any,
+    parent_key: tuple,
+    sep: str,
+    coerce_keys: bool,
+    dynamic: bool,
+    coerce_sequence_to_list: bool,
+    coerce_sequence_to_dict: bool,
+    max_depth: int | None,
+) -> dict[tuple | str, Any]:
+    stack = deque([(obj, parent_key, 0)])
+    result = {}
+    last_obj = None
+    last_key = None
+
+    while stack:
+        current_obj, current_key, depth = stack.pop()
+        last_obj = current_obj
+        last_key = current_key
+
+        if max_depth is not None and depth >= max_depth:
+            result[
+                _format_key(key=current_key, sep=sep, coerce_keys=coerce_keys)
+            ] = current_obj
+            continue
+
+        if isinstance(current_obj, Mapping):
+            for k, v in current_obj.items():
+                new_key = current_key + (k,)
+                if (
+                    v
+                    and isinstance(v, (Mapping, Sequence))
+                    and not isinstance(v, (str, bytes, bytearray))
+                ):
+                    stack.appendleft((v, new_key, depth + 1))
+                else:
+                    result[
+                        _format_key(
+                            key=new_key, sep=sep, coerce_keys=coerce_keys
+                        )
+                    ] = v
+
+        elif (
+            dynamic
+            and isinstance(current_obj, Sequence)
+            and not isinstance(current_obj, (str, bytes, bytearray))
+        ):
+            if coerce_sequence_to_dict:
+                dict_obj = {str(i): v for i, v in enumerate(current_obj)}
+                for k, v in dict_obj.items():
+                    new_key = current_key + (k,)
+                    stack.appendleft((v, new_key, depth + 1))
+            elif coerce_sequence_to_list:
+                for i, v in enumerate(current_obj):
+                    new_key = current_key + (str(i),)
+                    stack.appendleft((v, new_key, depth + 1))
+            else:
+                for i, v in enumerate(current_obj):
+                    new_key = current_key + (str(i),)
+                    stack.appendleft((v, new_key, depth + 1))
+        else:
+            result[
+                _format_key(key=current_key, sep=sep, coerce_keys=coerce_keys)
+            ] = current_obj
+
+    if last_obj == {} and last_key:
+        result[_format_key(key=last_key, sep=sep, coerce_keys=coerce_keys)] = (
+            last_obj
+        )
+    return result
+
+
+def _format_key(key: tuple, sep: str, coerce_keys: bool) -> tuple | str:
+    if not key:
+        return key
+    return sep.join(map(str, key)) if coerce_keys else key
+
+
+def _flatten_inplace(
+    d: dict,
+    parent_key: tuple,
+    sep: str,
+    coerce_keys: bool,
+    dynamic: bool,
+    coerce_sequence_to_list: bool,
+    coerce_sequence_to_dict: bool,
+    max_depth: int | None,
 ) -> None:
-    """
-    Recursively flatten a nested structure in place.
+    stack = deque([(d, parent_key, 0)])
 
-    Args:
-        nested_structure: The nested structure to flatten.
-        parent_key: The base key for flattened keys. Defaults to "".
-        sep: The separator for joining keys. Defaults to "|".
-        max_depth: The maximum depth to flatten. Defaults to None.
-        current_depth: The current depth of recursion. Defaults to 0.
-        dict_only: If True, only flattens dictionaries. Defaults to False.
+    while stack:
+        current_dict, current_key, depth = stack.pop()
 
-    Raises:
-        TypeError: If a key in the nested structure is not a string.
-    """
-    if isinstance(nested_structure, dict):
-        keys_to_delete = []
-        items = list(
-            nested_structure.items()
-        )  # Create a copy of the dictionary
+        if max_depth is not None and depth >= max_depth:
+            continue
 
-        for k, v in items:
-            if not isinstance(k, str):
-                raise TypeError(
-                    f"Unsupported key type: {type(k).__name__}. "
-                    "Only string keys are acceptable.",
-                )
-            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        for k in list(current_dict.keys()):
+            v = current_dict[k]
+            new_key = current_key + (k,)
 
-            if isinstance(v, dict) and (
-                max_depth is None or current_depth < max_depth
+            if isinstance(v, dict):
+                stack.appendleft((v, new_key, depth + 1))
+                del current_dict[k]
+            elif (
+                dynamic
+                and isinstance(v, Sequence)
+                and not isinstance(v, (str, bytes, bytearray))
             ):
-                _dynamic_flatten_in_place(
-                    v,
-                    parent_key=new_key,
-                    sep=sep,
-                    max_depth=max_depth,
-                    current_depth=(current_depth + 1),
-                    dict_only=dict_only,
-                )
-                keys_to_delete.append(k)
-                nested_structure.update(v)
-            elif not dict_only and (
-                isinstance(v, list) or not isinstance(v, dict | list)
-            ):
-                nested_structure[new_key] = v
-                if parent_key:
-                    keys_to_delete.append(k)
+                if coerce_sequence_to_dict:
+                    dict_obj = to_dict(v)
+                    stack.appendleft((dict_obj, new_key, depth + 1))
+                elif coerce_sequence_to_list:
+                    list_obj = to_list(v)
+                    for i, item in enumerate(list_obj):
+                        item_key = new_key + (str(i),)
+                        current_dict[
+                            _format_key(
+                                key=item_key, sep=sep, coerce_keys=coerce_keys
+                            )
+                        ] = item
+                else:
+                    for i, item in enumerate(v):
+                        item_key = new_key + (str(i),)
+                        current_dict[
+                            _format_key(
+                                key=item_key, sep=sep, coerce_keys=coerce_keys
+                            )
+                        ] = item
+                del current_dict[k]
+            elif coerce_keys:
+                current_dict[
+                    _format_key(key=new_key, sep=sep, coerce_keys=coerce_keys)
+                ] = current_dict.pop(k)
 
-        for k in keys_to_delete:
-            del nested_structure[k]
-
-
-def _dynamic_flatten_generator(
-    nested_structure: Any,
-    parent_key: tuple[str, ...],
-    sep: str = "|",
-    max_depth: int | None = None,
-    current_depth: int = 0,
-    dict_only: bool = False,
-) -> Generator[tuple[str, Any], None, None]:
-    """
-    Generator to recursively flatten a nested structure.
-
-    Args:
-        nested_structure: The nested structure to flatten.
-        parent_key: The base key to use for flattened keys.
-        sep: The separator for joining keys. Defaults to "|".
-        max_depth: The maximum depth to flatten. Defaults to None.
-        current_depth: The current depth of recursion. Defaults to 0.
-        dict_only: If True, only flattens dictionaries. Defaults to False.
-
-    Yields:
-        The flattened key and value pairs.
-    """
-    if max_depth is not None and current_depth >= max_depth:
-        yield sep.join(parent_key), nested_structure
-        return
-
-    if nested_structure is None:
-        raise ValueError("Cannot flatten NoneType objects.")
-
-    if isinstance(nested_structure, dict):
-        for k, v in nested_structure.items():
-            if not isinstance(k, str):
-                raise TypeError(
-                    f"Unsupported key type: {type(k).__name__}. "
-                    "Only string keys are acceptable."
-                )
-            new_key = parent_key + (k,)
-            yield from _dynamic_flatten_generator(
-                v, new_key, sep, max_depth, current_depth + 1, dict_only
-            )
-    elif isinstance(nested_structure, list) and not dict_only:
-        for i, item in enumerate(nested_structure):
-            new_key = parent_key + (str(i),)
-            yield from _dynamic_flatten_generator(
-                item, new_key, sep, max_depth, current_depth + 1, dict_only
-            )
-    else:
-        yield sep.join(parent_key), nested_structure
+        if current_dict is not d:
+            for k, v in current_dict.items():
+                d[k] = v
 
 
-# Path: lion_core/libs/data_handlers/_flatten.py
+# File: lion_core/libs/data_handlers/_flatten.py
