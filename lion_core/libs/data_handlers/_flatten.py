@@ -75,9 +75,7 @@ def _flatten_iterative(
         last_key = current_key
 
         if max_depth is not None and depth >= max_depth:
-            result[
-                _format_key(key=current_key, sep=sep, coerce_keys=coerce_keys)
-            ] = current_obj
+            result[_format_key(current_key, sep, coerce_keys)] = current_obj
             continue
 
         if isinstance(current_obj, Mapping):
@@ -90,11 +88,7 @@ def _flatten_iterative(
                 ):
                     stack.appendleft((v, new_key, depth + 1))
                 else:
-                    result[
-                        _format_key(
-                            key=new_key, sep=sep, coerce_keys=coerce_keys
-                        )
-                    ] = v
+                    result[_format_key(new_key, sep, coerce_keys)] = v
 
         elif (
             dynamic
@@ -115,18 +109,14 @@ def _flatten_iterative(
                     new_key = current_key + (str(i),)
                     stack.appendleft((v, new_key, depth + 1))
         else:
-            result[
-                _format_key(key=current_key, sep=sep, coerce_keys=coerce_keys)
-            ] = current_obj
+            result[_format_key(current_key, sep, coerce_keys)] = current_obj
 
     if last_obj == {} and last_key:
-        result[_format_key(key=last_key, sep=sep, coerce_keys=coerce_keys)] = (
-            last_obj
-        )
+        result[_format_key(last_key, sep, coerce_keys)] = last_obj
     return result
 
 
-def _format_key(key: tuple, sep: str, coerce_keys: bool) -> tuple | str:
+def _format_key(key: tuple, sep: str, coerce_keys: bool, /) -> tuple | str:
     if not key:
         return key
     return sep.join(map(str, key)) if coerce_keys else key
@@ -170,23 +160,19 @@ def _flatten_inplace(
                     for i, item in enumerate(list_obj):
                         item_key = new_key + (str(i),)
                         current_dict[
-                            _format_key(
-                                key=item_key, sep=sep, coerce_keys=coerce_keys
-                            )
+                            _format_key(item_key, sep, coerce_keys)
                         ] = item
                 else:
                     for i, item in enumerate(v):
                         item_key = new_key + (str(i),)
                         current_dict[
-                            _format_key(
-                                key=item_key, sep=sep, coerce_keys=coerce_keys
-                            )
+                            _format_key(item_key, sep, coerce_keys)
                         ] = item
                 del current_dict[k]
             elif coerce_keys:
-                current_dict[
-                    _format_key(key=new_key, sep=sep, coerce_keys=coerce_keys)
-                ] = current_dict.pop(k)
+                current_dict[_format_key(new_key, sep, coerce_keys)] = (
+                    current_dict.pop(k)
+                )
 
         if current_dict is not d:
             for k, v in current_dict.items():
