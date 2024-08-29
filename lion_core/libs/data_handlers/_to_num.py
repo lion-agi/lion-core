@@ -1,5 +1,5 @@
 import re
-from typing import Any
+from typing import Any, Literal
 
 # Comprehensive regex to capture decimal numbers, fractions, scientific
 # notation and complex numbers
@@ -22,13 +22,16 @@ _type_map = {
 }
 
 
+NUM_TYPES = type[int | float | complex] | Literal["int", "float", "complex"]
+
+
 def to_num(
     input_: Any,
     /,
     *,
     upper_bound: int | float | None = None,
     lower_bound: int | float | None = None,
-    num_type: type[int | float | complex] | str = "float",
+    num_type: NUM_TYPES = float,
     precision: int | None = None,
     num_count: int = 1,
 ) -> int | float | complex | list[int | float | complex]:
@@ -41,7 +44,7 @@ def to_num(
             the number exceeds this bound.
         lower_bound: The lower bound for the number. Raises ValueError if
             the number is below this bound.
-        num_type: The type of the number (int, float, or complex).
+        num_type: The type or type string name (int | float | complex).
         precision: The number of decimal places to round to
         num_count: The number of numeric values to return.
 
@@ -62,20 +65,30 @@ def to_num(
         0.6666666666666666
     """
     if isinstance(input_, list):
-        raise TypeError("Input cannot be a list.")
+        raise TypeError("The value input for `to_num` cannot be of type list")
 
     str_ = str(input_)
     if str_.startswith(("0x", "0b")):
-        raise ValueError("Hexadecimal and binary formats are not supported.")
+        raise ValueError(
+            "`to_num` does not support hexadecimal or binary formats."
+        )
 
     # Map string types to actual Python types
     if isinstance(num_type, str):
         if num_type not in _type_map:
-            raise ValueError(f"Invalid number type string: {num_type}")
+            raise ValueError(
+                f"Invalid number type string: <{num_type}>. It must be one "
+                "of 'int', 'float', or 'complex'."
+            )
         num_type = _type_map[num_type]
 
     return str_to_num(
-        str_, upper_bound, lower_bound, num_type, precision, num_count
+        input_=str_,
+        upper_bound=upper_bound,
+        lower_bound=lower_bound,
+        num_type=num_type,
+        precision=precision,
+        num_count=num_count,
     )
 
 
@@ -83,7 +96,7 @@ def str_to_num(
     input_: str,
     upper_bound: float | None = None,
     lower_bound: float | None = None,
-    num_type: type[int | float | complex] = float,
+    num_type: NUM_TYPES = float,
     precision: int | None = None,
     num_count: int = 1,
 ) -> int | float | complex | list[int | float | complex]:
