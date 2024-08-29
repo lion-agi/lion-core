@@ -1,4 +1,4 @@
-from lion_core.libs.data_handlers._flatten import flatten, get_flattened_keys
+from lion_core.libs.data_handlers._flatten import flatten
 from lion_core.libs.data_handlers._nfilter import nfilter
 from lion_core.libs.data_handlers._nget import nget
 from lion_core.libs.data_handlers._ninsert import ninsert
@@ -30,7 +30,6 @@ __all__ = [
     "to_dict",
     "to_str",
     "to_num",
-    "get_flattened_keys",
     "strip_lower",
     "npop",
     "is_homogeneous",

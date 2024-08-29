@@ -6,7 +6,6 @@ from lion_core.libs._helper import (
 from lion_core.libs.data_handlers import (
     deep_update,
     flatten,
-    get_flattened_keys,
     get_target_container,
     is_homogeneous,
     is_structure_homogeneous,
@@ -56,7 +55,6 @@ __all__ = [
     "is_same_dtype",
     "insert_random_hyphens",
     "flatten",
-    "get_flattened_keys",
     "nfilter",
     "nget",
     "ninsert",
