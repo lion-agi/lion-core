@@ -103,6 +103,7 @@ def _extract_docstring_details_google(
                 (a := str(lines[i]).strip().lower()).startswith("args")
                 or a.startswith("parameters")
                 or a.startswith("params")
+                or a.startswith("arguments")
             )
         ),
         0,
