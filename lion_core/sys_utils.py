@@ -117,17 +117,40 @@ class SysUtil:
             [copy_func(obj) for _ in range(num)] if num > 1 else copy_func(obj)
         )
 
-    @staticmethod
     def id(
-        n: int = DEFAULT_LION_ID_CONFIG.n,
-        prefix: str | None = DEFAULT_LION_ID_CONFIG.prefix,
-        postfix: str | None = DEFAULT_LION_ID_CONFIG.postfix,
-        random_hyphen: bool = DEFAULT_LION_ID_CONFIG.random_hyphen,
-        num_hyphens: int | None = DEFAULT_LION_ID_CONFIG.num_hyphens,
-        hyphen_start_index: (
-            int | None
-        ) = DEFAULT_LION_ID_CONFIG.hyphen_start_index,
-        hyphen_end_index: int | None = DEFAULT_LION_ID_CONFIG.hyphen_end_index,
+        config: LionIDConfig = DEFAULT_LION_ID_CONFIG,
+        /,
+        n: int = None,
+        prefix: str = None,
+        postfix: str = None,
+        random_hyphen: bool = None,
+        num_hyphens: int = None,
+        hyphen_start_index: int = None,
+        hyphen_end_index: int = None,
+    ) -> str:
+        _dict = {
+            "n": n,
+            "prefix": prefix,
+            "postfix": postfix,
+            "random_hyphen": random_hyphen,
+            "num_hyphens": num_hyphens,
+            "hyphen_start_index": hyphen_start_index,
+            "hyphen_end_index": hyphen_end_index,
+        }
+        _dict = {k: v for k, v in _dict.items() if v is not None}
+        config = {**config.to_dict(), **_dict}
+        return SysUtil._id(**config)
+
+    @staticmethod
+    def _id(
+        *,
+        n: int,
+        prefix: str = "",
+        postfix: str = "",
+        random_hyphen: bool = False,
+        num_hyphens: int = 0,
+        hyphen_start_index: int = 6,
+        hyphen_end_index: int = -6,
     ) -> str:
         """
         Generate a unique identifier.
@@ -166,9 +189,8 @@ class SysUtil:
     @staticmethod
     def get_id(
         item: Sequence[Observable] | Observable | str,
-        /,
-        *,
         config: LionIDConfig = DEFAULT_LION_ID_CONFIG,
+        /,
     ) -> str:
         """
         Get the Lion ID of an item.
@@ -183,6 +205,7 @@ class SysUtil:
         Raises:
             LionIDError: If the item does not contain a valid Lion ID.
         """
+
         item_id = None
         if isinstance(item, Sequence) and len(item) == 1:
             item = item[0]
@@ -192,59 +215,45 @@ class SysUtil:
         else:
             item_id = item
 
-        id_len = (
-            (len(config.prefix) if config.prefix else 0)
-            + config.n
-            + config.num_hyphens
-            + (len(config.postfix) if config.postfix else 0)
-        )
-
-        hyphen_check = (
-            False
-            if (config.num_hyphens and config.num_hyphens)
-            != item_id.count("-")
-            else True
-        )
-        hypen_start_check = (
-            False
-            if (
-                config.hyphen_start_index
-                and "-" in item_id[: config.hyphen_start_index]
+        check = isinstance(item_id, str)
+        if check:
+            id_len = (
+                (len(config.prefix) if config.prefix else 0)
+                + config.n
+                + config.num_hyphens
+                + (len(config.postfix) if config.postfix else 0)
             )
-            else True
-        )
-        hypen_end_check = (
-            False
-            if (
-                config.hyphen_end_index
-                and "-" in item_id[config.hyphen_end_index :]  # noqa
-            )
-            else True
-        )
+            if len(item_id) != id_len:
+                check = False
+        if check and config.prefix:
+            if item_id.startswith(config.prefix):
+                item_id = item_id[len(config.prefix) :]  # noqa
+            else:
+                check = False
+        if check and config.postfix:
+            if item_id.endswith(config.postfix):
+                item_id = item_id[: -len(config.postfix)]
+            else:
+                check = False
+        if check and config.num_hyphens:
+            if config.num_hyphens != item_id.count("-"):
+                check = False
+        if check and config.hyphen_start_index:
+            idx = config.hyphen_start_index - len(config.prefix)
+            if idx > 0 and "-" in item_id[:idx]:
+                check = False
+        if check and config.hyphen_end_index:
+            if config.hyphen_end_index < 0:
+                idx = config.hyphen_end_index + id_len
+            idx -= len(config.prefix + config.postfix)
+            if idx < 0 and "-" in item_id[idx:]:
+                check = False
 
-        prefix_check = (
-            False
-            if (config.prefix and not item_id.startswith(config.prefix))
-            else True
-        )
-        postfix_check = (
-            False
-            if (config.postfix and not item_id.endswith(config.postfix))
-            else True
-        )
-        length_check = len(item_id) == id_len
-
-        if all(
-            (
-                isinstance(item_id, str),
-                hyphen_check,
-                hypen_start_check,
-                hypen_end_check,
-                prefix_check,
-                postfix_check,
-                length_check,
-            )
-        ) or (len(item_id) == 32):
+        if check:
+            return config.prefix + item_id + config.postfix
+        if (
+            isinstance(item_id, str) and len(item_id) == 32
+        ):  # for backward compatibility
             return item_id
         raise LionIDError(
             f"The input object of type <{type(item).__name__}> does "
@@ -255,9 +264,8 @@ class SysUtil:
     @staticmethod
     def is_id(
         item: Sequence[Observable] | Observable | str,
-        /,
-        *,
         config: LionIDConfig = DEFAULT_LION_ID_CONFIG,
+        /,
     ) -> bool:
         """
         Check if an item is a valid Lion ID.
@@ -270,7 +278,7 @@ class SysUtil:
             True if the item is a valid Lion ID, False otherwise.
         """
         try:
-            SysUtil.get_id(item, config=config)
+            SysUtil.get_id(item, config)
             return True
         except LionIDError:
             return False
@@ -283,8 +291,7 @@ class SysUtil:
         exclude: list[str] | None = None,
     ) -> None:
         """
-        Clear all files (and, if recursive, directories) in the specified
-        directory, excluding files that match any pattern in the exclude list.
+        Clear all files and directories in the specified path.
 
         Args:
             path: The path to the directory to clear.
@@ -311,13 +318,17 @@ class SysUtil:
                 continue
 
             try:
-                if recursive and file_path.is_dir():
-                    SysUtil.clear_path(
-                        file_path, recursive=True, exclude=exclude
-                    )
-                elif file_path.is_file() or file_path.is_symlink():
+                if file_path.is_dir():
+                    if recursive:
+                        SysUtil.clear_path(
+                            file_path, recursive=True, exclude=exclude
+                        )
+                        file_path.rmdir()
+                    else:
+                        continue
+                else:
                     file_path.unlink()
-                    logging.info(f"Successfully deleted {file_path}")
+                logging.info(f"Successfully deleted {file_path}")
             except PermissionError as e:
                 logging.error(
                     f"Permission denied when deleting {file_path}: {e}"
@@ -329,7 +340,7 @@ class SysUtil:
     def create_path(
         directory: Path | str,
         filename: str,
-        timestamp: bool = True,
+        timestamp: bool = False,
         dir_exist_ok: bool = True,
         file_exist_ok: bool = False,
         time_prefix: bool = False,
@@ -358,79 +369,72 @@ class SysUtil:
             ValueError: If the filename contains illegal characters.
             FileExistsError: If the file exists and file_exist_ok is False.
         """
+        if "/" in filename or "\\" in filename:
+            raise ValueError("Filename cannot contain directory separators.")
         directory = Path(directory)
-        if not re.match(r"^[\w,\s-]+\.[A-Za-z]{1,5}$", filename):
-            raise ValueError(
-                "Invalid filename. Ensure it has a valid extension."
-            )
-
         name, ext = (
             filename.rsplit(".", 1) if "." in filename else (filename, "")
         )
+        if not ext:
+            raise ValueError("Filename must contain an extension.")
         ext = f".{ext}" if ext else ""
 
         if timestamp:
             timestamp_str = datetime.now().strftime(
                 timestamp_format or "%Y%m%d%H%M%S"
             )
-            filename = (
+            name = (
                 f"{timestamp_str}_{name}"
                 if time_prefix
                 else f"{name}_{timestamp_str}"
             )
-        else:
-            filename = name
 
-        if file_exist_ok and random_hash_digits < 5:
-            random_hash_digits = 5
+        if random_hash_digits > 0:
+            random_hash = "-" + _unique_hash(random_hash_digits)
+            name = f"{name}{random_hash}"
 
-        random_hash = (
-            "-" + _unique_hash(random_hash_digits)
-            if random_hash_digits > 0
-            else ""
-        )
-
-        full_filename = f"{filename}{random_hash}{ext}"
+        full_filename = f"{name}{ext}"
         full_path = directory / full_filename
 
-        if not file_exist_ok:
-            counter = 1
-            while full_path.exists():
-                new_filename = f"{filename}_{counter}{random_hash}{ext}"
-                full_path = directory / new_filename
-                counter += 1
-        elif full_path.exists():
-            logging.warning(
-                f"File {full_path} already exists. Using existing file."
+        if full_path.exists():
+            if file_exist_ok:
+                return full_path
+            raise FileExistsError(
+                f"File {full_path} already exists and file_exist_ok is False."
             )
-
-        if not full_path.exists():
-            full_path.parent.mkdir(parents=True, exist_ok=dir_exist_ok)
-
+        full_path.parent.mkdir(parents=True, exist_ok=dir_exist_ok)
         return full_path
 
     @staticmethod
     def _get_path_kwargs(
         persist_path: str | Path, postfix: str, **path_kwargs: Any
-    ):
+    ) -> dict[str, Any]:
+        """
+        Generate keyword arguments for path creation.
 
-        dirname, filename = None, None
+        Args:
+            persist_path: The base path to use.
+            postfix: The file extension to use.
+            **path_kwargs: Additional keyword arguments to override defaults.
 
-        postfix = f".{postfix.strip().strip('.')}"
+        Returns:
+            A dictionary of keyword arguments for path creation.
+        """
+        persist_path = Path(persist_path)
+        postfix = f".{postfix.strip('.')}"
 
-        if postfix not in (_path := str(persist_path)):
-            dirname = _path
-            filename = f"new_file.{postfix}"
-
+        if persist_path.suffix != postfix:
+            dirname = persist_path
+            filename = f"new_file{postfix}"
         else:
-            dirname, filename = SysUtil.split_path(persist_path)
+            dirname, filename = persist_path.parent, persist_path.name
 
-        path_kwargs["timestamp"] = path_kwargs.get("timestamp", False)
-        path_kwargs["file_exist_ok"] = path_kwargs.get("file_exist_ok", True)
-        path_kwargs["directory"] = path_kwargs.get("directory", dirname)
-        path_kwargs["filename"] = path_kwargs.get("filename", filename)
-
-        return path_kwargs
+        return {
+            "timestamp": path_kwargs.get("timestamp", False),
+            "file_exist_ok": path_kwargs.get("file_exist_ok", True),
+            "directory": path_kwargs.get("directory", dirname),
+            "filename": path_kwargs.get("filename", filename),
+        }
 
     @staticmethod
     def list_files(
@@ -438,7 +442,7 @@ class SysUtil:
     ) -> list[Path]:
         """
         List all files in a specified directory with an optional extension
-        filter.
+        filter, including files in subdirectories.
 
         Args:
             dir_path: The directory path where files are listed.
@@ -453,7 +457,9 @@ class SysUtil:
         dir_path = Path(dir_path)
         if not dir_path.is_dir():
             raise NotADirectoryError(f"{dir_path} is not a directory.")
-        return list(dir_path.glob(f"*.{extension}" if extension else "*"))
+
+        pattern = f"*.{extension}" if extension else "*"
+        return [f for f in dir_path.rglob(pattern) if f.is_file()]
 
     @staticmethod
     def split_path(path: Path | str) -> tuple[Path, str]:
@@ -525,7 +531,7 @@ class SysUtil:
                 return path.stat().st_size
             elif path.is_dir():
                 return sum(
-                    f.stat().st_size for f in path.glob("**/*") if f.is_file()
+                    f.stat().st_size for f in path.rglob("*") if f.is_file()
                 )
             else:
                 raise FileNotFoundError(f"{path} does not exist.")
@@ -539,13 +545,14 @@ class SysUtil:
         text: str,
         directory: Path | str,
         filename: str,
-        timestamp: bool = True,
+        timestamp: bool = False,
         dir_exist_ok: bool = True,
+        file_exist_ok: bool = False,
         time_prefix: bool = False,
         timestamp_format: str | None = None,
         random_hash_digits: int = 0,
         verbose: bool = True,
-    ) -> bool:
+    ) -> Path:
         """
         Save text to a file within a specified directory, optionally adding a
         timestamp, hash, and verbose logging.
@@ -563,7 +570,7 @@ class SysUtil:
             verbose: If True, logs the file path after saving.
 
         Returns:
-            True if the text was successfully saved.
+            Path: The path to the saved file.
 
         Raises:
             OSError: If there's an error creating the directory or
@@ -575,26 +582,45 @@ class SysUtil:
                 filename=filename,
                 timestamp=timestamp,
                 dir_exist_ok=dir_exist_ok,
+                file_exist_ok=file_exist_ok,
                 time_prefix=time_prefix,
                 timestamp_format=timestamp_format,
                 random_hash_digits=random_hash_digits,
             )
-
-            with open(file_path, "w", encoding="utf-8") as file:
+            with file_path.open("w", encoding="utf-8") as file:
                 file.write(text)
-
             if verbose:
                 logging.info(f"Text saved to: {file_path}")
+            return file_path
 
-            return True
         except OSError as e:
             logging.error(f"Failed to save file {filename}: {e}")
             raise
 
     @staticmethod
     def read_file(path: Path | str, /) -> str:
-        with open(path, encoding="utf-8") as file:
-            return file.read()
+        """
+        Read the contents of a file.
+
+        Args:
+            path: The path to the file to read.
+
+        Returns:
+            str: The contents of the file.
+
+        Raises:
+            FileNotFoundError: If the file does not exist.
+            PermissionError: If there are insufficient permissions to read
+                the file.
+        """
+        try:
+            return Path(path).read_text(encoding="utf-8")
+        except FileNotFoundError as e:
+            logging.error(f"File not found: {path}: {e}")
+            raise
+        except PermissionError as e:
+            logging.error(f"Permission denied when reading file: {path}: {e}")
+            raise
 
     @staticmethod
     def get_cpu_architecture() -> str:
@@ -602,14 +628,16 @@ class SysUtil:
         Get the CPU architecture.
 
         Returns:
-            str: 'apple_silicon' if ARM-based, 'other_cpu' otherwise.
+            str: 'arm64' if ARM-based, 'x86_64' for Intel/AMD 64-bit, or the
+                actual architecture string for other cases.
         """
         arch: str = platform.machine().lower()
-        return (
-            "apple_silicon"
-            if "arm" in arch or "aarch64" in arch
-            else "other_cpu"
-        )
+        if "arm" in arch or "aarch64" in arch:
+            return "arm64"
+        elif "x86_64" in arch or "amd64" in arch:
+            return "x86_64"
+        else:
+            return arch
 
     @staticmethod
     def install_import(
@@ -686,11 +714,13 @@ class SysUtil:
                     if not isinstance(import_name, list)
                     else import_name
                 )
-                module = __import__(
+                a = __import__(
                     full_import_path,
                     fromlist=import_name,
                 )
-                return getattr(module, import_name)
+                if len(import_name) == 1:
+                    return getattr(a, import_name[0])
+                return [getattr(a, name) for name in import_name]
             else:
                 return __import__(full_import_path)
 
