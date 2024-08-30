@@ -4,6 +4,7 @@ from typing import Any, Literal, TypeVar, overload
 
 from pydantic_core import PydanticUndefinedType
 
+from lion_core.libs.parsers._fuzzy_parse_json import fuzzy_parse_json
 from lion_core.setting import LionUndefinedType
 
 T = TypeVar("T", bound=dict[str, Any] | list[dict[str, Any]])
@@ -21,9 +22,12 @@ def to_dict(input_: Mapping, /) -> dict[str, Any]: ...
 
 @overload
 def to_dict(
-    input_: str,
+    input_: Any,
     /,
     *,
+    use_model_dump: bool = False,
+    fuzzy_parse: bool = False,
+    suppress: bool = False,
     str_type: Literal["json", "xml"] | None = "json",
     parser: Callable[[str], dict[str, Any]] | None = None,
     **kwargs: Any,
@@ -53,6 +57,7 @@ def to_dict(
     /,
     *,
     use_model_dump: bool = False,
+    fuzzy_parse: bool = False,
     suppress: bool = False,
     str_type: Literal["json", "xml"] | None = "json",
     parser: Callable[[str], dict[str, Any]] | None = None,
@@ -70,13 +75,17 @@ def to_dict(
         return _mapping_to_dict(input_)
 
     if isinstance(input_, str):
+        if fuzzy_parse:
+            parser = fuzzy_parse_json
         try:
-            return _str_to_dict(
+            a = _str_to_dict(
                 input_,
                 str_type=str_type,
                 parser=parser,
                 **kwargs,
             )
+            if isinstance(a, dict):
+                return a
         except Exception as e:
             if suppress:
                 return {}
