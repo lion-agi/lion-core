@@ -3,7 +3,9 @@ from typing import Any
 from xml.etree import ElementTree as ET
 
 
-def xml_to_dict(xml_string: str, /, suppress=False) -> dict[str, Any]:
+def xml_to_dict(
+    xml_string: str, /, suppress=False, remove_root: bool = True
+) -> dict[str, Any]:
     """
     Parse an XML string into a nested dictionary structure.
 
@@ -24,8 +26,8 @@ def xml_to_dict(xml_string: str, /, suppress=False) -> dict[str, Any]:
     """
     try:
         a = XMLParser(xml_string).parse()
-        if "root" in a:
-            return a["root"]
+        if remove_root and "root" in a:
+            a = a["root"]
         return a
     except ValueError as e:
         if not suppress:

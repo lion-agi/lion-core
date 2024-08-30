@@ -1,17 +1,15 @@
-from lion_core.exceptions import LionIDError
-from lion_core.setting import LionIDConfig
-from lion_core.abc import Observable
-
-
-import pytest
+import os
 from datetime import datetime, timezone
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-import os
-from lion_core.sys_utils import SysUtil
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from lion_core.abc import Observable
 from lion_core.exceptions import LionIDError
 from lion_core.setting import LionIDConfig
-from lion_core.abc import Observable
+from lion_core.sys_utils import SysUtil
+
 
 class TestSysUtilTime:
     def test_time_timestamp(self):
@@ -45,7 +43,9 @@ class TestSysUtilTime:
             SysUtil.time(type_="custom")
 
     def test_time_custom_sep(self):
-        result = SysUtil.time(type_="custom", custom_format="%Y-%m-%d %H:%M:%S", custom_sep="_")
+        result = SysUtil.time(
+            type_="custom", custom_format="%Y-%m-%d %H:%M:%S", custom_sep="_"
+        )
         assert "_" in result
         assert "-" not in result
 
@@ -78,6 +78,7 @@ class TestSysUtilTime:
     def test_time_custom_without_format(self):
         with pytest.raises(ValueError):
             SysUtil.time(type_="custom")
+
 
 class TestSysUtilCopy:
     @pytest.fixture
@@ -131,7 +132,9 @@ class TestSysUtilCopy:
         assert dest.exists()
         assert dest.read_text() == "content1"
 
-    @pytest.mark.skipif(os.name == "nt", reason="Symlinks might not be available on Windows")
+    @pytest.mark.skipif(
+        os.name == "nt", reason="Symlinks might not be available on Windows"
+    )
     def test_copy_file_symlink(self, temp_directory):
         src = temp_directory / "file1.txt"
         link = temp_directory / "link_to_file1.txt"
@@ -142,13 +145,17 @@ class TestSysUtilCopy:
         assert not dest.is_symlink()
         assert dest.read_text() == "content1"
 
-import pytest
+
 import os
 import re
-from pathlib import Path
 from datetime import datetime
-from unittest.mock import patch, MagicMock
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from lion_core.sys_utils import SysUtil
+
 
 class TestSysUtilPathOperations:
     @pytest.fixture
@@ -164,7 +171,11 @@ class TestSysUtilPathOperations:
 
         files = SysUtil.list_files(temp_dir)
         assert len(files) == 3
-        assert set(f.name for f in files) == {"file1.txt", "file2.py", "file3.txt"}
+        assert {f.name for f in files} == {
+            "file1.txt",
+            "file2.py",
+            "file3.txt",
+        }
 
     def test_list_files_with_extension(self, temp_dir):
         (temp_dir / "file1.txt").touch()
@@ -174,7 +185,7 @@ class TestSysUtilPathOperations:
 
         files = SysUtil.list_files(temp_dir, "txt")
         assert len(files) == 2
-        assert set(f.name for f in files) == {"file1.txt", "file3.txt"}
+        assert {f.name for f in files} == {"file1.txt", "file3.txt"}
 
     def test_list_files_empty_directory(self, temp_dir):
         files = SysUtil.list_files(temp_dir)
@@ -232,6 +243,7 @@ class TestSysUtilPathOperations:
     def test_get_file_size_empty_dir(self, temp_dir):
         assert SysUtil.get_file_size(temp_dir) == 0
 
+
 class TestSysUtilPathCreation:
     @pytest.fixture
     def temp_dir(self, tmp_path):
@@ -241,7 +253,9 @@ class TestSysUtilPathCreation:
         path = SysUtil.create_path(temp_dir, "test.txt")
         assert path.parent == temp_dir
         assert path.name == "test.txt"
-        assert not path.exists()  # File should not be created, only path returned
+        assert (
+            not path.exists()
+        )  # File should not be created, only path returned
 
     def test_create_path_with_timestamp(self, temp_dir):
         path = SysUtil.create_path(temp_dir, "test.txt", timestamp=True)
@@ -249,12 +263,16 @@ class TestSysUtilPathCreation:
         assert re.match(r"test_\d{14}\.txt", path.name)
 
     def test_create_path_with_timestamp_prefix(self, temp_dir):
-        path = SysUtil.create_path(temp_dir, "test.txt", timestamp=True, time_prefix=True)
+        path = SysUtil.create_path(
+            temp_dir, "test.txt", timestamp=True, time_prefix=True
+        )
         assert path.parent == temp_dir
         assert re.match(r"\d{14}_test\.txt", path.name)
 
     def test_create_path_custom_timestamp(self, temp_dir):
-        path = SysUtil.create_path(temp_dir, "test.txt", timestamp=True, timestamp_format="%Y%m%d")
+        path = SysUtil.create_path(
+            temp_dir, "test.txt", timestamp=True, timestamp_format="%Y%m%d"
+        )
         assert path.parent == temp_dir
         assert re.match(r"test_\d{8}\.txt", path.name)
 
@@ -266,7 +284,9 @@ class TestSysUtilPathCreation:
     def test_create_path_file_exists(self, temp_dir):
         existing_file = temp_dir / "existing.txt"
         existing_file.touch()
-        path = SysUtil.create_path(temp_dir, "existing.txt", file_exist_ok=True)
+        path = SysUtil.create_path(
+            temp_dir, "existing.txt", file_exist_ok=True
+        )
         assert path == existing_file
         assert path.exists()
 
@@ -300,6 +320,7 @@ class TestSysUtilPathCreation:
         assert path.parent == temp_dir
         assert re.match(r"\d{8}_test-[a-f0-9]{5}\.txt", path.name)
 
+
 class TestSysUtilFileOperations:
     @pytest.fixture
     def temp_dir(self, tmp_path):
@@ -307,20 +328,26 @@ class TestSysUtilFileOperations:
 
     def test_save_to_file(self, temp_dir):
         text = "Hello, World!"
-        file_path = SysUtil.save_to_file(text, temp_dir, "test.txt", timestamp=False, random_hash_digits=0)
+        file_path = SysUtil.save_to_file(
+            text, temp_dir, "test.txt", timestamp=False, random_hash_digits=0
+        )
         assert file_path.exists()
         assert file_path.read_text() == text
 
     def test_save_to_file_with_timestamp(self, temp_dir):
         text = "Hello, World!"
-        file_path = SysUtil.save_to_file(text, temp_dir, "test.txt", timestamp=True)
+        file_path = SysUtil.save_to_file(
+            text, temp_dir, "test.txt", timestamp=True
+        )
         assert file_path.exists()
         assert file_path.read_text() == text
         assert re.match(r"test_\d{14}\.txt", file_path.name)
 
     def test_save_to_file_with_random_hash(self, temp_dir):
         text = "Hello, World!"
-        file_path = SysUtil.save_to_file(text, temp_dir, "test.txt", timestamp=False, random_hash_digits=6)
+        file_path = SysUtil.save_to_file(
+            text, temp_dir, "test.txt", timestamp=False, random_hash_digits=6
+        )
         assert file_path.exists()
         assert file_path.read_text() == text
         assert re.match(r"test-[a-f0-9]{6}\.txt", file_path.name)
@@ -346,27 +373,36 @@ class TestSysUtilFileOperations:
 
     def test_save_to_file_overwrite(self, temp_dir):
         file_path = temp_dir / "test.txt"
-    
-        SysUtil.save_to_file("Original", temp_dir, "test.txt", file_exist_ok=True)
-        SysUtil.save_to_file("Updated", temp_dir, "test.txt", file_exist_ok=True)
+
+        SysUtil.save_to_file(
+            "Original", temp_dir, "test.txt", file_exist_ok=True
+        )
+        SysUtil.save_to_file(
+            "Updated", temp_dir, "test.txt", file_exist_ok=True
+        )
         assert file_path.read_text() == "Updated"
 
-    @pytest.mark.parametrize("filename", [
-        "normal.txt",
-        "with spaces.txt",
-        "with-dashes.txt",
-        "with_underscores.txt",
-        "with.multiple.dots.txt",
-        "တောင်ကြီးမြို့.txt",  # Non-ASCII characters
-        "🐍.py",  # Emoji
-    ])
+    @pytest.mark.parametrize(
+        "filename",
+        [
+            "normal.txt",
+            "with spaces.txt",
+            "with-dashes.txt",
+            "with_underscores.txt",
+            "with.multiple.dots.txt",
+            "တောင်ကြီးမြို့.txt",  # Non-ASCII characters
+            "🐍.py",  # Emoji
+        ],
+    )
     def test_file_operations_with_special_filenames(self, temp_dir, filename):
         content = "Test content"
         file_path = SysUtil.save_to_file(content, temp_dir, filename)
         assert file_path.exists()
         assert SysUtil.read_file(file_path) == content
 
-    @pytest.mark.skipif(os.name == "nt", reason="Symlinks might not be available on Windows")
+    @pytest.mark.skipif(
+        os.name == "nt", reason="Symlinks might not be available on Windows"
+    )
     def test_file_operations_with_symlink(self, temp_dir):
         original = temp_dir / "original.txt"
         SysUtil.save_to_file("Original content", temp_dir, "original.txt")
@@ -381,191 +417,224 @@ class TestSysUtilFileOperations:
         size = SysUtil.get_file_size(symlink)
         assert size == len("Original content")
 
-import pytest
-from unittest.mock import patch, MagicMock
-import subprocess
+
 import importlib
+import subprocess
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from lion_core.sys_utils import SysUtil
+
 
 class TestSysUtilImportMethods:
 
-    @patch('lion_core.sys_utils.SysUtil.import_module')
-    @patch('lion_core.sys_utils._run_pip_command')
+    @patch("lion_core.sys_utils.SysUtil.import_module")
+    @patch("lion_core.sys_utils._run_pip_command")
     def test_install_import_success(self, mock_run_pip, mock_import):
         mock_import.side_effect = [ImportError, MagicMock()]
-        
-        result = SysUtil.install_import('test_package')
-        
+
+        result = SysUtil.install_import("test_package")
+
         assert mock_run_pip.called
         assert mock_import.call_count == 2
         assert result is not None
 
-    @patch('lion_core.sys_utils.SysUtil.import_module')
-    @patch('lion_core.sys_utils._run_pip_command')
+    @patch("lion_core.sys_utils.SysUtil.import_module")
+    @patch("lion_core.sys_utils._run_pip_command")
     def test_install_import_failure(self, mock_run_pip, mock_import):
         mock_import.side_effect = ImportError
-        mock_run_pip.side_effect = subprocess.CalledProcessError(1, 'pip')
-        
-        with pytest.raises(ImportError):
-            SysUtil.install_import('test_package')
+        mock_run_pip.side_effect = subprocess.CalledProcessError(1, "pip")
 
-    @patch('builtins.__import__')
+        with pytest.raises(ImportError):
+            SysUtil.install_import("test_package")
+
+    @patch("builtins.__import__")
     def test_import_module_success(self, mock_import):
         mock_module = MagicMock()
         mock_module.TestClass = "TestClass"
         mock_import.return_value = mock_module
 
-        result = SysUtil.import_module('test_package', 'test_module', 'TestClass')
+        result = SysUtil.import_module(
+            "test_package", "test_module", "TestClass"
+        )
 
         assert result == "TestClass"
-        mock_import.assert_called_with('test_package.test_module', fromlist=['TestClass'])
+        mock_import.assert_called_with(
+            "test_package.test_module", fromlist=["TestClass"]
+        )
 
-    @patch('builtins.__import__')
+    @patch("builtins.__import__")
     def test_import_module_without_module_name(self, mock_import):
         mock_module = MagicMock()
         mock_import.return_value = mock_module
 
-        result = SysUtil.import_module('test_package')
+        result = SysUtil.import_module("test_package")
 
         assert result == mock_module
-        mock_import.assert_called_with('test_package')
+        mock_import.assert_called_with("test_package")
 
-    @patch('builtins.__import__')
+    @patch("builtins.__import__")
     def test_import_module_with_multiple_import_names(self, mock_import):
         mock_module = MagicMock()
         mock_module.Class1 = "Class1"
         mock_module.Class2 = "Class2"
         mock_import.return_value = mock_module
 
-        result = SysUtil.import_module('test_package', 'test_module', ['Class1', 'Class2'])
+        result = SysUtil.import_module(
+            "test_package", "test_module", ["Class1", "Class2"]
+        )
 
-        assert result == ['Class1', 'Class2']
-        mock_import.assert_called_with('test_package.test_module', fromlist=['Class1', 'Class2'])
+        assert result == ["Class1", "Class2"]
+        mock_import.assert_called_with(
+            "test_package.test_module", fromlist=["Class1", "Class2"]
+        )
 
     def test_import_module_failure(self):
         with pytest.raises(ImportError):
-            SysUtil.import_module('non_existent_package')
+            SysUtil.import_module("non_existent_package")
 
-    @patch('importlib.util.find_spec')
+    @patch("importlib.util.find_spec")
     def test_is_package_installed_true(self, mock_find_spec):
         mock_find_spec.return_value = MagicMock()
-        
-        assert SysUtil.is_package_installed('existing_package') is True
 
-    @patch('importlib.util.find_spec')
+        assert SysUtil.is_package_installed("existing_package") is True
+
+    @patch("importlib.util.find_spec")
     def test_is_package_installed_false(self, mock_find_spec):
         mock_find_spec.return_value = None
-        
-        assert SysUtil.is_package_installed('non_existent_package') is False
 
-    @patch('lion_core.sys_utils.SysUtil.is_package_installed')
-    @patch('lion_core.sys_utils.SysUtil.install_import')
-    @patch('lion_core.sys_utils.SysUtil.import_module')
-    def test_check_import_installed(self, mock_import, mock_install, mock_is_installed):
+        assert SysUtil.is_package_installed("non_existent_package") is False
+
+    @patch("lion_core.sys_utils.SysUtil.is_package_installed")
+    @patch("lion_core.sys_utils.SysUtil.install_import")
+    @patch("lion_core.sys_utils.SysUtil.import_module")
+    def test_check_import_installed(
+        self, mock_import, mock_install, mock_is_installed
+    ):
         mock_is_installed.return_value = True
         mock_import.return_value = MagicMock()
-        
-        result = SysUtil.check_import('existing_package')
-        
+
+        result = SysUtil.check_import("existing_package")
+
         assert result is not None
         assert not mock_install.called
 
-    @patch('lion_core.sys_utils.SysUtil.is_package_installed')
-    @patch('lion_core.sys_utils.SysUtil.install_import')
-    def test_check_import_not_installed_attempt_install(self, mock_install, mock_is_installed):
+    @patch("lion_core.sys_utils.SysUtil.is_package_installed")
+    @patch("lion_core.sys_utils.SysUtil.install_import")
+    def test_check_import_not_installed_attempt_install(
+        self, mock_install, mock_is_installed
+    ):
         mock_is_installed.return_value = False
         mock_install.return_value = MagicMock()
-        
-        result = SysUtil.check_import('new_package', attempt_install=True)
-        
+
+        result = SysUtil.check_import("new_package", attempt_install=True)
+
         assert result is not None
         assert mock_install.called
 
-    @patch('lion_core.sys_utils.SysUtil.is_package_installed')
+    @patch("lion_core.sys_utils.SysUtil.is_package_installed")
     def test_check_import_not_installed_no_attempt(self, mock_is_installed):
         mock_is_installed.return_value = False
-        
+
         with pytest.raises(ImportError):
-            SysUtil.check_import('new_package', attempt_install=False)
+            SysUtil.check_import("new_package", attempt_install=False)
 
-    @patch('lion_core.sys_utils.SysUtil.is_package_installed')
-    @patch('lion_core.sys_utils.SysUtil.install_import')
-    def test_check_import_with_custom_error_message(self, mock_install, mock_is_installed):
+    @patch("lion_core.sys_utils.SysUtil.is_package_installed")
+    @patch("lion_core.sys_utils.SysUtil.install_import")
+    def test_check_import_with_custom_error_message(
+        self, mock_install, mock_is_installed
+    ):
         mock_is_installed.return_value = False
-        
-        with pytest.raises(ImportError, match="Custom error message"):
-            SysUtil.check_import('new_package', attempt_install=False, error_message="Custom error message")
 
-    @patch('importlib.metadata.distributions')
+        with pytest.raises(ImportError, match="Custom error message"):
+            SysUtil.check_import(
+                "new_package",
+                attempt_install=False,
+                error_message="Custom error message",
+            )
+
+    @patch("importlib.metadata.distributions")
     def test_list_installed_packages(self, mock_distributions):
         mock_dist1 = MagicMock()
-        mock_dist1.metadata = {'Name': 'package1'}
+        mock_dist1.metadata = {"Name": "package1"}
         mock_dist2 = MagicMock()
-        mock_dist2.metadata = {'Name': 'package2'}
+        mock_dist2.metadata = {"Name": "package2"}
         mock_distributions.return_value = [mock_dist1, mock_dist2]
-        
-        result = SysUtil.list_installed_packages()
-        
-        assert result == ['package1', 'package2']
 
-    @patch('importlib.metadata.distributions')
+        result = SysUtil.list_installed_packages()
+
+        assert result == ["package1", "package2"]
+
+    @patch("importlib.metadata.distributions")
     def test_list_installed_packages_error(self, mock_distributions):
         mock_distributions.side_effect = Exception("Test error")
-        
+
         result = SysUtil.list_installed_packages()
-        
+
         assert result == []
 
-    @patch('lion_core.sys_utils._run_pip_command')
+    @patch("lion_core.sys_utils._run_pip_command")
     def test_uninstall_package_success(self, mock_run_pip):
-        SysUtil.uninstall_package('test_package')
-        mock_run_pip.assert_called_with(['uninstall', 'test_package', '-y'])
+        SysUtil.uninstall_package("test_package")
+        mock_run_pip.assert_called_with(["uninstall", "test_package", "-y"])
 
-    @patch('lion_core.sys_utils._run_pip_command')
+    @patch("lion_core.sys_utils._run_pip_command")
     def test_uninstall_package_failure(self, mock_run_pip):
-        mock_run_pip.side_effect = subprocess.CalledProcessError(1, 'pip')
-        
-        with pytest.raises(subprocess.CalledProcessError):
-            SysUtil.uninstall_package('test_package')
+        mock_run_pip.side_effect = subprocess.CalledProcessError(1, "pip")
 
-    @patch('lion_core.sys_utils._run_pip_command')
+        with pytest.raises(subprocess.CalledProcessError):
+            SysUtil.uninstall_package("test_package")
+
+    @patch("lion_core.sys_utils._run_pip_command")
     def test_update_package_success(self, mock_run_pip):
-        SysUtil.update_package('test_package')
-        mock_run_pip.assert_called_with(['install', '--upgrade', 'test_package'])
+        SysUtil.update_package("test_package")
+        mock_run_pip.assert_called_with(
+            ["install", "--upgrade", "test_package"]
+        )
 
-    @patch('lion_core.sys_utils._run_pip_command')
+    @patch("lion_core.sys_utils._run_pip_command")
     def test_update_package_failure(self, mock_run_pip):
-        mock_run_pip.side_effect = subprocess.CalledProcessError(1, 'pip')
-        
-        with pytest.raises(subprocess.CalledProcessError):
-            SysUtil.update_package('test_package')
+        mock_run_pip.side_effect = subprocess.CalledProcessError(1, "pip")
 
-import pytest
-from unittest.mock import patch, MagicMock
+        with pytest.raises(subprocess.CalledProcessError):
+            SysUtil.update_package("test_package")
+
+
 import os
 from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from lion_core.sys_utils import SysUtil
 
+
 class TestSysUtilAdditional:
-    @pytest.mark.parametrize("machine,expected", [
-        ("arm64", "arm64"),
-        ("aarch64", "arm64"),
-        ("x86_64", "x86_64"),
-        ("amd64", "x86_64"),
-        ("i386", "i386"),
-        ("powerpc", "powerpc"),
-    ])
+    @pytest.mark.parametrize(
+        "machine,expected",
+        [
+            ("arm64", "arm64"),
+            ("aarch64", "arm64"),
+            ("x86_64", "x86_64"),
+            ("amd64", "x86_64"),
+            ("i386", "i386"),
+            ("powerpc", "powerpc"),
+        ],
+    )
     def test_get_cpu_architecture(self, machine, expected):
-        with patch('platform.machine', return_value=machine):
+        with patch("platform.machine", return_value=machine):
             assert SysUtil.get_cpu_architecture() == expected
 
     def test_get_cpu_architecture_unknown(self):
-        with patch('platform.machine', return_value="unknown_arch"):
+        with patch("platform.machine", return_value="unknown_arch"):
             assert SysUtil.get_cpu_architecture() == "unknown_arch"
 
-    @pytest.mark.skipif(os.name == "nt", reason="Test specific to non-Windows systems")
+    @pytest.mark.skipif(
+        os.name == "nt", reason="Test specific to non-Windows systems"
+    )
     def test_get_cpu_architecture_apple_silicon(self):
-        with patch('platform.machine', return_value="arm64"):
+        with patch("platform.machine", return_value="arm64"):
             assert SysUtil.get_cpu_architecture() == "arm64"
 
     def test_create_path_file_collision(self, tmp_path):
@@ -578,11 +647,15 @@ class TestSysUtilAdditional:
             SysUtil.create_path(tmp_path, "test.txt", file_exist_ok=False)
 
         # Creating with file_exist_ok=True should return the existing path
-        existing_path = SysUtil.create_path(tmp_path, "test.txt", file_exist_ok=True)
+        existing_path = SysUtil.create_path(
+            tmp_path, "test.txt", file_exist_ok=True
+        )
         assert existing_path == initial_path
 
         # Creating a file with a different name should succeed
-        new_path = SysUtil.create_path(tmp_path, "new_test.txt", file_exist_ok=False)
+        new_path = SysUtil.create_path(
+            tmp_path, "new_test.txt", file_exist_ok=False
+        )
         assert new_path != initial_path
         assert new_path.name == "new_test.txt"
 
@@ -612,7 +685,10 @@ class TestSysUtilAdditional:
             (
                 "/path/to/dir",
                 "txt",
-                {"directory": Path("/path/to/dir"), "filename": "new_file.txt"},
+                {
+                    "directory": Path("/path/to/dir"),
+                    "filename": "new_file.txt",
+                },
             ),
             (
                 "file.json",
@@ -621,7 +697,9 @@ class TestSysUtilAdditional:
             ),
         ],
     )
-    def test_get_path_kwargs_various_inputs(self, persist_path, postfix, expected):
+    def test_get_path_kwargs_various_inputs(
+        self, persist_path, postfix, expected
+    ):
         kwargs = SysUtil._get_path_kwargs(persist_path, postfix)
         assert kwargs["directory"] == expected["directory"]
         assert kwargs["filename"] == expected["filename"]
@@ -638,72 +716,23 @@ class TestSysUtilAdditional:
         size = SysUtil.get_file_size(large_dir)
         assert size == 7 * 10000  # "content" is 7 bytes, 10000 files
 
+
 # File: tests/test_sys_utils.py
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import os
 import re
-import pytest
 from datetime import datetime, timezone
-from lion_core.sys_utils import SysUtil
-from lion_core.exceptions import LionIDError
-from lion_core.setting import LionIDConfig
-from lion_core.abc import Observable
-
-import pytest
 from pathlib import Path
 from shutil import rmtree
 from unittest.mock import patch
-import os
 
+import pytest
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+from lion_core.abc import Observable
+from lion_core.exceptions import LionIDError
+from lion_core.setting import LionIDConfig
+from lion_core.sys_utils import SysUtil
 
 
 class TestSysUtil:
@@ -790,11 +819,13 @@ class TestSysUtil:
         assert SysUtil.is_id(123) == False
 
 
-import pytest
 import os
 import tempfile
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+import pytest
+
 from lion_core.sys_utils import SysUtil
 
 
@@ -883,10 +914,12 @@ class TestSysUtilPathMethods:
         assert kwargs["filename"] == expected["filename"]
 
 
-import pytest
 import re
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+import pytest
+
 from lion_core.sys_utils import SysUtil
 
 
@@ -991,8 +1024,6 @@ class TestSysUtilCreatePath:
         assert new_path.name == "new_test.txt"
 
 
-
-
 @pytest.fixture
 def temp_directory(tmp_path):
     """Create a temporary directory with some files and subdirectories."""
@@ -1006,17 +1037,22 @@ def temp_directory(tmp_path):
     yield base_dir
     rmtree(base_dir)
 
+
 class TestFileUtils:
 
     def test_list_files_all(self, temp_directory):
         files = SysUtil.list_files(temp_directory)
         assert len(files) == 3
-        assert set(f.name for f in files) == {"file1.txt", "file2.py", "file3.txt"}
+        assert {f.name for f in files} == {
+            "file1.txt",
+            "file2.py",
+            "file3.txt",
+        }
 
     def test_list_files_with_extension(self, temp_directory):
         files = SysUtil.list_files(temp_directory, "txt")
         assert len(files) == 2
-        assert set(f.name for f in files) == {"file1.txt", "file3.txt"}
+        assert {f.name for f in files} == {"file1.txt", "file3.txt"}
 
     def test_list_files_empty_directory(self, tmp_path):
         empty_dir = tmp_path / "empty"
@@ -1078,7 +1114,9 @@ class TestFileUtils:
 
     def test_get_file_size_directory(self, temp_directory):
         size = SysUtil.get_file_size(temp_directory)
-        assert size == 24  # Total content size: "content1" + "content2" + "content3" = 8 + 8 + 8 = 24 bytes
+        assert (
+            size == 24
+        )  # Total content size: "content1" + "content2" + "content3" = 8 + 8 + 8 = 24 bytes
 
     def test_get_file_size_non_existent(self):
         with pytest.raises(FileNotFoundError):
@@ -1089,16 +1127,21 @@ class TestFileUtils:
             with pytest.raises(PermissionError):
                 SysUtil.get_file_size(temp_directory)
 
-    @pytest.mark.parametrize("filename", [
-        "normal.txt",
-        "with spaces.txt",
-        "with-dashes.txt",
-        "with_underscores.txt",
-        "with.multiple.dots.txt",
-        "တောင်ကြီးမြို့.txt",  # Non-ASCII characters
-        "🐍.py",  # Emoji
-    ])
-    def test_file_operations_with_special_filenames(self, temp_directory, filename):
+    @pytest.mark.parametrize(
+        "filename",
+        [
+            "normal.txt",
+            "with spaces.txt",
+            "with-dashes.txt",
+            "with_underscores.txt",
+            "with.multiple.dots.txt",
+            "တောင်ကြီးမြို့.txt",  # Non-ASCII characters
+            "🐍.py",  # Emoji
+        ],
+    )
+    def test_file_operations_with_special_filenames(
+        self, temp_directory, filename
+    ):
         file_path = temp_directory / filename
         file_path.write_text("content")
 
@@ -1120,7 +1163,9 @@ class TestFileUtils:
         size = SysUtil.get_file_size(file_path)
         assert size == 7  # "content" is 7 bytes
 
-    @pytest.mark.skipif(os.name == "nt", reason="Symlinks might not be available on Windows")
+    @pytest.mark.skipif(
+        os.name == "nt", reason="Symlinks might not be available on Windows"
+    )
     def test_file_operations_with_symlink(self, temp_directory):
         original = temp_directory / "original.txt"
         original.write_text("original content")
@@ -1147,14 +1192,15 @@ class TestFileUtils:
         size = SysUtil.get_file_size(large_dir)
         assert size == 7 * 10000  # "content" is 7 bytes, 10000 files
 
-
     def test_save_to_file(self, tmp_path):
         text = "Hello, World!"
         directory = tmp_path / "test_dir"
         filename = "test_file.txt"
-        
-        file_path = SysUtil.save_to_file(text, directory, filename, timestamp=False, random_hash_digits=0)
-        
+
+        file_path = SysUtil.save_to_file(
+            text, directory, filename, timestamp=False, random_hash_digits=0
+        )
+
         assert file_path.exists()
         assert file_path.read_text() == text
         assert file_path == directory / filename
@@ -1163,9 +1209,11 @@ class TestFileUtils:
         text = "Hello, World!"
         directory = tmp_path / "test_dir"
         filename = "test_file.txt"
-        
-        file_path = SysUtil.save_to_file(text, directory, filename, timestamp=True)
-        
+
+        file_path = SysUtil.save_to_file(
+            text, directory, filename, timestamp=True
+        )
+
         assert file_path.exists()
         assert file_path.read_text() == text
         assert file_path.name.startswith("test_file_")
@@ -1175,50 +1223,61 @@ class TestFileUtils:
         text = "Hello, World!"
         directory = tmp_path / "test_dir"
         filename = "test_file.txt"
-        
-        file_path = SysUtil.save_to_file(text, directory, filename, timestamp=False, random_hash_digits=6)
-        
+
+        file_path = SysUtil.save_to_file(
+            text, directory, filename, timestamp=False, random_hash_digits=6
+        )
+
         assert file_path.exists()
         assert file_path.read_text() == text
-        assert len(file_path.stem) == len("test_file") + 1 + 6  # name + hyphen + hash
+        assert (
+            len(file_path.stem) == len("test_file") + 1 + 6
+        )  # name + hyphen + hash
         assert file_path.name.endswith(".txt")
 
     def test_read_file(self, tmp_path):
         text = "Hello, World!"
         file_path = tmp_path / "test_file.txt"
         file_path.write_text(text)
-        
+
         result = SysUtil.read_file(file_path)
-        
+
         assert result == text
 
     def test_read_file_not_found(self, tmp_path):
         non_existent_file = tmp_path / "non_existent.txt"
-        
+
         with pytest.raises(FileNotFoundError):
             SysUtil.read_file(non_existent_file)
 
-    @pytest.mark.parametrize("machine,expected", [
-        ("arm64", "arm64"),
-        ("aarch64", "arm64"),
-        ("x86_64", "x86_64"),
-        ("amd64", "x86_64"),
-        ("i386", "i386"),
-        ("powerpc", "powerpc"),
-    ])
+    @pytest.mark.parametrize(
+        "machine,expected",
+        [
+            ("arm64", "arm64"),
+            ("aarch64", "arm64"),
+            ("x86_64", "x86_64"),
+            ("amd64", "x86_64"),
+            ("i386", "i386"),
+            ("powerpc", "powerpc"),
+        ],
+    )
     def test_get_cpu_architecture(self, machine, expected):
-        with patch('platform.machine', return_value=machine):
+        with patch("platform.machine", return_value=machine):
             assert SysUtil.get_cpu_architecture() == expected
+
 
 # File: tests/test_sys_util.py
 
-import pytest
-from pathlib import Path
-import platform
-from unittest.mock import patch, MagicMock
-import subprocess
 import importlib
+import platform
+import subprocess
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from lion_core.sys_utils import SysUtil  # Updated import statement
+
 
 class TestSysUtil:
 
@@ -1226,9 +1285,11 @@ class TestSysUtil:
         text = "Hello, World!"
         directory = tmp_path / "test_dir"
         filename = "test_file.txt"
-        
-        file_path = SysUtil.save_to_file(text, directory, filename, timestamp=False, random_hash_digits=0)
-        
+
+        file_path = SysUtil.save_to_file(
+            text, directory, filename, timestamp=False, random_hash_digits=0
+        )
+
         assert file_path.exists()
         assert file_path.read_text() == text
         assert file_path == directory / filename
@@ -1237,9 +1298,11 @@ class TestSysUtil:
         text = "Hello, World!"
         directory = tmp_path / "test_dir"
         filename = "test_file.txt"
-        
-        file_path = SysUtil.save_to_file(text, directory, filename, timestamp=True)
-        
+
+        file_path = SysUtil.save_to_file(
+            text, directory, filename, timestamp=True
+        )
+
         assert file_path.exists()
         assert file_path.read_text() == text
         assert file_path.name.startswith("test_file_")
@@ -1249,139 +1312,161 @@ class TestSysUtil:
         text = "Hello, World!"
         directory = tmp_path / "test_dir"
         filename = "test_file.txt"
-        
-        file_path = SysUtil.save_to_file(text, directory, filename, timestamp=False, random_hash_digits=6)
-        
+
+        file_path = SysUtil.save_to_file(
+            text, directory, filename, timestamp=False, random_hash_digits=6
+        )
+
         assert file_path.exists()
         assert file_path.read_text() == text
-        assert len(file_path.stem) == len("test_file") + 1 + 6  # name + hyphen + hash
+        assert (
+            len(file_path.stem) == len("test_file") + 1 + 6
+        )  # name + hyphen + hash
         assert file_path.name.endswith(".txt")
 
     def test_read_file(self, tmp_path):
         text = "Hello, World!"
         file_path = tmp_path / "test_file.txt"
         file_path.write_text(text)
-        
+
         result = SysUtil.read_file(file_path)
-        
+
         assert result == text
 
     def test_read_file_not_found(self, tmp_path):
         non_existent_file = tmp_path / "non_existent.txt"
-        
+
         with pytest.raises(FileNotFoundError):
             SysUtil.read_file(non_existent_file)
 
-    @pytest.mark.parametrize("machine,expected", [
-        ("arm64", "arm64"),
-        ("aarch64", "arm64"),
-        ("x86_64", "x86_64"),
-        ("amd64", "x86_64"),
-        ("i386", "i386"),
-        ("powerpc", "powerpc"),
-    ])
+    @pytest.mark.parametrize(
+        "machine,expected",
+        [
+            ("arm64", "arm64"),
+            ("aarch64", "arm64"),
+            ("x86_64", "x86_64"),
+            ("amd64", "x86_64"),
+            ("i386", "i386"),
+            ("powerpc", "powerpc"),
+        ],
+    )
     def test_get_cpu_architecture(self, machine, expected):
-        with patch('platform.machine', return_value=machine):
+        with patch("platform.machine", return_value=machine):
             assert SysUtil.get_cpu_architecture() == expected
 
-    @patch('lion_core.sys_utils.SysUtil.import_module')  # Updated patch path
-    @patch('lion_core.sys_utils._run_pip_command')  # Updated patch path
+    @patch("lion_core.sys_utils.SysUtil.import_module")  # Updated patch path
+    @patch("lion_core.sys_utils._run_pip_command")  # Updated patch path
     def test_install_import_success(self, mock_run_pip, mock_import):
         mock_import.side_effect = [ImportError, MagicMock()]
-        
-        result = SysUtil.install_import('test_package')
-        
+
+        result = SysUtil.install_import("test_package")
+
         assert mock_run_pip.called
         assert mock_import.call_count == 2
         assert result is not None
 
-    @patch('lion_core.sys_utils.SysUtil.import_module')  # Updated patch path
-    @patch('lion_core.sys_utils._run_pip_command')  # Updated patch path
+    @patch("lion_core.sys_utils.SysUtil.import_module")  # Updated patch path
+    @patch("lion_core.sys_utils._run_pip_command")  # Updated patch path
     def test_install_import_failure(self, mock_run_pip, mock_import):
         mock_import.side_effect = ImportError
-        mock_run_pip.side_effect = subprocess.CalledProcessError(1, 'pip')
-        
-        with pytest.raises(ImportError):
-            SysUtil.install_import('test_package')
+        mock_run_pip.side_effect = subprocess.CalledProcessError(1, "pip")
 
-    @patch('builtins.__import__')
+        with pytest.raises(ImportError):
+            SysUtil.install_import("test_package")
+
+    @patch("builtins.__import__")
     def test_import_module_success(self, mock_import):
         mock_module = MagicMock()
         mock_module.TestClass = "TestClass"
         mock_import.return_value = mock_module
-        
-        result = SysUtil.import_module('test_package', 'test_module', 'TestClass')
-        
-        assert result == "TestClass"
-        mock_import.assert_called_with('test_package.test_module', fromlist=['TestClass'])
 
-    @patch('importlib.import_module')
+        result = SysUtil.import_module(
+            "test_package", "test_module", "TestClass"
+        )
+
+        assert result == "TestClass"
+        mock_import.assert_called_with(
+            "test_package.test_module", fromlist=["TestClass"]
+        )
+
+    @patch("importlib.import_module")
     def test_import_module_failure(self, mock_import):
         mock_import.side_effect = ImportError
-        
-        with pytest.raises(ImportError):
-            SysUtil.import_module('non_existent_package')
 
-    @patch('importlib.util.find_spec')
+        with pytest.raises(ImportError):
+            SysUtil.import_module("non_existent_package")
+
+    @patch("importlib.util.find_spec")
     def test_is_package_installed_true(self, mock_find_spec):
         mock_find_spec.return_value = MagicMock()
-        
-        assert SysUtil.is_package_installed('existing_package') is True
 
-    @patch('importlib.util.find_spec')
+        assert SysUtil.is_package_installed("existing_package") is True
+
+    @patch("importlib.util.find_spec")
     def test_is_package_installed_false(self, mock_find_spec):
         mock_find_spec.return_value = None
-        
-        assert SysUtil.is_package_installed('non_existent_package') is False
 
-    @patch('lion_core.sys_utils.SysUtil.is_package_installed')  # Updated patch path
-    @patch('lion_core.sys_utils.SysUtil.install_import')  # Updated patch path
-    @patch('lion_core.sys_utils.SysUtil.import_module')  # Updated patch path
-    def test_check_import_installed(self, mock_import, mock_install, mock_is_installed):
+        assert SysUtil.is_package_installed("non_existent_package") is False
+
+    @patch(
+        "lion_core.sys_utils.SysUtil.is_package_installed"
+    )  # Updated patch path
+    @patch("lion_core.sys_utils.SysUtil.install_import")  # Updated patch path
+    @patch("lion_core.sys_utils.SysUtil.import_module")  # Updated patch path
+    def test_check_import_installed(
+        self, mock_import, mock_install, mock_is_installed
+    ):
         mock_is_installed.return_value = True
         mock_import.return_value = MagicMock()
-        
-        result = SysUtil.check_import('existing_package')
-        
+
+        result = SysUtil.check_import("existing_package")
+
         assert result is not None
         assert not mock_install.called
 
-    @patch('lion_core.sys_utils.SysUtil.is_package_installed')  # Updated patch path
-    @patch('lion_core.sys_utils.SysUtil.install_import')  # Updated patch path
-    def test_check_import_not_installed_attempt_install(self, mock_install, mock_is_installed):
+    @patch(
+        "lion_core.sys_utils.SysUtil.is_package_installed"
+    )  # Updated patch path
+    @patch("lion_core.sys_utils.SysUtil.install_import")  # Updated patch path
+    def test_check_import_not_installed_attempt_install(
+        self, mock_install, mock_is_installed
+    ):
         mock_is_installed.return_value = False
         mock_install.return_value = MagicMock()
-        
-        result = SysUtil.check_import('new_package', attempt_install=True)
-        
+
+        result = SysUtil.check_import("new_package", attempt_install=True)
+
         assert result is not None
         assert mock_install.called
 
-    @patch('lion_core.sys_utils.SysUtil.is_package_installed')  # Updated patch path
+    @patch(
+        "lion_core.sys_utils.SysUtil.is_package_installed"
+    )  # Updated patch path
     def test_check_import_not_installed_no_attempt(self, mock_is_installed):
         mock_is_installed.return_value = False
-        
-        with pytest.raises(ImportError):
-            SysUtil.check_import('new_package', attempt_install=False)
 
-    @patch('importlib.metadata.distributions')
+        with pytest.raises(ImportError):
+            SysUtil.check_import("new_package", attempt_install=False)
+
+    @patch("importlib.metadata.distributions")
     def test_list_installed_packages(self, mock_distributions):
         mock_dist1 = MagicMock()
-        mock_dist1.metadata = {'Name': 'package1'}
+        mock_dist1.metadata = {"Name": "package1"}
         mock_dist2 = MagicMock()
-        mock_dist2.metadata = {'Name': 'package2'}
+        mock_dist2.metadata = {"Name": "package2"}
         mock_distributions.return_value = [mock_dist1, mock_dist2]
-        
-        result = SysUtil.list_installed_packages()
-        
-        assert result == ['package1', 'package2']
 
-    @patch('importlib.metadata.distributions')
+        result = SysUtil.list_installed_packages()
+
+        assert result == ["package1", "package2"]
+
+    @patch("importlib.metadata.distributions")
     def test_list_installed_packages_error(self, mock_distributions):
         mock_distributions.side_effect = Exception("Test error")
-        
+
         result = SysUtil.list_installed_packages()
-        
+
         assert result == []
+
 
 # File: tests/test_sys_utils.py

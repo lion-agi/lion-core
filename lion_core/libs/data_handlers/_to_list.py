@@ -1,6 +1,7 @@
 from collections.abc import Iterable, Mapping
 from typing import Any, TypeVar, overload
 
+from pydantic import BaseModel
 from pydantic_core import PydanticUndefinedType
 
 from lion_core.setting import LionUndefinedType
@@ -42,6 +43,7 @@ def to_list(
     flatten: bool = False,
     dropna: bool = False,
     unique: bool = False,
+    use_values: bool = False,
 ) -> list:
     """Convert various input types to a list.
 
@@ -80,7 +82,7 @@ def to_list(
     if unique and not flatten:
         raise ValueError("unique=True requires flatten=True")
 
-    lst_ = _to_list_type(input_)
+    lst_ = _to_list_type(input_, use_values=use_values)
 
     if any((flatten, dropna)):
         lst_ = _process_list(
@@ -114,6 +116,9 @@ def _dict_to_list(input_: Mapping, /, use_values: bool = False) -> list[Any]:
 
 def _to_list_type(input_: Any, /, use_values: bool = False) -> Any | None:
 
+    if isinstance(input_, BaseModel):
+        return [input_]
+
     if use_values and hasattr(input_, "values"):
         return list(input_.values())
 
@@ -128,7 +133,7 @@ def _to_list_type(input_: Any, /, use_values: bool = False) -> Any | None:
     if isinstance(input_, str | bytes | bytearray):
         return _str_to_list(input_, use_values=use_values)
 
-    if isinstance(input_, Mapping):
+    if isinstance(input_, dict):
         return _dict_to_list(input_, use_values=use_values)
 
     if isinstance(input_, Iterable):

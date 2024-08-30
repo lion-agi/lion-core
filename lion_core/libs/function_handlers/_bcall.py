@@ -9,9 +9,9 @@ ErrorHandler = Callable[[Exception], Any]
 
 
 async def bcall(
+    input_: Any,
     func: Callable[..., T],
     /,
-    input_: Any,
     batch_size: int,
     num_retries: int = 0,
     initial_delay: float = 0,

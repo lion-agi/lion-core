@@ -25,7 +25,7 @@ def to_dict(
     input_: Any,
     /,
     *,
-    use_model_dump: bool = False,
+    use_model_dump: bool = True,
     fuzzy_parse: bool = False,
     suppress: bool = False,
     str_type: Literal["json", "xml"] | None = "json",
@@ -47,7 +47,7 @@ def to_dict(
     input_: Any,
     /,
     *,
-    use_model_dump: bool = False,
+    use_model_dump: bool = True,
     **kwargs: Any,
 ) -> dict[str, Any]: ...
 
@@ -56,16 +56,20 @@ def to_dict(
     input_: Any,
     /,
     *,
-    use_model_dump: bool = False,
+    use_model_dump: bool = True,
     fuzzy_parse: bool = False,
     suppress: bool = False,
     str_type: Literal["json", "xml"] | None = "json",
     parser: Callable[[str], dict[str, Any]] | None = None,
+    remove_root: bool = True,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Convert various input types to a dictionary."""
     if isinstance(input_, dict):
         return input_
+
+    if use_model_dump and hasattr(input_, "model_dump"):
+        return input_.model_dump(**kwargs)
 
     if isinstance(
         input_, type(None) | LionUndefinedType | PydanticUndefinedType
@@ -82,6 +86,7 @@ def to_dict(
                 input_,
                 str_type=str_type,
                 parser=parser,
+                remove_root=remove_root,
                 **kwargs,
             )
             if isinstance(a, dict):
@@ -96,9 +101,7 @@ def to_dict(
     if isinstance(input_, Iterable):
         return _iterable_to_dict(input_)
 
-    return _generic_type_to_dict(
-        input_, use_model_dump=use_model_dump, **kwargs
-    )
+    return _generic_type_to_dict(input_, **kwargs)
 
 
 def _undefined_to_dict(
@@ -118,6 +121,7 @@ def _str_to_dict(
     *,
     str_type: Literal["json", "xml"] | None = "json",
     parser: Callable[[str], dict[str, Any]] | None = None,
+    remove_root: bool = True,
     **kwargs: Any,
 ) -> dict[str, Any] | list[dict[str, Any]]:
     """Handle string inputs."""
@@ -139,7 +143,7 @@ def _str_to_dict(
             if parser is None:
                 from lion_core.libs.parsers._xml_parser import xml_to_dict
 
-                return xml_to_dict(input_)
+                return xml_to_dict(input_, remove_root=remove_root)
             return parser(input_, **kwargs)
         except Exception as e:
             raise ValueError("Failed to parse XML string") from e
@@ -161,21 +165,13 @@ def _iterable_to_dict(input_: Iterable, /) -> dict:
 def _generic_type_to_dict(
     input_,
     /,
-    *,
-    use_model_dump: bool,
     **kwargs: Any,
 ) -> dict[str, Any]:
-    if use_model_dump and hasattr(input_, "model_dump"):
-        return input_.model_dump(**kwargs)
 
     for method in ["to_dict", "dict", "json", "to_json"]:
         if hasattr(input_, method):
             result = getattr(input_, method)(**kwargs)
-            return (
-                json.loads(result)
-                if method == "json" and isinstance(result, str)
-                else result
-            )
+            return json.loads(result) if isinstance(result, str) else result
 
     if hasattr(input_, "__dict__"):
         return input_.__dict__

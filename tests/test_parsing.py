@@ -1,6 +1,6 @@
 import unittest
 
-from lion_core.libs.parsers import *
+from lion_core.libs import *
 from lion_core.libs.parsers._extract_docstring import (
     _extract_docstring_details_google,
     _extract_docstring_details_rest,

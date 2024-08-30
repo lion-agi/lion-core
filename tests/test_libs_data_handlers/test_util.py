@@ -24,7 +24,7 @@ from lion_core.libs.data_handlers._util import (
         ([1.0, 2.0, 3.0], float, True),
         (["a", "b", "c"], str, True),
         ([True, False, True], bool, True),
-        ([1, 1.0, "1"], (int, float, str), False),
+        ([1, 1.0, "1"], (int, float, str), True),
     ],
 )
 def test_is_homogeneous(input_data, type_check, expected):

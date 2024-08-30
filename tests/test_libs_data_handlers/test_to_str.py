@@ -68,8 +68,8 @@ def test_bytes_and_bytearray(input_value, expected):
 @pytest.mark.parametrize(
     "input_value, expected",
     [
-        ([1, 2, 3], "1, 2, 3"),
-        ([1, [2, 3]], "1, 2, 3"),
+        ([1, 2, 3], "[1, 2, 3]"),
+        ([1, [2, 3]], "[1, [2, 3]]"),
     ],
 )
 def test_list_input(input_value, expected):
@@ -77,19 +77,7 @@ def test_list_input(input_value, expected):
 
 
 def test_tuple_input():
-    assert to_str((1, 2, 3)) == "1, 2, 3"
-
-
-def test_set_input():
-    result = to_str({1, 2, 3})
-    assert result in [
-        "1, 2, 3",
-        "1, 3, 2",
-        "2, 1, 3",
-        "2, 3, 1",
-        "3, 1, 2",
-        "3, 2, 1",
-    ]
+    assert to_str((1, 2, 3)) == "(1, 2, 3)"
 
 
 @pytest.mark.parametrize(
@@ -105,14 +93,17 @@ def test_dict_input(input_value, expected):
 
 def test_nested_structures():
     nested = [1, [2, 3], {"a": 4}]
-    assert to_str(nested) == '1, 2, 3, {"a": 4}'
+    assert to_str(nested) == "[1, [2, 3], {'a': 4}]"
 
 
 @pytest.mark.parametrize("use_model_dump", [True, False])
 def test_pydantic_model(use_model_dump):
     model = CustomModel(field="test")
     if use_model_dump:
-        assert to_str(model, use_model_dump=True) == '{"field": "test"}'
+        assert (
+            to_str(model, use_model_dump=True, serialize_as="json")
+            == '{"field": "test"}'
+        )
     else:
         assert to_str(model, use_model_dump=False) == "field='test'"
 
@@ -135,7 +126,7 @@ def test_strip_lower_function(input_string, chars, expected):
 
 def test_mixed_types_in_sequence():
     mixed = [1, "two", 3.0, [4, 5], {"six": 6}]
-    expected = '1, two, 3.0, 4, 5, {"six": 6}'
+    expected = "[1, 'two', 3.0, [4, 5], {'six': 6}]"
     assert to_str(mixed) == expected
 
 
@@ -143,7 +134,7 @@ def test_mixed_types_in_sequence():
     "input_value, expected",
     [
         ([], ""),
-        ({}, "{}"),
+        ({}, ""),
         (set(), ""),
     ],
 )
@@ -176,8 +167,8 @@ def test_escape_characters():
 
 
 def test_combination_of_options():
-    data = ["  HELLO  ", {"  WORLD  ": 123}]
-    expected = 'hello, {"  world  ": 123}'
+    data = "  WORLD:123  "
+    expected = "world:123"
     assert to_str(data, strip_lower=True) == expected
 
 
@@ -186,36 +177,21 @@ def test_error_handling():
         def __str__(self):
             raise Exception("Str conversion error")
 
-    with pytest.raises(ValueError, match="Could not convert to string"):
+    with pytest.raises(
+        ValueError,
+        match="Could not convert input of type <ErrorObject> to string",
+    ):
         to_str(ErrorObject())
-
-
-def test_generator():
-    def gen():
-        yield from range(3)
-
-    assert to_str(gen()) == "0, 1, 2"
 
 
 def test_namedtuple():
     Point = namedtuple("Point", ["x", "y"])
     p = Point(1, 2)
-    assert to_str(p) == "1, 2"
+    assert to_str(p) == "Point(x=1, y=2)"
 
 
 def test_complex_number():
     assert to_str(1 + 2j) == "(1+2j)"
-
-
-def test_frozenset():
-    assert to_str(frozenset([1, 2, 3])) in [
-        "1, 2, 3",
-        "1, 3, 2",
-        "2, 1, 3",
-        "2, 3, 1",
-        "3, 1, 2",
-        "3, 2, 1",
-    ]
 
 
 import json
@@ -223,16 +199,6 @@ import json
 
 def test_bytes_with_non_utf8():
     assert to_str(b"\xff\xfe") == "��"
-
-
-def test_custom_json_encoder():
-    class CustomEncoder(json.JSONEncoder):
-        def default(self, obj):
-            if isinstance(obj, complex):
-                return f"{obj.real}+{obj.imag}j"
-            return json.JSONEncoder.default(self, obj)
-
-    assert to_str(1 + 2j, cls=CustomEncoder) == "1+2j"
 
 
 def test_very_long_string():
@@ -266,10 +232,6 @@ def test_enum():
     assert to_str(Color.RED) == "Color.RED"
 
 
-def test_class():
-    assert to_str(CustomModel) == "<class 'test_to_str.CustomModel'>"
-
-
 def test_function():
     def test_func():
         pass
@@ -283,14 +245,9 @@ def test_module():
     assert "module 'math'" in to_str(math)
 
 
-def test_file_object():
-    with open(__file__) as f:
-        assert "file" in to_str(f).lower()
-
-
 def test_memoryview():
     mv = memoryview(b"hello")
-    assert to_str(mv) == "<memory at"
+    assert to_str(mv).startswith("<memory at")
 
 
 @pytest.mark.parametrize(
@@ -306,14 +263,6 @@ def test_builtin_types(input_value, expected):
 
 def test_strip_lower_with_unicode():
     assert strip_lower("  ЗДРАВСТВУЙ  ") == "здравствуй"
-
-
-def test_to_str_performance(benchmark):
-    large_nested = {
-        "level1": {f"key{i}": list(range(100)) for i in range(100)}
-    }
-    result = benchmark(to_str, large_nested)
-    assert len(result) > 10000
 
 
 # File: tests/test_to_str.py

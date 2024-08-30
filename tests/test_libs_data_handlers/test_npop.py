@@ -42,8 +42,14 @@ def test_npop_various_scenarios(data, indices, expected_result, expected_data):
         ({"a": {"b": 2}}, ["a", "c"], 10, 10, {"a": {"b": 2}}),
         ([], [0], "default", "default", []),
         ({}, ["non_existent"], None, None, {}),
-        pytest.param({"a": 1}, ["b"], LN_UNDEFINED, None, {"a": 1},
-                     marks=pytest.mark.xfail(raises=KeyError)),
+        pytest.param(
+            {"a": 1},
+            ["b"],
+            LN_UNDEFINED,
+            None,
+            {"a": 1},
+            marks=pytest.mark.xfail(raises=KeyError),
+        ),
     ],
 )
 def test_npop_with_default(
@@ -198,6 +204,7 @@ def is_recursive_dict(d):
         if isinstance(obj, dict):
             seen.add(id(obj))
             return any(check(v) for v in obj.values())
+
     return check(d)
 
 
