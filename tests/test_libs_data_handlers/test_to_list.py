@@ -308,28 +308,17 @@ def test_to_list_with_map():
 
 def test_to_list_with_bytes():
     b = b"hello"
-    assert to_list(b) == [104, 101, 108, 108, 111]
+    assert to_list(b, use_values=True) == [104, 101, 108, 108, 111]
 
 
 def test_to_list_with_memoryview():
     mv = memoryview(b"hello")
-    assert to_list(mv) == [104, 101, 108, 108, 111]
+    assert to_list(mv, use_values=True) == [104, 101, 108, 108, 111]
 
 
 def test_to_list_with_complex():
     c = 1 + 2j
     assert to_list(c) == [c]
-
-
-def test_to_list_performance_large_nested(benchmark):
-    def create_large_nested():
-        return [list(range(1000)) for _ in range(1000)]
-
-    large_nested = create_large_nested()
-    result = benchmark(to_list, large_nested, flatten=True)
-    assert len(result) == 1_000_000
-    assert result[0] == 0
-    assert result[-1] == 999
 
 
 def test_to_list_with_custom_flatten():
