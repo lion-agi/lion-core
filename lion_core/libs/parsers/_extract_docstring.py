@@ -2,8 +2,6 @@ import inspect
 from collections.abc import Callable
 from typing import Literal
 
-from lion_core.libs.data_handlers import strip_lower
-
 DocstringStyle = Literal["google", "rest"]
 
 
@@ -40,11 +38,13 @@ def extract_docstring_details(
         ...            'param2': 'The second parameter.'}
         True
     """
-    if strip_lower(style) == "google":
+    style = str(style).strip().lower()
+
+    if style == "google":
         func_description, params_description = (
             _extract_docstring_details_google(func)
         )
-    elif strip_lower(style) == "rest":
+    elif style == "rest":
         func_description, params_description = _extract_docstring_details_rest(
             func
         )
@@ -100,9 +100,10 @@ def _extract_docstring_details_google(
             i + 1
             for i in range(1, lines_len)
             if (
-                strip_lower(lines[i]).startswith("args")
-                or strip_lower(lines[i]).startswith("arguments")
-                or strip_lower(lines[i]).startswith("parameters")
+                (a := str(lines[i]).strip().lower()).startswith("args")
+                or a.startswith("parameters")
+                or a.startswith("params")
+                or a.startswith("arguments")
             )
         ),
         0,

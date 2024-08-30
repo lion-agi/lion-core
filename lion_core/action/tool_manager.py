@@ -6,7 +6,7 @@ from lion_core.abc import BaseManager
 from lion_core.action.function_calling import FunctionCalling
 from lion_core.action.tool import Tool, func_to_tool
 from lion_core.communication.action_request import ActionRequest
-from lion_core.libs import fuzzy_parse_json, to_list
+from lion_core.libs import to_dict, to_list
 
 REGISTERABLE_TOOL = Tool | Callable[..., Any]
 FINDABLE_TOOL = REGISTERABLE_TOOL | str
@@ -166,7 +166,7 @@ class ToolManager(BaseManager):
         """Parse a string and match it to a registered tool."""
         _call = None
         try:
-            _call = fuzzy_parse_json(func_call)
+            _call = to_dict(func_call, str_type="json", fuzzy_parse=True)
         except Exception as e:
             raise ValueError(f"Invalid function call {func_call}") from e
 

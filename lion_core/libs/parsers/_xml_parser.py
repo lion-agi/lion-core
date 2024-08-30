@@ -1,5 +1,6 @@
 import re
 from typing import Any
+from xml.etree import ElementTree as ET
 
 
 def xml_to_dict(xml_string: str, /, suppress=False) -> dict[str, Any]:
@@ -29,6 +30,23 @@ def xml_to_dict(xml_string: str, /, suppress=False) -> dict[str, Any]:
     except ValueError as e:
         if not suppress:
             raise e
+
+
+def dict_to_xml(data: dict, /, root_tag: str = "root") -> str:
+
+    root = ET.Element(root_tag)
+
+    def convert(dict_obj: dict, parent: Any) -> None:
+        for key, val in dict_obj.items():
+            if isinstance(val, dict):
+                element = ET.SubElement(parent, key)
+                convert(dict_obj=val, parent=element)
+            else:
+                element = ET.SubElement(parent, key)
+                element.text = str(object=val)
+
+    convert(dict_obj=data, parent=root)
+    return ET.tostring(root, encoding="unicode")
 
 
 class XMLParser:

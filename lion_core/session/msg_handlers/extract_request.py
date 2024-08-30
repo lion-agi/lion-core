@@ -1,5 +1,5 @@
 from lion_core.communication.action_request import ActionRequest
-from lion_core.libs import fuzzy_parse_json, nget, to_dict
+from lion_core.libs import nget, to_dict
 
 
 def extract_request_plain_function_calling(
@@ -53,7 +53,7 @@ def extract_request_from_content_code_block(
 
         if isinstance(_arg := out.get("arguments"), str):
             if (
-                a := to_dict(_arg, str_type="json", parser=fuzzy_parse_json)
+                a := to_dict(_arg, str_type="json", fuzzy_parse=True)
             ) is not None:
                 out["arguments"] = a
             elif (a := to_dict(_arg, str_type="xml")) is not None:

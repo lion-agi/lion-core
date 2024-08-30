@@ -2,7 +2,7 @@ import asyncio
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from lion_core.libs.data_handlers import to_list
+from lion_core.libs.data_handlers._to_list import to_list
 from lion_core.libs.function_handlers._ucall import ucall
 from lion_core.setting import LN_UNDEFINED
 
@@ -11,9 +11,9 @@ ErrorHandler = Callable[[Exception], Any]
 
 
 def lcall(
+    input_: list[Any],
     func: Callable[..., T],
     /,
-    input_: list[Any],
     *,
     flatten: bool = False,
     dropna: bool = False,
@@ -30,9 +30,9 @@ def lcall(
 
 
 async def alcall(
+    input_: list[Any],
     func: Callable[..., T],
     /,
-    input_: list[Any],
     num_retries: int = 0,
     initial_delay: float = 0,
     retry_delay: float = 0,

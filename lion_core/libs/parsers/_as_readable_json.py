@@ -2,7 +2,8 @@
 
 from typing import Any
 
-from lion_core.libs.data_handlers import to_dict, to_str
+from lion_core.libs.data_handlers._to_dict import to_dict
+from lion_core.libs.data_handlers._to_str import to_str
 
 
 def as_readable_json(input_: Any, /, **kwargs) -> str:

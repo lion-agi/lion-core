@@ -2,8 +2,6 @@
 
 from typing import Any
 
-from lion_core.libs.data_handlers import strip_lower
-
 
 def validate_boolean(x: Any) -> bool:
     """
@@ -41,10 +39,17 @@ def validate_boolean(x: Any) -> bool:
     if isinstance(x, bool):
         return x
 
-    if strip_lower(x) in ["true", "1", "correct", "yes"]:
+    if str(x).strip().lower() in ["true", "1", "correct", "yes"]:
         return True
 
-    elif strip_lower(x) in ["false", "0", "incorrect", "no", "none", "n/a"]:
+    elif str(x).strip().lower() in [
+        "false",
+        "0",
+        "incorrect",
+        "no",
+        "none",
+        "n/a",
+    ]:
         return False
 
     raise ValueError(f"Failed to convert {x} into a boolean value")

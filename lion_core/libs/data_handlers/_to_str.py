@@ -1,50 +1,80 @@
 import json
-from collections.abc import Iterable, Mapping
-from typing import Any, TypeVar, overload
+from collections.abc import Callable, Mapping
+from typing import Any, Literal, TypeVar
 
-from pydantic import BaseModel
 from pydantic_core import PydanticUndefined, PydanticUndefinedType
 
 from lion_core.libs.data_handlers._to_dict import to_dict
+from lion_core.libs.parsers._xml_parser import dict_to_xml
 from lion_core.setting import LN_UNDEFINED, LionUndefinedType
 
 T = TypeVar("T")
 
 
-@overload
-def to_str(
-    input_: None | LionUndefinedType | PydanticUndefinedType,
-) -> str: ...
-
-
-@overload
-def to_str(input_: str) -> str: ...
-
-
-@overload
-def to_str(input_: BaseModel, **kwargs: Any) -> str: ...
-
-
-@overload
-def to_str(input_: Mapping, **kwargs: Any) -> str: ...
-
-
-@overload
-def to_str(input_: bytes | bytearray) -> str: ...
-
-
-@overload
-def to_str(input_: Iterable, **kwargs: Any) -> str: ...
-
-
-@overload
-def to_str(
-    input_: Any,
+def _serialize_as(
+    input_,
+    /,
     *,
+    serialize_as: Literal["json", "xml"],
     strip_lower: bool = False,
     chars: str | None = None,
+    str_type: Literal["json", "xml"] | None = None,
+    use_model_dump: bool = False,
+    str_parser: Callable[[str], dict[str, Any]] | None = None,
+    parser_kwargs: dict = {},
+    root_tag: str = "root",
     **kwargs: Any,
-) -> str: ...
+) -> str:
+    try:
+        dict_ = to_dict(
+            input_,
+            use_model_dump=use_model_dump,
+            str_type=str_type,
+            suppress=True,
+            parser=str_parser,
+            **parser_kwargs,
+        )
+        if any((str_type, chars)):
+            str_ = json.dumps(dict_)
+            str_ = _process_string(str_, strip_lower=strip_lower, chars=chars)
+            dict_ = json.loads(str_)
+
+        if serialize_as == "json":
+            return json.dumps(dict_, **kwargs)
+
+        if serialize_as == "xml":
+
+            return dict_to_xml(dict_, root_tag=root_tag)
+    except Exception as e:
+        raise ValueError(
+            f"Failed to serialize input of {type(input_).__name__} "
+            f"into <{str_type}>"
+        ) from e
+
+
+def _to_str_type(input_: Any, /) -> str:
+
+    if isinstance(
+        input_, type(None) | LionUndefinedType | PydanticUndefinedType
+    ):
+        return ""
+
+    if isinstance(input_, bytes | bytearray):
+        return input_.decode("utf-8", errors="replace")
+
+    if isinstance(input_, str):
+        return input_
+
+    if isinstance(input_, Mapping):
+        return json.dumps(dict(input_))
+
+    try:
+        return str(input_)
+    except Exception as e:
+        raise ValueError(
+            f"Could not convert input of type <{type(input_).__name__}> "
+            "to string"
+        ) from e
 
 
 def to_str(
@@ -53,6 +83,12 @@ def to_str(
     *,
     strip_lower: bool = False,
     chars: str | None = None,
+    str_type: Literal["json", "xml"] | None = None,
+    serialize_as: Literal["json", "xml"] | None = None,
+    use_model_dump: bool = False,
+    str_parser: Callable[[str], dict[str, Any]] | None = None,
+    parser_kwargs: dict = {},
+    root_tag: str = "root",
     **kwargs: Any,
 ) -> str:
     """
@@ -83,64 +119,25 @@ def to_str(
         >>> to_str({"a": 1, "b": 2})
         '{"a": 1, "b": 2}'
     """
-    try:
-        str_ = _dispatch_to_str(input_, **kwargs)
-        return _process_string(s=str_, strip_lower=strip_lower, chars=chars)
-    except Exception as e:
-        raise ValueError(
-            f"Could not convert input of type <{type(input_).__name__}> to "
-            "string"
-        ) from e
 
+    if serialize_as:
+        return _serialize_as(
+            input_,
+            serialize_as=serialize_as,
+            strip_lower=strip_lower,
+            chars=chars,
+            str_type=str_type,
+            use_model_dump=use_model_dump,
+            str_parser=str_parser,
+            parser_kwargs=parser_kwargs,
+            root_tag=root_tag,
+            **kwargs,
+        )
 
-def _pydantic_to_str(input_: BaseModel, /, **kwargs: Any) -> str:
-
-    if hasattr(input_, "to_dict"):
-        input_ = input_.to_dict()
-    else:
-        input_ = input_.model_dump()
-
-    return json.dumps(input_, **kwargs)
-
-
-def _dict_to_str(input_: Mapping, /, **kwargs: Any) -> str:
-    input_ = dict(input_)
-    return json.dumps(input_, **kwargs)
-
-
-def _byte_to_str(input_: bytes | bytearray, /) -> str:
-    return input_.decode("utf-8", errors="replace")
-
-
-def _dispatch_to_str(input_: Any, /, **kwargs: Any) -> str:
-    if isinstance(input_, str):
-        return input_
-
-    if input_ in [LN_UNDEFINED, PydanticUndefined, None, [], {}]:
-        return ""
-
-    if isinstance(input_, BaseModel):
-        return _pydantic_to_str(input_, **kwargs)
-
-    if isinstance(input_, Mapping):
-        return _dict_to_str(input_, **kwargs)
-
-    if isinstance(input_, (bytes, bytearray)):
-        return _byte_to_str(input_)
-
-    if isinstance(input_, Iterable):
-        return _iterable_to_str(input_, **kwargs)
-
-    try:
-        dict_ = to_dict(input_)
-        return _dict_to_str(dict_, **kwargs)
-    except Exception:
-        return str(object=input_)
-
-
-def _iterable_to_str(input_: Iterable, /, **kwargs: Any) -> str:
-    input_ = list(input_)
-    return ", ".join(_dispatch_to_str(item, **kwargs) for item in input_)
+    str_ = _to_str_type(input_, **kwargs)
+    if any((strip_lower, chars)):
+        str_ = _process_string(str_, strip_lower=strip_lower, chars=chars)
+    return str_
 
 
 def _process_string(s: str, strip_lower: bool, chars: str | None) -> str:
@@ -158,6 +155,12 @@ def strip_lower(
     /,
     *,
     chars: str | None = None,
+    str_type: Literal["json", "xml"] | None = None,
+    serialize_as: Literal["json", "xml"] | None = None,
+    use_model_dump: bool = False,
+    str_parser: Callable[[str], dict[str, Any]] | None = None,
+    parser_kwargs: dict = {},
+    root_tag: str = "root",
     **kwargs: Any,
 ) -> str:
     """
@@ -186,6 +189,12 @@ def strip_lower(
         input_,
         strip_lower=True,
         chars=chars,
+        str_type=str_type,
+        serialize_as=serialize_as,
+        use_model_dump=use_model_dump,
+        str_parser=str_parser,
+        parser_kwargs=parser_kwargs,
+        root_tag=root_tag,
         **kwargs,
     )
 
