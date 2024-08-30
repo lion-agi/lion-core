@@ -1,9 +1,6 @@
 from collections import deque
 from collections.abc import Mapping, Sequence
-from typing import Any
-
-from lion_core.libs.data_handlers._to_dict import to_dict
-from lion_core.libs.data_handlers._to_list import to_list
+from typing import Any, Literal
 
 
 def flatten(
@@ -12,35 +9,29 @@ def flatten(
     *,
     parent_key: tuple = (),
     sep: str = "|",
-    coerce_keys: bool = True,
     dynamic: bool = False,
-    coerce_sequence_to_list: bool = False,
-    coerce_sequence_to_dict: bool = False,
+    coerce_sequence: bool | Literal["dict", "list"] = False,
+    coerce_keys: bool = True,
     max_depth: int | None = None,
-    inplace: bool = False,
 ) -> dict[tuple | str, Any] | None:
-    if coerce_sequence_to_list and coerce_sequence_to_dict:
+
+    if coerce_keys and coerce_sequence == "list":
         raise ValueError(
-            "coerce_sequence_to_list and coerce_sequence_to_dict cannot both "
-            "be True"
+            "coerce_sequence cannot be 'list' when coerce_keys is True"
         )
 
-    if inplace:
-        if not isinstance(nested_structure, dict):
-            raise ValueError(
-                "Inplace flattening is only supported for dictionaries"
-            )
-        _flatten_inplace(
-            d=nested_structure,
-            parent_key=parent_key,
-            sep=sep,
-            coerce_keys=coerce_keys,
-            dynamic=dynamic,
-            coerce_sequence_to_list=coerce_sequence_to_list,
-            coerce_sequence_to_dict=coerce_sequence_to_dict,
-            max_depth=max_depth,
-        )
-        return None
+    if dynamic and coerce_sequence:
+        match coerce_sequence:
+            case "list" | True:
+                coerce_sequence_to_list = True
+                coerce_sequence_to_dict = False
+            case "dict":
+                coerce_sequence_to_list = False
+                coerce_sequence_to_dict = True
+
+    else:
+        coerce_sequence_to_list = False
+        coerce_sequence_to_dict = False
 
     return _flatten_iterative(
         obj=nested_structure,
@@ -60,9 +51,9 @@ def _flatten_iterative(
     sep: str,
     coerce_keys: bool,
     dynamic: bool,
-    coerce_sequence_to_list: bool,
-    coerce_sequence_to_dict: bool,
-    max_depth: int | None,
+    coerce_sequence_to_list: bool = False,
+    coerce_sequence_to_dict: bool = False,
+    max_depth: int | None = None,
 ) -> dict[tuple | str, Any]:
     stack = deque([(obj, parent_key, 0)])
     result = {}
@@ -98,7 +89,7 @@ def _flatten_iterative(
                     stack.appendleft((v, new_key, depth + 1))
             elif coerce_sequence_to_list:
                 for i, v in enumerate(current_obj):
-                    new_key = current_key + (str(i),)
+                    new_key = current_key + (i,)
                     stack.appendleft((v, new_key, depth + 1))
             else:
                 for i, v in enumerate(current_obj):
@@ -114,63 +105,6 @@ def _format_key(key: tuple, sep: str, coerce_keys: bool, /) -> tuple | str:
     if not key:
         return key
     return sep.join(map(str, key)) if coerce_keys else key
-
-
-def _flatten_inplace(
-    d: dict,
-    parent_key: tuple,
-    sep: str,
-    coerce_keys: bool,
-    dynamic: bool,
-    coerce_sequence_to_list: bool,
-    coerce_sequence_to_dict: bool,
-    max_depth: int | None,
-) -> None:
-    stack = deque([(d, parent_key, 0)])
-
-    while stack:
-        current_dict, current_key, depth = stack.pop()
-
-        if max_depth is not None and depth >= max_depth:
-            continue
-
-        for k in list(current_dict.keys()):
-            v = current_dict[k]
-            new_key = current_key + (k,)
-
-            if isinstance(v, dict):
-                stack.appendleft((v, new_key, depth + 1))
-                del current_dict[k]
-            elif (
-                dynamic
-                and isinstance(v, Sequence)
-                and not isinstance(v, (str, bytes, bytearray))
-            ):
-                if coerce_sequence_to_dict:
-                    dict_obj = to_dict(v)
-                    stack.appendleft((dict_obj, new_key, depth + 1))
-                elif coerce_sequence_to_list:
-                    list_obj = to_list(v)
-                    for i, item in enumerate(list_obj):
-                        item_key = new_key + (str(i),)
-                        current_dict[
-                            _format_key(item_key, sep, coerce_keys)
-                        ] = item
-                else:
-                    for i, item in enumerate(v):
-                        item_key = new_key + (str(i),)
-                        current_dict[
-                            _format_key(item_key, sep, coerce_keys)
-                        ] = item
-                del current_dict[k]
-            elif coerce_keys:
-                current_dict[_format_key(new_key, sep, coerce_keys)] = (
-                    current_dict.pop(k)
-                )
-
-        if current_dict is not d:
-            for k, v in current_dict.items():
-                d[k] = v
 
 
 # File: lion_core/libs/data_handlers/_flatten.py
