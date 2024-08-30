@@ -1,7 +1,7 @@
 from typing_extensions import override
 
 from lion_core.exceptions import LionOperationError
-from lion_core.libs import fuzzy_parse_json, to_dict, to_list
+from lion_core.libs import to_dict, to_list
 from lion_core.rule.default_rules.mapping import MappingRule
 
 
@@ -47,7 +47,7 @@ class FunctionCallingRule(MappingRule):
     async def fix_value(self, value):
         corrected = []
         if isinstance(value, str):
-            value = fuzzy_parse_json(value)
+            value = to_dict(value, str_type="json", fuzzy_parse=True)
 
         try:
             value = to_list(value, flatten=True, dropna=True)

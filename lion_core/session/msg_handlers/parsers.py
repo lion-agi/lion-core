@@ -1,12 +1,7 @@
 import re
 
 from lion_core.generic.note import note
-from lion_core.libs import (
-    extract_json_block,
-    fuzzy_parse_json,
-    md_to_json,
-    to_dict,
-)
+from lion_core.libs import extract_json_block, md_to_json, to_dict
 
 identifier = [
     "tool_uses",
@@ -45,21 +40,21 @@ def _force_parse_json(s_: str) -> tuple:
                 parser=md_to_json,
                 suppress=True,
             )
-            if out is None:
+            if not out:
                 out = to_dict(
                     s_,
                     str_type="json",
-                    parser=fuzzy_parse_json,
+                    fuzzy_parse=True,
                     suppress=True,
                 )
-            if out is None:
+            if not out:
                 out = to_dict(
                     s_,
                     str_type="json",
                     parser=extract_json_block,
                     suppress=True,
                 )
-            if out is not None and isinstance(out, dict):
+            if out and isinstance(out, dict):
                 return idx, out
     return None, None
 

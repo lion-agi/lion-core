@@ -9,7 +9,7 @@ from lion_core.communication.message import (
     RoledMessage,
 )
 from lion_core.generic.note import Note
-from lion_core.libs import fuzzy_parse_json, to_dict, to_str
+from lion_core.libs import to_dict, to_str
 
 
 def prepare_action_request(
@@ -21,11 +21,7 @@ def prepare_action_request(
             return {}
         if not isinstance(_arg, dict):
             try:
-                _arg = to_dict(
-                    to_str(_arg),
-                    str_type="json",
-                    parser=fuzzy_parse_json,
-                )
+                _arg = to_dict(to_str(_arg), str_type="json", fuzzy_parse=True)
             except ValueError:
                 _arg = to_dict(to_str(_arg), str_type="xml")
             except Exception as e:
