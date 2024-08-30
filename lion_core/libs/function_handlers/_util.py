@@ -46,20 +46,14 @@ def is_coroutine_func(func: Callable[..., Any]) -> bool:
     return asyncio.iscoroutinefunction(func)
 
 
-def custom_error_handler(
+async def custom_error_handler(
     error: Exception, error_map: dict[type, ErrorHandler]
 ) -> None:
-    """
-    Handle errors based on a custom error map.
-
-    Args:
-        error: The error that occurred.
-        error_map: A map of error types to handler functions.
-    """
     for error_type, handler in error_map.items():
         if isinstance(error, error_type):
-            handler(error)
-            return
+            if is_coroutine_func(handler):
+                return await handler(error)
+            return handler(error)
     logging.error(f"Unhandled error: {error}")
 
 

@@ -2,7 +2,7 @@ from typing import Any
 
 
 def is_homogeneous(
-    iterables: list[Any] | dict[Any, Any], type_check: type
+    iterables: list[Any] | dict[Any, Any], type_check: type | tuple[type, ...]
 ) -> bool:
     """
     Check if all elements in a list or all values in a dict are of same type.

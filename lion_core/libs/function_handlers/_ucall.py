@@ -59,7 +59,8 @@ async def ucall(
 
     except Exception as e:
         if error_map:
-            custom_error_handler(e, error_map)
+
+            return await custom_error_handler(e, error_map)
         raise e
 
 
