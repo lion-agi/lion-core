@@ -53,6 +53,8 @@ def _serialize_as(
 
 
 def _to_str_type(input_: Any, /) -> str:
+    if input_ in [set(), [], {}]:
+        return ""
 
     if isinstance(
         input_, type(None) | LionUndefinedType | PydanticUndefinedType
