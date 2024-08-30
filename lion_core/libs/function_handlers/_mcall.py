@@ -2,7 +2,7 @@ import asyncio
 from collections.abc import Callable, Sequence
 from typing import Any, TypeVar
 
-from lion_core.libs.data_handlers import to_list
+from lion_core.libs.data_handlers._to_list import to_list
 from lion_core.libs.function_handlers._lcall import alcall
 from lion_core.libs.function_handlers._rcall import rcall
 from lion_core.setting import LN_UNDEFINED
@@ -12,9 +12,9 @@ ErrorHandler = Callable[[Exception], Any]
 
 
 async def mcall(
+    input_: Any,
     func: Callable[..., T] | Sequence[Callable[..., T]],
     /,
-    input_: Any,
     *,
     explode: bool = False,
     num_retries: int = 0,
@@ -68,8 +68,8 @@ async def mcall(
     if explode:
         tasks = [
             alcall(
-                f,
                 input_,
+                f,
                 num_retries=num_retries,
                 initial_delay=initial_delay,
                 retry_delay=retry_delay,

@@ -12,6 +12,7 @@ ErrorHandler = Callable[[Exception], Any]
 
 async def rcall(
     func: Callable[..., T],
+    /,
     *args: Any,
     num_retries: int = 0,
     initial_delay: float = 0,

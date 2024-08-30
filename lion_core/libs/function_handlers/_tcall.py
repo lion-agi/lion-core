@@ -8,6 +8,7 @@ ErrorHandler = Callable[[Exception], None]
 
 async def tcall(
     func: Callable[..., T],
+    /,
     *args: Any,
     initial_delay: float = 0,
     error_msg: str | None = None,
