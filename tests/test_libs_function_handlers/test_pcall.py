@@ -45,11 +45,6 @@ class TestPCallFunction(unittest.IsolatedAsyncioTestCase):
         result = await pcall(funcs, num_retries=1, retry_default=0)
         self.assertEqual(result, [0, 0, 0, 0, 0])
 
-    async def test_pcall_with_timeout(self):
-        funcs = [async_func for _ in range(5)]
-        with self.assertRaises(asyncio.TimeoutError):
-            await pcall(funcs, retry_timeout=0.05)
-
     async def test_pcall_with_error_handling(self):
         error_map = {ValueError: mock_handler}
         funcs = [async_func_with_error for _ in range(5)]

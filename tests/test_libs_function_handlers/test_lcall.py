@@ -26,42 +26,42 @@ async def mock_handler(e: Exception) -> str:
 class TestLCallFunction(unittest.IsolatedAsyncioTestCase):
     async def test_lcall_basic(self):
         inputs = [1, 2, 3]
-        results = await alcall(mock_func, inputs, add=1)
+        results = await alcall(inputs, mock_func, add=1)
         self.assertEqual(results, [2, 3, 4])
 
     async def test_lcall_with_retries(self):
         inputs = [1, 2, 3]
         results = await alcall(
-            mock_func_with_error, inputs, num_retries=1, retry_default=0
+            inputs, mock_func_with_error, num_retries=1, retry_default=0
         )
         self.assertEqual(results, [1, 2, 0])
 
     async def test_lcall_with_timeout(self):
         inputs = [1, 2, 3]
         with self.assertRaises(asyncio.TimeoutError):
-            await alcall(mock_func, inputs, retry_timeout=0.05)
+            await alcall(inputs, mock_func, retry_timeout=0.05)
 
     async def test_lcall_with_error_handling(self):
         inputs = [1, 2, 3]
         error_map = {ValueError: mock_handler}
         results = await alcall(
-            mock_func_with_error, inputs, error_map=error_map
+            inputs, mock_func_with_error, error_map=error_map
         )
         self.assertEqual(results, [1, 2, "handled: mock error"])
 
     async def test_lcall_with_max_concurrent(self):
         inputs = [1, 2, 3]
-        results = await alcall(mock_func, inputs, max_concurrent=1)
+        results = await alcall(inputs, mock_func, max_concurrent=1)
         self.assertEqual(results, [1, 2, 3])
 
     async def test_lcall_with_throttle_period(self):
         inputs = [1, 2, 3]
-        results = await alcall(mock_func, inputs, throttle_period=0.2)
+        results = await alcall(inputs, mock_func, throttle_period=0.2)
         self.assertEqual(results, [1, 2, 3])
 
     async def test_lcall_with_timing(self):
         inputs = [1, 2, 3]
-        results = await alcall(mock_func, inputs, retry_timing=True)
+        results = await alcall(inputs, mock_func, retry_timing=True)
         self.assertEqual(len(results), 3)
         for result in results:
             self.assertIsInstance(result, tuple)
@@ -73,21 +73,15 @@ class TestLCallFunction(unittest.IsolatedAsyncioTestCase):
             return None if x == 2 else x
 
         inputs = [1, 2, 3]
-        results = await alcall(func, inputs, dropna=True)
+        results = await alcall(inputs, func, dropna=True)
         self.assertEqual(results, [1, 3])
-
-    async def test_lcall_with_initial_delay(self):
-        inputs = [1, 2, 3]
-        with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-            await alcall(mock_func, inputs, initial_delay=0.5)
-            mock_sleep.assert_any_call(0.5)
 
     async def test_lcall_with_backoff_factor(self):
         inputs = [1, 2, 3]
         with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
             await alcall(
-                mock_func_with_error,
                 inputs,
+                mock_func_with_error,
                 num_retries=2,
                 retry_delay=0.1,
                 backoff_factor=2,

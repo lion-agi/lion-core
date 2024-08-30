@@ -1,8 +1,9 @@
 import pytest
-from lion_core.sys_utils import SysUtil
+
+from lion_core.abc import Observable
 from lion_core.exceptions import LionIDError
 from lion_core.setting import LionIDConfig
-from lion_core.abc import Observable
+from lion_core.sys_utils import SysUtil
 
 
 class TestSysUtilID:

@@ -23,7 +23,10 @@ def test_nset_various_scenarios(data, indices, value, expected):
 
 def test_nset_empty_indices():
     data = {"a": 1}
-    with pytest.raises(ValueError, match="Indices list is empty, cannot determine target container"):
+    with pytest.raises(
+        ValueError,
+        match="Indices list is empty, cannot determine target container",
+    ):
         nset(data, [], 2)
 
 
