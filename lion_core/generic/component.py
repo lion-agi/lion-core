@@ -13,7 +13,6 @@ from lion_core.exceptions import LionValueError
 from lion_core.generic.component_converter import ComponentConverterRegistry
 from lion_core.generic.element import Element
 from lion_core.generic.note import Note
-from lion_core.libs import strip_lower
 from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 
@@ -443,7 +442,7 @@ class Component(Element):
         /,
     ) -> Any:
         """Get the value of a field attribute."""
-        if strip_lower(attr, chars="s") == "annotation":
+        if str(attr).strip("s").lower() == "annotation":
             return self._field_annotation(field_name)
 
         all_fields = self.all_fields
