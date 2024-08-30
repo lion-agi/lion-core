@@ -21,8 +21,88 @@ _type_map = {
     "complex": complex,
 }
 
-
 NUM_TYPES = type[int | float | complex] | Literal["int", "float", "complex"]
+
+
+def _extract_numbers(input_: str) -> list[str]:
+    """
+    Extract all numeric values from a string.
+
+    Args:
+        input_: The input string to search for numeric values.
+
+    Returns:
+        The list of numeric values found in the string.
+
+    Examples:
+        >>> _extract_numbers("42 and 3.14 and 2/3")
+        ['42', '3.14', '2/3']
+    """
+    # Add support for inf, -inf, nan, and percentage
+    special_numbers = r"(?:inf|-inf|nan)"
+    percentage = r"[-+]?\d+(?:\.\d*)?%"
+
+    full_pattern = r"|".join(
+        [number_regex.pattern, special_numbers, percentage]
+    )
+    return re.findall(full_pattern, input_, re.IGNORECASE)
+
+
+def _convert_to_num(
+    number_str: str,
+    num_type: type[int | float | complex] = float,
+    precision: int | None = None,
+) -> int | float | complex:
+    """
+    Convert a numeric string to a specified numeric type.
+
+    Args:
+        number_str: The numeric string to convert.
+        num_type: The type to convert the string to (int, float, or complex).
+        precision: The number of decimal places to round to.
+
+    Returns:
+        The converted number.
+
+    Raises:
+        ValueError: If the specified number type is invalid.
+
+    Examples:
+        >>> _convert_to_num('42', int)
+        42
+        >>> _convert_to_num('3.14', float)
+        3.14
+        >>> _convert_to_num('2/3', float)
+        0.6666666666666666
+    """
+    number_str = number_str.strip().lower()
+
+    if number_str in ("inf", "+inf"):
+        return float("inf")
+    elif number_str == "-inf":
+        return float("-inf")
+    elif number_str == "nan":
+        return float("nan")
+    elif number_str.endswith("%"):
+        number = float(number_str[:-1]) / 100
+    elif "/" in number_str:
+        numerator, denominator = map(float, number_str.split("/"))
+        number = numerator / denominator
+    elif "j" in number_str:
+        number = complex(number_str)
+    elif "e" in number_str.lower():
+        number = float(number_str)
+    else:
+        number = float(number_str)
+
+    if num_type is int:
+        return int(number)
+    elif num_type is float:
+        return round(number, precision) if precision is not None else number
+    elif num_type is complex:
+        return complex(number)
+    else:
+        raise ValueError(f"Invalid number type: {num_type}")
 
 
 def to_num(
@@ -66,6 +146,9 @@ def to_num(
     """
     if isinstance(input_, list):
         raise TypeError("The value input for `to_num` cannot be of type list")
+
+    if isinstance(input_, bool):
+        return float(input_)
 
     str_ = str(input_)
     if str_.startswith(("0x", "0b")):
@@ -134,11 +217,11 @@ def str_to_num(
 
     numbers = [
         _convert_to_num(num_str, num_type, precision)
-        for num_str in number_strs
+        for num_str in number_strs[:num_count]
     ]
 
     for number in numbers:
-        if isinstance(number, int | float | complex):
+        if isinstance(number, (int, float)):
             if upper_bound is not None and number > upper_bound:
                 raise ValueError(
                     f"Number {number} is greater than the upper bound of "
@@ -150,69 +233,7 @@ def str_to_num(
                     f"{lower_bound}."
                 )
 
-    return numbers[0] if num_count == 1 else numbers[:num_count]
-
-
-def _extract_numbers(input_: str) -> list[str]:
-    """
-    Extract all numeric values from a string.
-
-    Args:
-        input_: The input string to search for numeric values.
-
-    Returns:
-        The list of numeric values found in the string.
-
-    Examples:
-        >>> _extract_numbers("42 and 3.14 and 2/3")
-        ['42', '3.14', '2/3']
-    """
-    return number_regex.findall(input_)
-
-
-def _convert_to_num(
-    number_str: str,
-    num_type: type[int | float | complex] = float,
-    precision: int | None = None,
-) -> int | float | complex:
-    """
-    Convert a numeric string to a specified numeric type.
-
-    Args:
-        number_str: The numeric string to convert.
-        num_type: The type to convert the string to (int, float, or complex).
-        precision: The number of decimal places to round to.
-
-    Returns:
-        The converted number.
-
-    Raises:
-        ValueError: If the specified number type is invalid.
-
-    Examples:
-        >>> _convert_to_num('42', int)
-        42
-        >>> _convert_to_num('3.14', float)
-        3.14
-        >>> _convert_to_num('2/3', float)
-        0.6666666666666666
-    """
-    if "/" in number_str:
-        numerator, denominator = map(float, number_str.split("/"))
-        number = numerator / denominator
-    elif "j" in number_str:
-        number = complex(number_str)
-    else:
-        number = float(number_str)
-
-    if num_type is int:
-        return int(number)
-    elif num_type is float:
-        return round(number, precision) if precision is not None else number
-    elif num_type is complex:
-        return number
-    else:
-        raise ValueError(f"Invalid number type: {num_type}")
+    return numbers[0] if num_count == 1 else numbers
 
 
 # Path: lion_core/libs/data_handlers/_to_num.py
