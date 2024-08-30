@@ -9,9 +9,9 @@ def flatten(
     *,
     parent_key: tuple = (),
     sep: str = "|",
-    dynamic: bool = False,
-    coerce_sequence: bool | Literal["dict", "list"] = False,
     coerce_keys: bool = True,
+    dynamic: bool = True,
+    coerce_sequence: Literal["dict", "list"] | None = None,
     max_depth: int | None = None,
 ) -> dict[tuple | str, Any] | None:
 
@@ -20,18 +20,15 @@ def flatten(
             "coerce_sequence cannot be 'list' when coerce_keys is True"
         )
 
+    coerce_sequence_to_list = None
+    coerce_sequence_to_dict = None
+
     if dynamic and coerce_sequence:
         match coerce_sequence:
-            case "list" | True:
+            case "list":
                 coerce_sequence_to_list = True
-                coerce_sequence_to_dict = False
             case "dict":
-                coerce_sequence_to_list = False
                 coerce_sequence_to_dict = True
-
-    else:
-        coerce_sequence_to_list = False
-        coerce_sequence_to_dict = False
 
     return _flatten_iterative(
         obj=nested_structure,
