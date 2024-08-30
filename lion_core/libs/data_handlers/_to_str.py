@@ -1,31 +1,14 @@
 import json
 from collections.abc import Callable, Mapping
 from typing import Any, Literal, TypeVar
-from xml.etree import ElementTree as ET
 
 from pydantic_core import PydanticUndefined, PydanticUndefinedType
 
 from lion_core.libs.data_handlers._to_dict import to_dict
+from lion_core.libs.parsers._xml_parser import dict_to_xml
 from lion_core.setting import LN_UNDEFINED, LionUndefinedType
 
 T = TypeVar("T")
-
-
-def dict_to_xml(data: dict, /, root_tag: str = "root") -> str:
-
-    root = ET.Element(root_tag)
-
-    def convert(dict_obj: dict, parent: Any) -> None:
-        for key, val in dict_obj.items():
-            if isinstance(val, dict):
-                element = ET.SubElement(parent, key)
-                convert(dict_obj=val, parent=element)
-            else:
-                element = ET.SubElement(parent, key)
-                element.text = str(object=val)
-
-    convert(dict_obj=data, parent=root)
-    return ET.tostring(root, encoding="unicode")
 
 
 def _serialize_as(
