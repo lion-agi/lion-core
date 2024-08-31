@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 
 
 class Tao(ABC):
@@ -7,10 +7,6 @@ class Tao(ABC):
 
 class AbstractSpace(Tao):
     """Abstract space or context."""
-
-    @abstractmethod
-    def __contains__(self, item: object) -> bool:
-        """Check if an item is in the space."""
 
 
 class AbstractElement(Tao):

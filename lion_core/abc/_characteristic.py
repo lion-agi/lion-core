@@ -1,3 +1,5 @@
+from typing import Any
+
 from lion_core.abc._concept import Tao
 
 
@@ -42,6 +44,8 @@ class Relational(Observable):
 
 class Traversal(Observable):
     """progressable or explorable entities"""
+
+    progress: Any
 
 
 __all__ = [
