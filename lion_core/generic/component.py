@@ -215,6 +215,9 @@ class Component(Element):
             dict_["content"] = dict_["content"]["content"]
         extra_fields = dict_.pop("extra_fields", {})
         dict_ = {**dict_, **extra_fields, "lion_class": self.class_name()}
+        for i in list(dict_.keys()):
+            if dict_[i] is LN_UNDEFINED:
+                dict_.pop(i)
         return dict_
 
     def to_note(self, **kwargs: Any) -> Note:

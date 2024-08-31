@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Self
 
 
-class LionUndefinedType(str):
+class LionUndefinedType:
     def __init__(self) -> None:
         self.undefined = True
 
@@ -35,7 +35,11 @@ class SchemaModel(BaseModel):
     )
 
     def to_dict(self) -> dict[str, Any]:
-        return self.model_dump(exclude_unset=True)
+        dict_ = self.model_dump(exclude_unset=True)
+        for i in list(dict_.keys()):
+            if dict_[i] is LN_UNDEFINED:
+                dict_.pop(i)
+        return dict_
 
     @classmethod
     def from_dict(cls, **data) -> Self:
@@ -114,7 +118,6 @@ DEFAULT_LION_ID_CONFIG = LionIDConfig(
 
 DEFAULT_TIMED_FUNC_CALL_CONFIG = TimedFuncCallConfig(
     initial_delay=0,
-    retry_default=LN_UNDEFINED,
     retry_timeout=None,
     retry_timing=False,
     error_msg=None,
@@ -126,7 +129,6 @@ DEFAULT_RETRY_CONFIG = RetryConfig(
     initial_delay=0,
     retry_delay=0,
     backoff_factor=1,
-    retry_default=LN_UNDEFINED,
     retry_timeout=None,
     retry_timing=False,
     verbose_retry=False,
