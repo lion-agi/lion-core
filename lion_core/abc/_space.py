@@ -9,6 +9,10 @@ from lion_core.abc._concept import AbstractElement, AbstractSpace
 class Container(AbstractSpace, AbstractElement):
     """Container for items."""
 
+    @abstractmethod
+    def __contains__(self, item: object) -> bool:
+        """Check if an item is in the space."""
+
 
 class Ordering(Container):
     """Container with a defined order. Subclass must have order attribute."""
@@ -26,6 +30,24 @@ class Collective(Container):
 
         Returns:
             Iterable: The items in the collective.
+        """
+
+    @abstractmethod
+    def values(self) -> Iterable[Any]:
+        """
+        Get the values in the collective.
+
+        Returns:
+            Iterable: The values in the collective.
+        """
+
+    @abstractmethod
+    def keys(self) -> Iterable[Any]:
+        """
+        Get the keys in the collective.
+
+        Returns:
+            Iterable: The keys in the collective.
         """
 
 
