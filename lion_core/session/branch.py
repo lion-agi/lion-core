@@ -4,7 +4,7 @@ from typing import Any, ClassVar, Literal
 from pydantic import Field, model_validator
 from typing_extensions import override
 
-from lion_core.abc import BaseiModel
+from lion_core.abc import BaseiModel, Traversal
 from lion_core.action import Tool, ToolManager
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.action_response import ActionResponse
@@ -31,7 +31,7 @@ class BranchConverterRegistry(ConverterRegistry):
     pass
 
 
-class Branch(BaseSession):
+class Branch(BaseSession, Traversal):
     """
     Represents a branch in the conversation tree with tools and messages.
 
