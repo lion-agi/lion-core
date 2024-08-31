@@ -20,7 +20,7 @@ class ObservableAction(Element, Action):
     execution_time: float | None = None
     execution_response: Any = None
     execution_error: str | None = None
-    timed_config: TimedFuncCallConfig | None = None
+    _timed_config: TimedFuncCallConfig | None = PrivateAttr(None)
     _content_fields: list = PrivateAttr(["execution_response"])
 
     @override
@@ -29,7 +29,7 @@ class ObservableAction(Element, Action):
     ) -> None:
         super().__init__()
         if timed_config is None:
-            self.timed_config = DEFAULT_TIMED_FUNC_CALL_CONFIG
+            self._timed_config = DEFAULT_TIMED_FUNC_CALL_CONFIG
 
         else:
             if isinstance(timed_config, TimedFuncCallConfig):
@@ -37,7 +37,7 @@ class ObservableAction(Element, Action):
             if isinstance(timed_config, dict):
                 timed_config = {**timed_config, **kwargs}
             timed_config = TimedFuncCallConfig(**timed_config)
-            self.timed_config = timed_config
+            self._timed_config = timed_config
 
     async def alog(self) -> Log:
         """Log the action asynchronously."""

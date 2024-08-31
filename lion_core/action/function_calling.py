@@ -70,7 +70,7 @@ class FunctionCalling(ObservableAction):
                 kwargs = self.func_tool.post_processor_kwargs or {}
                 kwargs = {
                     **kwargs,
-                    **self.timed_config.to_dict(),
+                    **self._timed_config.to_dict(),
                     "retry_timing": True,
                 }
                 result, elp2 = await tcall(
