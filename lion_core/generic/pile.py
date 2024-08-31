@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import threading
 from collections.abc import (
@@ -11,7 +13,7 @@ from functools import wraps
 from typing import Any, Generic, TypeVar
 
 from pydantic import Field, field_serializer
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from lion_core.abc import Collective, Observable
 from lion_core.exceptions import (
@@ -191,7 +193,7 @@ class Pile(Element, Collective, Generic[T]):
     # Sync Interface methods
     @override
     @classmethod
-    def from_dict(cls: type[T], data: dict[str, Any]) -> "Pile":
+    def from_dict(cls: type[T], data: dict[str, Any]) -> Pile:
         """Create a Pile instance from a dictionary.
 
         Args:
@@ -228,7 +230,7 @@ class Pile(Element, Collective, Generic[T]):
         self,
         key: PILE_KEY_TYPE,
         default: Any = LN_UNDEFINED,
-    ) -> T | "Pile" | None:
+    ) -> T | Pile | None:
         """Remove and return an item or items from the Pile.
 
         Args:
@@ -327,7 +329,7 @@ class Pile(Element, Collective, Generic[T]):
         self,
         key: PILE_KEY_TYPE,
         default: Any = LN_UNDEFINED,
-    ) -> T | "Pile" | None:
+    ) -> T | Pile | None:
         """Retrieve item(s) associated with the given key.
 
         Args:
@@ -422,7 +424,7 @@ class Pile(Element, Collective, Generic[T]):
         except StopIteration:
             raise StopIteration("End of pile")
 
-    def __getitem__(self, key: PILE_KEY_TYPE):
+    def __getitem__(self, key: PILE_KEY_TYPE) -> Any | list | T:
         """Get item(s) from the Pile by index, ID, or slice.
 
         Args:
@@ -473,7 +475,7 @@ class Pile(Element, Collective, Generic[T]):
         """
         return self.values()
 
-    def __add__(self, other: T | Iterable[T]) -> "Pile":
+    def __add__(self, other: T | Iterable[T]) -> Pile:
         """Create a new Pile with the contents of this Pile plus other item(s).
 
         Args:
@@ -491,7 +493,7 @@ class Pile(Element, Collective, Generic[T]):
         result.include(other)
         return result
 
-    def __sub__(self, other: T | Iterable[T]) -> "Pile":
+    def __sub__(self, other: T | Iterable[T]) -> Pile:
         """
         Create a new Pile with the contents of this Pile minus other item(s).
 
@@ -509,7 +511,7 @@ class Pile(Element, Collective, Generic[T]):
         result.pop(other)
         return result
 
-    def __iadd__(self, other: T | Iterable[T]) -> "Pile":
+    def __iadd__(self, other: T | Iterable[T]) -> Pile:
         """Add item(s) to this Pile in-place.
 
         Args:
@@ -522,7 +524,7 @@ class Pile(Element, Collective, Generic[T]):
         self.include(other)
         return self
 
-    def __isub__(self, other: T | Iterable[T]) -> "Pile":
+    def __isub__(self, other: T | Iterable[T]) -> Pile:
         """Remove item(s) from this Pile in-place.
 
         Args:
@@ -540,7 +542,7 @@ class Pile(Element, Collective, Generic[T]):
         self.remove(other)
         return self
 
-    def __radd__(self, other: T | Iterable[T]) -> "Pile":
+    def __radd__(self, other: T | Iterable[T]) -> Pile:
         """Implement reverse addition.
 
         This method allows for expressions like: item + pile
@@ -552,6 +554,110 @@ class Pile(Element, Collective, Generic[T]):
             A new Pile instance with the combined items.
         """
         return self + other
+
+    def __ior__(self, other: Any | Pile) -> Pile:
+        """
+        p |= pile      -> p.include(pile.values())
+        """
+        if not isinstance(other, Pile):
+            raise LionTypeError(
+                "Invalid type for Pile operation.",
+                expected_type=Pile,
+                actual_type=type(other),
+            )
+        other = self._validate_pile(list(other))
+        self.include(other)
+        return self
+
+    def __or__(self, other: Any | Pile) -> Pile:
+        """
+        p | pile  -> pile([i for i in p.values()] + [i for i in pile.values()])
+        """
+        if not isinstance(other, Pile):
+            raise LionTypeError(
+                "Invalid type for Pile operation.",
+                expected_type=Pile,
+                actual_type=type(other),
+            )
+
+        result = self.__class__(
+            items=self.values(),
+            item_type=self.item_type,
+            order=self.order,
+        )
+        result.include(list(other))
+        return result
+
+    def __ixor__(self, other: Any | Pile) -> Pile:
+        if not isinstance(other, Pile):
+            raise LionTypeError(
+                "Invalid type for Pile operation.",
+                expected_type=Pile,
+                actual_type=type(other),
+            )
+
+        if isinstance(other, Collective):
+            other = other.values()
+
+        other = [other] if not isinstance(other, list) else other
+        to_exclude = []
+        for i in other:
+            if i in self:
+                to_exclude.append(i)
+
+        other = [i for i in other if i not in to_exclude]
+        self.exclude(to_exclude)
+        self.include(other)
+        return self
+
+    def __xor__(self, other: Any | Pile) -> Pile:
+        """
+        p ^ pile   -> pile([i for i in p.values() if i not in pile.values()])
+        p ^ element -> pile([i for i in p.values() if i != element])
+        """
+        if isinstance(other, Collective):
+            other = other.values()
+
+        other = [other] if not isinstance(other, list) else other
+        to_exclude = []
+        for i in other:
+            if i in self:
+                to_exclude.append(i)
+
+        values = [i for i in self if i not in to_exclude] + [
+            i for i in other if i not in to_exclude
+        ]
+
+        result = self.__class__(
+            items=values,
+            item_type=self.item_type,
+        )
+        return result
+
+    def __iand__(self, other: Any | Self) -> Pile:
+        if isinstance(other, Collective):
+            other = other.values()
+
+        to_exclude = []
+        for i in self.values():
+            if i not in other:
+                to_exclude.append(i)
+        self.exclude(to_exclude)
+        return self
+
+    def __and__(self, other: Any | Pile) -> Pile:
+        """
+        p & pile   -> pile([i for i in p.values() if i in pile.values()])
+        p & element -> pile([i for i in p.values() if i == element])
+        """
+        if isinstance(other, Collective):
+            other = other.values()
+
+        values = [i for i in self if i in other]
+        return self.__class__(
+            items=values,
+            item_type=self.item_type,
+        )
 
     @override
     def __str__(self) -> str:
@@ -692,7 +798,7 @@ class Pile(Element, Collective, Generic[T]):
         self._update(other)
 
     @async_synchronized
-    async def aget(self, key: Any, default=LN_UNDEFINED):
+    async def aget(self, key: Any, default=LN_UNDEFINED) -> list | Any | T:
         return self._get(key, default)
 
     async def __aiter__(self) -> AsyncIterator[T]:
@@ -724,42 +830,22 @@ class Pile(Element, Collective, Generic[T]):
             raise StopAsyncIteration("End of pile")
 
     # private methods
-    def _getitem(self, key: Any):
-        """
-        Retrieve items from the pile using a key.
-
-        Supports multiple types of key access:
-        - By index or slice (list-like access)
-        - By LionID (dictionary-like access)
-        - By other complex types if item is of LionIDable
-
-        Args:
-            key: Key to retrieve items.
-
-        Returns:
-            The requested item(s). Single items returned directly,
-            multiple items returned in a new `Pile` instance.
-
-        Raises:
-            ItemNotFoundError: If requested item(s) not found.
-            LionTypeError: If provided key is invalid.
-        """
+    def _getitem(self, key: Any) -> Any | list | T:
         if key is None:
             raise ValueError("getitem key not provided.")
-        if isinstance(key, int):
-            try:
-                result_id = self.order[key]
-                return self.pile_[result_id]
-            except Exception as e:
-                raise ItemNotFoundError(f"index {key}. Error: {e}")
 
-        elif isinstance(key, slice):
+        if isinstance(key, int | slice):
             try:
                 result_ids = self.order[key]
+                result_ids = (
+                    [result_ids]
+                    if not isinstance(result_ids, list)
+                    else result_ids
+                )
                 result = []
                 for i in result_ids:
                     result.append(self.pile_[i])
-                return self.__class__(items=result, item_type=self.item_type)
+                return result[0] if len(result) == 1 else result
             except Exception as e:
                 raise ItemNotFoundError(f"index {key}. Error: {e}")
 
@@ -781,11 +867,7 @@ class Pile(Element, Collective, Generic[T]):
                     raise ItemNotFoundError(f"key {key} item not found")
                 if len(result) == 1:
                     return result[0]
-                else:
-                    return self.__class__(
-                        items=result,
-                        item_type=self.item_type,
-                    )
+                return result
             except Exception as e:
                 raise ItemNotFoundError(f"Key {key}. Error:{e}")
 
@@ -841,7 +923,7 @@ class Pile(Element, Collective, Generic[T]):
             self.order += key
             self.pile_.update(item_dict)
 
-    def _get(self, key: Any, default: Any = LN_UNDEFINED):
+    def _get(self, key: Any, default: Any = LN_UNDEFINED) -> list | Any | T:
         """
         Retrieve item(s) associated with given key.
 
@@ -880,17 +962,14 @@ class Pile(Element, Collective, Generic[T]):
                     raise ItemNotFoundError(f"key {key} item not found")
                 if len(result) == 1:
                     return result[0]
-                else:
-                    return self.__class__(
-                        items=result,
-                        item_type=self.item_type,
-                    )
+                return result
+
             except Exception as e:
                 if default is LN_UNDEFINED:
                     raise ItemNotFoundError(f"Item not found. Error: {e}")
                 return default
 
-    def _pop(self, key: Any, default: Any = LN_UNDEFINED):
+    def _pop(self, key: Any, default: Any = LN_UNDEFINED) -> list | Any | T:
         """
         Remove and return item(s) associated with given key.
 
@@ -933,10 +1012,7 @@ class Pile(Element, Collective, Generic[T]):
                     raise ItemNotFoundError(f"key {key} item not found")
                 elif len(result) == 1:
                     return result[0]
-                else:
-                    return self.__class__(
-                        items=result, item_type=self.item_type, order=key
-                    )
+                return result
             except Exception as e:
                 if default is LN_UNDEFINED:
                     raise ItemNotFoundError(f"Item not found. Error: {e}")
@@ -1117,7 +1193,7 @@ class Pile(Element, Collective, Generic[T]):
         return [i.to_dict() for i in value.values()]
 
     class AsyncPileIterator:
-        def __init__(self, pile: "Pile"):
+        def __init__(self, pile: Pile):
             self.pile = pile
             self.index = 0
 
@@ -1143,7 +1219,7 @@ class Pile(Element, Collective, Generic[T]):
         return result
 
     @classmethod
-    def load(cls, data: dict) -> "Pile":
+    def load(cls, data: dict) -> Pile:
         return cls.from_dict(data)
 
 
@@ -1176,5 +1252,5 @@ def pile(
     )
 
 
-__all__ = ["Pile", "pile"]
+__all__ = [Pile, Pile]
 # File: lion_core/generic/pile.py
