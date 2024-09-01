@@ -35,7 +35,7 @@ jobs:
         pip install pytest-asyncio flake8
 
     - name: Run pre-commit hooks
-      uses: pre-commit/action@v3.0.0
+      uses: pre-commit/action@v3.0.1
 
     - name: Run tests
       run: pytest --asyncio-mode=auto --maxfail=1 --disable-warnings tests/
