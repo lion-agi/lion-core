@@ -476,9 +476,6 @@ class Pile(Element, Collective, Generic[T]):
         return self.values()
 
     def __ior__(self, other: Any | Pile) -> Pile:
-        """
-        p |= pile      -> p.include(pile.values())
-        """
         if not isinstance(other, Pile):
             raise LionTypeError(
                 "Invalid type for Pile operation.",
@@ -490,9 +487,6 @@ class Pile(Element, Collective, Generic[T]):
         return self
 
     def __or__(self, other: Any | Pile) -> Pile:
-        """
-        p | pile  -> pile([i for i in p.values()] + [i for i in pile.values()])
-        """
         if not isinstance(other, Pile):
             raise LionTypeError(
                 "Invalid type for Pile operation.",
@@ -516,10 +510,6 @@ class Pile(Element, Collective, Generic[T]):
                 actual_type=type(other),
             )
 
-        if isinstance(other, Collective):
-            other = other.values()
-
-        other = [other] if not isinstance(other, list) else other
         to_exclude = []
         for i in other:
             if i in self:
@@ -531,14 +521,13 @@ class Pile(Element, Collective, Generic[T]):
         return self
 
     def __xor__(self, other: Any | Pile) -> Pile:
-        """
-        p ^ pile   -> pile([i for i in p.values() if i not in pile.values()])
-        p ^ element -> pile([i for i in p.values() if i != element])
-        """
-        if isinstance(other, Collective):
-            other = other.values()
+        if not isinstance(other, Pile):
+            raise LionTypeError(
+                "Invalid type for Pile operation.",
+                expected_type=Pile,
+                actual_type=type(other),
+            )
 
-        other = [other] if not isinstance(other, list) else other
         to_exclude = []
         for i in other:
             if i in self:
@@ -555,8 +544,12 @@ class Pile(Element, Collective, Generic[T]):
         return result
 
     def __iand__(self, other: Any | Self) -> Pile:
-        if isinstance(other, Collective):
-            other = other.values()
+        if not isinstance(other, Pile):
+            raise LionTypeError(
+                "Invalid type for Pile operation.",
+                expected_type=Pile,
+                actual_type=type(other),
+            )
 
         to_exclude = []
         for i in self.values():
@@ -566,12 +559,12 @@ class Pile(Element, Collective, Generic[T]):
         return self
 
     def __and__(self, other: Any | Pile) -> Pile:
-        """
-        p & pile   -> pile([i for i in p.values() if i in pile.values()])
-        p & element -> pile([i for i in p.values() if i == element])
-        """
-        if isinstance(other, Collective):
-            other = other.values()
+        if not isinstance(other, Pile):
+            raise LionTypeError(
+                "Invalid type for Pile operation.",
+                expected_type=Pile,
+                actual_type=type(other),
+            )
 
         values = [i for i in self if i in other]
         return self.__class__(
