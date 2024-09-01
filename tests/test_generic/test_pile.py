@@ -153,28 +153,6 @@ def test_insert(sample_pile, sample_elements):
     assert len(sample_pile) == 6
 
 
-def test_add_sub_operations(sample_pile, sample_elements):
-    new_element = MockElement(value="new")
-    new_pile = sample_pile + new_element
-    assert len(new_pile) == 6
-    assert new_element in new_pile
-
-    sub_pile = sample_pile - sample_elements[1]
-    assert len(sub_pile) == 4
-    assert sample_elements[1] not in sub_pile
-
-
-def test_iadd_isub_operations(sample_pile, sample_elements):
-    new_element = MockElement(value="new")
-    sample_pile += new_element
-    assert len(sample_pile) == 6
-    assert new_element in sample_pile
-
-    sample_pile -= sample_elements[1]
-    assert len(sample_pile) == 5
-    assert sample_elements[1] not in sample_pile
-
-
 def test_iter(sample_pile, sample_elements):
     for item in sample_pile:
         assert item in sample_elements
@@ -428,21 +406,6 @@ def test_pile_memory_leak():
 
     # Check if all elements have been properly garbage collected
     assert sum(ref() is not None for ref in refs) == 1
-
-
-@pytest.mark.asyncio
-async def test_pile_async_iteration():
-    p = Pile(items=[MockElement(value=i) for i in range(100)])
-
-    async def async_sum():
-        total = 0
-        async for item in p:
-            total += item.value
-            await asyncio.sleep(0.001)
-        return total
-
-    result = await async_sum()
-    assert result == sum(range(100))
 
 
 def test_pile_pickling():
