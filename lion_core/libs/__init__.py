@@ -24,6 +24,11 @@ from .parsers._as_readable_json import as_readable_json
 from .parsers._choose_most_similar import choose_most_similar
 from .parsers._extract_code_block import extract_code_block
 from .parsers._extract_docstring import extract_docstring_details
+from .parsers._extract_json_schema import (
+    extract_json_schema,
+    json_schema_to_cfg,
+    json_schema_to_regex,
+)
 from .parsers._function_to_schema import function_to_schema
 from .parsers._fuzzy_parse_json import fuzzy_parse_json
 from .parsers._md_to_json import extract_json_block, md_to_json
@@ -66,6 +71,9 @@ __all__ = [
     "choose_most_similar",
     "extract_code_block",
     "extract_docstring_details",
+    "extract_json_schema",
+    "json_schema_to_cfg",
+    "json_schema_to_regex",
     "md_to_json",
     "xml_to_dict",
     "nset",
