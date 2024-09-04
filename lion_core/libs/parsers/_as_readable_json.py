@@ -1,9 +1,9 @@
 """Provide utility for converting various inputs to readable JSON strings."""
 
+import json
 from typing import Any
 
 from lion_core.libs.data_handlers._to_dict import to_dict
-from lion_core.libs.data_handlers._to_str import to_str
 
 
 def as_readable_json(input_: Any, /, **kwargs) -> str:
@@ -27,8 +27,8 @@ def as_readable_json(input_: Any, /, **kwargs) -> str:
     """
     try:
         dict_ = to_dict(input_, **kwargs)
-        config = {"indent": 4} if isinstance(dict_, dict) else {}
-        return to_str(dict_, **config)
+        return json.dumps(dict_, indent=4)
+
     except Exception as e:
         raise ValueError(
             f"Could not convert given input to readable dict: {e}"
