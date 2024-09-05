@@ -2,7 +2,9 @@ from json import loads
 from typing import Any
 
 
-def fuzzy_parse_json(str_to_parse: str, *, suppress=False) -> dict[str, Any]:
+def fuzzy_parse_json(
+    str_to_parse: str, /, *, suppress=False
+) -> dict[str, Any]:
     """
     Attempt to parse a JSON string, applying fixes for common issues.
 
@@ -36,6 +38,7 @@ def fuzzy_parse_json(str_to_parse: str, *, suppress=False) -> dict[str, Any]:
         except Exception:
             try:
                 fixed_str = fixed_str.replace("'", '"')
+                fixed_str = fix_json_string(fixed_str)
                 return loads(fixed_str)
             except Exception as e:
                 if suppress:
@@ -46,7 +49,7 @@ def fuzzy_parse_json(str_to_parse: str, *, suppress=False) -> dict[str, Any]:
                     ) from e
 
 
-def fix_json_string(str_to_parse: str) -> str:
+def fix_json_string(str_to_parse: str, /) -> str:
     """
     Fix a JSON string by ensuring all brackets are properly closed.
 
