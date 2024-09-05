@@ -1,5 +1,3 @@
-from typing import Any, Literal
-
 import pytest
 
 from lion_core.communication.instruction import (
@@ -11,7 +9,6 @@ from lion_core.communication.instruction import (
 from lion_core.communication.message import MessageFlag, MessageRole
 from lion_core.form.form import Form
 from lion_core.generic.note import Note
-from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 
 

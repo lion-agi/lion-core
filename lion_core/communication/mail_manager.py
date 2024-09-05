@@ -13,7 +13,7 @@ from lion_core.sys_utils import SysUtil
 class MailManager(BaseManager):
     """Manages mail operations for multiple sources in the Lion framework."""
 
-    def __init__(self, sources: list[Any] = None):
+    def __init__(self, sources: list[Any] = None) -> None:
         """Initialize a MailManager instance."""
         self.sources: Pile = pile()
         self.mails: dict[str, dict[str, deque]] = {}
@@ -22,7 +22,7 @@ class MailManager(BaseManager):
         if sources:
             self.add_sources(sources)
 
-    def add_sources(self, sources: Any) -> None:
+    def add_sources(self, sources: Any, /) -> None:
         """Add new sources to the MailManager."""
         try:
             sources = to_list_type(sources)
@@ -87,17 +87,17 @@ class MailManager(BaseManager):
             )
             while pending_mails:
                 mail = pending_mails.popleft()
-                mailbox.include(mail, "in")
+                mailbox.include(mail, direction="in")
 
     def collect_all(self) -> None:
         """Collect mail from all sources."""
         for source in self.sources:
-            self.collect(SysUtil.get_id(source))
+            self.collect(sender=SysUtil.get_id(source))
 
     def send_all(self) -> None:
         """Send mail to all recipients."""
         for source in self.sources:
-            self.send(SysUtil.get_id(source))
+            self.send(recipient=SysUtil.get_id(source))
 
     async def execute(self, refresh_time: int = 1) -> None:
         """Execute mail collection and sending process asynchronously."""

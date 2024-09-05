@@ -1,7 +1,7 @@
 from typing import Any
 
 import pytest
-from pydantic import Field, ValidationError
+from pydantic import Field
 from pydantic_core import PydanticUndefined
 
 from lion_core.exceptions import (

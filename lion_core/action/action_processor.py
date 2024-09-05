@@ -8,11 +8,12 @@ from lion_core.action.base import ObservableAction
 
 class ActionProcessor(BaseProcessor):
     """
-    A processor class for handling the execution of actions.
+    A processor class for processing action invokations.
 
     The `ActionProcessor` manages a queue of actions, processing them according
     to the specified capacity and refresh time. It handles the lifecycle of
-    actions from enqueuing to processing and stopping.
+    actions from enqueuing to processing and stopping. Optionally, it can
+    request permission before processing each action.
     """
 
     observation_type = ObservableAction

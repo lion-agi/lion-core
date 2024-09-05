@@ -1,16 +1,11 @@
 import json
-from collections import OrderedDict, namedtuple
-from typing import Any
+from collections import OrderedDict
 
 import pytest
 from pydantic import BaseModel
 
 # Import the functions to be tested
-from lion_core.libs.data_handlers._to_dict import (
-    LionUndefinedType,
-    PydanticUndefinedType,
-    to_dict,
-)
+from lion_core.libs.data_handlers._to_dict import to_dict
 
 
 # Mock classes and functions for testing

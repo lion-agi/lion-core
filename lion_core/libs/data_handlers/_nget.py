@@ -6,6 +6,7 @@ from lion_core.setting import LN_UNDEFINED
 
 def nget(
     nested_structure: dict[Any, Any] | list[Any],
+    /,
     indices: list[int | str],
     default: Any = LN_UNDEFINED,
 ) -> Any:

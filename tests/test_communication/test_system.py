@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import pytest
 
 from lion_core.communication.message import MessageFlag, MessageRole

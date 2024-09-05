@@ -178,13 +178,13 @@ class Form(BaseForm):
                 self.init_input_kwargs[i] = getattr(self, i)
             else:
                 self.add_field(
-                    field_name=i,
+                    i,
                     value=self.init_input_kwargs.get(i, LN_UNDEFINED),
                 )
 
         for i in self.request_fields:
             if i not in self.all_fields:
-                self.add_field(field_name=i)
+                self.add_field(i)
 
         return self
 
@@ -285,7 +285,7 @@ class Form(BaseForm):
             **kwargs: Additional keyword arguments for field configuration.
         """
         super().update_field(
-            field_name=field_name,
+            field_name,
             value=value,
             annotation=annotation,
             field_obj=field_obj,

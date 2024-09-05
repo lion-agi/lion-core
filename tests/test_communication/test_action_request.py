@@ -1,7 +1,4 @@
-from collections.abc import Callable
-
 import pytest
-from pydantic import ValidationError
 
 from lion_core.communication.action_request import (
     ActionRequest,

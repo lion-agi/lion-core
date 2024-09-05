@@ -7,6 +7,7 @@ from lion_core.setting import LN_UNDEFINED
 
 def nset(
     nested_structure: dict[str, Any] | list[Any],
+    /,
     indices: str | int | Sequence[str | int],
     value: Any,
 ) -> None:

@@ -31,7 +31,7 @@ class LogManager(BaseManager):
             subfolder: Subfolder within persist_dir.
             file_prefix: Prefix for log files.
         """
-        self.logs: Pile[T] = pile(items=logs or {}, item_type={Log})
+        self.logs: Pile[T] = pile(logs or {}, item_type={Log})
         self.persist_dir = persist_dir
         self.persist_path = persist_path
         self.file_prefix = file_prefix

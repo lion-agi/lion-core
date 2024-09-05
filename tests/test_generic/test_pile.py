@@ -86,7 +86,7 @@ def test_keys_values_items(sample_pile, sample_elements):
 def test_get(sample_pile, sample_elements):
     assert sample_pile.get(0) == sample_elements[0]
     assert sample_pile.get(sample_elements[1].ln_id) == sample_elements[1]
-    assert sample_pile.get("nonexistent", default="default") == "default"
+    assert sample_pile.get("nonexistent", "default") == "default"
 
 
 def test_pop(sample_pile, sample_elements):
@@ -215,7 +215,7 @@ def test_large_scale_operations():
 
 def test_memory_efficiency():
     elements = [MockElement(value=i) for i in range(100000)]
-    p = Pile(items=elements)
+    p = Pile(elements)
 
     # Calculate memory usage
     pile_size = sys.getsizeof(p)
@@ -228,16 +228,14 @@ def test_memory_efficiency():
 
 def test_pile_with_custom_progression():
     custom_prog = Progression(order=[1, 2, 3, 4, 5])
-    p = Pile(items=[MockElement(value=i) for i in range(5)], order=custom_prog)
+    p = Pile([MockElement(value=i) for i in range(5)], order=custom_prog)
     assert p.order == custom_prog
 
 
 def test_pile_with_invalid_order():
     elements = [MockElement(value=i) for i in range(5)]
     with pytest.raises(LionValueError):
-        Pile(
-            items=elements, order=[1, 2, 3]
-        )  # Order length doesn't match items
+        Pile(elements, order=[1, 2, 3])  # Order length doesn't match items
 
 
 def test_pile_with_complex_elements():
@@ -259,7 +257,7 @@ def test_pile_with_generator_input():
         for i in range(1000):
             yield MockElement(value=i)
 
-    p = Pile(items=element_generator())
+    p = Pile(element_generator())
     assert len(p) == 1000
     assert all(i == e.value for i, e in enumerate(p.values()))
 
@@ -291,7 +289,7 @@ def test_pile_exception_handling():
 
 def test_pile_function():
     elements = [MockElement(value=i) for i in range(5)]
-    p = pile(items=elements, item_type=MockElement)
+    p = pile(elements, item_type=MockElement)
     assert isinstance(p, Pile)
     assert len(p) == 5
     assert p.item_type == {MockElement}
@@ -340,7 +338,7 @@ def complex_elements():
 
 
 def test_pile_with_complex_elements(complex_elements):
-    p = Pile(items=complex_elements)
+    p = Pile(complex_elements)
     assert len(p) == 10
     assert p[3].data["name"] == "Element3"
     assert p[5].nested[1]["y"] == 15
@@ -348,10 +346,7 @@ def test_pile_with_complex_elements(complex_elements):
 
 def test_pile_nested_operations():
     p = Pile(
-        items=[
-            Pile(items=[MockElement(value=i) for i in range(3)])
-            for _ in range(3)
-        ]
+        [Pile([MockElement(value=i) for i in range(3)]) for _ in range(3)]
     )
     assert len(p) == 3
     assert all(isinstance(item, Pile) for item in p.values())
@@ -364,7 +359,7 @@ def test_pile_with_custom_hash_elements():
             return hash(self.ln_id + str(self.value))
 
     elements = [CustomHashElement(content=i) for i in range(5)]
-    p = Pile(items=elements)
+    p = Pile(elements)
     assert len(p) == 5
     assert elements[2] in p
 
@@ -376,7 +371,7 @@ def test_pile_scaling_performance(n):
     elements = [MockElement(value=i) for i in range(n)]
 
     start_time = time.time()
-    p = Pile(items=elements)
+    p = Pile(elements)
     creation_time = time.time() - start_time
 
     start_time = time.time()
@@ -429,7 +424,7 @@ def test_pile_with_property_access():
         def squared(self):
             return self.content**2
 
-    p = Pile(items=[PropertyElement(content=i) for i in range(10)])
+    p = Pile([PropertyElement(content=i) for i in range(10)])
     assert [e.squared for e in p.values()] == [i**2 for i in range(10)]
 
 
@@ -453,7 +448,7 @@ def test_pile_with_custom_progression():
 
     elements = [MockElement(value=i) for i in range(5)]
     p = Pile(
-        items=elements,
+        elements,
         order=ReversedProgression(order=[e.ln_id for e in elements]),
     )
     assert [e.value for e in p.values()] == [4, 3, 2, 1, 0]
@@ -510,7 +505,7 @@ def test_pile_with_abc():
 
 @pytest.fixture
 async def async_sample_pile():
-    return Pile(items=[Component(content=i) for i in range(5)])
+    return Pile([Component(content=i) for i in range(5)])
 
 
 @pytest.mark.asyncio
@@ -607,7 +602,7 @@ async def test_async_get(async_sample_pile):
     element = await async_sample_.aget(2)
 
     default = object()
-    assert await async_sample_.aget(10, default=default) is default
+    assert await async_sample_.aget(10, default) is default
 
 
 @pytest.mark.asyncio
