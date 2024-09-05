@@ -3,6 +3,7 @@
 from typing import Any
 
 from pydantic import Field, PrivateAttr, field_serializer
+from typing_extensions import Self
 
 from lion_core.abc import ImmutableRecord
 from lion_core.exceptions import LionAccessError
@@ -26,13 +27,13 @@ class Log(Element, ImmutableRecord):
 
     _immutable: bool = PrivateAttr(False)
 
-    def __init__(self, content: Note, loginfo: Note, **kwargs):
+    def __init__(self, content: Note, loginfo: Note, **kwargs) -> None:
         super().__init__(**kwargs)
         self.content = self._validate_note(content)
         self.loginfo = self._validate_note(loginfo)
 
     @classmethod
-    def _validate_load_data(cls, data: dict) -> dict:
+    def _validate_load_data(cls, data: dict, /) -> dict:
         try:
             data["ln_id"] = data.pop("log_id")
             data["timestamp"] = data.pop("log_timestamp")
@@ -44,18 +45,18 @@ class Log(Element, ImmutableRecord):
             ) from e
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Log":
+    def from_dict(cls, data: dict, /) -> Self:
         data = cls._validate_load_data(data)
         self = cls(**data)
         self._immutable = True
         return self
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value: Any, /) -> None:
         if self._immutable:
             raise AttributeError("Cannot modify immutable log entry.")
         super().__setattr__(name, value)
 
-    def _validate_note(cls, value: Any) -> Note:
+    def _validate_note(cls, value: Any, /) -> Note:
         if not value:
             return Note()
         if isinstance(value, Note):
@@ -71,7 +72,7 @@ class Log(Element, ImmutableRecord):
     def _serialize_note(self, value: Note) -> dict:
         return value.to_dict()
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         dict_ = super().to_dict()
         dict_["log_id"] = dict_.pop("ln_id")
         dict_["log_class"] = dict_.pop("lion_class")

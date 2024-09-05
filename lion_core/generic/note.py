@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import ItemsView, Iterator, ValuesView
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
@@ -93,7 +93,7 @@ class Note(BaseModel, Container):
             return flatten(self.content, **kwargs).keys()
         return list(self.content.keys())
 
-    def values(self, /, flat: bool = False, **kwargs: Any):
+    def values(self, /, flat: bool = False, **kwargs: Any) -> ValuesView:
         """
         Get the values of the Note.
 
@@ -105,7 +105,7 @@ class Note(BaseModel, Container):
             return flatten(self.content, **kwargs).values()
         return self.content.values()
 
-    def items(self, /, flat: bool = False, **kwargs: Any):
+    def items(self, /, flat: bool = False, **kwargs: Any) -> ItemsView:
         """
         Get the items of the Note.
 
@@ -129,7 +129,7 @@ class Note(BaseModel, Container):
         output_dict = self.model_dump(**kwargs)
         return output_dict["content"]
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear the content of the Note."""
         self.content.clear()
 

@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import Field
 from pydantic_core import PydanticUndefined
+from typing_extensions import Self
 
 from lion_core.abc import Collective
 from lion_core.exceptions import (
@@ -19,7 +20,7 @@ from lion_core.setting import LN_UNDEFINED
 
 class Flow(Element):
     progressions: Pile[Progression] = Field(
-        default_factory=lambda: pile({}, Progression)
+        default_factory=lambda: pile({}, item_type={Progression})
     )
 
     registry: dict = Field(default_factory=dict)
@@ -43,7 +44,7 @@ class Flow(Element):
         if default_name:
             self.default_name = default_name
 
-        for prog_ in progressions:
+        for prog_ in self.progressions:
             a = prog_.name or prog_.ln_id
             self.register(prog_, a)
 
@@ -51,7 +52,7 @@ class Flow(Element):
         try:
             if isinstance(value, Collective):
                 value = list(value)
-            return pile(value, {Progression})
+            return pile(value, item_type={Progression})
         except Exception as e:
             raise LionValueError(f"Invalid progressions: {e}")
 
@@ -79,7 +80,7 @@ class Flow(Element):
         self,
         prog_: str | Progression = None,
         default: Any = LN_UNDEFINED,
-    ):
+    ) -> Progression | Any:
         """Get a progression by its ID or name."""
         return self.get(prog_, default)
 
@@ -89,7 +90,7 @@ class Flow(Element):
         index: int | slice | None = None,
         value: Any = None,
         /,
-    ):
+    ) -> None:
         """Set a progression or an item within a progression."""
         if prog_ not in self:
             raise ItemNotFoundError(f"Sequence {prog_}")
@@ -130,7 +131,7 @@ class Flow(Element):
 
         return sum(len(seq) for seq in self.all_orders())
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear all progressions and the registry."""
         self.progressions.clear()
         self.registry.clear()
@@ -140,7 +141,7 @@ class Flow(Element):
         prog_: str | Progression | None = None,
         item: Any = None,
         name: str | None = None,
-    ):
+    ) -> bool | None:
         """
         Include a progression or an item in a progression.
 
@@ -186,7 +187,7 @@ class Flow(Element):
         prog_: Progression | str | None = None,
         item: Any = None,
         name: str | None = None,
-    ):
+    ) -> bool | Any | None:
         """
         Exclude a progression or an item from a progression.
 
@@ -222,7 +223,7 @@ class Flow(Element):
                     return a is not None and self.progressions.exclude(a)
             return False
 
-    def register(self, prog_: Progression, name: str | None = None, /):
+    def register(self, prog_: Progression, name: str | None = None, /) -> None:
         """
         Register a new progression.
 
@@ -250,7 +251,9 @@ class Flow(Element):
         self.progressions.include(prog_)
         self.registry[name] = prog_.ln_id
 
-    def append(self, item: Any, prog_: str | Progression | None = None, /):
+    def append(
+        self, item: Any, prog_: str | Progression | None = None, /
+    ) -> None:
         """
         Append an item to a progression.
 
@@ -279,7 +282,7 @@ class Flow(Element):
         p = prog(item, prog_ if isinstance(prog_, str) else None)
         self.register(p)
 
-    def popleft(self, prog_: str | Progression | None = None, /):
+    def popleft(self, prog_: str | Progression | None = None, /) -> str | Any:
         """
         Remove and return the leftmost item from a progression.
 
@@ -329,7 +332,9 @@ class Flow(Element):
                 raise e
             return default
 
-    def remove(self, item: Any, prog_: str | Progression | None = None, /):
+    def remove(
+        self, item: Any, prog_: str | Progression | None = None, /
+    ) -> None:
         """
         Remove an item from one or all progressions.
 
@@ -346,13 +351,13 @@ class Flow(Element):
         prog_ = self._find_prog(prog_)
         self.progressions[prog_].remove(item)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.progressions)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Progression]:
         return iter(self.progressions)
 
-    def __next__(self):
+    def __next__(self) -> Progression:
         return next(self.__iter__())
 
     def _find_prog(
@@ -373,14 +378,14 @@ class Flow(Element):
         if prog_ in self.registry:
             return self.registry[prog_]
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return {
             "progressions": self.progressions.to_dict(),
             "default_name": self.default_name,
         }
 
     @classmethod
-    def from_dict(cls, data: dict):
+    def from_dict(cls, data: dict) -> Self:
         progressions = Pile.from_dict(data["progressions"])
         return cls(progressions, data["default_name"])
 
