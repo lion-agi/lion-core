@@ -4,6 +4,7 @@ from typing import Any
 
 def nfilter(
     nested_structure: dict[Any, Any] | list[Any],
+    /,
     condition: Callable[[Any], bool],
 ) -> dict[Any, Any] | list[Any]:
     """

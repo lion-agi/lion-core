@@ -90,6 +90,7 @@ class Component(Element):
     def add_field(
         self,
         field_name: NAMED_FIELD,
+        /,
         value: Any = LN_UNDEFINED,
         annotation: Any = LN_UNDEFINED,
         field_obj: FieldInfo = LN_UNDEFINED,
@@ -112,7 +113,7 @@ class Component(Element):
             raise LionValueError(f"Field '{field_name}' already exists")
 
         self.update_field(
-            field_name=field_name,
+            field_name,
             value=value,
             annotation=annotation,
             field_obj=field_obj,
@@ -126,6 +127,7 @@ class Component(Element):
     def update_field(
         self,
         field_name: NAMED_FIELD,
+        /,
         value: Any = LN_UNDEFINED,
         annotation: Any = LN_UNDEFINED,
         field_obj: FieldInfo | Any = LN_UNDEFINED,
@@ -195,7 +197,7 @@ class Component(Element):
         setattr(self, field_name, value)
         self._add_last_update(field_name)
 
-    def _add_last_update(self, field_name: NAMED_FIELD) -> None:
+    def _add_last_update(self, field_name: str, /) -> None:
         current_time = SysUtil.time()
         self.metadata.set(["last_updated", field_name], current_time)
 
@@ -248,7 +250,7 @@ class Component(Element):
                 extra_fields[k] = input_data.pop(k)
         obj = cls.model_validate(input_data, **kwargs)
         for k, v in extra_fields.items():
-            obj.update_field(field_name=k, value=v)
+            obj.update_field(k, value=v)
 
         metadata = SysUtil.copy(data.get("metadata", {}))
         last_updated = metadata.get("last_updated", None)
@@ -405,7 +407,7 @@ class Component(Element):
         attr: Any,
         value: Any,
         /,
-    ):
+    ) -> None:
         """Set the value of a field attribute."""
         all_fields = self.all_fields
         if field_name not in all_fields:
@@ -471,6 +473,10 @@ class Component(Element):
             raise AttributeError(
                 f"field {field_name} has no attribute {attr}",
             )
+
+    def field_annotation(self, field_name: Any, /) -> dict[str, Any]:
+        """Get the annotation of a field."""
+        return self._field_annotation(field_name)
 
     @singledispatchmethod
     def _field_annotation(self, field_name: Any, /) -> dict[str, Any]:

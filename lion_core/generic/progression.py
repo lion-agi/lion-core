@@ -61,7 +61,7 @@ class Progression(Element, Ordering):
         """Get the length of the progression."""
         return len(self.order)
 
-    def __getitem__(self, key: int | slice):
+    def __getitem__(self, key: int | slice) -> str | list[str]:
         """Get an item or slice of items from the progression."""
         if not isinstance(key, int | slice):
             key_cls = key.__class__.__name__
@@ -109,12 +109,12 @@ class Progression(Element, Ordering):
         """Clear the progression."""
         self.order.clear()
 
-    def append(self, item: Any) -> None:
+    def append(self, item: Any, /) -> None:
         """Append an item to the end of the progression."""
         item_ = validate_order(item)
         self.order.extend(item_)
 
-    def pop(self, index: int | None = None) -> str:
+    def pop(self, index: int | None = None, /) -> str:
         """Remove and return an item from the progression."""
         try:
             if index is None:
@@ -123,14 +123,14 @@ class Progression(Element, Ordering):
         except IndexError as e:
             raise ItemNotFoundError("pop index out of range") from e
 
-    def include(self, item: Any):
+    def include(self, item: Any, /) -> None:
         """Include item(s) in the progression."""
         item_ = validate_order(item)
         for i in item_:
             if i not in self.order:
                 self.order.append(i)
 
-    def exclude(self, item: int | Any):
+    def exclude(self, item: int | Any, /) -> None:
         """Exclude an item or items from the progression."""
         for i in validate_order(item):
             while i in self:
@@ -145,13 +145,15 @@ class Progression(Element, Ordering):
         return self.__class__(reversed(self.order), name=self.name)
 
     @override
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: object, /) -> bool:
         """Compare two Progression instances for equality."""
         if not isinstance(other, Progression):
             return NotImplemented
         return self.order == other.order and self.name == other.name
 
-    def index(self, item: Any, start: int = 0, end: int | None = None) -> int:
+    def index(
+        self, item: Any, /, start: int = 0, end: int | None = None
+    ) -> int:
         """Return the index of an item in the progression."""
         return (
             self.order.index(SysUtil.get_id(item), start, end)
@@ -159,7 +161,7 @@ class Progression(Element, Ordering):
             else self.order.index(SysUtil.get_id(item), start)
         )
 
-    def remove(self, item: Any) -> None:
+    def remove(self, item: Any, /) -> None:
         """Remove the next occurrence of an item from the progression."""
         if item in self:
             item = validate_order(item)
@@ -180,7 +182,7 @@ class Progression(Element, Ordering):
         except IndexError as e:
             raise ItemNotFoundError from e
 
-    def extend(self, item: Any) -> None:
+    def extend(self, item: Any, /) -> None:
         """Extend the progression from the right with anorher progression."""
         if not isinstance(item, Progression):
             raise LionTypeError(
@@ -188,7 +190,7 @@ class Progression(Element, Ordering):
             )
         self.order.extend(item.order)
 
-    def count(self, item: Any) -> int:
+    def count(self, item: Any, /) -> int:
         """Return the number of occurrences of an item"""
         if not self.order or item not in self:
             return 0
@@ -238,7 +240,7 @@ class Progression(Element, Ordering):
             a = a[:50] + "..."
         return f"Progression(name={self.name}, size={len(self)}, items={a})"
 
-    def insert(self, index: int, item: Any) -> None:
+    def insert(self, index: int, item: Any, /) -> None:
         """Insert an item at the specified index."""
         item_ = validate_order(item)
         for i in reversed(item_):
@@ -248,7 +250,11 @@ class Progression(Element, Ordering):
         return hash(self.ln_id)
 
 
-def prog(order: Any = None, name: str | None = None) -> Progression:
+def prog(
+    order: Any = None,
+    name: str | None = None,
+    /,
+) -> Progression:
     """Create a new Progression instance."""
     return Progression(order=order, name=name)
 

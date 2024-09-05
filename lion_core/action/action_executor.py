@@ -41,7 +41,7 @@ class ActionExecutor(BaseExecutor):
             strict=self.strict,
         )
         self.pending: Progression = prog()
-        self.processor: self.processor_class = None
+        self.processor: ActionProcessor = None
 
     @property
     def pending_action(self) -> Pile:

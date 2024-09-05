@@ -1269,14 +1269,9 @@ class TestFileUtils:
 # File: tests/test_sys_util.py
 
 import importlib
-import platform
 import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-
-import pytest
-
-from lion_core.sys_utils import SysUtil  # Updated import statement
 
 
 class TestSysUtil:

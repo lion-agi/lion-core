@@ -62,7 +62,9 @@ class Exchange(Element, Container):
         """
         return list(self.pending_ins.keys())
 
-    def include(self, item: Communicatable, direction: Literal["in", "out"]):
+    def include(
+        self, item: Communicatable, /, direction: Literal["in", "out"]
+    ):
         if not isinstance(item, Communicatable):
             raise LionValueError(
                 "Invalid item to include. Item must be a mail.",
@@ -82,7 +84,7 @@ class Exchange(Element, Container):
         elif direction == "out":
             self.pending_outs.include(item)
 
-    def exclude(self, item: Communicatable):
+    def exclude(self, item: Communicatable, /):
         self.pile.exclude(item)
         self.pending_outs.exclude(item)
         for v in self.pending_ins.values():

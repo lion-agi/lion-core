@@ -151,13 +151,13 @@ class Pile(Element, Collective, Generic[T]):
         description="Specify if enforce a strict type check",
     )
 
-    def __pydantic_extra__(self):
+    def __pydantic_extra__(self) -> dict[str, Any]:
         return {
             "_lock": Field(default_factory=threading.Lock),
             "_async": Field(default_factory=asyncio.Lock),
         }
 
-    def __pydantic_private__(self):
+    def __pydantic_private__(self) -> dict[str, Any]:
         return self.__pydantic_extra__()
 
     @override
@@ -168,7 +168,7 @@ class Pile(Element, Collective, Generic[T]):
         order: Progression | list | None = None,
         strict: bool = False,
         **kwargs,
-    ):
+    ) -> None:
         """
         Initialize a Pile instance.
 
@@ -193,7 +193,11 @@ class Pile(Element, Collective, Generic[T]):
     # Sync Interface methods
     @override
     @classmethod
-    def from_dict(cls: type[T], data: dict[str, Any]) -> Pile:
+    def from_dict(
+        cls: type[T],
+        data: dict[str, Any],
+        /,
+    ) -> Pile:
         """Create a Pile instance from a dictionary.
 
         Args:
@@ -230,6 +234,7 @@ class Pile(Element, Collective, Generic[T]):
         self,
         key: PILE_KEY_TYPE,
         default: Any = LN_UNDEFINED,
+        /,
     ) -> T | Pile | None:
         """Remove and return an item or items from the Pile.
 
@@ -247,7 +252,11 @@ class Pile(Element, Collective, Generic[T]):
         """
         return self._pop(key, default)
 
-    def remove(self, item: T) -> None:
+    def remove(
+        self,
+        item: T,
+        /,
+    ) -> None:
         """Remove a specific item from the Pile.
 
         Args:
@@ -258,7 +267,11 @@ class Pile(Element, Collective, Generic[T]):
         """
         self._remove(item)
 
-    def include(self, item: T | Iterable[T]) -> None:
+    def include(
+        self,
+        item: T | Iterable[T],
+        /,
+    ) -> None:
         """Include item(s) in the Pile if not already present.
 
         Args:
@@ -269,7 +282,11 @@ class Pile(Element, Collective, Generic[T]):
         """
         self._include(item)
 
-    def exclude(self, item: T | Iterable[T]) -> None:
+    def exclude(
+        self,
+        item: T | Iterable[T],
+        /,
+    ) -> None:
         """Exclude item(s) from the Pile if present.
 
         Args:
@@ -285,7 +302,11 @@ class Pile(Element, Collective, Generic[T]):
         """Remove all items from the Pile."""
         self._clear()
 
-    def update(self, other) -> None:
+    def update(
+        self,
+        other: Any,
+        /,
+    ) -> None:
         """Update Pile with items from another iterable or Pile.
 
         Args:
@@ -297,7 +318,7 @@ class Pile(Element, Collective, Generic[T]):
         self._update(other)
 
     @synchronized
-    def insert(self, index: int, item: T) -> None:
+    def insert(self, index: int, item: T, /) -> None:
         """Insert an item at a specific position in the Pile.
 
         Args:
@@ -311,7 +332,7 @@ class Pile(Element, Collective, Generic[T]):
         self._insert(index, item)
 
     @synchronized
-    def append(self, item: T) -> None:
+    def append(self, item: T, /) -> None:
         """Append an item to the end of the Pile.
 
         This method is an alias for `include`.
@@ -329,6 +350,7 @@ class Pile(Element, Collective, Generic[T]):
         self,
         key: PILE_KEY_TYPE,
         default: Any = LN_UNDEFINED,
+        /,
     ) -> T | Pile | None:
         """Retrieve item(s) associated with the given key.
 
@@ -630,6 +652,7 @@ class Pile(Element, Collective, Generic[T]):
         self,
         key: PILE_KEY_TYPE,
         item: T | Iterable[T],
+        /,
     ) -> None:
         """Asynchronously set an item or items in the Pile.
 
@@ -647,7 +670,12 @@ class Pile(Element, Collective, Generic[T]):
         self._setitem(key, item)
 
     @async_synchronized
-    async def apop(self, key: PILE_KEY_TYPE, default: Any = LN_UNDEFINED):
+    async def apop(
+        self,
+        key: PILE_KEY_TYPE,
+        default: Any = LN_UNDEFINED,
+        /,
+    ):
         """Asynchronously remove and return an item or items from the Pile.
 
         Args:
@@ -665,7 +693,11 @@ class Pile(Element, Collective, Generic[T]):
         return self._pop(key, default)
 
     @async_synchronized
-    async def aremove(self, item: T) -> None:
+    async def aremove(
+        self,
+        item: T,
+        /,
+    ) -> None:
         """Asynchronously remove a specific item from the Pile.
 
         Args:
@@ -677,7 +709,11 @@ class Pile(Element, Collective, Generic[T]):
         self._remove(item)
 
     @async_synchronized
-    async def ainclude(self, item: T | Iterable[T]) -> None:
+    async def ainclude(
+        self,
+        item: T | Iterable[T],
+        /,
+    ) -> None:
         """Asynchronously include item(s) in the Pile if not already present.
 
         Args:
@@ -691,7 +727,11 @@ class Pile(Element, Collective, Generic[T]):
             raise LionTypeError(f"Item {item} is not of allowed types")
 
     @async_synchronized
-    async def aexclude(self, item: T | Iterable[T]) -> None:
+    async def aexclude(
+        self,
+        item: T | Iterable[T],
+        /,
+    ) -> None:
         """Asynchronously exclude item(s) from the Pile if present.
 
         Args:
@@ -707,11 +747,20 @@ class Pile(Element, Collective, Generic[T]):
         self._clear()
 
     @async_synchronized
-    async def aupdate(self, other: Any) -> None:
+    async def aupdate(
+        self,
+        other: Any,
+        /,
+    ) -> None:
         self._update(other)
 
     @async_synchronized
-    async def aget(self, key: Any, default=LN_UNDEFINED) -> list | Any | T:
+    async def aget(
+        self,
+        key: Any,
+        default=LN_UNDEFINED,
+        /,
+    ) -> list | Any | T:
         return self._get(key, default)
 
     async def __aiter__(self) -> AsyncIterator[T]:
@@ -1132,12 +1181,13 @@ class Pile(Element, Collective, Generic[T]):
         return result
 
     @classmethod
-    def load(cls, data: dict) -> Pile:
+    def load(cls, data: dict, **kwargs: Any) -> Pile:
         return cls.from_dict(data)
 
 
 def pile(
     items: Any = None,
+    /,
     item_type: type[Observable] | set[type[Observable]] | None = None,
     order: list[str] | None = None,
     strict: bool = False,
@@ -1157,7 +1207,7 @@ def pile(
     """
 
     return Pile(
-        items=items,
+        items,
         item_type=item_type,
         order=order,
         strict=strict,

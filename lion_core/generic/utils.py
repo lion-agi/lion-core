@@ -10,7 +10,7 @@ from lion_core.sys_utils import SysUtil
 T = TypeVar("T")
 
 
-def to_list_type(value: Any) -> list[Any]:
+def to_list_type(value: Any, /) -> list[Any]:
     """Convert input to a list format"""
     if value is None:
         return []
@@ -27,7 +27,7 @@ def to_list_type(value: Any) -> list[Any]:
     return [value]
 
 
-def validate_order(value: Any) -> list[str]:
+def validate_order(value: Any, /) -> list[str]:
     """Validate and standardize order representation"""
 
     try:

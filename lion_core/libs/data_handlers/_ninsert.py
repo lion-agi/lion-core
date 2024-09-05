@@ -5,6 +5,7 @@ from lion_core.libs.data_handlers._to_list import to_list
 
 def ninsert(
     nested_structure: dict[Any, Any] | list[Any],
+    /,
     indices: list[str | int],
     value: Any,
     *,
