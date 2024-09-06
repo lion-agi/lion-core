@@ -8,25 +8,31 @@ from lion_core.libs import to_dict, to_list
 from lion_core.setting import LionUndefinedType
 
 
+def validate_message(
+    messages, strict=False
+) -> list[RoledMessage] | RoledMessage:
+    return _validate_message(messages, strict=strict)
+
+
 @singledispatch
-def validate_message(messages: Any) -> list[RoledMessage] | RoledMessage:
+def _validate_message(messages: Any) -> list[RoledMessage] | RoledMessage:
     raise NotImplementedError(f"Invalid messages type: {type(messages)}")
 
 
-@to_dict.register(LionUndefinedType)
-@to_dict.register(type(None))
+@_validate_message.register(LionUndefinedType)
+@_validate_message.register(type(None))
 def _(messages):
     """Handle None or LionUndefined inputs."""
     return []
 
 
-@validate_message.register(RoledMessage)
+@_validate_message.register(RoledMessage)
 def _(messages, strict=False):
     """Handle RoledMessage inputs."""
     return [messages]
 
 
-@validate_message.register(dict)
+@_validate_message.register(dict)
 def _(messages, strict=False):
     """Handle dictionary inputs."""
     try:
@@ -38,26 +44,26 @@ def _(messages, strict=False):
             return []
 
 
-@validate_message.register(str)
+@_validate_message.register(str)
 def _(messages, strict=False):
     """Handle string inputs."""
-    e1 = None
     try:
-        try:
-            _d = to_dict(messages, str_type="json")
+        _d = to_dict(
+            messages, str_type="json", fuzzy_parse=True, suppress=True
+        )
+        if _d:
             return validate_message(_d)
-        except ValueError as e:
-            e1 = e
-            _d = to_dict(messages, str_type="xml")
+        _d = to_dict(messages, str_type="xml", suppress=True)
+        if _d:
             return validate_message(_d)
     except ValueError as e:
         if strict:
-            raise ValueError(f"Error in converting string to dict: {e1}, {e}")
+            raise ValueError("Error in converting string to dict: ") from e
         else:
             return []
 
 
-@validate_message.register(Mapping)
+@_validate_message.register(Mapping)
 def _(messages, strict=False):
     """Handle mapping inputs."""
     try:
@@ -70,7 +76,7 @@ def _(messages, strict=False):
             return []
 
 
-@validate_message.register(list)
+@_validate_message.register(list)
 def _(messages, strict=False):
     try:
         return to_list([validate_message(d) for d in messages], faltten_=True)
@@ -80,7 +86,7 @@ def _(messages, strict=False):
         return []
 
 
-@validate_message.register(Pile)
+@_validate_message.register(Pile)
 def _(messages: Pile, strict=False):
     if messages.is_empty():
         return []
