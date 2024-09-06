@@ -6,14 +6,14 @@ from typing_extensions import override
 
 from lion_core._class_registry import LION_CLASS_REGISTRY, get_class
 from lion_core.exceptions import LionIDError
-from lion_core.generic.base import ObservableElement
+from lion_core.generic.base import RealElement
 from lion_core.setting import DEFAULT_TIMEZONE
 from lion_core.sys_utils import SysUtil
 
 T = TypeVar("T", bound="Element")
 
 
-class Element(ObservableElement):
+class Element(RealElement):
     """Base class in the Lion framework."""
 
     model_config = ConfigDict(

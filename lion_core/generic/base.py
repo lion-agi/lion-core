@@ -2,12 +2,12 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from lion_core.abc._characteristic import Observable, Temporal
+from lion_core.abc._characteristic import Real
 from lion_core.abc._concept import AbstractElement
 from lion_core.sys_utils import SysUtil
 
 
-class ObservableElement(BaseModel, AbstractElement, Observable, Temporal):
+class RealElement(BaseModel, AbstractElement, Real):
     """Base class in the Lion framework."""
 
     ln_id: str = Field(
@@ -28,5 +28,5 @@ class ObservableElement(BaseModel, AbstractElement, Observable, Temporal):
         return self.model_dump()
 
     @classmethod
-    def from_dict(cls, data: dict, /, **kwargs) -> "ObservableElement":
+    def from_dict(cls, data: dict, /, **kwargs) -> "RealElement":
         return cls.model_validate(data, **kwargs)

@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any
 
-from lion_core.abc import Observable, Temporal
+from lion_core.abc import Real
 from lion_core.sys_utils import SysUtil
 
 
@@ -32,7 +32,7 @@ def validate_category(value: Any) -> PackageCategory:
         raise ValueError("Invalid value for category.") from e
 
 
-class Package(Observable, Temporal):
+class Package(Real):
     """A package in the Lion framework's communication system."""
 
     def __init__(

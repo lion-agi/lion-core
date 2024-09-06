@@ -3,6 +3,7 @@
 from ._characteristic import (
     Communicatable,
     Observable,
+    Real,
     Relational,
     Temporal,
     Traversal,
@@ -51,4 +52,5 @@ __all__ = [
     "BaseRecord",
     "MutableRecord",
     "Communicatable",
+    "Real",
 ]
