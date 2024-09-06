@@ -30,7 +30,7 @@ class Flow(Element):
         self,
         progressions: Pile[Progression] | None = None,
         default_name: str | None = None,
-    ):
+    ) -> None:
         """
         Initializes a Flow instance.
 
@@ -51,8 +51,12 @@ class Flow(Element):
     def _validate_progressions(self, value: Any) -> Pile[Progression]:
         try:
             if isinstance(value, Collective):
-                value = list(value)
+                if Progression in getattr(value, "item_type", []):
+                    return value
+                else:
+                    value = list(value)
             return pile(value, item_type={Progression})
+
         except Exception as e:
             raise LionValueError(f"Invalid progressions: {e}")
 
@@ -139,6 +143,7 @@ class Flow(Element):
     def include(
         self,
         prog_: str | Progression | None = None,
+        /,
         item: Any = None,
         name: str | None = None,
     ) -> bool | None:
@@ -185,6 +190,7 @@ class Flow(Element):
     def exclude(
         self,
         prog_: Progression | str | None = None,
+        /,
         item: Any = None,
         name: str | None = None,
     ) -> bool | Any | None:
@@ -223,7 +229,7 @@ class Flow(Element):
                     return a is not None and self.progressions.exclude(a)
             return False
 
-    def register(self, prog_: Progression, name: str | None = None, /) -> None:
+    def register(self, prog_: Progression, /, name: str | None = None) -> None:
         """
         Register a new progression.
 
@@ -298,6 +304,7 @@ class Flow(Element):
     def get(
         self,
         prog_: Progression | str | None = None,
+        /,
         default: Any = LN_UNDEFINED,
     ) -> Progression | Any:
         """

@@ -1,5 +1,3 @@
-from typing import Any
-
 from lion_core.abc._concept import Tao
 
 
@@ -19,7 +17,11 @@ class Temporal(Characteristic):
     timestamp: float
 
 
-class Communicatable(Observable, Temporal):
+class Real(Observable, Temporal):
+    """objects have definite properties independent of observation"""
+
+
+class Communicatable(Real):
     """Represents entities that can be used for communication."""
 
     sender: str
@@ -38,14 +40,12 @@ class Stochastic(Probabilistic, Temporal):
     """Combines probabilistic and time-dependent aspects."""
 
 
-class Relational(Observable):
+class Relational(Real):
     """only relational entities can be nodes in a graph"""
 
 
-class Traversal(Observable):
+class Traversal(Characteristic):
     """progressable or explorable entities"""
-
-    progress: Any
 
 
 __all__ = [

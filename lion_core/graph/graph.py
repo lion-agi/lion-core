@@ -2,6 +2,7 @@ from typing import Any, Literal
 
 from pydantic import Field, field_serializer
 
+from lion_core.abc import Relational, Structure
 from lion_core.exceptions import ItemExistsError, LionRelationError
 from lion_core.generic.node import Node
 from lion_core.generic.note import Note
@@ -10,7 +11,7 @@ from lion_core.graph.edge import Edge
 from lion_core.sys_utils import SysUtil
 
 
-class Graph(Node):
+class Graph(Node, Structure):
     """
     Represents a graph structure containing nodes and edges.
 
@@ -25,7 +26,7 @@ class Graph(Node):
     """
 
     internal_nodes: Pile = Field(
-        default_factory=lambda: pile({}, {Node}),
+        default_factory=lambda: pile({}, {Relational}),
         description="The internal nodes of the graph.",
     )
     internal_edges: Pile = Field(
@@ -39,7 +40,7 @@ class Graph(Node):
     )
 
     @field_serializer("internal_nodes", "internal_edges")
-    def _serialize_internal_piles(self, value):
+    def _serialize_internal_piles(self, value) -> Any:
         """
         Serialize the internal nodes and edges.
 
@@ -53,7 +54,7 @@ class Graph(Node):
         value = value["pile_"]
         return value
 
-    def add_node(self, node: Node) -> None:
+    def add_node(self, node: Relational) -> None:
         """
         Add a node to the graph.
 
@@ -65,9 +66,10 @@ class Graph(Node):
                 if the node type is invalid.
         """
         try:
-            if not isinstance(node, Node):
+            if not isinstance(node, Relational):
                 raise LionRelationError(
-                    "Failed to add node: Invalid node type."
+                    "Failed to add node: Invalid node type: "
+                    "not a <Relational> entity."
                 )
             _id = SysUtil.get_id(node)
             self.internal_nodes.insert(len(self.internal_nodes), node)
@@ -75,7 +77,7 @@ class Graph(Node):
         except ItemExistsError as e:
             raise LionRelationError(f"Error adding node: {e}")
 
-    def add_edge(self, edge: Edge) -> None:
+    def add_edge(self, edge: Edge, /) -> None:
         """
         Add an edge to the graph.
 
@@ -105,7 +107,7 @@ class Graph(Node):
         except ItemExistsError as e:
             raise LionRelationError(f"Error adding node: {e}")
 
-    def remove_node(self, node: Node | str) -> None:
+    def remove_node(self, node: Relational | str, /) -> None:
         """
         Remove a node from the graph.
 
@@ -123,7 +125,7 @@ class Graph(Node):
                 f"Node {node} not found in the graph nodes."
             )
 
-        in_edges = self.node_edge_mapping[_id, "in"]
+        in_edges: dict = self.node_edge_mapping[_id, "in"]
         for edge_id, node_id in in_edges.items():
             self.node_edge_mapping[node_id, "out"].pop(edge_id)
             self.internal_edges.pop(edge_id)
@@ -136,7 +138,7 @@ class Graph(Node):
         self.node_edge_mapping.pop(_id)
         return self.internal_nodes.pop(_id)
 
-    def remove_edge(self, edge: Edge | str) -> None:
+    def remove_edge(self, edge: Edge | str, /) -> None:
         """
         Remove an edge from the graph.
 
@@ -160,6 +162,7 @@ class Graph(Node):
     def find_node_edge(
         self,
         node: Any,
+        /,
         direction: Literal["both", "in", "out"] = "both",
     ) -> Pile[Edge]:
         """
@@ -215,9 +218,11 @@ class Graph(Node):
             if self.node_edge_mapping[node_id, "in"] == {}:
                 result.append(self.internal_nodes[node_id])
 
-        return self.internal_nodes.__class__(items=result, item_type={Node})
+        return self.internal_nodes.__class__(
+            items=result, item_type={Relational}
+        )
 
-    def get_predecessors(self, node: Node):
+    def get_predecessors(self, node: Node, /) -> Pile:
         """
         Get all predecessor nodes of a given node.
 
@@ -234,9 +239,11 @@ class Graph(Node):
         for edge in edges:
             node_id = edge.head
             result.append(self.internal_nodes[node_id])
-        return self.internal_nodes.__class__(items=result, item_type={Node})
+        return self.internal_nodes.__class__(
+            items=result, item_type={Relational}
+        )
 
-    def get_successors(self, node: Node):
+    def get_successors(self, node: Node, /) -> Pile:
         """
         Get all successor nodes of a given node.
 
@@ -253,7 +260,12 @@ class Graph(Node):
         for edge in edges:
             node_id = edge.tail
             result.append(self.internal_nodes[node_id])
-        return self.internal_nodes.__class__(items=result, item_type={Node})
+        return self.internal_nodes.__class__(
+            items=result, item_type={Relational}
+        )
+
+    def __contains__(self, item: object) -> bool:
+        return item in self.internal_nodes or item in self.internal_edges
 
 
 __all__ = ["Graph"]

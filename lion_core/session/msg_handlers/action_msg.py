@@ -9,7 +9,7 @@ def handle_action_request(
     action_request,
     func,
     arguments,
-):
+) -> ActionRequest | None:
     if action_request:
         if not isinstance(action_request, ActionRequest):
             raise ValueError(
@@ -38,7 +38,7 @@ def handle_action_response(
     action_request,
     action_response,
     func_output,
-):
+) -> ActionResponse | ActionRequest | None:
     if func_output or action_response:
         if not action_request or not isinstance(action_request, ActionRequest):
             raise ValueError(

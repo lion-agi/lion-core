@@ -3,14 +3,14 @@ from typing import Literal
 from pydantic import Field
 from typing_extensions import override
 
-from lion_core.abc import Communicatable, Container
+from lion_core.abc import Communicatable, Structure
 from lion_core.exceptions import ItemExistsError, LionValueError
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import Progression, prog
 
 
-class Exchange(Element, Container):
+class Exchange(Element, Structure):
     """
     Item exchange system designed to handle incoming and outgoing flows.
 
