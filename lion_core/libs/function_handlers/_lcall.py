@@ -17,15 +17,47 @@ def lcall(
     *,
     flatten: bool = False,
     dropna: bool = False,
+    unique: bool = False,
     **kwargs,
 ) -> list[Any]:
+    """Apply a function to each element of a list synchronously.
+
+    Args:
+        input_: List of inputs to be processed.
+        func: Function to apply to each input element.
+        flatten: If True, flatten the resulting list.
+        dropna: If True, remove None values from the result.
+        unique: If True, return only unique values (requires flatten=True).
+        **kwargs: Additional keyword arguments passed to func.
+
+    Returns:
+        list[Any]: List of results after applying func to each input element.
+
+    Raises:
+        ValueError: If more than one function is provided.
+
+    Examples:
+        >>> lcall([1, 2, 3], lambda x: x * 2)
+        [2, 4, 6]
+        >>> lcall([[1, 2], [3, 4]], sum, flatten=True)
+        [3, 7]
+        >>> lcall([1, 2, 2, 3], lambda x: x, unique=True, flatten=True)
+        [1, 2, 3]
+
+    Note:
+        The function uses to_list internally, which allows for flexible input
+        types beyond just lists.
+    """
     lst = to_list(input_)
     if len(to_list(func, flatten=True, dropna=True)) != 1:
         raise ValueError(
             "There must be one and only one function for list calling."
         )
     return to_list(
-        [func(i, **kwargs) for i in lst], flatten=flatten, dropna=dropna
+        [func(i, **kwargs) for i in lst],
+        flatten=flatten,
+        dropna=dropna,
+        unique=unique,
     )
 
 
@@ -49,30 +81,47 @@ async def alcall(
     dropna: bool = False,
     **kwargs: Any,
 ) -> list[T] | list[tuple[T, float]]:
-    """
-    Apply a function over a list of inputs asynchronously with options.
+    """Apply a function to each element of a list asynchronously with options.
 
     Args:
-        func: The function to be applied to each input.
         input_: List of inputs to be processed.
-        retries: Number of retry attempts for each function call.
-        initial_delay: Initial delay before starting execution.
-        delay: Delay between retry attempts.
+        func: Async or sync function to apply to each input element.
+        num_retries: Number of retry attempts for each function call.
+        initial_delay: Initial delay before starting execution (seconds).
+        retry_delay: Delay between retry attempts (seconds).
         backoff_factor: Factor by which delay increases after each attempt.
-        default: Default value to return if all attempts fail.
-        timeout: Timeout for each function execution.
-        timing: Whether to return the execution duration.
-        verbose: Whether to print retry messages.
-        error_msg: Custom error message.
-        error_map: Dictionary mapping exception types to error handlers.
+        retry_default: Default value to return if all attempts fail.
+        retry_timeout: Timeout for each function execution (seconds).
+        retry_timing: If True, return execution duration for each call.
+        verbose_retry: If True, print retry messages.
+        error_msg: Custom error message prefix for exceptions.
+        error_map: Dict mapping exception types to error handlers.
         max_concurrent: Maximum number of concurrent executions.
-        throttle_period: Minimum time period between function executions.
-        dropna: Whether to drop None values from the output list.
-        **kwargs: Additional keyword arguments for the function.
+        throttle_period: Minimum time between function executions (seconds).
+        flatten: If True, flatten the resulting list.
+        dropna: If True, remove None values from the result.
+        **kwargs: Additional keyword arguments passed to func.
 
     Returns:
-        List of results, optionally including execution durations if timing
-        is True.
+        list[T] | list[tuple[T, float]]: List of results, optionally with
+        execution times if retry_timing is True.
+
+    Raises:
+        asyncio.TimeoutError: If execution exceeds retry_timeout.
+        Exception: Any exception raised by func if not handled by error_map.
+
+    Examples:
+        >>> async def square(x):
+        ...     return x * x
+        >>> await alcall([1, 2, 3], square)
+        [1, 4, 9]
+        >>> await alcall([1, 2, 3], square, retry_timing=True)
+        [(1, 0.001), (4, 0.001), (9, 0.001)]
+
+    Note:
+        - Uses semaphores for concurrency control if max_concurrent is set.
+        - Supports both synchronous and asynchronous functions for `func`.
+        - Results are returned in the original input order.
     """
     if initial_delay:
         await asyncio.sleep(initial_delay)

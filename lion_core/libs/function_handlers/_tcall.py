@@ -19,31 +19,43 @@ async def tcall(
     error_map: dict[type, ErrorHandler] | None = None,
     **kwargs: Any,
 ) -> T | tuple[T, float]:
-    """
-    Execute a function asynchronously with customizable options.
+    """Execute a function asynchronously with timing and error handling.
 
-    Handles both synchronous and asynchronous functions, applying initial
-    delay, timing execution, handling errors, and enforcing timeout.
+    Handles both coroutine and regular functions, supporting timing,
+    timeout, and custom error handling.
 
     Args:
-        func: The function to be executed.
-        *args: Positional arguments to pass to the function.
-        initial_delay: Delay before executing the function.
-        error_msg: Custom error message.
-        suppress_err: Whether to suppress errors and return default value.
-        timing: Whether to return the execution duration.
-        timeout: Timeout for the function execution.
-        default: Default value to return if an error occurs.
-        error_map: Dictionary mapping exception types to error handlers.
-        **kwargs: Additional keyword arguments to pass to the function.
+        func: The function to execute (coroutine or regular).
+        *args: Positional arguments for the function.
+        initial_delay: Delay before execution (seconds).
+        error_msg: Custom error message prefix.
+        suppress_err: If True, return default on error instead of raising.
+        retry_timing: If True, return execution duration.
+        retry_timeout: Timeout for function execution (seconds).
+        retry_default: Value to return if an error occurs and suppress_err
+        is True.
+        error_map: Dict mapping exception types to error handlers.
+        **kwargs: Additional keyword arguments for the function.
 
     Returns:
-        The result of the function call, optionally including the duration
-        of execution if `timing` is True.
+        T | tuple[T, float]: Function result, optionally with duration.
 
     Raises:
-        asyncio.TimeoutError: If function execution exceeds the timeout.
-        RuntimeError: If an error occurs and `suppress_err` is False.
+        asyncio.TimeoutError: If execution exceeds the timeout.
+        RuntimeError: If an error occurs and suppress_err is False.
+
+    Examples:
+        >>> async def slow_func(x):
+        ...     await asyncio.sleep(1)
+        ...     return x * 2
+        >>> result, duration = await tcall(slow_func, 5, retry_timing=True)
+        >>> print(f"Result: {result}, Duration: {duration:.2f}s")
+        Result: 10, Duration: 1.00s
+
+    Note:
+        - Automatically handles both coroutine and regular functions.
+        - Provides timing information for performance analysis.
+        - Supports custom error handling and suppression.
     """
     start = asyncio.get_event_loop().time()
 

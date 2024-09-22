@@ -64,7 +64,34 @@ def to_dict(
     remove_root: bool = True,
     **kwargs: Any,
 ) -> dict[str, Any]:
-    """Convert various input types to a dictionary."""
+    """Convert various input types to a dictionary.
+
+    Handles multiple input types, including None, Mappings, strings, and more.
+
+    Args:
+        input_: The input to convert to a dictionary.
+        use_model_dump: Use model_dump() for Pydantic models if available.
+        fuzzy_parse: Use fuzzy parsing for string inputs.
+        suppress: Return empty dict on parsing errors if True.
+        str_type: Input string type, either "json" or "xml".
+        parser: Custom parser function for string inputs.
+        remove_root: Remove root element from XML parsing result.
+        **kwargs: Additional arguments passed to parsing functions.
+
+    Returns:
+        A dictionary derived from the input.
+
+    Raises:
+        ValueError: If string parsing fails and suppress is False.
+
+    Examples:
+        >>> to_dict({"a": 1, "b": 2})
+        {'a': 1, 'b': 2}
+        >>> to_dict('{"x": 10}', str_type="json")
+        {'x': 10}
+        >>> to_dict("<root><a>1</a></root>", str_type="xml")
+        {'a': '1'}
+    """
     if isinstance(input_, dict):
         return input_
 

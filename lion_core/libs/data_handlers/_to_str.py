@@ -93,33 +93,37 @@ def to_str(
     root_tag: str = "root",
     **kwargs: Any,
 ) -> str:
-    """
-    Convert the input to a string representation.
+    """Convert any input to its string representation.
 
-    This function uses singledispatch to provide type-specific
-    implementations for different input types. The base implementation
-    handles Any type by converting it to a string using the str() function.
+    Handles various input types, with options for serialization and formatting.
 
     Args:
-        input_: The input to be converted to a string.
-        use_model_dump: If True, use model_dump for Pydantic models.
-        strip_lower: If True, strip and convert to lowercase.
-        chars: Characters to strip from the result.
-        **kwargs: Additional arguments for json.dumps.
+        input_: The input to convert to a string.
+        strip_lower: If True, strip whitespace and convert to lowercase.
+        chars: Specific characters to strip from the result.
+        str_type: Type of string input ("json" or "xml") if applicable.
+        serialize_as: Output serialization format ("json" or "xml").
+        use_model_dump: Use model_dump for Pydantic models if available.
+        str_parser: Custom parser function for string inputs.
+        parser_kwargs: Additional keyword arguments for the parser.
+        root_tag: Root tag name for XML serialization.
+        **kwargs: Additional arguments passed to json.dumps or serialization.
 
     Returns:
-        String representation of the input.
+        str: The string representation of the input.
 
     Raises:
-        ValueError: If conversion fails.
+        ValueError: If serialization or conversion fails.
 
     Examples:
         >>> to_str(123)
         '123'
         >>> to_str("  HELLO  ", strip_lower=True)
         'hello'
-        >>> to_str({"a": 1, "b": 2})
-        '{"a": 1, "b": 2}'
+        >>> to_str({"a": 1}, serialize_as="json")
+        '{"a": 1}'
+        >>> to_str({"a": 1}, serialize_as="xml")
+        '<root><a>1</a></root>'
     """
 
     if serialize_as:

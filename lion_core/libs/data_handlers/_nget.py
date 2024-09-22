@@ -10,22 +10,26 @@ def nget(
     indices: list[int | str],
     default: Any = LN_UNDEFINED,
 ) -> Any:
-    """
-    Retrieve a value from a nested structure using a list of indices.
+    """Retrieve a value from a nested structure using a list of indices.
 
     Args:
         nested_structure: The nested structure to retrieve the value from.
-        indices: A list of indices to navigate through the nested structure.
-        default: The default value to return if the target value is not found.
-            If not provided, a LookupError is raised.
+        indices: List of indices to navigate through the nested structure.
+        default: Value to return if target not found. If not provided,
+            raises LookupError.
 
     Returns:
-        The value retrieved from the nested structure, or the default value
-        if provided.
+        Retrieved value or default if provided.
 
     Raises:
-        LookupError: If the target value is not found and no default value
-            is provided.
+        LookupError: If target not found and no default value provided.
+
+    Example:
+        >>> data = {"a": [{"b": 1}, {"c": 2}]}
+        >>> nget(data, ["a", 1, "c"])
+        2
+        >>> nget(data, ["a", 2, "d"], default="Not found")
+        'Not found'
     """
     try:
         target_container = get_target_container(nested_structure, indices[:-1])
