@@ -44,8 +44,8 @@ class Branch(BaseSession, Traversal):
     mailbox: Exchange | None = Field(None)
     progress: Progression | None = Field(None)
     system: System | None = Field(None)
-    user: str = Field(None)
-    imodel: BaseiModel = Field(None)
+    user: str | None = Field(None)
+    imodel: BaseiModel | None = Field(None)
 
     _converter_registry: ClassVar = BranchConverterRegistry
 
@@ -58,14 +58,14 @@ class Branch(BaseSession, Traversal):
             strict=False,
         )
         data["progress"] = prog(
-            data.pop(list(data["messages"]), []),
+            list(data.pop("messages", [])),
         )
         data["tool_manager"] = data.pop(
-            data["tool_manager"],
+            "tool_manager",
             ToolManager(),
         )
         data["mailbox"] = data.pop(
-            data["mailbox"],
+            "mailbox",
             Exchange(),
         )
         if "tools" in data:

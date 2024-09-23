@@ -1,4 +1,6 @@
-from pydantic import Field, PrivateAttr, model_validator
+from typing import ClassVar
+
+from pydantic import Field, model_validator
 
 from lion_core.abc import AbstractSpace, BaseiModel
 from lion_core.communication.system import System
@@ -13,7 +15,7 @@ class BaseSession(Node, AbstractSpace):
     user: str | None = Field(None)
     imodel: BaseiModel | None = Field(None)
     name: str | None = Field(None)
-    pile_type: type[Pile] = PrivateAttr(Pile)
+    pile_type: ClassVar[type] = Pile
 
     @model_validator(mode="before")
     def validate_system(cls, data: dict):

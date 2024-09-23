@@ -15,13 +15,15 @@ def validate_message(
 
 
 @singledispatch
-def _validate_message(messages: Any) -> list[RoledMessage] | RoledMessage:
+def _validate_message(
+    messages: Any, strict=False
+) -> list[RoledMessage] | RoledMessage:
     raise NotImplementedError(f"Invalid messages type: {type(messages)}")
 
 
 @_validate_message.register(LionUndefinedType)
 @_validate_message.register(type(None))
-def _(messages):
+def _(messages, strict=False):
     """Handle None or LionUndefined inputs."""
     return []
 
