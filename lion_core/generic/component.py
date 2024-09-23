@@ -1,4 +1,3 @@
-import contextlib
 from collections import deque
 from functools import singledispatchmethod
 from typing import Annotated, Any, ClassVar, TypeVar
@@ -77,20 +76,6 @@ class Component(Element):
             out_[k] = Field(**v) if isinstance(v, dict) else v
 
         return out_
-
-    @field_validator("embedding")
-    def _validate_embedding(value: Any) -> list:
-        if not value:
-            return []
-        if isinstance(value, str):
-            if len(value) < 10:
-                return []
-
-            string_elements = value.strip("[]").split(",")
-            # Convert each string element to a float
-            with contextlib.suppress(ValueError):
-                return [float(element) for element in string_elements]
-        raise ValueError("Invalid embedding format.")
 
     @property
     def all_fields(self) -> dict[str, FieldInfo]:
