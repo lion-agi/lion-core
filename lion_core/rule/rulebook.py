@@ -73,21 +73,23 @@ def validate_rules_info(rules_info):
     out = note()
 
     if isinstance(rules_info, Note):
-        rules_info = to_dict(rules_info)
+        rules_info = to_dict(rules_info)["content"]
 
     if isinstance(rules_info, dict):
         for k, v in rules_info.items():
             v = to_dict(v)
             k: type[Rule] | None = k or v.get("rule", None)
-            if not issubclass(k, Rule):
+            obj_ = rules_info[k]["rule"]
+            if inspect.isclass(obj_) and not issubclass(obj_, Rule):
+
                 raise LionTypeError(
                     message="Item type must be a subclass of Rule.",
                     expected_type=Rule,
                     actual_type=type(k),
                 )
 
-            v["rule"] = k
-            out[k.__name__] = v
+            v["rule"] = obj_
+            out[k] = v
 
     return out
 
