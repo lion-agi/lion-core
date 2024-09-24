@@ -26,30 +26,45 @@ async def rcall(
     error_map: dict[type, ErrorHandler] | None = None,
     **kwargs: Any,
 ) -> T | tuple[T, float]:
-    """
-    Retry a function asynchronously with customizable options.
+    """Retry a function asynchronously with customizable options.
+
+    Executes a function with specified retry logic, timing, and error handling.
 
     Args:
-        func: The function to be executed.
-        *args: Positional arguments to pass to the function.
-        num_retries: Number of retry attempts.
-        initial_delay: Initial delay before the first attempt.
-        retry_delay: Delay between attempts.
-        backoff_factor: Factor by which the delay increases after each attempt.
-        retry_default: Default value to return if all attempts fail.
-        retry_timeout: Timeout for each function execution.
-        retry_timing: Whether to return the execution duration.
-        verbose_retry: Whether to print retry messages.
-        error_msg: Custom error message.
-        error_map: Dictionary mapping exception types to error handlers.
-        **kwargs: Additional keyword arguments to pass to the function.
+        func: The function to execute (coroutine or regular).
+        *args: Positional arguments for the function.
+        num_retries: Number of retry attempts (default: 0).
+        initial_delay: Delay before first attempt (seconds).
+        retry_delay: Delay between retry attempts (seconds).
+        backoff_factor: Factor to increase delay after each retry.
+        retry_default: Value to return if all attempts fail.
+        retry_timeout: Timeout for each function execution (seconds).
+        retry_timing: If True, return execution duration.
+        verbose_retry: If True, print retry messages.
+        error_msg: Custom error message prefix.
+        error_map: Dict mapping exception types to error handlers.
+        **kwargs: Additional keyword arguments for the function.
 
     Returns:
-        The result of the function call, optionally including the duration
-        of execution if `timing` is True.
+        T | tuple[T, float]: Function result, optionally with duration.
 
     Raises:
-        RuntimeError: If the function fails after the specified retries.
+        RuntimeError: If function fails after all retries.
+        asyncio.TimeoutError: If execution exceeds retry_timeout.
+
+    Examples:
+        >>> async def flaky_func(x):
+        ...     if random.random() < 0.5:
+        ...         raise ValueError("Random failure")
+        ...     return x * 2
+        >>> result = await rcall(flaky_func, 5, num_retries=3)
+        >>> print(result)
+        10
+
+    Note:
+        - Supports both coroutine and regular functions.
+        - Implements exponential backoff for retries.
+        - Can return execution timing for performance analysis.
     """
     last_exception = None
     result = None

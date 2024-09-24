@@ -35,7 +35,7 @@ class Session(BaseSession):
     mail_transfer: Exchange | None = Field(None)
     mail_manager: MailManager | None = Field(None, exclude=True)
     conversations: Flow | None = Field(None)
-    branch_type: type[Branch] = PrivateAttr(Branch)
+    _branch_type: type[Branch] = PrivateAttr(Branch)
 
     async def new_branch(
         self,
@@ -56,7 +56,7 @@ class Session(BaseSession):
             system.sender = self.ln_id
             system_sender = self.ln_id
 
-        branch = self.branch_type(
+        branch = self._branch_type(
             system=system,
             system_sender=system_sender,
             system_datetime=system_datetime,
@@ -133,7 +133,7 @@ class Session(BaseSession):
             if branch.tool_manager.registry
             else None
         )
-        branch_clone = self.branch_type(
+        branch_clone = self._branch_type(
             system=system,
             system_sender=branch.ln_id,
             user=branch.user,

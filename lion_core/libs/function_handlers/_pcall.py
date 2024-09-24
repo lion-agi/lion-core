@@ -27,28 +27,54 @@ async def pcall(
     throttle_period: float | None = None,
     **kwargs: Any,
 ) -> list[T] | list[tuple[T, float]]:
-    """
-    Execute multiple functions asynchronously with customizable options.
+    """Execute multiple functions asynchronously in parallel with options.
+
+    Manages parallel execution of functions with retry logic, timing, and
+    error handling. Supports concurrency control and throttling.
 
     Args:
-        funcs: Sequence of functions to be executed.
-        retries: Number of retry attempts for each function.
-        initial_delay: Initial delay before starting the execution.
-        delay: Delay between retry attempts.
-        backoff_factor: Factor by which delay increases after each attempt.
-        default: Default value to return if all attempts fail.
-        timeout: Timeout for each function execution.
-        timing: Whether to return the execution duration.
-        verbose: Whether to print retry messages.
-        error_msg: Custom error message.
-        error_map: Dictionary mapping exception types to error handlers.
-        max_concurrent: Maximum number of concurrent executions.
-        throttle_period: Minimum time period between function executions.
-        **kwargs: Additional keyword arguments for each function.
+        funcs: Sequence of functions to execute in parallel.
+        num_retries: Number of retry attempts for each function (default: 0).
+        initial_delay: Delay before starting execution (seconds).
+        retry_delay: Initial delay between retry attempts (seconds).
+        backoff_factor: Factor to increase delay after each retry.
+        retry_default: Value to return if all attempts for a function fail.
+        retry_timeout: Timeout for each function execution (seconds).
+        retry_timing: If True, return execution duration for each function.
+        verbose_retry: If True, print retry messages.
+        error_msg: Custom error message prefix.
+        error_map: Dict mapping exception types to error handlers.
+        max_concurrent: Maximum number of functions to run concurrently.
+        throttle_period: Minimum time between function starts (seconds).
+        **kwargs: Additional keyword arguments passed to each function.
 
     Returns:
-        List of results, optionally including execution durations if timing
-        is True.
+        list[T] | list[tuple[T, float]]: List of results, optionally with
+        execution times if retry_timing is True.
+
+    Raises:
+        asyncio.TimeoutError: If any function execution exceeds retry_timeout.
+        Exception: Any unhandled exception from function executions.
+
+    Examples:
+        >>> async def func1(x):
+        ...     await asyncio.sleep(1)
+        ...     return x * 2
+        >>> async def func2(x):
+        ...     await asyncio.sleep(0.5)
+        ...     return x + 10
+        >>> results = await pcall([func1, func2], retry_timing=True, x=5)
+        >>> for result, duration in results:
+        ...     print(f"Result: {result}, Duration: {duration:.2f}s")
+        Result: 10, Duration: 1.00s
+        Result: 15, Duration: 0.50s
+
+    Note:
+        - Executes functions in parallel, respecting max_concurrent limit.
+        - Implements exponential backoff for retries.
+        - Can return execution timing for performance analysis.
+        - Supports both coroutine and regular functions via ucall.
+        - Results are returned in the original order of input functions.
     """
     if initial_delay:
         await asyncio.sleep(initial_delay)

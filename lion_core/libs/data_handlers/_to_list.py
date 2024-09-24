@@ -47,29 +47,21 @@ def to_list(
 ) -> list:
     """Convert various input types to a list.
 
-    Handles different input types and converts them to a list,
-    with options for flattening nested structures and removing None values.
-
-    Accepted input types and behaviors:
-    1. None or LionUndefined: Returns an empty list [].
-    2. str, bytes, bytearray: Returns a single-item list with the input.
-    3. Mapping (dict, etc.): Returns a single-item list with the input.
-    4. BaseModel: Returns a single-item list with the input.
-    5. Sequence (list, tuple, etc.):
-       - If flatten=False, returns the sequence as a list.
-       - If flatten=True, flattens nested sequences.
-    6. Other Iterables: Converts to a list, flattens if specified.
-    7. Any other type: Returns a single-item list with the input.
+    Handles different input types and converts them to a list, with options
+    for flattening nested structures and removing None values.
 
     Args:
         input_: The input to be converted to a list.
         flatten: If True, flattens nested list structures.
         dropna: If True, removes None values from the result.
-        unique: If True, returns only unique values. (only works
-            with flatten=True)
+        unique: If True, returns only unique values (requires flatten=True).
+        use_values: If True, uses .values() for dict-like inputs.
 
     Returns:
         A list derived from the input, processed as specified.
+
+    Raises:
+        ValueError: If unique=True and flatten=False.
 
     Examples:
         >>> to_list(1)
@@ -77,6 +69,8 @@ def to_list(
         >>> to_list([1, [2, 3]], flatten=True)
         [1, 2, 3]
         >>> to_list([1, None, 2], dropna=True)
+        [1, 2]
+        >>> to_list({'a': 1, 'b': 2}, use_values=True)
         [1, 2]
     """
     if unique and not flatten:

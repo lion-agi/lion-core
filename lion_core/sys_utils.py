@@ -119,7 +119,6 @@ class SysUtil:
 
     def id(
         config: LionIDConfig = DEFAULT_LION_ID_CONFIG,
-        /,
         n: int = None,
         prefix: str = None,
         postfix: str = None,

@@ -1,5 +1,4 @@
-from .algorithms.jaro_distance import jaro_distance
-from .algorithms.levenshtein_distance import levenshtein_distance
+from ._helper import is_same_dtype, unique_hash
 from .data_handlers._flatten import flatten
 from .data_handlers._nfilter import nfilter
 from .data_handlers._nget import nget
@@ -20,6 +19,7 @@ from .function_handlers._pcall import pcall
 from .function_handlers._rcall import rcall
 from .function_handlers._tcall import tcall
 from .function_handlers._ucall import ucall
+from .function_handlers._util import force_async
 from .parsers._as_readable_json import as_readable_json
 from .parsers._choose_most_similar import choose_most_similar
 from .parsers._extract_code_block import extract_code_block
@@ -38,45 +38,45 @@ from .parsers._validate_mapping import validate_mapping
 from .parsers._xml_parser import dict_to_xml, xml_to_dict
 
 __all__ = [
-    "jaro_distance",
-    "levenshtein_distance",
-    "to_dict",
-    "to_list",
-    "to_str",
-    "dict_to_xml",
-    "to_num",
-    "flatten",
-    "unflatten",
-    "nmerge",
-    "nfilter",
-    "ninsert",
-    "npop",
-    "nget",
+    "alcall",
+    "as_readable_json",
     "bcall",
     "CallDecorator",
-    "lcall",
-    "alcall",
-    "ucall",
-    "mcall",
-    "rcall",
-    "tcall",
-    "pcall",
-    "ucall",
-    "as_readable_json",
+    "choose_most_similar",
+    "dict_to_xml",
+    "extract_code_block",
+    "extract_docstring_details",
+    "extract_json_block",
+    "extract_json_schema",
+    "flatten",
+    "force_async",
     "function_to_schema",
     "fuzzy_parse_json",
+    "json_schema_to_cfg",
+    "json_schema_to_regex",
+    "lcall",
+    "md_to_json",
+    "mcall",
+    "nfilter",
+    "nget",
+    "ninsert",
+    "nmerge",
+    "npop",
+    "nset",
+    "pcall",
+    "rcall",
+    "strip_lower",
+    "tcall",
+    "to_dict",
+    "to_list",
+    "to_num",
+    "to_str",
+    "ucall",
+    "unflatten",
     "validate_boolean",
     "validate_keys",
     "validate_mapping",
-    "choose_most_similar",
-    "extract_code_block",
-    "extract_docstring_details",
-    "extract_json_schema",
-    "json_schema_to_cfg",
-    "json_schema_to_regex",
-    "md_to_json",
     "xml_to_dict",
-    "nset",
-    "strip_lower",
-    "extract_json_block",
+    "is_same_dtype",
+    "unique_hash",
 ]

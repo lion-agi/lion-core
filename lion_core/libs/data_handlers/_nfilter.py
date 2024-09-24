@@ -7,19 +7,23 @@ def nfilter(
     /,
     condition: Callable[[Any], bool],
 ) -> dict[Any, Any] | list[Any]:
-    """
-    Filter elements in a nested structure (dict or list) based on a condition.
+    """Filter elements in a nested structure based on a condition.
 
     Args:
-        nested_structure: The nested structure to filter.
-        condition: A function that returns True for elements to keep and
-            False for elements to discard.
+        nested_structure: The nested structure (dict or list) to filter.
+        condition: Function returning True for elements to keep, False to
+            discard.
 
     Returns:
         The filtered nested structure.
 
     Raises:
         TypeError: If nested_structure is not a dict or list.
+
+    Example:
+        >>> data = {"a": 1, "b": {"c": 2, "d": 3}, "e": [4, 5, 6]}
+        >>> nfilter(data, lambda x: isinstance(x, int) and x > 2)
+        {'b': {'d': 3}, 'e': [4, 5, 6]}
     """
     if isinstance(nested_structure, dict):
         return _filter_dict(nested_structure, condition)
@@ -34,17 +38,6 @@ def nfilter(
 def _filter_dict(
     dictionary: dict[Any, Any], condition: Callable[[tuple[Any, Any]], bool]
 ) -> dict[Any, Any]:
-    """
-    Filter elements in a dictionary based on a condition.
-
-    Args:
-        dictionary: The dictionary to filter.
-        condition: A function that returns True for key-value pairs to keep
-            and False for key-value pairs to discard.
-
-    Returns:
-        The filtered dictionary.
-    """
     return {
         k: nfilter(v, condition) if isinstance(v, dict | list) else v
         for k, v in dictionary.items()
@@ -55,17 +48,6 @@ def _filter_dict(
 def _filter_list(
     lst: list[Any], condition: Callable[[Any], bool]
 ) -> list[Any]:
-    """
-    Filter elements in a list based on a condition.
-
-    Args:
-        lst: The list to filter.
-        condition: A function that returns True for elements to keep and
-            False for elements to discard.
-
-    Returns:
-        The filtered list.
-    """
     return [
         nfilter(item, condition) if isinstance(item, dict | list) else item
         for item in lst

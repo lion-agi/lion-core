@@ -19,25 +19,35 @@ async def ucall(
     error_map: dict[type, ErrorHandler] | None = None,
     **kwargs: Any,
 ) -> T:
-    """
-    Execute a function asynchronously with error handling.
+    """Execute a function asynchronously with error handling.
 
-    Checks if the given function is a coroutine. If not, forces it to run
-    asynchronously. Executes the function, ensuring proper handling of event
-    loops. If an error occurs, applies custom error handling based on the
-    provided error map.
+    Ensures asynchronous execution of both coroutine and regular functions,
+    managing event loops and applying custom error handling.
 
     Args:
-        func: The function to be executed.
-        *args: Positional arguments to pass to the function.
-        error_map: A dictionary mapping exception types to error handlers.
-        **kwargs: Additional keyword arguments to pass to the function.
+        func: The function to be executed (coroutine or regular).
+        *args: Positional arguments for the function.
+        error_map: Dict mapping exception types to error handlers.
+        **kwargs: Keyword arguments for the function.
 
     Returns:
-        The result of the function call.
+        T: The result of the function call.
 
     Raises:
-        Exception: Propagates any exception raised during function execution.
+        Exception: Any unhandled exception from the function execution.
+
+    Examples:
+        >>> async def example_func(x):
+        ...     return x * 2
+        >>> await ucall(example_func, 5)
+        10
+        >>> await ucall(lambda x: x + 1, 5)  # Non-coroutine function
+        6
+
+    Note:
+        - Automatically wraps non-coroutine functions for async execution.
+        - Manages event loop creation and closure when necessary.
+        - Applies custom error handling based on the provided error_map.
     """
     try:
         if not is_coroutine_func(func):

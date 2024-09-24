@@ -26,8 +26,9 @@ RULE_SYS_FIELDS = [
 
 
 class Rule(Element, Condition, Action):
-    base_config: dict = {}
-    info: Note = Field(default_factory=note)
+    base_config: dict | None = {}
+    info: Note | None = Field(default_factory=note)
+    status: str = Field(default="active")
     _is_init: bool = PrivateAttr(False)
 
     def __init__(
@@ -266,7 +267,7 @@ def prepare_info(
     for k, v in d_.items():
         if k not in RULE_SYS_FIELDS + accept_info_key:
             _d["validation_kwargs"] = _d.get("validation_kwargs", {})
-            _d["validation_kwargs"].update(v)
+            _d["validation_kwargs"].update({k: v})
         else:
             _d[k] = v
 

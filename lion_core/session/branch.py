@@ -19,7 +19,7 @@ from lion_core.generic.exchange import Exchange
 from lion_core.generic.note import Note
 from lion_core.generic.pile import Pile
 from lion_core.generic.progression import Progression, prog
-from lion_core.libs import is_same_dtype
+from lion_core.libs._helper import is_same_dtype
 from lion_core.session.base import BaseSession
 from lion_core.session.msg_handlers.create_msg import create_message
 from lion_core.session.msg_handlers.validate_msg import validate_message
@@ -43,6 +43,9 @@ class Branch(BaseSession, Traversal):
     tool_manager: ToolManager | None = Field(None)
     mailbox: Exchange | None = Field(None)
     progress: Progression | None = Field(None)
+    system: System | None = Field(None)
+    user: str | None = Field(None)
+    imodel: BaseiModel | None = Field(None)
 
     _converter_registry: ClassVar = BranchConverterRegistry
 
@@ -55,14 +58,14 @@ class Branch(BaseSession, Traversal):
             strict=False,
         )
         data["progress"] = prog(
-            data.pop(list(data["messages"]), []),
+            list(data.pop("messages", [])),
         )
         data["tool_manager"] = data.pop(
-            data["tool_manager"],
+            "tool_manager",
             ToolManager(),
         )
         data["mailbox"] = data.pop(
-            data["mailbox"],
+            "mailbox",
             Exchange(),
         )
         if "tools" in data:

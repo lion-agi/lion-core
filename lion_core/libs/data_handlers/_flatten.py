@@ -14,6 +14,41 @@ def flatten(
     coerce_sequence: Literal["dict", "list"] | None = None,
     max_depth: int | None = None,
 ) -> dict[tuple | str, Any] | None:
+    """Flatten a nested structure into a single-level dictionary.
+
+    Recursively traverses the input, creating keys that represent the path
+    to each value in the flattened result.
+
+    Args:
+        nested_structure: The nested structure to flatten.
+        parent_key: Base key for the current recursion level. Default: ().
+        sep: Separator for joining keys. Default: "|".
+        coerce_keys: Join keys into strings if True, keep as tuples if False.
+            Default: True.
+        dynamic: Handle sequences (except strings) dynamically if True.
+            Default: True.
+        coerce_sequence: Force sequences to be treated as dicts or lists.
+            Options: "dict", "list", or None. Default: None.
+        max_depth: Maximum depth to flatten. None for complete flattening.
+            Default: None.
+
+    Returns:
+        A flattened dictionary with keys as tuples or strings (based on
+        coerce_keys) representing the path to each value.
+
+    Raises:
+        ValueError: If coerce_sequence is "list" and coerce_keys is True.
+
+    Example:
+        >>> nested = {"a": 1, "b": {"c": 2, "d": [3, 4]}}
+        >>> flatten(nested)
+        {'a': 1, 'b|c': 2, 'b|d|0': 3, 'b|d|1': 4}
+
+    Note:
+        - Preserves order of keys in dicts and indices in sequences.
+        - With dynamic=True, treats sequences (except strings) as nestable.
+        - coerce_sequence allows forcing sequence handling for homogeneity.
+    """
 
     if coerce_keys and coerce_sequence == "list":
         raise ValueError(
