@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
-from lion_core.exceptions import LionTypeError, LionValueError
+from lionabc.exceptions import LionTypeError, LionValueError
 
 T = TypeVar("T")
 
