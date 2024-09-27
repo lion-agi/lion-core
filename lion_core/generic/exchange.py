@@ -1,10 +1,10 @@
 from typing import Literal
 
+from lionabc import Communicatable, Structure
+from lionabc.exceptions import ItemExistsError, LionValueError
 from pydantic import Field
 from typing_extensions import override
 
-from lion_core.abc import Communicatable, Structure
-from lion_core.exceptions import ItemExistsError, LionValueError
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import Progression, prog

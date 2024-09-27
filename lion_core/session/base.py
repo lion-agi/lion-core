@@ -1,8 +1,8 @@
 from typing import ClassVar
 
+from lionabc import AbstractSpace, BaseiModel
 from pydantic import Field, model_validator
 
-from lion_core.abc import AbstractSpace, BaseiModel
 from lion_core.communication.system import System
 from lion_core.generic.node import Node
 from lion_core.generic.pile import Pile

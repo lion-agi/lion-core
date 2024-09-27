@@ -108,7 +108,7 @@ Initialize a Pile instance.
 
 ```python
 from lion_core.generic.pile import Pile, pile
-from lion_core.abc import Observable
+from lionabc import Observable
 
 class MyItem(Observable):
     def __init__(self, value):

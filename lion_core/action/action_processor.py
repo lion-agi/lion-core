@@ -1,8 +1,8 @@
 import asyncio
 
+from lionabc import BaseProcessor, EventStatus
 from typing_extensions import override
 
-from lion_core.abc import BaseProcessor, EventStatus
 from lion_core.action.base import ObservableAction
 
 

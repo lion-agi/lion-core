@@ -2,14 +2,14 @@
 
 from typing import Any
 
+from lionabc import ImmutableRecord
+from lionabc.exceptions import LionAccessError
+from lionfuncs import to_dict
 from pydantic import Field, PrivateAttr, field_serializer
 from typing_extensions import Self
 
-from lion_core.abc import ImmutableRecord
-from lion_core.exceptions import LionAccessError
 from lion_core.generic.element import Element
 from lion_core.generic.note import Note
-from lion_core.libs import to_dict
 
 
 class Log(Element, ImmutableRecord):

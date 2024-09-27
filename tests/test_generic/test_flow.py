@@ -1,6 +1,6 @@
 import pytest
+from lionabc.exceptions import LionIDError
 
-from lion_core.exceptions import LionIDError
 from lion_core.generic.component import Component
 from lion_core.generic.flow import Flow
 from lion_core.generic.progression import prog

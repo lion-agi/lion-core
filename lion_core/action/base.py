@@ -1,11 +1,11 @@
 from typing import Any, NoReturn
 
+from lionabc import Action, EventStatus
+from lionabc.exceptions import LionAccessError
 from pydantic import PrivateAttr
 from typing_extensions import override
 
 from lion_core import event_log_manager
-from lion_core.abc import Action, EventStatus
-from lion_core.exceptions import LionAccessError
 from lion_core.generic.element import Element
 from lion_core.generic.log import Log
 from lion_core.setting import (

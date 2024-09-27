@@ -1,11 +1,11 @@
 from typing import Any
 
+from lionabc.exceptions import LionValueError
 from pydantic import Field, field_validator
 from typing_extensions import override
 
 from lion_core.communication.base_mail import BaseMail
 from lion_core.communication.package import Package, PackageCategory
-from lion_core.exceptions import LionValueError
 
 
 class Mail(BaseMail):

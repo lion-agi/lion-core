@@ -3,8 +3,8 @@ from collections import deque
 from unittest.mock import patch
 
 import pytest
+from lionabc import Observable
 
-from lion_core.abc import Observable
 from lion_core.communication.mail import Mail
 from lion_core.communication.mail_manager import MailManager
 from lion_core.communication.package import Package, PackageCategory

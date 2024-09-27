@@ -1,9 +1,9 @@
 from typing import Any, Literal
 
+from lionabc import Relational, Structure
+from lionabc.exceptions import ItemExistsError, LionRelationError
 from pydantic import Field, field_serializer
 
-from lion_core.abc import Relational, Structure
-from lion_core.exceptions import ItemExistsError, LionRelationError
 from lion_core.generic.node import Node
 from lion_core.generic.note import Note
 from lion_core.generic.pile import Pile, pile

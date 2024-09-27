@@ -1,12 +1,11 @@
 from collections.abc import ItemsView, Iterator, ValuesView
 from typing import Any
 
+from lionabc import Communicatable, Container
+from lionfuncs import LN_UNDEFINED, flatten, nget, ninsert, npop, nset, to_list
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from typing_extensions import override
 
-from lion_core.abc import Communicatable, Container
-from lion_core.libs import flatten, nget, ninsert, npop, nset, to_list
-from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 
 INDICE_TYPE = str | list[str | int]

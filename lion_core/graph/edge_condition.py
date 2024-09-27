@@ -1,8 +1,7 @@
 from typing import Any
 
+from lionabc import Condition
 from pydantic import BaseModel, ConfigDict, Field
-
-from lion_core.abc import Condition
 
 
 class EdgeCondition(BaseModel, Condition):

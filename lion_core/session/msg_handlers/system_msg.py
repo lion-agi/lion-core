@@ -1,8 +1,9 @@
 from typing import Any
 
+from lionfuncs import LN_UNDEFINED
+
 from lion_core.communication.message import MessageFlag
 from lion_core.communication.system import System
-from lion_core.setting import LN_UNDEFINED
 
 
 def handle_system(

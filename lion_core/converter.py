@@ -1,8 +1,9 @@
 import json
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
+from lionfuncs import to_dict
+
 from lion_core.generic.element import Element
-from lion_core.libs import to_dict
 
 T = TypeVar("T", bound=Element)
 
