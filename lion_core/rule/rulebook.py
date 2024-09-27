@@ -2,7 +2,7 @@ import inspect
 
 from lionabc import BaseRecord
 from lionabc.exceptions import LionTypeError, LionValueError
-from lionfuncs import to_dict
+from lionfuncs import copy, to_dict
 from pydantic import Field
 
 from lion_core.generic.element import Element
@@ -14,7 +14,6 @@ from lion_core.rule.default_rules._default import (
     DEFAULT_RULE_INFO,
     DEFAULT_RULEORDER,
 )
-from lion_core.sys_utils import SysUtil
 
 
 class RuleBook(Element, BaseRecord):
@@ -55,7 +54,7 @@ class RuleBook(Element, BaseRecord):
             rule = self.rules_info.get([rule, "rule"], None)
 
         if rule:
-            _info = SysUtil.copy(self.rules_info[rule.__name__])
+            _info = copy(self.rules_info[rule.__name__])
             _info.pop("rule")
             rule = rule(info=info or _info, **kwargs)
             rule._is_init = True

@@ -1,5 +1,6 @@
 from typing import Any
 
+from lionfuncs import time
 from typing_extensions import override
 
 from lion_core.communication.message import (
@@ -8,7 +9,6 @@ from lion_core.communication.message import (
     RoledMessage,
 )
 from lion_core.generic.note import Note
-from lion_core.sys_utils import SysUtil
 
 DEFAULT_SYSTEM = "You are a helpful AI assistant. Let's think step by step."
 
@@ -24,7 +24,7 @@ def format_system_content(
     if isinstance(system_datetime, str):
         return Note(system_info=f"{system_message}. Date: {system_datetime}")
     if system_datetime:
-        date = SysUtil.time(type_="iso", timespec="minutes")
+        date = time(type_="iso", timespec="minutes")
         return Note(system_info=f"{system_message}. System Date: {date}")
 
 

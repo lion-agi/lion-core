@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Any
 
 from lionabc import Relational
+from lionfuncs import copy
 from pydantic import Field, field_validator
 from typing_extensions import override
 
@@ -11,7 +12,6 @@ from lion_core.communication.base_mail import BaseMail
 from lion_core.generic.component import Component
 from lion_core.generic.log import Log
 from lion_core.generic.note import Note
-from lion_core.sys_utils import SysUtil
 
 
 class MessageField(str, Enum):
@@ -104,7 +104,7 @@ class RoledMessage(Relational, Component, BaseMail):
     @classmethod
     def from_dict(cls, data: dict, /, **kwargs: Any) -> "RoledMessage":
         """Loads a RoledMessage object from a dictionary."""
-        data = SysUtil.copy(data)
+        data = copy(data)
         if "lion_class" in data:
             cls = get_class(data.pop("lion_class"))
         signature = inspect.signature(cls.__init__)
