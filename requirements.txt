@@ -1,2 +1,0 @@
-lionfuncs==1.0.1
-lionabc==1.0.1
