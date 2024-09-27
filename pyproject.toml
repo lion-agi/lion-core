@@ -2,8 +2,18 @@
 name = "lion-core"
 version = "0.3.3"
 description = "A core package for the Lion framework."
-authors = ["HaiyangLi <quantocean.li@gmail.com>"]
+authors = [
+    {name = "Haiyang Li", email = "quantocean.li@gmail.com"},
+]
 readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
