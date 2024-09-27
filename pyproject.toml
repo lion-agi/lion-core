@@ -1,13 +1,7 @@
 license = {file = "LICENSE"}
-
-[tool.poetry]
-name = "lion-core"
-version = "0.3.3"
-description = "A core package for the Lion framework."
 authors = [
     {name = "Haiyang Li", email = "quantocean.li@gmail.com"},
 ]
-readme = "README.md"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -15,6 +9,13 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
 ]
+
+[tool.poetry]
+name = "lion-core"
+version = "0.3.3"
+description = "A core package for the Lion framework."
+readme = "README.md"
+
 
 [tool.poetry.dependencies]
 python = "^3.10"
