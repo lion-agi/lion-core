@@ -1,6 +1,7 @@
 from collections.abc import Mapping
 from typing import Any
 
+from lionfuncs import validate_mapping
 from typing_extensions import override
 
 from lion_core.exceptions import (
@@ -8,7 +9,6 @@ from lion_core.exceptions import (
     LionTypeError,
     LionValueError,
 )
-from lion_core.libs import validate_mapping
 from lion_core.rule.default_rules.choice import ChoiceRule
 
 

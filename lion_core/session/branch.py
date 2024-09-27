@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from typing import Any, ClassVar, Literal
 
+from lionfuncs import is_same_dtype
 from pydantic import Field, model_validator
 from typing_extensions import override
 
@@ -19,7 +20,6 @@ from lion_core.generic.exchange import Exchange
 from lion_core.generic.note import Note
 from lion_core.generic.pile import Pile
 from lion_core.generic.progression import Progression, prog
-from lion_core.libs._helper import is_same_dtype
 from lion_core.session.base import BaseSession
 from lion_core.session.msg_handlers.create_msg import create_message
 from lion_core.session.msg_handlers.validate_msg import validate_message

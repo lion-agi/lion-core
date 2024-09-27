@@ -1,6 +1,7 @@
+from lionfuncs import to_dict
+
 from lion_core.communication.action_request import ActionRequest
 from lion_core.generic.note import note
-from lion_core.libs import to_dict
 from lion_core.session.msg_handlers.extract_request import (
     extract_action_request,
     extract_request_from_content_code_block,

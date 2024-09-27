@@ -1,5 +1,6 @@
 import inspect
 
+from lionfuncs import to_dict
 from pydantic import Field
 
 from lion_core.abc import BaseRecord
@@ -8,7 +9,6 @@ from lion_core.generic.element import Element
 from lion_core.generic.flow import Flow, flow
 from lion_core.generic.note import Note, note
 from lion_core.generic.pile import Pile, pile
-from lion_core.libs import to_dict
 from lion_core.rule.base import Rule
 from lion_core.rule.default_rules._default import (
     DEFAULT_RULE_INFO,
