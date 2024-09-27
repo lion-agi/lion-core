@@ -3,11 +3,11 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any, Literal
 
+from lionfuncs import function_to_schema, to_list
 from pydantic import Field, field_serializer, field_validator
 from typing_extensions import override
 
 from lion_core.generic.element import Element
-from lion_core.libs import function_to_schema, to_list
 
 
 class Tool(Element):

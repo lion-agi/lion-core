@@ -1,7 +1,7 @@
 import os
 from typing import TypeVar
 
-from lion_core.libs._helper import get_class_file_registry, get_class_objects
+from lionfuncs import get_class_file_registry, get_class_objects
 
 T = TypeVar("T")
 LION_CLASS_REGISTRY: dict[str, type[T]] = {}

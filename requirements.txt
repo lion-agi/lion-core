@@ -1,1 +1,2 @@
 pydantic >= 2.0.0
+lionfuncs==1.0.1
