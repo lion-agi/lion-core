@@ -2,6 +2,7 @@ from typing import Any
 
 from lionabc import BaseiModel
 from lionabc.exceptions import ItemNotFoundError, LionValueError
+from lionfuncs import LN_UNDEFINED
 from pydantic import Field, PrivateAttr
 
 from lion_core.action.tool_manager import ToolManager
@@ -14,7 +15,6 @@ from lion_core.generic.progression import Progression, prog
 from lion_core.generic.utils import to_list_type
 from lion_core.session.base import BaseSession
 from lion_core.session.branch import Branch
-from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 
 

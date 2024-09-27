@@ -2,6 +2,7 @@ import inspect
 from typing import Any, Literal
 
 from lionabc.exceptions import LionValueError
+from lionfuncs import LN_UNDEFINED
 from pydantic import Field, model_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
@@ -11,7 +12,6 @@ from lion_core.form.base import BaseForm
 from lion_core.form.utils import ERR_MAP, get_input_output_fields
 from lion_core.generic.component import T
 from lion_core.generic.note import Note
-from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 
 

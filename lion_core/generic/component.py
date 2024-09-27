@@ -3,6 +3,7 @@ from functools import singledispatchmethod
 from typing import Annotated, Any, ClassVar, TypeVar
 
 from lionabc.exceptions import LionValueError
+from lionfuncs import LN_UNDEFINED
 from pydantic import Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
@@ -13,7 +14,6 @@ from lion_core.converter import Converter
 from lion_core.generic.component_converter import ComponentConverterRegistry
 from lion_core.generic.element import Element
 from lion_core.generic.note import Note
-from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 
 T = TypeVar("T", bound=Element)

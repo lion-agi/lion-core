@@ -19,14 +19,13 @@ from lionabc.exceptions import (
     LionTypeError,
     LionValueError,
 )
-from lionfuncs import to_list
+from lionfuncs import LN_UNDEFINED, to_list
 from pydantic import Field, field_serializer
 from typing_extensions import Self, override
 
 from lion_core.generic.element import Element
 from lion_core.generic.progression import Progression, prog
 from lion_core.generic.utils import to_list_type, validate_order
-from lion_core.setting import LN_UNDEFINED
 from lion_core.sys_utils import SysUtil
 
 T = TypeVar("T", bound=Observable)

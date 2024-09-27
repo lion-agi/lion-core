@@ -1,29 +1,9 @@
 from datetime import timezone
 from enum import Enum
-from typing import Any, Literal
+from typing import Any
 
+from lionfuncs import LN_UNDEFINED, LionUndefinedType
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import Self
-
-
-class LionUndefinedType:
-    def __init__(self) -> None:
-        self.undefined = True
-
-    def __bool__(self) -> Literal[False]:
-        return False
-
-    def __deepcopy__(self, memo) -> Self:
-        # Ensure LN_UNDEFINED is universal
-        return self
-
-    def __repr__(self) -> Literal["LN_UNDEFINED"]:
-        return "LN_UNDEFINED"
-
-    __slots__ = ["undefined"]
-
-
-LN_UNDEFINED = LionUndefinedType()
 
 
 class SchemaModel(BaseModel):
@@ -42,7 +22,7 @@ class SchemaModel(BaseModel):
         return dict_
 
     @classmethod
-    def from_dict(cls, **data) -> Self:
+    def from_dict(cls, **data):
         return cls(**data)
 
     @classmethod

@@ -1,11 +1,11 @@
 from lionabc.exceptions import LionValueError
+from lionfuncs import LN_UNDEFINED
 from pydantic import Field
 
 from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
 from lion_core.form.utils import ERR_MAP
 from lion_core.generic.pile import Pile
-from lion_core.setting import LN_UNDEFINED
 
 
 class Report(BaseForm):
