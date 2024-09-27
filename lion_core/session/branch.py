@@ -1,11 +1,11 @@
 from collections.abc import Callable
 from typing import Any, ClassVar, Literal
 
+from lionabc import BaseiModel, Traversal
 from lionfuncs import is_same_dtype
 from pydantic import Field, model_validator
 from typing_extensions import override
 
-from lion_core.abc import BaseiModel, Traversal
 from lion_core.action import Tool, ToolManager
 from lion_core.communication.action_request import ActionRequest
 from lion_core.communication.action_response import ActionResponse

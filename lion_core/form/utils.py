@@ -1,8 +1,9 @@
-from lion_core.exceptions import (
+from lionabc.exceptions import (
     LionOperationError,
     LionTypeError,
     LionValueError,
 )
+
 from lion_core.generic.note import note
 
 RESTRICTED_FIELDS = {

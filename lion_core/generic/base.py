@@ -1,9 +1,8 @@
 from typing import Any
 
+from lionabc import AbstractElement, Real
 from pydantic import BaseModel, Field
 
-from lion_core.abc._characteristic import Real
-from lion_core.abc._concept import AbstractElement
 from lion_core.sys_utils import SysUtil
 
 

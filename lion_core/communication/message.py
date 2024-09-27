@@ -2,11 +2,11 @@ import inspect
 from enum import Enum
 from typing import Any
 
+from lionabc import Relational
 from pydantic import Field, field_validator
 from typing_extensions import override
 
 from lion_core._class_registry import get_class
-from lion_core.abc import Relational
 from lion_core.communication.base_mail import BaseMail
 from lion_core.generic.component import Component
 from lion_core.generic.log import Log

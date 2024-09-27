@@ -1,10 +1,10 @@
 import inspect
 
+from lionabc import BaseRecord
+from lionabc.exceptions import LionTypeError, LionValueError
 from lionfuncs import to_dict
 from pydantic import Field
 
-from lion_core.abc import BaseRecord
-from lion_core.exceptions import LionTypeError, LionValueError
 from lion_core.generic.element import Element
 from lion_core.generic.flow import Flow, flow
 from lion_core.generic.note import Note, note

@@ -2,9 +2,9 @@ from collections.abc import Callable
 from functools import singledispatchmethod
 from typing import Any
 
+from lionabc import BaseManager
 from lionfuncs import to_dict, to_list
 
-from lion_core.abc import BaseManager
 from lion_core.action.function_calling import FunctionCalling
 from lion_core.action.tool import Tool, func_to_tool
 from lion_core.communication.action_request import ActionRequest

@@ -6,12 +6,8 @@ import time
 from typing import Any, List
 
 import pytest
+from lionabc.exceptions import ItemNotFoundError, LionTypeError, LionValueError
 
-from lion_core.exceptions import (
-    ItemNotFoundError,
-    LionTypeError,
-    LionValueError,
-)
 from lion_core.generic.component import Component
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
@@ -308,13 +304,13 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Dict, List
 
 import pytest
-
-from lion_core.exceptions import (
+from lionabc.exceptions import (
     ItemExistsError,
     ItemNotFoundError,
     LionTypeError,
     LionValueError,
 )
+
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
 from lion_core.generic.progression import Progression

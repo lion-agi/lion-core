@@ -1,7 +1,8 @@
 from enum import Enum
 from typing import Any
 
-from lion_core.abc import Real
+from lionabc import Real
+
 from lion_core.sys_utils import SysUtil
 
 

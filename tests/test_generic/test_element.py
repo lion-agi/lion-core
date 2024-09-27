@@ -2,9 +2,9 @@ import time
 from datetime import datetime, timezone
 
 import pytest
+from lionabc.exceptions import LionIDError
 from pydantic_core._pydantic_core import ValidationError
 
-from lion_core.exceptions import LionIDError
 from lion_core.generic.element import Element
 from lion_core.sys_utils import SysUtil
 

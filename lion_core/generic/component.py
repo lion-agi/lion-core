@@ -2,6 +2,7 @@ from collections import deque
 from functools import singledispatchmethod
 from typing import Annotated, Any, ClassVar, TypeVar
 
+from lionabc.exceptions import LionValueError
 from pydantic import Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
@@ -9,7 +10,6 @@ from typing_extensions import override
 
 from lion_core._class_registry import get_class
 from lion_core.converter import Converter
-from lion_core.exceptions import LionValueError
 from lion_core.generic.component_converter import ComponentConverterRegistry
 from lion_core.generic.element import Element
 from lion_core.generic.note import Note

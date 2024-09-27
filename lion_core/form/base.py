@@ -1,10 +1,10 @@
 from typing import Any, Literal
 
+from lionabc import MutableRecord
+from lionabc.exceptions import LionValueError
 from pydantic import Field, field_validator
 from pydantic_core import PydanticUndefined
 
-from lion_core.abc import MutableRecord
-from lion_core.exceptions import LionValueError
 from lion_core.form.utils import ERR_MAP
 from lion_core.generic.component import Component
 from lion_core.setting import LN_UNDEFINED

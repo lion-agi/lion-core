@@ -4,9 +4,9 @@ import string
 from typing import Any
 
 import pytest
+from lionabc.exceptions import ItemNotFoundError
 from pydantic import Field
 
-from lion_core.exceptions import ItemNotFoundError
 from lion_core.generic.element import Element
 from lion_core.generic.progression import Progression
 from lion_core.sys_utils import SysUtil

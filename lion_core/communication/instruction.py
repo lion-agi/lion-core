@@ -1,6 +1,7 @@
 import inspect
 from typing import Any, Literal
 
+from lionabc.exceptions import LionTypeError
 from typing_extensions import override
 
 from lion_core.communication.message import (
@@ -8,7 +9,6 @@ from lion_core.communication.message import (
     MessageRole,
     RoledMessage,
 )
-from lion_core.exceptions import LionTypeError
 from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
 from lion_core.generic.note import Note, note

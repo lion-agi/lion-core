@@ -1,12 +1,12 @@
 from typing import Any
 
+from lionabc import BaseiModel
+from lionabc.exceptions import ItemNotFoundError, LionValueError
 from pydantic import Field, PrivateAttr
 
-from lion_core.abc import BaseiModel
 from lion_core.action.tool_manager import ToolManager
 from lion_core.communication.mail_manager import MailManager
 from lion_core.communication.message import RoledMessage
-from lion_core.exceptions import ItemNotFoundError, LionValueError
 from lion_core.generic.exchange import Exchange
 from lion_core.generic.flow import Flow
 from lion_core.generic.pile import Pile, pile
