@@ -2,11 +2,18 @@ from collections.abc import ItemsView, Iterator, ValuesView
 from typing import Any
 
 from lionabc import Communicatable, Container
-from lionfuncs import LN_UNDEFINED, flatten, nget, ninsert, npop, nset, to_list
+from lionfuncs import (
+    LN_UNDEFINED,
+    copy,
+    flatten,
+    nget,
+    ninsert,
+    npop,
+    nset,
+    to_list,
+)
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from typing_extensions import override
-
-from lion_core.sys_utils import SysUtil
 
 INDICE_TYPE = str | list[str | int]
 
@@ -31,7 +38,7 @@ class Note(BaseModel, Container):
     def _serialize_content(self, value: Any) -> dict[str, Any]:
         """Serialize the content"""
 
-        output_dict = SysUtil.copy(value, deep=True)
+        output_dict = copy(value, deep=True)
         origin_obj = output_dict.pop("clone_from", None)
 
         if origin_obj and isinstance(origin_obj, Communicatable):

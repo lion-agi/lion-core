@@ -2,7 +2,7 @@ import inspect
 from typing import Any, Literal
 
 from lionabc.exceptions import LionValueError
-from lionfuncs import LN_UNDEFINED
+from lionfuncs import LN_UNDEFINED, copy
 from pydantic import Field, model_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
@@ -12,7 +12,6 @@ from lion_core.form.base import BaseForm
 from lion_core.form.utils import ERR_MAP, get_input_output_fields
 from lion_core.generic.component import T
 from lion_core.generic.note import Note
-from lion_core.sys_utils import SysUtil
 
 
 class Form(BaseForm):
@@ -410,7 +409,7 @@ class Form(BaseForm):
         Returns:
             The created Form instance.
         """
-        input_data = SysUtil.copy(data)
+        input_data = copy(data)
 
         input_data.pop("lion_class", None)
         input_data.pop("input_fields", None)
@@ -426,7 +425,7 @@ class Form(BaseForm):
         for k, v in extra_fields.items():
             obj.update_field(field_name=k, value=v)
 
-        metadata = SysUtil.copy(data.get("metadata", {}))
+        metadata = copy(data.get("metadata", {}))
         last_updated = metadata.get("last_updated", None)
         if last_updated is not None:
             obj.metadata.set(["last_updated"], last_updated)
@@ -457,14 +456,14 @@ class Form(BaseForm):
                     continue
                 value = value_kwargs.get(i, LN_UNDEFINED)
                 if value is LN_UNDEFINED:
-                    value = SysUtil.copy(getattr(form, i, LN_UNDEFINED))
+                    value = copy(getattr(form, i, LN_UNDEFINED))
                 if value is not LN_UNDEFINED:
                     setattr(self, i, value)
             else:
                 if getattr(self, i) in [LN_UNDEFINED, None]:
                     value = value_kwargs.get(i)
                     if value in [LN_UNDEFINED, None]:
-                        value = SysUtil.copy(getattr(form, i, LN_UNDEFINED))
+                        value = copy(getattr(form, i, LN_UNDEFINED))
                     if value not in [LN_UNDEFINED, None]:
                         setattr(self, i, value)
 
@@ -491,14 +490,14 @@ class Form(BaseForm):
                     continue
                 value = value_kwargs.get(i, LN_UNDEFINED)
                 if value is LN_UNDEFINED:
-                    value = SysUtil.copy(getattr(form, i, LN_UNDEFINED))
+                    value = copy(getattr(form, i, LN_UNDEFINED))
                 if value is not LN_UNDEFINED:
                     setattr(self, i, value)
             else:
                 if getattr(self, i) in [LN_UNDEFINED, None]:
                     value = value_kwargs.get(i)
                     if value in [LN_UNDEFINED, None]:
-                        value = SysUtil.copy(getattr(form, i, LN_UNDEFINED))
+                        value = copy(getattr(form, i, LN_UNDEFINED))
                     if value not in [LN_UNDEFINED, None]:
                         setattr(self, i, value)
 
@@ -555,7 +554,7 @@ class Form(BaseForm):
                     "Cannot provide output_fields and "
                     "same_form_output_fields at the same time."
                 )
-            output_fields = SysUtil.copy(form.output_fields)
+            output_fields = copy(form.output_fields)
 
         if not assignment:
             if not getattr(form, "assignment", None):

@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Any
 
 from lionabc import Real
+from lionfuncs import time
 
 from lion_core.sys_utils import SysUtil
 
@@ -53,7 +54,7 @@ class Package(Real):
             ValueError: If the category is invalid or None.
         """
         self.ln_id = SysUtil.id()
-        self.timestamp = SysUtil.time(type_="timestamp")
+        self.timestamp = time(type_="timestamp")
         self.request_source = request_source
         self.category = validate_category(category)
         self.package = package

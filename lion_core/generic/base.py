@@ -1,6 +1,7 @@
 from typing import Any
 
 from lionabc import AbstractElement, Real
+from lionfuncs import time
 from pydantic import BaseModel, Field
 
 from lion_core.sys_utils import SysUtil
@@ -17,7 +18,7 @@ class RealElement(BaseModel, AbstractElement, Real):
     )
 
     timestamp: float = Field(
-        default_factory=lambda: SysUtil.time(type_="timestamp"),
+        default_factory=lambda: time(type_="timestamp"),
         title="Creation Timestamp",
         frozen=True,
         alias="created",

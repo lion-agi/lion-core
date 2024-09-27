@@ -3,7 +3,7 @@ from functools import singledispatchmethod
 from typing import Annotated, Any, ClassVar, TypeVar
 
 from lionabc.exceptions import LionValueError
-from lionfuncs import LN_UNDEFINED
+from lionfuncs import LN_UNDEFINED, copy, time
 from pydantic import Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
@@ -14,7 +14,6 @@ from lion_core.converter import Converter
 from lion_core.generic.component_converter import ComponentConverterRegistry
 from lion_core.generic.element import Element
 from lion_core.generic.note import Note
-from lion_core.sys_utils import SysUtil
 
 T = TypeVar("T", bound=Element)
 
@@ -198,7 +197,7 @@ class Component(Element):
         self._add_last_update(field_name)
 
     def _add_last_update(self, field_name: str, /) -> None:
-        current_time = SysUtil.time()
+        current_time = time()
         self.metadata.set(["last_updated", field_name], current_time)
 
     @override
@@ -238,7 +237,7 @@ class Component(Element):
         Returns:
             T: An instance of the Component class or its subclass.
         """
-        input_data = SysUtil.copy(data)
+        input_data = copy(data)
         if "lion_class" in input_data:
             cls = get_class(input_data.pop("lion_class"))
         if cls.from_dict.__func__ != Component.from_dict.__func__:
@@ -252,7 +251,7 @@ class Component(Element):
         for k, v in extra_fields.items():
             obj.update_field(k, value=v)
 
-        metadata = SysUtil.copy(data.get("metadata", {}))
+        metadata = copy(data.get("metadata", {}))
         last_updated = metadata.get("last_updated", None)
         if last_updated is not None:
             obj.metadata.set(["last_updated"], last_updated)

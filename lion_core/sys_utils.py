@@ -1,113 +1,20 @@
-import copy
 import os
 from collections.abc import Sequence
-from datetime import datetime, timezone
 from hashlib import sha256
-from typing import Literal, TypeVar
+from typing import TypeVar
 
 from lionabc import Observable
 from lionabc.exceptions import LionIDError
-from lionfuncs import insert_random_hyphens
+from lionfuncs import insert_random_hyphens, time
 
-from lion_core.setting import (
-    DEFAULT_LION_ID_CONFIG,
-    DEFAULT_TIMEZONE,
-    LionIDConfig,
-)
+from lion_core.setting import DEFAULT_LION_ID_CONFIG, LionIDConfig
 
 T = TypeVar("T")
 
 
 class SysUtil:
-    """Utility class providing various system-related functionalities."""
 
     @staticmethod
-    def time(
-        *,
-        tz: timezone = DEFAULT_TIMEZONE,
-        type_: Literal["timestamp", "datetime", "iso", "custom"] = "timestamp",
-        sep: str | None = "T",
-        timespec: str | None = "auto",
-        custom_format: str | None = None,
-        custom_sep: str | None = None,
-    ) -> float | str | datetime:
-        """
-        Get current time in various formats.
-
-        Args:
-            tz: Timezone for the time (default: utc).
-            type_: Type of time to return (default: "timestamp").
-                Options: "timestamp", "datetime", "iso", "custom".
-            sep: Separator for ISO format (default: "T").
-            timespec: Timespec for ISO format (default: "auto").
-            custom_format: Custom strftime format string for
-                type_="custom".
-            custom_sep: Custom separator for type_="custom",
-                replaces "-", ":", ".".
-
-        Returns:
-            Current time in the specified format.
-
-        Raises:
-            ValueError: If an invalid type_ is provided or if custom_format
-                is not provided when type_="custom".
-        """
-        now = datetime.now(tz=tz)
-
-        match type_:
-            case "iso":
-                return now.isoformat(sep=sep, timespec=timespec)
-
-            case "timestamp":
-                return now.timestamp()
-
-            case "datetime":
-                return now
-
-            case "custom":
-                if not custom_format:
-                    raise ValueError(
-                        "custom_format must be provided when type_='custom'"
-                    )
-                formatted_time = now.strftime(custom_format)
-                if custom_sep is not None:
-                    for old_sep in ("-", ":", "."):
-                        formatted_time = formatted_time.replace(
-                            old_sep, custom_sep
-                        )
-                return formatted_time
-
-            case _:
-                raise ValueError(
-                    f"Invalid value <{type_}> for `type_`, must be"
-                    " one of 'timestamp', 'datetime', 'iso', or 'custom'."
-                )
-
-    @staticmethod
-    def copy(obj: T, /, *, deep: bool = True, num: int = 1) -> T | list[T]:
-        """
-        Create one or more copies of an object.
-
-        Args:
-            obj: The object to be copied.
-            deep: If True, create a deep copy. Otherwise, create a shallow
-                copy.
-            num: The number of copies to create.
-
-        Returns:
-            A single copy if num is 1, otherwise a list of copies.
-
-        Raises:
-            ValueError: If num is less than 1.
-        """
-        if num < 1:
-            raise ValueError("Number of copies must be at least 1")
-
-        copy_func = copy.deepcopy if deep else copy.copy
-        return (
-            [copy_func(obj) for _ in range(num)] if num > 1 else copy_func(obj)
-        )
-
     def id(
         config: LionIDConfig = DEFAULT_LION_ID_CONFIG,
         n: int = None,
@@ -157,7 +64,7 @@ class SysUtil:
         Returns:
             A unique identifier string.
         """
-        _t = SysUtil.time(type_="iso").encode()
+        _t = time(type_="iso").encode()
         _r = os.urandom(16)
         _id = sha256(_t + _r).hexdigest()[:n]
 
