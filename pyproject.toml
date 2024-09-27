@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "typing_extensions>=4.0.0",
-    "lionfuncs==1.0.1",
+    "lionfuncs==1.0.2",
     "lionabc==1.0.1",
 ]
 dynamic = ["version"]
