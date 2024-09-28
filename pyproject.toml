@@ -9,14 +9,14 @@ classifiers = [
 
 [tool.poetry]
 name = "lion-core"
-version = "0.3.4"
+version = "0.3.5"
 description = "A core package for the Lion framework."
 authors = ["HaiyangLi <quantocean.li@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-lionfuncs = "^1.0.2"
+lionfuncs = "1.0.3"
 lionabc = "^1.0.1"
 
 
