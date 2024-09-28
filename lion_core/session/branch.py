@@ -290,23 +290,23 @@ class Branch(BaseSession, Traversal):
     @classmethod
     def convert_from(
         cls,
-        object_: Any,
-        object_key: str,
+        obj: Any,
+        obj_key: str,
         **kwargs,
     ) -> "Branch":
-        p = cls.get_converter_registry().convert_from(
+        p = cls._get_converter_registry().convert_from(
             subject_class=cls,
-            object_=object_,
-            object_key=object_key,
+            object_=obj,
+            object_key=obj_key,
             **kwargs,
         )
         return cls(messages=p, **kwargs)
 
     @override
-    def convert_to(self, object_key: str, /, **kwargs: Any) -> Any:
-        return self.get_converter_registry().convert_to(
-            subject=self,
-            object_key=object_key,
+    def convert_to(self, obj_key: str, /, **kwargs: Any) -> Any:
+        return self._get_converter_registry().convert_to(
+            self,
+            obj_key,
             **kwargs,
         )
 

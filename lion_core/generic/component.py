@@ -368,36 +368,37 @@ class Component(Element):
 
     # converter methods
     @classmethod
-    def get_converter_registry(cls) -> ComponentConverterRegistry:
+    def _get_converter_registry(cls) -> ComponentConverterRegistry:
         """Get the converter registry for the class."""
         if isinstance(cls._converter_registry, type):
             cls._converter_registry = cls._converter_registry()
         return cls._converter_registry
 
-    def convert_to(self, object_key: str, /, **kwargs: Any) -> Any:
+    def convert_to(self, obj_key: str, /, **kwargs: Any) -> Any:
         """Convert the component to a specified type"""
-        return self.get_converter_registry().convert_to(
-            subject=self,
-            object_key=object_key,
+        return self._get_converter_registry().convert_to(
+            self,
+            obj_key,
             **kwargs,
         )
 
     @classmethod
     def convert_from(
-        cls, object_: Any, object_key: str = None, /, **kwargs: Any
+        cls, obj: Any, obj_key: str = None, /, **kwargs: Any
     ) -> T:
         """Convert data to create a new component instance"""
-        data = cls.get_converter_registry().convert_from(
-            subject_class=cls,
-            object_=object_,
-            object_key=object_key,
+        data = cls._get_converter_registry().convert_from(
+            cls,
+            obj,
+            obj_key,
+            **kwargs,
         )
-        return cls.from_dict(data, **kwargs)
+        return cls.from_dict(data)
 
     @classmethod
     def register_converter(cls, converter: type[Converter]) -> None:
         """Register a new converter."""
-        cls.get_converter_registry().register(converter=converter)
+        cls._get_converter_registry().register(converter)
 
     # field management methods
     def field_setattr(
