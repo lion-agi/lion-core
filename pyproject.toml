@@ -9,7 +9,7 @@ classifiers = [
 
 [tool.poetry]
 name = "lion-core"
-version = "0.3.7"
+version = "0.3.8"
 description = "A core package for the Lion framework."
 authors = ["HaiyangLi <quantocean.li@gmail.com>"]
 readme = "README.md"
