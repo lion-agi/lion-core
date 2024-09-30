@@ -7,7 +7,7 @@ from typing_extensions import override
 
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
-from lion_core.generic.progression import Progression, prog
+from lion_core.generic.progression import Progression, progression
 
 
 class Exchange(Element, Structure):
@@ -35,7 +35,7 @@ class Exchange(Element, Structure):
     )
 
     pending_outs: Progression = Field(
-        default_factory=lambda: prog(),
+        default_factory=lambda: progression(),
         description="The pending outgoing items to the exchange.",
         title="pending outgoing items",
     )

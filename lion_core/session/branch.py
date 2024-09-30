@@ -19,7 +19,7 @@ from lion_core.converter import ConverterRegistry
 from lion_core.generic.exchange import Exchange
 from lion_core.generic.note import Note
 from lion_core.generic.pile import Pile
-from lion_core.generic.progression import Progression, prog
+from lion_core.generic.progression import Progression, progression
 from lion_core.session.base import BaseSession
 from lion_core.session.msg_handlers.create_msg import create_message
 from lion_core.session.msg_handlers.validate_msg import validate_message
@@ -57,7 +57,7 @@ class Branch(BaseSession, Traversal):
             {RoledMessage},
             strict=False,
         )
-        data["progress"] = prog(
+        data["progress"] = progression(
             list(data.pop("messages", [])),
         )
         data["tool_manager"] = data.pop(
@@ -243,7 +243,7 @@ class Branch(BaseSession, Traversal):
             ValueError: If the sender does not exist or the mail category
                 is invalid.
         """
-        skipped_requests = prog()
+        skipped_requests = progression()
         if sender not in self.mailbox.pending_ins.keys():
             raise ValueError(f"No package from {sender}")
         while self.mailbox.pending_ins[sender].size() > 0:

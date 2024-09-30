@@ -250,7 +250,7 @@ class Progression(Element, Ordering):
         return hash(self.ln_id)
 
 
-def prog(
+def progression(
     order: Any = None,
     name: str | None = None,
     /,

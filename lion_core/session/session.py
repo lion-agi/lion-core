@@ -11,7 +11,7 @@ from lion_core.communication.message import RoledMessage
 from lion_core.generic.exchange import Exchange
 from lion_core.generic.flow import Flow
 from lion_core.generic.pile import Pile, pile
-from lion_core.generic.progression import Progression, prog
+from lion_core.generic.progression import Progression, progression
 from lion_core.generic.utils import to_list_type
 from lion_core.session.base import BaseSession
 from lion_core.session.branch import Branch
@@ -120,8 +120,8 @@ class Session(BaseSession):
         system = branch.system.clone() if branch.system else None
         if system:
             system.sender = branch.ln_id
-        progress = prog()
-        messages = pile({}, RoledMessage, strict=False)
+        progress = progression()
+        messages = pile({}, RoledMessage, strict_type=False)
 
         for id_ in branch.progress:
             clone_message: RoledMessage = branch.messages[id_].clone()

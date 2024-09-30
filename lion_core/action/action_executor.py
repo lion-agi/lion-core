@@ -7,7 +7,7 @@ from typing_extensions import override
 from lion_core.action.action_processor import ActionProcessor
 from lion_core.action.base import ObservableAction
 from lion_core.generic.pile import Pile, pile
-from lion_core.generic.progression import Progression, prog
+from lion_core.generic.progression import Progression, progression
 
 
 class ActionExecutor(BaseExecutor):
@@ -38,9 +38,9 @@ class ActionExecutor(BaseExecutor):
         super().__init__(**kwargs)
         self.pile: Pile[ObservableAction] = pile(
             item_type={self.processor_class.event_type},
-            strict=self.strict,
+            strict_type=self.strict,
         )
-        self.pending: Progression = prog()
+        self.pending: Progression = progression()
         self.processor: ActionProcessor = None
 
     @property

@@ -3,11 +3,11 @@ from lionabc.exceptions import LionIDError
 
 from lion_core.generic.component import Component
 from lion_core.generic.flow import Flow
-from lion_core.generic.progression import prog
+from lion_core.generic.progression import progression
 from lion_core.sys_utils import SysUtil
 
 sample_progressions = [
-    prog([Component(content=i) for i in range(3)], f"prog_{j}")
+    progression([Component(content=i) for i in range(3)], f"prog_{j}")
     for j in range(3)
 ]
 
@@ -17,7 +17,7 @@ sample_flow = Flow(progressions=sample_progressions, default_name="main")
 def test_flow_with_generator_input():
     def gen_progressions():
         for i in range(5):
-            yield prog(
+            yield progression(
                 [Component(content=j) for j in range(i)], f"gen_prog_{i}"
             )
 
@@ -37,7 +37,7 @@ def test_flow_performance_scaling(n_progs, prog_size):
 
     large_flow = Flow(
         progressions=[
-            prog(
+            progression(
                 [Component(content=i) for i in range(prog_size)],
                 f"perf_prog_{j}",
             )
@@ -60,15 +60,17 @@ def test_flow_performance_scaling(n_progs, prog_size):
 
 @pytest.mark.parametrize("op", ["union", "intersection", "difference"])
 def test_flow_set_operations(op):
-    flow1 = Flow([prog([Component(content=i) for i in range(5)], "set_op_1")])
+    flow1 = Flow(
+        [progression([Component(content=i) for i in range(5)], "set_op_1")]
+    )
     flow2 = Flow(
-        [prog([Component(content=i) for i in range(3, 8)], "set_op_2")]
+        [progression([Component(content=i) for i in range(3, 8)], "set_op_2")]
     )
 
     if op == "union":
         result = Flow(
             [
-                prog(
+                progression(
                     set(flow1["set_op_1"]) | set(flow2["set_op_2"]),
                     "union",
                 )
@@ -78,7 +80,7 @@ def test_flow_set_operations(op):
     elif op == "intersection":
         result = Flow(
             [
-                prog(
+                progression(
                     set(flow1["set_op_1"]) & set(flow2["set_op_2"]),
                     "intersection",
                 )
@@ -88,7 +90,7 @@ def test_flow_set_operations(op):
     elif op == "difference":
         result = Flow(
             [
-                prog(
+                progression(
                     set(flow1["set_op_1"]) - set(flow2["set_op_2"]),
                     "difference",
                 )
@@ -109,14 +111,17 @@ def test_sys_util_get_id_with_invalid_input():
 
 def test_flow_with_proper_id_handling():
     flow = Flow(
-        progressions=[prog([], "test_prog_1"), prog([], "test_prog_2")]
+        progressions=[
+            progression([], "test_prog_1"),
+            progression([], "test_prog_2"),
+        ]
     )
     assert SysUtil.is_id(flow.registry["test_prog_1"])
     assert SysUtil.is_id(flow.registry["test_prog_2"])
 
 
 def test_flow_add_element_with_id():
-    flow = Flow([prog([], "test_prog")])
+    flow = Flow([progression([], "test_prog")])
     element = Component(content=100)
     flow.append(element, "test_prog")
     assert SysUtil.get_id(element) in flow["test_prog"].order
