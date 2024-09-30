@@ -96,6 +96,8 @@ class LogManager(BaseManager):
 
         if not persist_path:
             persist_dir = self.persist_dir or "./data/logs"
+            if str(persist_dir).endswith("/"):
+                persist_dir = str(persist_dir)[:-1]
             if self.subfolder:
                 persist_dir = f"{persist_dir}/{self.subfolder}"
             persist_path = f"{persist_dir}/{self.file_prefix or ''}{id_}.json"
