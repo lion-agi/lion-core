@@ -1,3 +1,4 @@
+dynamic = ["version"]
 license = {file = "LICENSE"}
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -16,7 +17,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-lionfuncs = "^1.0.5"
+lionfuncs = "^1.0.7"
 lionabc = "^1.0.1"
 
 
@@ -27,6 +28,7 @@ pytest-asyncio = "^0.24.0"
 pre-commit = "^3.8.0"
 flake8 = "^7.1.1"
 isort = "^5.13.2"
+poetry-dynamic-versioning = "^1.4.1"
 
 [build-system]
 requires = ["poetry-core"]
