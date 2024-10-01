@@ -19,12 +19,12 @@ from lionabc.exceptions import (
     LionTypeError,
     LionValueError,
 )
-from lionfuncs import LN_UNDEFINED, to_list
+from lionfuncs import LN_UNDEFINED, is_same_dtype, to_df, to_list
 from pydantic import Field, field_serializer
 from typing_extensions import Self, override
 
 from lion_core.generic.element import Element
-from lion_core.generic.progression import Progression, progression
+from lion_core.generic.progression import Progression
 from lion_core.generic.utils import to_list_type, validate_order
 from lion_core.sys_utils import SysUtil
 
@@ -84,7 +84,7 @@ class Pile(Element, Collective, Generic[T]):
         strict: If True, enforces strict type checking. Defaults to False.
 
     Attributes:
-        pile_ (dict[str, T]): Internal storage mapping Lion IDs to items.
+        pile (dict[str, T]): Internal storage mapping Lion IDs to items.
         item_type (set[Type[Observable]] | None): Set of allowed item types.
         order (Progression): Maintains the order of items.
         strict (bool): Whether to enforce strict type checking.
@@ -141,7 +141,7 @@ class Pile(Element, Collective, Generic[T]):
         exclude=True,
     )
     order: Progression = Field(
-        default_factory=progression,
+        default_factory=Progression,
         description="Progression specifying the order of items in the pile.",
         exclude=True,
     )
@@ -186,7 +186,7 @@ class Pile(Element, Collective, Generic[T]):
         super().__init__(**_config)
         self.strict_type = strict
         self.item_type = self._validate_item_type(item_type)
-        self.pile = self._validate_pile(items or kwargs.get("pile_", {}))
+        self.pile = self._validate_pile(items or kwargs.get("pile", {}))
         self.order = self._validate_order(order)
 
     # Sync Interface methods
@@ -208,7 +208,7 @@ class Pile(Element, Collective, Generic[T]):
         Raises:
             ValueError: If the dictionary format is invalid.
         """
-        items = data.pop("pile_", [])
+        items = data.pop("pile", [])
         items = [Element.from_dict(i) for i in items]
         return cls(items=items, **data)
 
@@ -862,7 +862,7 @@ class Pile(Element, Collective, Generic[T]):
                     else [self.order[key]]
                 )
                 self.order[key] = item_order
-                for i in delete_order:
+                for i in to_list(delete_order, flatten=True):
                     self.pile.pop(i)
                 self.pile.update(item_dict)
             except Exception as e:
@@ -1106,7 +1106,7 @@ class Pile(Element, Collective, Generic[T]):
 
     def _validate_order(self, value: Any) -> Progression:
         if not value:
-            return Progression(order=list(self.pile.keys()))
+            return self.order.__class__(order=list(self.pile.keys()))
 
         if isinstance(value, Progression):
             value = list(value)
@@ -1127,7 +1127,7 @@ class Pile(Element, Collective, Generic[T]):
                     f"The order does not match the pile. {i} not found"
                 )
 
-        return Progression(order=value)
+        return self.order.__class__(order=value)
 
     def _append(self, item: T):
         """
@@ -1149,7 +1149,7 @@ class Pile(Element, Collective, Generic[T]):
         self.order.insert(index, item_order)
         self.pile.update(item_dict)
 
-    @field_serializer("pile_")
+    @field_serializer("pile")
     def _(self, value: dict[str, T]):
         return [i.to_dict() for i in value.values()]
 
@@ -1169,6 +1169,11 @@ class Pile(Element, Collective, Generic[T]):
             await asyncio.sleep(0)  # Yield control to the event loop
             return item
 
+    def is_homogenous(self) -> bool:
+        return len(self.pile) < 2 or all(is_same_dtype(self.pile.values()))
+
+    # load / dump methods, should be added in lionagi
+
     @async_synchronized
     async def adump(self, clear: bool = False) -> dict:
         self.dump(clear=clear)
@@ -1182,6 +1187,16 @@ class Pile(Element, Collective, Generic[T]):
     @classmethod
     def load(cls, data: dict, **kwargs: Any) -> Pile:
         return cls.from_dict(data)
+
+    def to_df(self):
+        """Return the pile as a DataFrame."""
+        dicts_ = []
+        for i in self.values():
+            _dict = i.to_dict()
+            if _dict.get("embedding", None):
+                _dict["embedding"] = str(_dict.get("embedding"))
+            dicts_.append(_dict)
+        return to_df(dicts_)
 
 
 def pile(
