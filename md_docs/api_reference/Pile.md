@@ -21,7 +21,7 @@ class Pile(Element, Collective, Generic[T]):
 
 ## Attributes
 
-- `pile_: dict[str, T]` - Internal storage mapping Lion IDs to items
+- `pile: dict[str, T]` - Internal storage mapping Lion IDs to items
 - `item_type: set[Type[Observable]] | None` - Set of allowed types for items
 - `order: Progression` - Maintains the order of items
 - `strict: bool` - Whether to enforce strict type checking

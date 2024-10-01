@@ -11,7 +11,7 @@ from typing_extensions import Self
 
 from lion_core.generic.element import Element
 from lion_core.generic.pile import Pile, pile
-from lion_core.generic.progression import Progression, prog
+from lion_core.generic.progression import Progression, progression
 
 
 class Flow(Element):
@@ -269,7 +269,7 @@ class Flow(Element):
                 self.progressions[prog_].include(item)
                 return
 
-            p = prog(item, self.default_name)
+            p = progression(item, self.default_name)
             self.register(p)
             return
 
@@ -281,7 +281,7 @@ class Flow(Element):
             self.progressions[self.registry[prog_]].include(item)
             return
 
-        p = prog(item, prog_ if isinstance(prog_, str) else None)
+        p = progression(item, prog_ if isinstance(prog_, str) else None)
         self.register(p)
 
     def popleft(self, prog_: str | Progression | None = None, /) -> str | Any:

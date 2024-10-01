@@ -21,7 +21,7 @@ class RuleBook(Element, BaseRecord):
     active_rules: Pile[Rule] = Field(
         default_factory=lambda: pile(
             item_type=Rule,
-            strict=False,
+            strict_type=False,
         ),
         exclude=True,
     )
