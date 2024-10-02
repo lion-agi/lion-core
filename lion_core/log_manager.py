@@ -61,7 +61,9 @@ class LogManager(BaseManager):
         """
         async with self.logs.async_lock:
             id_ = self.logs[-1].ln_id[:-6]
-            data = self.logs.dump(clear=clear)
+            data = self.logs.to_dict()
+            if clear:
+                self.logs.clear()
             self._save(id_=id_, data=data, persist_path=persist_path)
         return data
 
@@ -78,7 +80,9 @@ class LogManager(BaseManager):
             The dumped log data.
         """
         id_ = self.logs[-1].ln_id[:-6]
-        data = self.logs.dump(clear=clear)
+        data = self.logs.to_dict()
+        if clear:
+            self.logs.clear()
         self._save(id_=id_, data=data, persist_path=persist_path)
         return data
 

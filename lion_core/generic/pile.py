@@ -10,7 +10,7 @@ from collections.abc import (
     Sequence,
 )
 from functools import wraps
-from typing import Any, Generic, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar
 
 from lionabc import Collective, Observable
 from lionabc.exceptions import (
@@ -19,7 +19,7 @@ from lionabc.exceptions import (
     LionTypeError,
     LionValueError,
 )
-from lionfuncs import LN_UNDEFINED, is_same_dtype, to_df, to_list
+from lionfuncs import LN_UNDEFINED, is_same_dtype, to_list
 from pydantic import Field, field_serializer
 from typing_extensions import Self, override
 
@@ -149,6 +149,7 @@ class Pile(Element, Collective, Generic[T]):
         default=False,
         description="Specify if enforce a strict type check",
     )
+    _adapter_registry: ClassVar = None
 
     def __pydantic_extra__(self) -> dict[str, Any]:
         return {
@@ -1171,32 +1172,6 @@ class Pile(Element, Collective, Generic[T]):
 
     def is_homogenous(self) -> bool:
         return len(self.pile) < 2 or all(is_same_dtype(self.pile.values()))
-
-    # load / dump methods, should be added in lionagi
-
-    @async_synchronized
-    async def adump(self, clear: bool = False) -> dict:
-        self.dump(clear=clear)
-
-    def dump(self, clear: bool = False) -> dict:
-        result = self.to_dict()
-        if clear:
-            self.clear()
-        return result
-
-    @classmethod
-    def load(cls, data: dict, **kwargs: Any) -> Pile:
-        return cls.from_dict(data)
-
-    def to_df(self):
-        """Return the pile as a DataFrame."""
-        dicts_ = []
-        for i in self.values():
-            _dict = i.to_dict()
-            if _dict.get("embedding", None):
-                _dict["embedding"] = str(_dict.get("embedding"))
-            dicts_.append(_dict)
-        return to_df(dicts_)
 
 
 def pile(
