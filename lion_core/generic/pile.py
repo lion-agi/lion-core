@@ -10,7 +10,7 @@ from collections.abc import (
     Sequence,
 )
 from functools import wraps
-from typing import Any, ClassVar, Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from lionabc import Collective, Observable
 from lionabc.exceptions import (
@@ -26,7 +26,6 @@ from typing_extensions import Self, override
 from lion_core.generic.element import Element
 from lion_core.generic.progression import Progression
 from lion_core.generic.utils import to_list_type, validate_order
-from lion_core.pile_adapter import AdapterRegistry
 from lion_core.sys_utils import SysUtil
 
 T = TypeVar("T", bound=Observable)
@@ -150,7 +149,6 @@ class Pile(Element, Collective, Generic[T]):
         default=False,
         description="Specify if enforce a strict type check",
     )
-    _adapter_registry: ClassVar = AdapterRegistry
 
     def __pydantic_extra__(self) -> dict[str, Any]:
         return {
