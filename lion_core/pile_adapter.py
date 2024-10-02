@@ -106,18 +106,12 @@ class AdapterRegistry:
 
     @classmethod
     def register(cls, adapter: type[Dumper | Loader], /) -> None:
+        err_msg = ""
         if not inspect.isclass(adapter):
-            err_msg = (
+            err_msg += (
                 "In order to register the adapter, it needs to be a "
                 "subclass of the <Dumper> or <Loader> protocol. "
             )
-
-        if isinstance(adapter, Dumper | Loader):
-            err_msg += (
-                f"The adapter value received <{adapter.obj_key}> "
-                "is an adapter instance. please register the class"
-            )
-            raise ValueError(err_msg)
 
         if adapter is Dumper:
             cls._dumpers[adapter.obj_key] = adapter()
