@@ -165,7 +165,4 @@ class AdapterRegistry:
         return cls.get("dump", obj_key).dump_to(subj, **kwargs)
 
 
-AdapterRegistry.register(JsonDumper)
-AdapterRegistry.register(JsonLoader)
-
 __all__ = ["AdapterRegistry", "Loader", "Dumper"]
