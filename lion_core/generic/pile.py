@@ -149,7 +149,7 @@ class Pile(Element, Collective, Generic[T]):
         default=False,
         description="Specify if enforce a strict type check",
     )
-    _adapter_registry: ClassVar = None
+    _adapter_registry: ClassVar | None = None
 
     def __pydantic_extra__(self) -> dict[str, Any]:
         return {
