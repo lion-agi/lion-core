@@ -368,6 +368,11 @@ class Component(Element):
 
     # converter methods
     @classmethod
+    def list_converters(cls) -> list[str]:
+        """List all registered converters."""
+        return cls._get_converter_registry().list_obj_keys()
+
+    @classmethod
     def _get_converter_registry(cls) -> ComponentConverterRegistry:
         """Get the converter registry for the class."""
         if isinstance(cls._converter_registry, type):
