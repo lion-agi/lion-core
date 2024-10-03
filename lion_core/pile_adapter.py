@@ -1,4 +1,3 @@
-import inspect
 import json
 from pathlib import Path
 from typing import Any, Literal, Protocol, TypeVar, runtime_checkable
@@ -15,7 +14,7 @@ class Dumper(Protocol):
 
     default_directory: Path = Path(".") / "data" / "pile_dump"
     default_filename: str = "unnamed_pile_dump"
-    obj_key: str = ".txt"
+    obj_key: str
 
     @classmethod
     def dump_to(
@@ -105,18 +104,27 @@ class AdapterRegistry:
     _dumpers: dict[str, Dumper] = {}
 
     @classmethod
-    def register(cls, adapter: type[Dumper | Loader], /) -> None:
+    def register(cls, adapter: type[Dumper] | type[Loader], /) -> None:
         err_msg = ""
-        if not inspect.isclass(adapter):
+
+        if not isinstance(adapter, type(Dumper)) and not isinstance(
+            adapter, type(Loader)
+        ):
             err_msg += (
                 "In order to register the adapter, it needs to be a "
                 "subclass of the <Dumper> or <Loader> protocol. "
             )
+            if isinstance(adapter, Dumper) or isinstance(adapter, Loader):
+                err_msg += (
+                    f"The converter value received <{adapter.obj_key}> "
+                    "is an instance. Did you mean to register the class?"
+                )
+            raise ValueError(err_msg)
 
-        if adapter is Dumper:
-            cls._dumpers[adapter.obj_key] = adapter()
-        elif adapter is Loader:
+        if isinstance(adapter, type(Loader)):
             cls._loaders[adapter.obj_key] = adapter()
+        else:
+            cls._dumpers[adapter.obj_key] = adapter()
 
     @classmethod
     def list_loader_keys(cls) -> list[str]:
