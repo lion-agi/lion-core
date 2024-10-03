@@ -215,7 +215,7 @@ def test_memory_efficiency():
 
     # Calculate memory usage
     pile_size = sys.getsizeof(p)
-    internal_size = sum(sys.getsizeof(item) for item in p.pile.values())
+    internal_size = sum(sys.getsizeof(item) for item in p.pile_.values())
     total_size = pile_size + internal_size
 
     # Check if memory usage is reasonable (less than 100MB for 100,000 elements)

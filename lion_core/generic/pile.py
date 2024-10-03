@@ -10,7 +10,7 @@ from collections.abc import (
     Sequence,
 )
 from functools import wraps
-from typing import Any, Generic, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar
 
 from lionabc import Collective, Observable
 from lionabc.exceptions import (
@@ -26,6 +26,7 @@ from typing_extensions import Self, override
 from lion_core.generic.element import Element
 from lion_core.generic.progression import Progression
 from lion_core.generic.utils import to_list_type, validate_order
+from lion_core.pile_adapter import AdapterRegistry, Dumper, Loader
 from lion_core.sys_utils import SysUtil
 
 T = TypeVar("T", bound=Observable)
@@ -134,7 +135,7 @@ class Pile(Element, Collective, Generic[T]):
         Use the iteration snapshot for safe concurrent access.
     """
 
-    pile: dict[str, T] = Field(default_factory=dict)
+    pile_: dict[str, T] = Field(default_factory=dict)
     item_type: set[type[Observable]] | None = Field(
         default=None,
         description="Set of allowed types for items in the pile.",
@@ -148,7 +149,10 @@ class Pile(Element, Collective, Generic[T]):
     strict_type: bool = Field(
         default=False,
         description="Specify if enforce a strict type check",
+        frozen=True,
     )
+
+    _adapter_registry: ClassVar[AdapterRegistry] = AdapterRegistry()
 
     def __pydantic_extra__(self) -> dict[str, Any]:
         return {
@@ -165,7 +169,7 @@ class Pile(Element, Collective, Generic[T]):
         items: Any = None,
         item_type: set[type[Observable]] | None = None,
         order: Progression | list | None = None,
-        strict: bool = False,
+        strict_type: bool = False,
         **kwargs,
     ) -> None:
         """
@@ -183,10 +187,9 @@ class Pile(Element, Collective, Generic[T]):
         if "created" in kwargs:
             _config["created"] = kwargs["created"]
 
-        super().__init__(**_config)
-        self.strict_type = strict
+        super().__init__(strict_type=strict_type, **_config)
         self.item_type = self._validate_item_type(item_type)
-        self.pile = self._validate_pile(items or kwargs.get("pile", {}))
+        self.pile_ = self._validate_pile(items or kwargs.get("pile_", {}))
         self.order = self._validate_order(order)
 
     # Sync Interface methods
@@ -208,7 +211,7 @@ class Pile(Element, Collective, Generic[T]):
         Raises:
             ValueError: If the dictionary format is invalid.
         """
-        items = data.pop("pile", [])
+        items = data.pop("pile_", [])
         items = [Element.from_dict(i) for i in items]
         return cls(items=items, **data)
 
@@ -384,7 +387,7 @@ class Pile(Element, Collective, Generic[T]):
         Returns:
             A sequence of all items in the Pile in their current order.
         """
-        return [self.pile[key] for key in self.order]
+        return [self.pile_[key] for key in self.order]
 
     def items(self) -> Sequence[tuple[str, T]]:
         """Return a sequence of all (key, value) pairs in the Pile.
@@ -393,7 +396,7 @@ class Pile(Element, Collective, Generic[T]):
             A sequence of tuples, each containing a string key (Lion ID)
             and its corresponding item, in their current order.
         """
-        return [(key, self.pile[key]) for key in self.order]
+        return [(key, self.pile_[key]) for key in self.order]
 
     def is_empty(self) -> bool:
         """Check if the Pile is empty.
@@ -429,7 +432,7 @@ class Pile(Element, Collective, Generic[T]):
             current_order = list(self.order)
 
         for key in current_order:
-            yield self.pile[key]
+            yield self.pile_[key]
 
     def __next__(self) -> T:
         """Return the next item in the Pile.
@@ -477,7 +480,7 @@ class Pile(Element, Collective, Generic[T]):
         Returns:
             The number of items in the Pile.
         """
-        return len(self.pile)
+        return len(self.pile_)
 
     @override
     def __bool__(self) -> bool:
@@ -614,7 +617,7 @@ class Pile(Element, Collective, Generic[T]):
         if length == 0:
             return "Pile()"
         elif length == 1:
-            return f"Pile({next(iter(self.pile.values())).__repr__()})"
+            return f"Pile({next(iter(self.pile_.values())).__repr__()})"
         else:
             return f"Pile({length})"
 
@@ -780,7 +783,7 @@ class Pile(Element, Collective, Generic[T]):
             current_order = list(self.order)
 
         for key in current_order:
-            yield self.pile[key]
+            yield self.pile_[key]
             await asyncio.sleep(0)  # Yield control to the event loop
 
     async def __anext__(self) -> T:
@@ -805,14 +808,14 @@ class Pile(Element, Collective, Generic[T]):
                 )
                 result = []
                 for i in result_ids:
-                    result.append(self.pile[i])
+                    result.append(self.pile_[i])
                 return result[0] if len(result) == 1 else result
             except Exception as e:
                 raise ItemNotFoundError(f"index {key}. Error: {e}")
 
         elif isinstance(key, str):
             try:
-                return self.pile[key]
+                return self.pile_[key]
             except Exception as e:
                 raise ItemNotFoundError(f"key {key}. Error: {e}")
 
@@ -822,7 +825,7 @@ class Pile(Element, Collective, Generic[T]):
             try:
                 for k in key:
                     result_id = SysUtil.get_id(k)
-                    result.append(self.pile[result_id])
+                    result.append(self.pile_[result_id])
 
                 if len(result) == 0:
                     raise ItemNotFoundError(f"key {key} item not found")
@@ -863,8 +866,8 @@ class Pile(Element, Collective, Generic[T]):
                 )
                 self.order[key] = item_order
                 for i in to_list(delete_order, flatten=True):
-                    self.pile.pop(i)
-                self.pile.update(item_dict)
+                    self.pile_.pop(i)
+                self.pile_.update(item_dict)
             except Exception as e:
                 raise ValueError(f"Failed to set pile. Error: {e}")
         else:
@@ -882,7 +885,7 @@ class Pile(Element, Collective, Generic[T]):
                         f"Invalid key {id_}. Key and item does not match.",
                     )
             self.order += key
-            self.pile.update(item_dict)
+            self.pile_.update(item_dict)
 
     def _get(self, key: Any, default: Any = LN_UNDEFINED) -> list | Any | T:
         """
@@ -951,7 +954,7 @@ class Pile(Element, Collective, Generic[T]):
                 result = []
                 for i in pops:
                     self.order.remove(i)
-                    result.append(self.pile.pop(i))
+                    result.append(self.pile_.pop(i))
                 result = (
                     self.__class__(items=result, item_type=self.item_type)
                     if len(result) > 1
@@ -968,7 +971,7 @@ class Pile(Element, Collective, Generic[T]):
                 result = []
                 for k in key:
                     self.order.remove(k)
-                    result.append(self.pile.pop(k))
+                    result.append(self.pile_.pop(k))
                 if len(result) == 0:
                     raise ItemNotFoundError(f"key {key} item not found")
                 elif len(result) == 1:
@@ -1009,7 +1012,7 @@ class Pile(Element, Collective, Generic[T]):
                 item_order.append(i)
 
         self.order.append(item_order)
-        self.pile.update(item_dict)
+        self.pile_.update(item_dict)
 
     def _exclude(self, item: Any):
         """
@@ -1028,7 +1031,7 @@ class Pile(Element, Collective, Generic[T]):
 
     def _clear(self) -> None:
         """Remove all items from the pile."""
-        self.pile.clear()
+        self.pile_.clear()
         self.order.clear()
 
     def _update(self, other: Any):
@@ -1106,7 +1109,7 @@ class Pile(Element, Collective, Generic[T]):
 
     def _validate_order(self, value: Any) -> Progression:
         if not value:
-            return self.order.__class__(order=list(self.pile.keys()))
+            return self.order.__class__(order=list(self.pile_.keys()))
 
         if isinstance(value, Progression):
             value = list(value)
@@ -1116,13 +1119,13 @@ class Pile(Element, Collective, Generic[T]):
         value_set = set(value)
         if len(value_set) != len(value):
             raise LionValueError("There are duplicate elements in the order")
-        if len(value_set) != len(self.pile.keys()):
+        if len(value_set) != len(self.pile_.keys()):
             raise LionValueError(
                 "The length of the order does not match the length of the pile"
             )
 
         for i in value_set:
-            if SysUtil.get_id(i) not in self.pile.keys():
+            if SysUtil.get_id(i) not in self.pile_.keys():
                 raise LionValueError(
                     f"The order does not match the pile. {i} not found"
                 )
@@ -1147,9 +1150,9 @@ class Pile(Element, Collective, Generic[T]):
                 raise ItemExistsError(f"item {i} already exists in the pile")
             item_order.append(i)
         self.order.insert(index, item_order)
-        self.pile.update(item_dict)
+        self.pile_.update(item_dict)
 
-    @field_serializer("pile")
+    @field_serializer("pile_")
     def _(self, value: dict[str, T]):
         return [i.to_dict() for i in value.values()]
 
@@ -1170,7 +1173,29 @@ class Pile(Element, Collective, Generic[T]):
             return item
 
     def is_homogenous(self) -> bool:
-        return len(self.pile) < 2 or all(is_same_dtype(self.pile.values()))
+        return len(self.pile_) < 2 or all(is_same_dtype(self.pile_.values()))
+
+    @classmethod
+    def _get_adapter_registry(cls) -> AdapterRegistry:
+        if not isinstance(cls._adapter_registry, AdapterRegistry):
+            cls._adapter_registry = cls._adapter_registry()
+        return cls._adapter_registry
+
+    @classmethod
+    def register_adapter(cls, adapter: type[Loader | Dumper], /) -> None:
+        cls._get_adapter_registry().register(adapter)
+
+    @classmethod
+    def load(cls, obj: Any, obj_key: str = None, /, **kwargs: Any) -> Pile:
+        raise NotImplementedError
+
+    def dump(self, obj_key: str, *, clear: bool = False, **kwargs) -> None:
+        try:
+            self._get_adapter_registry().dump(self, obj_key, **kwargs)
+            if clear:
+                self.clear()
+        except Exception as e:
+            raise LionTypeError("Failed to dump pile") from e
 
 
 def pile(

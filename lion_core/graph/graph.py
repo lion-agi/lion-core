@@ -51,7 +51,7 @@ class Graph(Node, Structure):
             Serialized representation of the Pile.
         """
         value = value.to_dict()
-        value = value["pile"]
+        value = value["pile_"]
         return value
 
     def add_node(self, node: Relational) -> None:
