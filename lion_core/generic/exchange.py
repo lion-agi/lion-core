@@ -21,7 +21,7 @@ class Exchange(Element, Structure):
         pending_outs (Progression): The progression of pending outgoing items.
     """
 
-    pile: Pile = Field(
+    pile_: Pile = Field(
         default_factory=lambda: pile(item_type={Communicatable}),
         description="The pile of items in the exchange.",
         title="pending items",
@@ -50,7 +50,7 @@ class Exchange(Element, Structure):
         Returns:
             bool: True if the item is in the pile, False otherwise.
         """
-        return item in self.pile
+        return item in self.pile_
 
     @property
     def senders(self) -> list[str]:
@@ -69,13 +69,13 @@ class Exchange(Element, Structure):
             raise LionValueError(
                 "Invalid item to include. Item must be a mail.",
             )
-        if item in self.pile:
+        if item in self.pile_:
             raise ItemExistsError(f"{item} is already pending in the exchange")
         if direction not in ["in", "out"]:
             raise LionValueError(
                 "Invalid direction value. Specify either 'in' or 'out'."
             )
-        self.pile.include(item)
+        self.pile_.include(item)
 
         if direction == "in":
             if item.sender not in self.pending_ins:
@@ -85,18 +85,18 @@ class Exchange(Element, Structure):
             self.pending_outs.include(item)
 
     def exclude(self, item: Communicatable, /):
-        self.pile.exclude(item)
+        self.pile_.exclude(item)
         self.pending_outs.exclude(item)
         for v in self.pending_ins.values():
             v.exclude(item)
 
     @override
     def __bool__(self) -> bool:
-        return not self.pile.is_empty()
+        return not self.pile_.is_empty()
 
     @override
     def __len__(self) -> int:
-        return len(self.pile)
+        return len(self.pile_)
 
 
 __all__ = ["Exchange"]

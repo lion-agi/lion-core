@@ -65,7 +65,7 @@ class MailManager(BaseManager):
         )
         while mailbox.pending_outs.size() > 0:
             mail_id = mailbox.pending_outs.popleft()
-            mail: Mail = mailbox.pile.pop(mail_id)
+            mail: Mail = mailbox.pile_.pop(mail_id)
             if mail.recipient not in self.sources:
                 rec_ = mail.recipient
                 raise ValueError(f"Recipient source {rec_} does not exist")

@@ -81,7 +81,7 @@ def test_mail_manager_send(mail_manager, mock_source):
     )
     mail_manager.mails[mock_source.ln_id] = {sender_id: deque([mock_mail])}
     mail_manager.send(mock_source.ln_id)
-    assert len(mock_source.mailbox.pile) == 1
+    assert len(mock_source.mailbox.pile_) == 1
 
 
 def test_mail_manager_collect_all(mail_manager, mock_source):
@@ -101,7 +101,7 @@ def test_mail_manager_send_all(mail_manager, mock_source):
     )
     mail_manager.mails[mock_source.ln_id] = {sender_id: deque([mock_mail])}
     mail_manager.send_all()
-    assert len(mock_source.mailbox.pile) == 1
+    assert len(mock_source.mailbox.pile_) == 1
 
 
 @pytest.mark.asyncio
@@ -159,7 +159,7 @@ def test_mail_manager_collect_with_nonexistent_recipient(
 
 def test_mail_manager_send_empty_mail_queue(mail_manager, mock_source):
     mail_manager.send(mock_source.ln_id)
-    assert len(mock_source.mailbox.pile) == 0
+    assert len(mock_source.mailbox.pile_) == 0
 
 
 @pytest.mark.parametrize("num_sources", [10, 100, 1000])
@@ -215,7 +215,7 @@ def test_mail_manager_collect_and_send_cycle(mail_manager, mock_source):
     mail_manager.collect_all()
     assert len(mail_manager.mails[mock_source.ln_id][sender_id]) == 1
     mail_manager.send_all()
-    assert len(mock_source.mailbox.pile) == 1
+    assert len(mock_source.mailbox.pile_) == 1
     assert len(mail_manager.mails[mock_source.ln_id]) == 0
 
 
