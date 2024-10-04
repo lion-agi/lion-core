@@ -4,7 +4,6 @@ from typing import Any, ClassVar, Literal
 from lionabc import BaseiModel, Traversal
 from lionfuncs import is_same_dtype
 from pydantic import Field, model_validator
-from typing_extensions import override
 
 from lion_core.action import Tool, ToolManager
 from lion_core.communication.action_request import ActionRequest
@@ -248,7 +247,7 @@ class Branch(BaseSession, Traversal):
             raise ValueError(f"No package from {sender}")
         while self.mailbox.pending_ins[sender].size() > 0:
             mail_id = self.mailbox.pending_ins[sender].popleft()
-            mail: Mail = self.mailbox.pile[mail_id]
+            mail: Mail = self.mailbox.pile_[mail_id]
 
             if mail.category == "message" and message:
                 if not isinstance(mail.package.package, RoledMessage):
@@ -257,19 +256,19 @@ class Branch(BaseSession, Traversal):
                 new_message.sender = mail.sender
                 new_message.recipient = self.ln_id
                 self.messages.include(new_message)
-                self.mailbox.pile.pop(mail_id)
+                self.mailbox.pile_.pop(mail_id)
 
             elif mail.category == "tool" and tool:
                 if not isinstance(mail.package.package, Tool):
                     raise ValueError("Invalid tools format")
                 self.tool_manager.register_tools(mail.package.package)
-                self.mailbox.pile.pop(mail_id)
+                self.mailbox.pile_.pop(mail_id)
 
             elif mail.category == "imodel" and imodel:
                 if not isinstance(mail.package.package, BaseiModel):
                     raise ValueError("Invalid iModel format")
                 self.imodel = mail.package.package
-                self.mailbox.pile.pop(mail_id)
+                self.mailbox.pile_.pop(mail_id)
 
             else:
                 skipped_requests.append(mail)
@@ -285,30 +284,6 @@ class Branch(BaseSession, Traversal):
         """
         for key in list(self.mailbox.pending_ins.keys()):
             self.receive(key)
-
-    @override
-    @classmethod
-    def convert_from(
-        cls,
-        obj: Any,
-        obj_key: str,
-        **kwargs,
-    ) -> "Branch":
-        p = cls._get_converter_registry().convert_from(
-            subject_class=cls,
-            object_=obj,
-            object_key=obj_key,
-            **kwargs,
-        )
-        return cls(messages=p, **kwargs)
-
-    @override
-    def convert_to(self, obj_key: str, /, **kwargs: Any) -> Any:
-        return self._get_converter_registry().convert_to(
-            self,
-            obj_key,
-            **kwargs,
-        )
 
     @property
     def last_response(self) -> AssistantResponse | None:
