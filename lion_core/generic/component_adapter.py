@@ -1,24 +1,6 @@
-import json
-
-from lionfuncs import to_dict
-
-from lion_core.protocols.adapter import Adapter, AdapterRegistry
-
-
-class JsonDataAdapter(Adapter):
-
-    obj_key = "json_data"
-    verbose = False
-    config = {}
-
-    @classmethod
-    def from_obj(cls, subj_cls, obj, **kwargs):
-        return to_dict(obj, **kwargs)
-
-    @classmethod
-    def to_obj(cls, subj, **kwargs):
-        dict_ = subj.to_dict()
-        return json.dumps(dict_, **kwargs)
+from lion_core.protocols.adapter import AdapterRegistry
+from lion_core.protocols.data_adapter import JsonDataAdapter
+from lion_core.protocols.data_source_adapter import JsonFileAdapter
 
 
 class ComponentAdapterRegistry(AdapterRegistry):
@@ -26,5 +8,6 @@ class ComponentAdapterRegistry(AdapterRegistry):
 
 
 ComponentAdapterRegistry.register(JsonDataAdapter)
+ComponentAdapterRegistry.register(JsonFileAdapter)
 
 __all__ = ["ComponentAdapterRegistry"]
