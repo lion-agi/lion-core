@@ -56,9 +56,11 @@ class AdapterRegistry:
         return cls._adapters[obj_key]
 
     @classmethod
-    def adapt_from(cls, obj: Any, obj_key: str, **kwargs) -> dict | list[dict]:
+    def adapt_from(
+        cls, subj_cls, obj: Any, obj_key: str, **kwargs
+    ) -> dict | list[dict]:
         try:
-            return cls.get(obj_key).from_obj(obj, **kwargs)
+            return cls.get(obj_key).from_obj(subj_cls, obj, **kwargs)
         except Exception as e:
             logging.error(f"Error adapting data from {obj_key}.")
             raise e
