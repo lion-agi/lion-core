@@ -386,7 +386,9 @@ class Component(Element):
 
     @classmethod
     def adapt_from(cls, obj: Any, obj_key: str, /, **kwargs: Any):
-        dict_ = cls._get_adapter_registry().adapt_from(obj, obj_key, **kwargs)
+        dict_ = cls._get_adapter_registry().adapt_from(
+            cls, obj, obj_key, **kwargs
+        )
         return cls.from_dict(dict_)
 
     # field management methods
