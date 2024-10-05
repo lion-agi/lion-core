@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import inspect
 import threading
 from collections.abc import (
     AsyncIterator,
@@ -11,7 +10,6 @@ from collections.abc import (
     Sequence,
 )
 from functools import wraps
-from pathlib import Path
 from typing import Any, ClassVar, Generic, TypeVar
 
 from lionabc import Collective, Observable
@@ -25,11 +23,10 @@ from lionfuncs import LN_UNDEFINED, is_same_dtype, to_list
 from pydantic import Field, field_serializer
 from typing_extensions import Self, override
 
-from lion_core.generic.component import Component
 from lion_core.generic.element import Element
 from lion_core.generic.progression import Progression
 from lion_core.generic.utils import to_list_type, validate_order
-from lion_core.pile_adapter import AdapterRegistry, Dumper, Loader
+from lion_core.protocols.adapter import Adapter, AdapterRegistry
 from lion_core.sys_utils import SysUtil
 
 T = TypeVar("T", bound=Observable)
@@ -155,7 +152,7 @@ class Pile(Element, Collective, Generic[T]):
         frozen=True,
     )
 
-    _adapter_registry: ClassVar[AdapterRegistry] = AdapterRegistry()
+    _adapter_registry: ClassVar[AdapterRegistry] = AdapterRegistry
 
     def __pydantic_extra__(self) -> dict[str, Any]:
         return {
@@ -1178,54 +1175,28 @@ class Pile(Element, Collective, Generic[T]):
     def is_homogenous(self) -> bool:
         return len(self.pile_) < 2 or all(is_same_dtype(self.pile_.values()))
 
+    def adapt_to(self, obj_key: str, /, **kwargs: Any) -> Any:
+        return self._get_adapter_registry().adapt_to(self, obj_key, **kwargs)
+
+    @classmethod
+    def list_adapters(cls):
+        return cls._get_adapter_registry().list_adapters()
+
+    @classmethod
+    def register_adapter(cls, adapter: type[Adapter]):
+        cls._get_adapter_registry().register(adapter)
+
     @classmethod
     def _get_adapter_registry(cls) -> AdapterRegistry:
-        if not inspect.isclass(cls):
+        """Get the converter registry for the class."""
+        if isinstance(cls._adapter_registry, type):
             cls._adapter_registry = cls._adapter_registry()
         return cls._adapter_registry
 
     @classmethod
-    def register_adapter(cls, adapter: type[Loader | Dumper], /) -> None:
-        cls._get_adapter_registry().register(adapter)
-
-    @classmethod
-    def load(cls, obj: Any, obj_key: str = None, /, **kwargs: Any) -> Pile:
-        try:
-            item = cls._get_adapter_registry().load(obj, obj_key, **kwargs)
-            if isinstance(item, list):
-                return cls([Component.from_dict(i) for i in item])
-            if isinstance(item, dict):
-                return cls.from_dict(item)
-        except Exception as e:
-            raise LionTypeError(f"Failed to load pile. Error: {e}")
-
-    def dump(
-        self,
-        obj_key: str,
-        *,
-        clear: bool = False,
-        directory: Path | str = None,
-        filename: str = None,
-        timestamp: bool = True,
-        random_hash: bool = True,
-        random_hash_digits=3,
-        **kwargs,
-    ) -> None:
-        try:
-            self._get_adapter_registry().dump(
-                self,
-                obj_key,
-                directory=directory,
-                filename=filename,
-                timestamp=timestamp,
-                random_hash=random_hash,
-                random_hash_digits=random_hash_digits,
-                **kwargs,
-            )
-            if clear:
-                self.clear()
-        except Exception as e:
-            raise LionTypeError("Failed to dump pile") from e
+    def adapt_from(cls, obj: Any, obj_key: str, /, **kwargs: Any):
+        dict_ = cls._get_adapter_registry().adapt_from(obj, obj_key, **kwargs)
+        return cls.from_dict(dict_)
 
 
 def pile(

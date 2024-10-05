@@ -10,10 +10,10 @@ from pydantic_core import PydanticUndefined
 from typing_extensions import override
 
 from lion_core._class_registry import get_class
-from lion_core.converter import Converter
-from lion_core.generic.component_converter import ComponentConverterRegistry
+from lion_core.generic.component_adapter import ComponentAdapterRegistry
 from lion_core.generic.element import Element
 from lion_core.generic.note import Note
+from lion_core.protocols.adapter import Adapter, AdapterRegistry
 
 T = TypeVar("T", bound=Element)
 
@@ -46,7 +46,7 @@ class Component(Element):
 
     extra_fields: dict[str, Any] = Field(default_factory=dict)
 
-    _converter_registry: ClassVar = ComponentConverterRegistry
+    _adapter_registry: ClassVar = ComponentAdapterRegistry
 
     @field_serializer("metadata")
     def _serialize_metadata(self, value):
@@ -366,44 +366,28 @@ class Component(Element):
         repr_str += f"extra_fields={truncate_dict(extra_fields)})"
         return repr_str
 
-    # converter methods
-    @classmethod
-    def list_converters(cls) -> list[str]:
-        """List all registered converters."""
-        return cls._get_converter_registry().list_obj_keys()
+    def adapt_to(self, obj_key: str, /, **kwargs: Any) -> Any:
+        return self._get_adapter_registry().adapt_to(self, obj_key, **kwargs)
 
     @classmethod
-    def _get_converter_registry(cls) -> ComponentConverterRegistry:
+    def list_adapters(cls):
+        return cls._get_adapter_registry().list_adapters()
+
+    @classmethod
+    def register_adapter(cls, adapter: type[Adapter]):
+        cls._get_adapter_registry().register(adapter)
+
+    @classmethod
+    def _get_adapter_registry(cls) -> AdapterRegistry:
         """Get the converter registry for the class."""
-        if isinstance(cls._converter_registry, type):
-            cls._converter_registry = cls._converter_registry()
-        return cls._converter_registry
-
-    def convert_to(self, obj_key: str, /, **kwargs: Any) -> Any:
-        """Convert the component to a specified type"""
-        return self._get_converter_registry().convert_to(
-            self,
-            obj_key,
-            **kwargs,
-        )
+        if isinstance(cls._adapter_registry, type):
+            cls._adapter_registry = cls._adapter_registry()
+        return cls._adapter_registry
 
     @classmethod
-    def convert_from(
-        cls, obj: Any, obj_key: str = None, /, **kwargs: Any
-    ) -> T:
-        """Convert data to create a new component instance"""
-        data = cls._get_converter_registry().convert_from(
-            cls,
-            obj,
-            obj_key,
-            **kwargs,
-        )
-        return cls.from_dict(data)
-
-    @classmethod
-    def register_converter(cls, converter: type[Converter]) -> None:
-        """Register a new converter."""
-        cls._get_converter_registry().register(converter)
+    def adapt_from(cls, obj: Any, obj_key: str, /, **kwargs: Any):
+        dict_ = cls._get_adapter_registry().adapt_from(obj, obj_key, **kwargs)
+        return cls.from_dict(dict_)
 
     # field management methods
     def field_setattr(
