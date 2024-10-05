@@ -17,7 +17,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-lionfuncs = "^1.0.9"
+lionfuncs = "^1.0.10"
 lionabc = "^1.0.1"
 
 

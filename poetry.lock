@@ -233,13 +233,13 @@ files = [
 
 [[package]]
 name = "lionfuncs"
-version = "1.0.9"
+version = "1.0.10"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "lionfuncs-1.0.9-py3-none-any.whl", hash = "sha256:a829baf62d0124ddcd303320d38a7affaeb1977f90511144141145a3b6eb28c6"},
-    {file = "lionfuncs-1.0.9.tar.gz", hash = "sha256:468599110513055e637f094f396d3768708eb55210a72b5715b533bddb724cc4"},
+    {file = "lionfuncs-1.0.10-py3-none-any.whl", hash = "sha256:0bfd970c4da1f58bea701a84a2f3f1132e465caf9f1e5d6e7bfc4cb4c4adab42"},
+    {file = "lionfuncs-1.0.10.tar.gz", hash = "sha256:6e9a73f696590a6a95344088e4370bc83abd2c9496ce961010aef089aea536e5"},
 ]
 
 [package.dependencies]
@@ -937,4 +937,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "73d53ef5ccacab5c8e6346a31bd42d1287aebd5e56e770a6f1591f1aa7a82db5"
+content-hash = "e20209bc8494d30065f8a55f136dde80b3911b4905f513fa75b734336c9b85af"
