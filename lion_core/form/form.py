@@ -29,14 +29,15 @@ class Form(BaseForm):
     - request_fields: Fields that need to be filled by an intelligent process.
     - output_fields: Fields for presentation, which may include all, some, or
       none of the request fields. These can be conditionally modified if the
-      form is not strict.
+      form is not strict_form.
 
     The Form class provides methods for field management, validation, and
-    task instruction generation. It supports both strict and flexible modes
-    of operation, allowing for immutable fields and assignments when needed.
+    task instruction generation. It supports both strict_form and flexible
+    modes of operation, allowing for immutable fields and assignments when
+    needed.
 
     Attributes:
-        strict (bool): If True, form fields and assignment are immutable.
+        strict_form (bool): If True, form fields and assignment are immutable.
         guidance (str | dict[str, Any] | None): High-level task guidance that
             can be optimized by AI or provided as instructions.
         input_fields (list[str]): Fields needed to obtain the requested fields.
@@ -50,14 +51,14 @@ class Form(BaseForm):
     Example:
         >>> form = Form(
         ...     assignment="input1, input2 -> output",
-        ...     strict=True,
+        ...     strict_form=True,
         ...     guidance="Complete the task with the given inputs."
         ... )
         >>> form.fill_input_fields(input1="value1", input2="value2")
         >>> print(form.get_results())
     """
 
-    strict: bool = Field(
+    strict_form: bool = Field(
         default=False,
         description="If True, form fields and assignment are immutable.",
         frozen=True,
@@ -104,7 +105,7 @@ class Form(BaseForm):
             ValueError: If required fields are incomplete and handle_how
                 is "raise".
         """
-        if self.strict and self.has_processed:
+        if self.strict_form and self.has_processed:
             return
         return super().check_is_completed(handle_how)
 
@@ -129,7 +130,12 @@ class Form(BaseForm):
             raise ERR_MAP["type", "not_dict"](data)
 
         if not data.get("assignment", None):
-            raise ERR_MAP["assignment", "no_assignment"]
+            if cls.model_fields["assignment"].get_default() is None:
+                raise ERR_MAP["assignment", "no_assignment"]
+            else:
+                data["assignment"] = cls.model_fields[
+                    "assignment"
+                ].get_default()
 
         if "input_fields" in data:
             raise ERR_MAP["assignment", "explcit_input"]
@@ -153,7 +159,7 @@ class Form(BaseForm):
         data["request_fields"] = request_fields
         data["output_fields"] = data.get("output_fields", request_fields)
         data["init_input_kwargs"] = {}
-        data["strict"] = data.get("strict", False)
+        data["strict_form"] = data.get("strict_form", False)
 
         for in_ in data["input_fields"]:
             data["init_input_kwargs"][in_] = (
@@ -296,23 +302,23 @@ class Form(BaseForm):
     def __setattr__(self, field_name: str, value: Any) -> None:
         """Set an attribute of the form.
 
-        This method enforces the strict attribute, preventing modifications
-        to certain fields when strict mode is enabled.
+        This method enforces the strict_form attribute, preventing
+        modifications to certain fields when strict_form mode is enabled.
 
         Args:
             field_name: The name of the attribute to set.
             value: The value to assign to the attribute.
 
         Raises:
-            ValueError: If attempting to modify a restricted field
-                        in strict mode.
+            ValueError: If attempting to modify a restrict_formed field
+                        in strict_form mode.
         """
-        if self.strict and field_name in {
+        if self.strict_form and field_name in {
             "assignment",
             "input_fields",
             "request_fields",
         }:
-            raise ERR_MAP["assignment", "strict"](field_name)
+            raise ERR_MAP["assignment", "strict_form"](field_name)
 
         if field_name in {"input_fields", "request_fields"}:
             raise ERR_MAP["field", "modify_input_request_list"]
@@ -345,8 +351,8 @@ class Form(BaseForm):
             ValueError: If input fields are missing and handle_how is
                         "raise".
         """
-        if self.strict and self.has_processed:
-            raise ERR_MAP["assignment", "strict_processed"]
+        if self.strict_form and self.has_processed:
+            raise ERR_MAP["assignment", "strict_form_processed"]
 
         missing_inputs = []
         invalid_values = [LN_UNDEFINED, PydanticUndefined]
@@ -507,7 +513,7 @@ class Form(BaseForm):
         form: BaseForm | type[BaseForm],
         guidance: str | dict[str, Any] | None = None,
         assignment: str | None = None,
-        strict: bool = False,
+        strict_form: bool = False,
         task_description: str | None = None,
         fill_inputs: bool = True,
         none_as_valid_value: bool = False,
@@ -521,7 +527,7 @@ class Form(BaseForm):
             form: The form to copy from.
             guidance: Guidance for the new form.
             assignment: The assignment for the new form.
-            strict: Whether the new form should be strict.
+            strict_form: Whether the new form should be strict_form.
             task_description: A description of the task.
             fill_inputs: Whether to fill input fields.
             none_as_valid_value: Whether to treat None as a valid value.
@@ -572,7 +578,7 @@ class Form(BaseForm):
             ),
             none_as_valid_value=none_as_valid_value
             or getattr(form, "none_as_valid_value", False),
-            strict=strict or getattr(form, "strict", False),
+            strict_form=strict_form or getattr(form, "strict_form", False),
             output_fields=output_fields,
         )
 
@@ -616,11 +622,11 @@ class Form(BaseForm):
 
         Raises:
             ValueError: If the field type is invalid or if appending to
-                input or request fields in strict mode.
+                input or request fields in strict_form mode.
         """
 
-        if self.strict and field_type in {"input", "request"}:
-            raise ERR_MAP["assignment", "strict"](field_type)
+        if self.strict_form and field_type in {"input", "request"}:
+            raise ERR_MAP["assignment", "strict_form"](field_type)
 
         config = {
             "field_name": field_name,
