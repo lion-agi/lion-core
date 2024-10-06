@@ -198,8 +198,8 @@ class Instruction(RoledMessage):
     @classmethod
     def from_form(
         cls,
-        *,
         form: BaseForm | type[Form],
+        *,
         sender: str | None = None,
         recipient: Any = None,
         images: str | None = None,
