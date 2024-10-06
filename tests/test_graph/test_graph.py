@@ -2,12 +2,17 @@ import random
 import time
 
 import pytest
+from lionabc import Relational
 from lionabc.exceptions import LionRelationError
 
-from lion_core.generic.node import Node
+from lion_core.generic.component import Component
 from lion_core.generic.pile import Pile
 from lion_core.graph.edge import Edge
 from lion_core.graph.graph import Graph
+
+
+class Node(Component, Relational):
+    pass
 
 
 # Helper functions to create test nodes and edges
