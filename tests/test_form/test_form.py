@@ -31,7 +31,7 @@ def test_form_init():
     assert form.assignment == "field1, field2 -> field3"
     assert form.input_fields == ["field1", "field2"]
     assert form.request_fields == ["field3"]
-    assert not form.strict
+    assert not form.strict_form
     assert form.guidance is None
 
     form_with_fields = create_sample_form(
@@ -360,7 +360,7 @@ def test_form_nested_structures():
 
 # Test Form with strict mode
 def test_form_strict_mode():
-    form = create_sample_form(assignment="field1 -> field2", strict=True)
+    form = create_sample_form(assignment="field1 -> field2", strict_form=True)
 
     with pytest.raises(LionOperationError):
         form.append_to_input("new_input")
