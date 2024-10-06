@@ -4,14 +4,14 @@ from lionabc import Relational, Structure
 from lionabc.exceptions import ItemExistsError, LionRelationError
 from pydantic import Field, field_serializer
 
-from lion_core.generic.node import Node
+from lion_core.generic.component import Component
 from lion_core.generic.note import Note
 from lion_core.generic.pile import Pile, pile
 from lion_core.graph.edge import Edge
 from lion_core.sys_utils import SysUtil
 
 
-class Graph(Node, Structure):
+class Graph(Component, Relational, Structure):
     """
     Represents a graph structure containing nodes and edges.
 
@@ -222,7 +222,7 @@ class Graph(Node, Structure):
             items=result, item_type={Relational}
         )
 
-    def get_predecessors(self, node: Node, /) -> Pile:
+    def get_predecessors(self, node: Relational, /) -> Pile:
         """
         Get all predecessor nodes of a given node.
 
@@ -243,7 +243,7 @@ class Graph(Node, Structure):
             items=result, item_type={Relational}
         )
 
-    def get_successors(self, node: Node, /) -> Pile:
+    def get_successors(self, node: Relational, /) -> Pile:
         """
         Get all successor nodes of a given node.
 
