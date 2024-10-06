@@ -10,7 +10,6 @@ from lion_core.protocols.data_adapter import DataAdapter, JsonDataAdapter
 class DataSourceAdapterConfig:
 
     data_adapter: DataAdapter
-    data_adapter_config = {}
 
     save_func: Callable
     save_config: dict = {}
@@ -20,17 +19,13 @@ class DataSourceAdapterConfig:
 
     def __init__(
         self,
+        data_adapter: DataAdapter,
         save_func: Callable = save_to_file,
         save_config: dict = {},
         read_func: Callable = read_file,
         read_config: dict = {},
-        data_adapter_config: dict = {},
-        data_adapter: DataAdapter = None,
     ):
-        self.data_adapter_config = data_adapter_config
         self.data_adapter = data_adapter
-        if not self.data_adapter:
-            self.data_adapter = DataAdapter(**self.data_adapter_config)
         self.save_func = save_func
         self.save_config = save_config
         self.read_func = read_func
@@ -62,7 +57,6 @@ class DataSourceAdapter(Adapter):
 
 json_file_config = DataSourceAdapterConfig(
     data_adapter=JsonDataAdapter,
-    data_adapter_config={},
     save_func=save_to_file,
     save_config={
         "directory": Path(".") / "data" / "json_files",
