@@ -41,9 +41,6 @@ class AdapterRegistry:
                     f"Adapter {_str} missing required methods."
                 )
 
-        if adapter.obj_key in cls._adapters:
-            raise ValueError(f"Adapter {adapter.obj_key} already registered.")
-
         if isinstance(adapter, type):
             cls._adapters[adapter.obj_key] = adapter()
         else:
