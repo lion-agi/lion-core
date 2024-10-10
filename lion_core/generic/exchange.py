@@ -6,7 +6,7 @@ from pydantic import Field
 from typing_extensions import override
 
 from lion_core.generic.element import Element
-from lion_core.generic.pile import Pile, pile
+from lion_core.generic.pile import Pile
 from lion_core.generic.progression import Progression, progression
 
 
@@ -22,7 +22,7 @@ class Exchange(Element, Structure):
     """
 
     pile_: Pile = Field(
-        default_factory=lambda: pile(item_type={Communicatable}),
+        default_factory=lambda: Pile(item_type={Communicatable}),
         description="The pile of items in the exchange.",
         title="pending items",
     )
@@ -61,6 +61,22 @@ class Exchange(Element, Structure):
             List[str]: The list of sender IDs.
         """
         return list(self.pending_ins.keys())
+
+    @property
+    def unassigned(self) -> Pile:
+        """
+        if the item is not in the pending_ins or pending_outs, it is unassigned
+        """
+        return self.pile_.__class__(
+            [
+                item
+                for item in self.pile_
+                if (
+                    all(item not in j for j in self.pending_ins.values())
+                    and item not in self.pending_outs
+                )
+            ]
+        )
 
     def include(
         self, item: Communicatable, /, direction: Literal["in", "out"]
