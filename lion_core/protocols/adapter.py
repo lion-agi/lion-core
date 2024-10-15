@@ -59,7 +59,7 @@ class AdapterRegistry:
         try:
             return cls.get(obj_key).from_obj(subj_cls, obj, **kwargs)
         except Exception as e:
-            logging.error(f"Error adapting data from {obj_key}.")
+            logging.error(f"Error adapting data from {obj_key}. Error: {e}")
             raise e
 
     @classmethod
@@ -67,7 +67,7 @@ class AdapterRegistry:
         try:
             return cls.get(obj_key).to_obj(subj, **kwargs)
         except Exception as e:
-            logging.error(f"Error adapting data to {obj_key}.")
+            logging.error(f"Error adapting data to {obj_key}. Error: {e}")
             raise e
 
 
