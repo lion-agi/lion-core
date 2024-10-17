@@ -12,6 +12,12 @@ event_log_manager = LogManager(
     file_prefix="event_",
 )
 
+message_log_manager = LogManager(
+    persist_dir="./data/logs",
+    subfolder="messages",
+    file_prefix="message_",
+)
+
 __all__ = [
     "BASE_LION_FIELDS",
     "DEFAULT_LION_ID_CONFIG",
