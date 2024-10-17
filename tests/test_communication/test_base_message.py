@@ -1,8 +1,8 @@
 import pytest
+from lionfuncs import Note
 from pydantic import ValidationError
 
 from lion_core.communication.message import MessageRole, RoledMessage
-from lion_core.generic.note import Note
 from lion_core.sys_utils import SysUtil
 
 

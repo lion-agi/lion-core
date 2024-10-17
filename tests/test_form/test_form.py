@@ -6,14 +6,13 @@ from lionabc.exceptions import (
     LionTypeError,
     LionValueError,
 )
-from lionfuncs import LN_UNDEFINED, LionUndefinedType
+from lionfuncs import LN_UNDEFINED, LionUndefinedType, Note
 from pydantic import Field
 from pydantic_core import PydanticUndefined
 
 from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
 from lion_core.generic.component import Component
-from lion_core.generic.note import Note
 
 
 # Helper functions and classes
