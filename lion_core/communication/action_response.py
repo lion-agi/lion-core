@@ -1,6 +1,7 @@
 from typing import Any
 
 from lionabc.exceptions import LionValueError
+from lionfuncs import Note
 from typing_extensions import override
 
 from lion_core.communication.action_request import ActionRequest
@@ -9,7 +10,6 @@ from lion_core.communication.message import (
     MessageRole,
     RoledMessage,
 )
-from lion_core.generic.note import Note
 
 
 def prepare_action_response_content(

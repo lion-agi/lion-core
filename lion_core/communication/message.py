@@ -2,16 +2,16 @@ import inspect
 from enum import Enum
 from typing import Any
 
-from lionabc import Relational
-from lionfuncs import copy
-from pydantic import Field, field_validator
+from lionabc import Communicatable, Relational
+from lionfuncs import Note, copy
+from pydantic import Field, field_serializer, field_validator
 from typing_extensions import override
 
+from lion_core import message_log_manager
 from lion_core._class_registry import get_class
 from lion_core.communication.base_mail import BaseMail
 from lion_core.generic.component import Component
 from lion_core.generic.log import Log
-from lion_core.generic.note import Note
 
 
 class MessageField(str, Enum):
@@ -79,6 +79,7 @@ class RoledMessage(Relational, Component, BaseMail):
 
     def _format_content(self) -> dict[str, Any]:
         """Format the message content for chat representation."""
+        content = None
         if self.content.get("images", None):
             content = self.content.to_dict()
         else:
@@ -149,6 +150,28 @@ class RoledMessage(Relational, Component, BaseMail):
             loginfo=dict_,
         )
         return _log
+
+    async def alog(self):
+        await message_log_manager.alog(self.to_log())
+
+    @field_serializer("content")
+    def _serialize_content(self, value: Note) -> dict[str, Any]:
+        """Serialize the content"""
+
+        output_dict = copy(value.content, deep=True)
+        origin_obj = output_dict.pop("clone_from", None)
+
+        if origin_obj and isinstance(origin_obj, Communicatable):
+            info_dict = {
+                "clone_from_info": {
+                    "original_ln_id": origin_obj.ln_id,
+                    "original_timestamp": origin_obj.timestamp,
+                    "original_sender": origin_obj.sender,
+                    "original_recipient": origin_obj.recipient,
+                }
+            }
+            output_dict.update(info_dict)
+        return output_dict
 
 
 # File: lion_core/communication/message.py

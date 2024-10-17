@@ -2,7 +2,6 @@ import inspect
 from typing import Any, Literal
 
 from lionabc.exceptions import LionTypeError
-from lionfuncs import LN_UNDEFINED
 from typing_extensions import override
 
 from lion_core.communication.message import (
@@ -12,69 +11,13 @@ from lion_core.communication.message import (
 )
 from lion_core.form.base import BaseForm
 from lion_core.form.form import Form
-from lion_core.generic.note import Note, note
 
-
-def prepare_request_response_format(request_fields: dict) -> str:
-    return (
-        "MUST RETURN JSON-PARSEABLE RESPONSE ENCLOSED BY JSON CODE BLOCKS. "
-        f"---\n```json\n{request_fields}\n```\n---"
-    ).strip()
-
-
-def _f(idx: str, x: str, /) -> dict[str, Any]:
-    """Create an image_url dict for content formatting."""
-    return {
-        "type": "image_url",
-        "image_url": {
-            "url": f"data:image/jpeg;base64,{idx}",
-            "detail": x,
-        },
-    }
-
-
-def format_image_content(
-    text_content: str,
-    images: list,
-    image_detail: Literal["low", "high", "auto"],
-) -> dict[str, Any]:
-    """Format text content with images for message content."""
-    content = [{"type": "text", "text": text_content}]
-    content.extend(_f(i, image_detail) for i in images)
-    return content
-
-
-def prepare_instruction_content(
-    guidance: str | None = None,
-    instruction: str | None = None,
-    context: str | dict | list | None = None,
-    request_fields: dict | None = None,
-    images: str | list | None = None,
-    image_detail: Literal["low", "high", "auto"] | None = None,
-) -> Note:
-    """Prepare the content for an instruction message."""
-    out_ = {}
-    if guidance:
-        out_["guidance"] = guidance
-
-    out_["instruction"] = instruction or "N/A"
-    if context:
-        if not isinstance(context, str):
-            out_["context"] = context
-        else:
-            out_["context"] = [context]
-    if images:
-        out_["images"] = images if isinstance(images, list) else [images]
-        out_["image_detail"] = image_detail or "low"
-    if request_fields:
-        out_["request_fields"] = request_fields
-        out_["request_response_format"] = prepare_request_response_format(
-            request_fields=request_fields
-        )
-
-    return note(
-        **{k: v for k, v in out_.items() if v not in [None, LN_UNDEFINED]},
-    )
+from .utils import (
+    format_image_content,
+    format_text_content,
+    prepare_instruction_content,
+    prepare_request_response_format,
+)
 
 
 class Instruction(RoledMessage):
@@ -83,13 +26,14 @@ class Instruction(RoledMessage):
     @override
     def __init__(
         self,
-        instruction: Any | MessageFlag,
+        instruction: Any | MessageFlag = None,
         context: Any | MessageFlag = None,
         guidance: Any | MessageFlag = None,
         images: list | MessageFlag = None,
         sender: Any | MessageFlag = None,
         recipient: Any | MessageFlag = None,
-        request_fields: dict | MessageFlag = None,
+        request_fields: dict | list | MessageFlag = None,
+        plain_content: str | None = None,
         image_detail: Literal["low", "high", "auto"] | MessageFlag = None,
         protected_init_params: dict | None = None,
     ) -> None:
@@ -120,6 +64,7 @@ class Instruction(RoledMessage):
                 context=context,
                 images=images,
                 request_fields=request_fields,
+                plain_content=plain_content,
                 image_detail=image_detail,
             ),
             sender=sender or "user",
@@ -134,7 +79,10 @@ class Instruction(RoledMessage):
     @property
     def instruction(self):
         """Return the main instruction content."""
-        return self.content.get(["instruction"], None)
+        if "plain_content" in self.content:
+            return self.content.get(["plain_content"])
+        else:
+            return self.content.get(["instruction"], None)
 
     def update_images(
         self,
@@ -178,22 +126,18 @@ class Instruction(RoledMessage):
     @override
     def _format_content(self) -> dict[str, Any]:
         """Format the content of the instruction."""
-        _msg = super()._format_content()
-        if isinstance(_msg["content"], str):
-            return _msg
 
+        content = self.content.to_dict()
+        text_content = format_text_content(content)
+        if "images" not in content:
+            return {"role": self.role.value, "content": text_content}
         else:
-            content = _msg["content"]
-            content.pop("images")
-            content.pop("image_detail")
-            text_content = str(content)
             content = format_image_content(
                 text_content=text_content,
                 images=self.content.get(["images"]),
                 image_detail=self.content.get(["image_detail"]),
             )
-            _msg["content"] = content
-            return _msg
+            return {"role": self.role.value, "content": content}
 
     @classmethod
     def from_form(

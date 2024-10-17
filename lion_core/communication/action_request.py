@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any
 
-from lionfuncs import to_dict, to_str
+from lionfuncs import Note, to_dict, to_str
 from typing_extensions import override
 
 from lion_core.communication.message import (
@@ -9,11 +9,10 @@ from lion_core.communication.message import (
     MessageRole,
     RoledMessage,
 )
-from lion_core.generic.note import Note
 
 
 def prepare_action_request(
-    func: str | Callable,
+    function: str | Callable,
     arguments: dict,
 ) -> Note:
     def _prepare_arguments(_arg: Any) -> dict[str, Any]:
@@ -33,7 +32,7 @@ def prepare_action_request(
 
     arguments = _prepare_arguments(arguments)
     return Note(
-        **{"action_request": {"function": func, "arguments": arguments}},
+        **{"action_request": {"function": function, "arguments": arguments}},
     )
 
 
@@ -43,7 +42,7 @@ class ActionRequest(RoledMessage):
     @override
     def __init__(
         self,
-        func: str | Callable | MessageFlag,
+        function: str | Callable | MessageFlag,
         arguments: dict | MessageFlag,
         sender: Any | MessageFlag,
         recipient: Any | MessageFlag,
@@ -59,7 +58,7 @@ class ActionRequest(RoledMessage):
             recipient: The recipient of the request.
             protected_init_params: Protected initialization parameters.
         """
-        message_flags = [func, arguments, sender, recipient]
+        message_flags = [function, arguments, sender, recipient]
 
         if all(x == MessageFlag.MESSAGE_LOAD for x in message_flags):
             super().__init__(**protected_init_params)
@@ -69,11 +68,11 @@ class ActionRequest(RoledMessage):
             super().__init__(role=MessageRole.ASSISTANT)
             return
 
-        func = func.__name__ if callable(func) else func
+        function = function.__name__ if callable(function) else function
 
         super().__init__(
             role=MessageRole.ASSISTANT,
-            content=prepare_action_request(func, arguments),
+            content=prepare_action_request(function, arguments),
             sender=sender,
             recipient=recipient,
         )
