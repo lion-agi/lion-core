@@ -2,29 +2,10 @@ from typing import Any
 
 from lionfuncs import LN_UNDEFINED
 
-from lion_core.communication.message import MessageFlag
 from lion_core.communication.system import System
 
 
-def handle_system(
-    system: Any,
-    sender: Any | MessageFlag,
-    recipient: Any | MessageFlag,
-    system_datetime: bool | str | None | MessageFlag,
-):
-    if isinstance(system, System):
-        return system
-
-    if system:
-        return System(
-            system=system,
-            sender=sender,
-            recipient=recipient,
-            system_datetime=system_datetime,
-        )
-
-
-def validate_system(
+def create_system(
     system: Any = None,
     sender=None,
     recipient=None,

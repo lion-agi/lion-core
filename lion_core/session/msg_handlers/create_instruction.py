@@ -4,15 +4,16 @@ from lion_core.communication.instruction import Instruction
 from lion_core.communication.message import MessageFlag
 
 
-def handle_instruction(
-    sender: Any | MessageFlag,
-    recipient: Any | MessageFlag,
-    instruction: Any | MessageFlag,
-    context: Any | MessageFlag,
-    guidance: Any | MessageFlag,
-    request_fields: dict | MessageFlag,
-    images: list | MessageFlag,
-    image_detail: Literal["low", "high", "auto"] | MessageFlag,
+def create_instruction(
+    sender: Any | MessageFlag = None,
+    recipient: Any | MessageFlag = None,
+    instruction: Any | MessageFlag = None,
+    context: Any | MessageFlag = None,
+    guidance: Any | MessageFlag = None,
+    request_fields: dict | MessageFlag = None,
+    plain_content=None,
+    images: list | MessageFlag = None,
+    image_detail: Literal["low", "high", "auto"] | MessageFlag = None,
 ):
     if isinstance(instruction, Instruction):
         if context:
@@ -30,6 +31,8 @@ def handle_instruction(
             instruction.update_guidance(
                 guidance=guidance,
             )
+        if plain_content:
+            instruction.content["plain_content"] = plain_content
         return instruction
 
     return Instruction(
@@ -41,4 +44,5 @@ def handle_instruction(
         recipient=recipient,
         request_fields=request_fields,
         image_detail=image_detail,
+        plain_content=plain_content,
     )

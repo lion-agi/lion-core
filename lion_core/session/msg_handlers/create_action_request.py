@@ -1,9 +1,11 @@
-from lionfuncs import nget, to_dict
+from lionabc.exceptions import LionValueError
+from lionfuncs import nget, note, to_dict
 
 from lion_core.communication.action_request import ActionRequest
+from lion_core.operative.operative import ActionRequestModel
 
 
-def extract_request_plain_function_calling(
+def _extract_request_plain_function_calling(
     response: dict,
     suppress=False,
 ) -> list[dict]:
@@ -33,7 +35,7 @@ def extract_request_plain_function_calling(
             ) from e
 
 
-def extract_request_from_content_code_block(
+def _extract_request_from_content_code_block(
     content_: list[dict],
 ) -> list[dict]:
     out = {}
@@ -65,7 +67,7 @@ def extract_request_from_content_code_block(
     return [_inner(i) for i in content_]
 
 
-def extract_action_request(content_: list[dict]) -> list[ActionRequest]:
+def _extract_action_request(content_: list[dict]) -> list[ActionRequestModel]:
     outs = []
 
     def _f(x: str):
@@ -82,10 +84,64 @@ def extract_action_request(content_: list[dict]) -> list[ActionRequest]:
         elif "arguments" in request_:
             request_["arguments"] = request_["arguments"]
 
-        msg = ActionRequest(
-            func=_f(request_["action"]),
+        msg = ActionRequestModel(
+            function=_f(request_["action"]),
             arguments=request_["arguments"],
         )
         outs.append(msg)
 
     return outs
+
+
+def create_action_request_model(
+    response: str | dict,
+) -> list[ActionRequest] | None:
+    msg = note(**to_dict(response))
+
+    content_ = None
+    if str(msg.get(["content"], "")).strip().lower() == "none":
+        content_ = _extract_request_plain_function_calling(msg, suppress=True)
+    elif a := msg.get(["content", "tool_uses"], None):
+        content_ = a
+    else:
+        content_ = _extract_request_from_content_code_block(msg)
+
+    if content_:
+        content_ = [content_] if isinstance(content_, dict) else content_
+        return _extract_action_request(content_)
+
+    _content = to_dict(msg["content"], fuzzy_parse=True, suppress=True)
+
+    if _content and isinstance(_content, dict):
+        if "action_request" in _content:
+            content_ = _content["action_request"]
+        if isinstance(content_, str):
+            content_ = to_dict(content_, fuzzy_parse=True, suppress=True)
+        if isinstance(content_, dict):
+            content_ = [content_]
+        if isinstance(content_, list):
+            return _extract_action_request(content_)
+
+    return None
+
+
+def create_action_request(
+    *,
+    action_request_model: ActionRequestModel,
+    sender,
+    recipient,
+    action_request: ActionRequest = None,
+):
+    if action_request:
+        if not isinstance(action_request, ActionRequest):
+            raise LionValueError(
+                "Error: action request must be an instance of ActionRequest."
+            )
+        return action_request
+
+    return ActionRequest(
+        function=action_request_model.function,
+        arguments=action_request_model.arguments,
+        sender=sender,
+        recipient=recipient,
+    )
