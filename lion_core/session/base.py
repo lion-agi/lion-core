@@ -6,7 +6,7 @@ from pydantic import Field, model_validator
 from lion_core.communication.system import System
 from lion_core.generic.node import Node
 from lion_core.generic.pile import Pile
-from lion_core.session.msg_handlers.system_msg import validate_system
+from lion_core.session.msg_handlers.create_system import validate_system
 from lion_core.sys_utils import SysUtil
 
 

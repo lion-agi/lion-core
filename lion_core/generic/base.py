@@ -29,4 +29,4 @@ class RealElement(BaseModel, AbstractElement, Real):
 
     @classmethod
     def from_dict(cls, data: dict, /, **kwargs) -> "RealElement":
-        return cls.model_validate(data, **kwargs)
+        return cls.model_validate({**data, **kwargs})

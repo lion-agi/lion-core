@@ -1,8 +1,8 @@
 from collections.abc import Callable
-from typing import Any, ClassVar, Literal
+from typing import Any, Literal
 
 from lionabc import BaseiModel, Traversal
-from lionfuncs import is_same_dtype
+from lionfuncs import Note, is_same_dtype
 from pydantic import Field, model_validator
 
 from lion_core.action import Tool, ToolManager
@@ -14,20 +14,19 @@ from lion_core.communication.mail import Mail
 from lion_core.communication.message import MessageFlag, RoledMessage
 from lion_core.communication.package import Package
 from lion_core.communication.system import System
-from lion_core.converter import ConverterRegistry
+
+# from lion_core.converter import ConverterRegistry
 from lion_core.generic.exchange import Exchange
-from lion_core.generic.note import Note
 from lion_core.generic.pile import Pile
 from lion_core.generic.progression import Progression, progression
 from lion_core.session.base import BaseSession
-from lion_core.session.msg_handlers.create_msg import create_message
-from lion_core.session.msg_handlers.validate_msg import validate_message
+from lion_core.session.msg_handlers.create_message import create_message
+from lion_core.session.msg_handlers.validate_message import validate_message
 
+# class BranchConverterRegistry(ConverterRegistry):
+#     """Registry for Branch converters."""
 
-class BranchConverterRegistry(ConverterRegistry):
-    """Registry for Branch converters."""
-
-    pass
+#     pass
 
 
 class Branch(BaseSession, Traversal):
@@ -46,7 +45,7 @@ class Branch(BaseSession, Traversal):
     user: str | None = Field(None)
     imodel: BaseiModel | None = Field(None)
 
-    _converter_registry: ClassVar = BranchConverterRegistry
+    # _converter_registry: ClassVar = BranchConverterRegistry
 
     @model_validator(mode="before")
     def _validate_input(cls, data: dict) -> dict:

@@ -192,7 +192,7 @@ Gets field annotation for a given field.
 
 ```python
 from lion_core.generic.component import Component
-from lion_core.generic.note import Note
+from lionfuncs import Note
 
 # Create a basic component
 component = Component(content="Hello, World!")

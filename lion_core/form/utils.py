@@ -3,8 +3,7 @@ from lionabc.exceptions import (
     LionTypeError,
     LionValueError,
 )
-
-from lion_core.generic.note import note
+from lionfuncs import note
 
 RESTRICTED_FIELDS = {
     "input_fields",

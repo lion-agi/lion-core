@@ -1,4 +1,5 @@
-from lion_core.generic.note import note
+from lionfuncs import note
+
 from lion_core.rule.default_rules.boolean import BooleanRule
 from lion_core.rule.default_rules.choice import ChoiceRule
 from lion_core.rule.default_rules.function_calling import FunctionCallingRule
