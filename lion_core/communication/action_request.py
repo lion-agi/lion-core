@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any
 
-from lionfuncs import Note, to_dict, to_str
+from lionfuncs import Note, copy, to_dict, to_str
 from typing_extensions import override
 
 from lion_core.communication.message import (
@@ -105,7 +105,9 @@ class ActionRequest(RoledMessage):
         Returns:
             The action request content.
         """
-        return self.content.get("action_request", {})
+        a = copy(self.content.get("action_request", {}))
+        a.pop("output", None)
+        return a
 
     @property
     def arguments(self) -> dict[str, Any]:
