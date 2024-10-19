@@ -236,6 +236,12 @@ class ToolManager(BaseManager):
         """Retrieve the schema for a specific tool."""
         if isinstance(tool, dict):
             return tool
+        if isinstance(tool, Callable):
+            name = tool.__name__
+            if name in self.registry:
+                return self.registry[name].schema_
+            raise ValueError(f"Tool {name} is not registered.")
+
         elif isinstance(tool, Tool) or isinstance(tool, str):
             name = tool.function_name if isinstance(tool, Tool) else tool
             if name in self.registry:
