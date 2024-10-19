@@ -1,7 +1,8 @@
+import logging
 from typing import Any
 
 from lionabc import AbstractElement
-from lionfuncs import copy, to_dict, to_num, validate_str
+from lionfuncs import copy, to_dict, to_num, validate_boolean, validate_str
 from pydantic import BaseModel, Field, create_model, field_validator
 
 from lion_core.operative.utils import prepare_fields
@@ -98,13 +99,24 @@ class OperativeModel(BaseModel, AbstractElement):
 
 
 class StepModel(BaseModel):
-
+    title: str = Field(
+        ...,
+        title="Title",
+        description="Provide a concise title summarizing the step.",
+    )
+    content: str = Field(
+        ...,
+        title="Content",
+        description="Describe the content of the step in detail.",
+    )
     reason: ReasonModel | None = Field(
         None,
         title="Reason",
-        description="a concise reasoning for the step",
+        description="**a concise reasoning for the step**",
     )
-    action_responses: list[ActionResponseModel] = []
+    action_responses: list[ActionResponseModel] = Field(
+        [], description="**Do not fill**"
+    )
     action_requests: list[ActionRequestModel] = Field(
         [],
         title="Actions",
@@ -116,7 +128,27 @@ class StepModel(BaseModel):
             "argument names.**"
         ),
     )
-    action_required: bool = False
+    action_required: bool = Field(
+        False,
+        title="Action Required",
+        description=(
+            "Specify whether the step requires actions to be "
+            "performed. If **True**, the actions in `action_requests` "
+            "must be performed. If **False**, the actions in "
+            "`action_requests` are optional. If no tool_schemas"
+            " are provided, this field is ignored."
+        ),
+    )
+
+    @field_validator("action_required", mode="before")
+    def validate_action_required(cls, value: Any) -> bool:
+        try:
+            return validate_boolean(value)
+        except Exception as e:
+            logging.error(
+                f"Failed to convert {value} to a boolean. Error: {e}"
+            )
+            return False
 
     @classmethod
     def parse_request_to_response(

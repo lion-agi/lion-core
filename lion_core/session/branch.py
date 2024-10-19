@@ -104,6 +104,8 @@ class Branch(BaseSession, Traversal):
 
     @model_validator(mode="after")
     def _check_system(self):
+        if self.system is None:
+            return self
         if self.system not in self.messages:
             self.messages.include(self.system)
             self.progress.insert(0, self.system)
@@ -592,6 +594,7 @@ class Branch(BaseSession, Traversal):
                     imodel=retry_imodel or imodel or self.imodel,
                     reason=reason,
                     actions=actions,
+                    invoke_action=invoke_action,
                     messages=[self.messages[i] for i in progress],
                     tool_schemas=tool_schemas,
                     handle_unmatched=handle_unmatched,
@@ -776,6 +779,7 @@ class Branch(BaseSession, Traversal):
             tool_schemas=tool_schemas,
             images=images,
             image_detail=image_detail,
+            invoke_action=invoke_action,
             **kwargs,
         )
 
@@ -802,7 +806,8 @@ class Branch(BaseSession, Traversal):
                     tool_schemas=tool_schemas,
                     images=images,
                     image_detail=image_detail,
-                    **response,
+                    invoke_action=invoke_action,
+                    **kwargs,
                 )
                 num_parse_retries -= 1
         elif request_model and not isinstance(response, BaseModel):
@@ -823,7 +828,7 @@ class Branch(BaseSession, Traversal):
                     tool_schemas=tool_schemas,
                     images=images,
                     image_detail=image_detail,
-                    **response,
+                    **kwargs,
                 )
                 num_parse_retries -= 1
         if not skip_validation:
