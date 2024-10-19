@@ -91,7 +91,7 @@ class PydanticSerializationConfig(SchemaModel):
 
 
 DEFAULT_LION_ID_CONFIG = LionIDConfig(
-    n=42,
+    n=36,
     random_hyphen=True,
     num_hyphens=4,
     hyphen_start_index=6,
