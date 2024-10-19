@@ -1,6 +1,6 @@
 from typing import Any
 
-from lionfuncs import to_str
+from lionfuncs import to_dict, to_str
 from pydantic import BaseModel
 from typing_extensions import override
 
@@ -52,8 +52,11 @@ class AssistantResponse(RoledMessage):
                 self.content["assistant_response"] = (
                     assistant_response.choices[0].message.content or ""
                 )
-                self.metadata["model_response"] = (
-                    assistant_response.model_dump(exclude_none=True)
+                self.metadata["model_response"] = to_dict(
+                    assistant_response,
+                    use_model_dump=True,
+                    exclude_none=True,
+                    exclude_unset=True,
                 )
             # or response[i].choices[0].delta.content
             elif isinstance(assistant_response, list):
@@ -65,7 +68,13 @@ class AssistantResponse(RoledMessage):
                 )
                 self.content["assistant_response"] = msg
                 self.metadata["model_response"] = [
-                    i.model_dump(exclude_none=True) for i in assistant_response
+                    to_dict(
+                        i,
+                        use_model_dump=True,
+                        exclude_none=True,
+                        exclude_unset=True,
+                    )
+                    for i in assistant_response
                 ]
             elif (
                 isinstance(assistant_response, dict)

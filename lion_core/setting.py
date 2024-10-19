@@ -2,7 +2,7 @@ from datetime import timezone
 from enum import Enum
 from typing import Any
 
-from lionfuncs import LN_UNDEFINED, LionUndefinedType
+from lionfuncs import LN_UNDEFINED, LionUndefinedType, to_dict
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -15,7 +15,11 @@ class SchemaModel(BaseModel):
     )
 
     def to_dict(self) -> dict[str, Any]:
-        dict_ = self.model_dump(exclude_unset=True)
+        dict_ = to_dict(
+            self,
+            use_model_dump=True,
+            exclude_unset=True,
+        )
         for i in list(dict_.keys()):
             if dict_[i] is LN_UNDEFINED:
                 dict_.pop(i)
