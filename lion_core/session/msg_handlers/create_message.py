@@ -34,7 +34,7 @@ def create_message(
                 if i is not None
             ],
         )
-        != 1
+        > 1
     ):
         raise ValueError("Error: Message can only have one role")
 

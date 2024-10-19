@@ -22,14 +22,19 @@ def create_action_response(
             raise LionValueError(
                 "Error: action response must be an instance of ActionResponse."
             )
-        action_response.update_request(
-            action_request=action_request,
-            func_output=action_response_model.output,
-        )
+        if action_response_model:
+            action_response.update_request(
+                action_request=action_request,
+                func_output=action_response_model.output,
+            )
+        else:
+            action_response.update_request(
+                action_request=action_request,
+            )
         return action_response
 
     return ActionResponse(
         action_request=action_request,
         sender=sender,
-        func_outputs=action_response_model.output,
+        func_output=action_response_model.output,
     )
