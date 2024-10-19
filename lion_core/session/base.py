@@ -6,7 +6,7 @@ from pydantic import Field, model_validator
 from lion_core.communication.system import System
 from lion_core.generic.node import Node
 from lion_core.generic.pile import Pile
-from lion_core.session.msg_handlers.create_system import validate_system
+from lion_core.session.msg_handlers.create_system import create_system
 from lion_core.sys_utils import SysUtil
 
 
@@ -20,10 +20,13 @@ class BaseSession(Node, AbstractSpace):
     @model_validator(mode="before")
     def validate_system(cls, data: dict):
         system = data.pop("system", None)
+        if system is None:
+            return data
+
         sender = data.pop("system_sender", None)
         system_datetime = data.pop("system_datetime", None)
 
-        system = validate_system(
+        system = create_system(
             system=system,
             sender=sender,
             system_datetime=system_datetime,
@@ -33,6 +36,8 @@ class BaseSession(Node, AbstractSpace):
 
     @model_validator(mode="after")
     def check_system_recipient(self):
+        if self.system is None:
+            return self
         if not SysUtil.is_id(self.system.recipient):
             self.system.recipient = self.ln_id
         return self

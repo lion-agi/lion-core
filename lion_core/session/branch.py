@@ -1,9 +1,12 @@
-from collections.abc import Callable
+import logging
+from datetime import datetime
 from typing import Any, Literal
 
-from lionabc import BaseiModel, Traversal
-from lionfuncs import Note, is_same_dtype
-from pydantic import Field, model_validator
+import pandas as pd
+from lion_service import iModel
+from lionabc import Traversal
+from lionfuncs import is_same_dtype
+from pydantic import BaseModel, Field, model_validator
 
 from lion_core.action import Tool, ToolManager
 from lion_core.communication.action_request import ActionRequest
@@ -11,7 +14,7 @@ from lion_core.communication.action_response import ActionResponse
 from lion_core.communication.assistant_response import AssistantResponse
 from lion_core.communication.instruction import Instruction
 from lion_core.communication.mail import Mail
-from lion_core.communication.message import MessageFlag, RoledMessage
+from lion_core.communication.message import RoledMessage
 from lion_core.communication.package import Package
 from lion_core.communication.system import System
 
@@ -19,14 +22,27 @@ from lion_core.communication.system import System
 from lion_core.generic.exchange import Exchange
 from lion_core.generic.pile import Pile
 from lion_core.generic.progression import Progression, progression
+from lion_core.operative.operative import OperativeModel
 from lion_core.session.base import BaseSession
 from lion_core.session.msg_handlers.create_message import create_message
 from lion_core.session.msg_handlers.validate_message import validate_message
+from lion_core.session.utils import _chat, _operate
 
 # class BranchConverterRegistry(ConverterRegistry):
 #     """Registry for Branch converters."""
 
 #     pass
+
+MESSAGE_FIELDS = [
+    "ln_id",
+    "timestamp",
+    "role",
+    "content",
+    "sender",
+    "recipient",
+    "lion_class",
+    "metadata",
+]
 
 
 class Branch(BaseSession, Traversal):
@@ -37,13 +53,14 @@ class Branch(BaseSession, Traversal):
     and communication within the branch.
     """
 
-    messages: Pile | None = Field(None)
-    tool_manager: ToolManager | None = Field(None)
-    mailbox: Exchange | None = Field(None)
-    progress: Progression | None = Field(None)
+    messages: Pile = Field(default_factory=Pile)
+    tool_manager: ToolManager = Field(default_factory=ToolManager)
+    mailbox: Exchange = Field(default_factory=Exchange)
+    progress: Progression | None = Field(default_factory=progression)
     system: System | None = Field(None)
     user: str | None = Field(None)
-    imodel: BaseiModel | None = Field(None)
+    imodel: iModel | None = Field(None)
+    operative_model: type[OperativeModel] | None = Field(None)
 
     # _converter_registry: ClassVar = BranchConverterRegistry
 
@@ -95,25 +112,24 @@ class Branch(BaseSession, Traversal):
     def add_message(
         self,
         *,
-        sender: Any | MessageFlag = None,
-        recipient: Any | MessageFlag = None,
-        instruction: Any | MessageFlag = None,
-        context: Any | MessageFlag = None,
-        guidance: Any | MessageFlag = None,
-        request_fields: dict | MessageFlag = None,
-        system: Any = None,
-        system_sender: Any = None,
-        system_datetime: bool | str | None | MessageFlag = None,
-        images: list | MessageFlag = None,
-        image_detail: Literal["low", "high", "auto"] | MessageFlag = None,
-        assistant_response: str | dict | None | MessageFlag = None,
-        action_request: ActionRequest | None = None,
-        action_response: ActionResponse | None = None,
-        func: str | Callable | MessageFlag = None,
-        arguments: dict | MessageFlag = None,
-        func_output: Any | MessageFlag = None,
-        metadata: Note | dict = None,  # additional branch parameters
+        sender=None,
+        recipient=None,
+        instruction=None,
+        context=None,
+        guidance=None,
+        request_fields=None,
+        system=None,
+        system_sender=None,
+        system_datetime=None,
+        images=None,
+        image_detail=None,
+        assistant_response=None,
+        action_request: ActionRequest = None,
+        action_response: ActionResponse = None,
+        action_request_model=None,
+        action_response_model=None,
         delete_previous_system: bool = None,
+        metadata=None,
     ) -> bool:
         _msg = create_message(
             sender=sender,
@@ -123,16 +139,15 @@ class Branch(BaseSession, Traversal):
             guidance=guidance,
             request_fields=request_fields,
             system=system,
+            system_sender=system_sender,
             system_datetime=system_datetime,
             images=images,
             image_detail=image_detail,
             assistant_response=assistant_response,
             action_request=action_request,
             action_response=action_response,
-            func=func,
-            arguments=arguments,
-            func_output=func_output,
-            system_sender=system_sender,
+            action_request_model=action_request_model,
+            action_response_model=action_response_model,
         )
 
         if isinstance(_msg, System):
@@ -163,7 +178,8 @@ class Branch(BaseSession, Traversal):
         if metadata:
             _msg.metadata.update(metadata, ["extra"])
 
-        return self.messages.include(_msg)
+        self.messages.include(_msg)
+        return _msg
 
     def clear_messages(self) -> None:
         """Clear all messages except the system message."""
@@ -264,7 +280,7 @@ class Branch(BaseSession, Traversal):
                 self.mailbox.pile_.pop(mail_id)
 
             elif mail.category == "imodel" and imodel:
-                if not isinstance(mail.package.package, BaseiModel):
+                if not isinstance(mail.package.package, iModel):
                     raise ValueError("Invalid iModel format")
                 self.imodel = mail.package.package
                 self.mailbox.pile_.pop(mail_id)
@@ -391,6 +407,278 @@ class Branch(BaseSession, Traversal):
     def _is_invoked(self) -> bool:
         """Check if the last message is an ActionResponse."""
         return isinstance(self.messages[-1], ActionResponse)
+
+    async def operate(
+        self,
+        instruction=None,
+        guidance=None,
+        context=None,
+        sender=None,
+        recipient=None,
+        progress: Progression = None,
+        operative_model: type[OperativeModel] = None,
+        imodel: iModel = None,
+        reason: bool = True,
+        actions: bool = False,
+        tools: Any = None,
+        invoke_action: bool = True,
+        num_parse_retries: int = 0,
+        retry_imodel: iModel = None,
+        handle_validation: Literal[
+            "raise", "return_value", "return_none"
+        ] = "return_value",
+        skip_validation: bool = False,
+        **kwargs,
+    ):
+        self = self or Branch()
+        progress = progress or self.progress
+
+        tool_schemas = None
+        if tools:
+            self.register_tools(tools)
+            tool_schemas = self.tool_manager.get_tool_schema(tools)
+
+        responses_model, ins, res = await _operate(
+            instruction=instruction,
+            guidance=guidance,
+            context=context,
+            sender=sender,
+            recipient=recipient,
+            operative_model=operative_model or self.operative_model,
+            imodel=imodel or self.imodel,
+            reason=reason,
+            actions=actions,
+            invoke_action=invoke_action,
+            messages=[self.messages[i] for i in progress],
+            tool_schemas=tool_schemas,
+            **kwargs,
+        )
+        if num_parse_retries > 10:
+            logging.warning(
+                f"Are you sure you want to retry {num_parse_retries} "
+                "times? lowering retry attempts to 10. Suggestion is under 3"
+            )
+            num_parse_retries = 10
+
+        if isinstance(responses_model, dict):
+            while num_parse_retries > 0 and isinstance(responses_model, dict):
+                responses_model, ins, res = await _operate(
+                    instruction=instruction,
+                    guidance=guidance,
+                    context=context,
+                    sender=sender,
+                    recipient=recipient,
+                    operative_model=operative_model or self.operative_model,
+                    imodel=retry_imodel or imodel or self.imodel,
+                    reason=reason,
+                    actions=actions,
+                    messages=[self.messages[i] for i in progress],
+                    tool_schemas=tool_schemas,
+                    **responses_model,
+                )
+                num_parse_retries -= 1
+
+        if not skip_validation and isinstance(responses_model, dict):
+            logging.warning(
+                "iModel response not parsed into operative "
+                f"model: {responses_model}"
+            )
+            if handle_validation == "raise":
+                raise ValueError(
+                    "Operative model validation failed. iModel response"
+                    f" not parsed into operative model: {responses_model}"
+                )
+            if handle_validation == "return_none":
+                return None
+            if handle_validation == "return_value":
+                self.add_message(instruction=ins)
+                self.add_message(assistant_response=res)
+                return responses_model
+
+        action_responses = None
+        if isinstance(responses_model, dict):
+            action_responses = responses_model.get("action_responses", None)
+        elif isinstance(responses_model, BaseModel) and hasattr(
+            responses_model, "action_responses"
+        ):
+            action_responses = responses_model.action_responses
+
+        self.add_message(instruction=ins)
+        self.add_message(assistant_response=res)
+
+        if action_responses:
+            for i in action_responses:
+                act_req = ActionRequest(
+                    function=i.function,
+                    arguments=i.arguments,
+                    sender=self,
+                    recipient=self.tool_manager.registry[i.function].ln_id,
+                )
+                act_req = self.add_message(action_request=act_req)
+                self.add_message(
+                    action_request=act_req,
+                    action_response_model=i,
+                    sender=self.tool_manager.registry[i.function].ln_id,
+                    recipient=self,
+                )
+
+        elif isinstance(responses_model, BaseModel) and hasattr(
+            responses_model, "action_requests"
+        ):
+            for i in responses_model.action_requests:
+                self.add_message(
+                    action_request_model=i,
+                    sender=self.ln_id,
+                    recipient=self.tool_manager.registry[i.function].ln_id,
+                )
+
+        return responses_model
+
+    async def chat(
+        self,
+        instruction=None,
+        guidance=None,
+        context=None,
+        sender=None,
+        recipient=None,
+        progress=None,
+        request_model: type[OperativeModel] = None,
+        request_fields: dict = None,
+        imodel: iModel = None,
+        images: list = None,
+        image_detail: Literal["low", "high", "auto"] = None,
+        tools: Any = None,
+        num_parse_retries: int = 0,
+        retry_imodel: iModel = None,
+        handle_validation: Literal[
+            "raise", "return_value", "return_none"
+        ] = "return_value",
+        skip_validation: bool = False,
+        **kwargs,
+    ):
+        self = self or Branch()
+        progress = progress or self.progress
+
+        tool_schemas = None
+        if tools:
+            self.register_tools(tools)
+            tool_schemas = self.tool_manager.get_tool_schema(tools)
+
+        response, ins, res = await _chat(
+            branch=self,
+            instruction=instruction,
+            guidance=guidance,
+            context=context,
+            sender=sender,
+            recipient=recipient,
+            request_model=request_model,
+            request_fields=request_fields,
+            imodel=imodel or self.imodel,
+            messages=[self.messages[i] for i in progress],
+            tool_schemas=tool_schemas,
+            images=images,
+            image_detail=image_detail,
+            **kwargs,
+        )
+
+        if num_parse_retries > 10:
+            logging.warning(
+                f"Are you sure you want to retry {num_parse_retries} times"
+                "? lowering retry attempts to 10. Suggestion is under 3"
+            )
+            num_parse_retries = 10
+
+        if request_fields and not isinstance(response, dict):
+            while num_parse_retries > 0 and not isinstance(response, dict):
+                response, ins, res = await _chat(
+                    branch=self,
+                    instruction=instruction,
+                    guidance=guidance,
+                    context=context,
+                    sender=sender,
+                    recipient=recipient,
+                    request_model=request_model,
+                    request_fields=request_fields,
+                    imodel=retry_imodel or imodel or self.imodel,
+                    messages=[self.messages[i] for i in progress],
+                    tool_schemas=tool_schemas,
+                    images=images,
+                    image_detail=image_detail,
+                    **response,
+                )
+                num_parse_retries -= 1
+        elif request_model and not isinstance(response, BaseModel):
+            while num_parse_retries > 0 and not isinstance(
+                response, BaseModel
+            ):
+                response, ins, res = await _chat(
+                    branch=self,
+                    instruction=instruction,
+                    guidance=guidance,
+                    context=context,
+                    sender=sender,
+                    recipient=recipient,
+                    request_model=request_model,
+                    request_fields=request_fields,
+                    imodel=retry_imodel or imodel or self.imodel,
+                    messages=[self.messages[i] for i in progress],
+                    tool_schemas=tool_schemas,
+                    images=images,
+                    image_detail=image_detail,
+                    **response,
+                )
+                num_parse_retries -= 1
+        if not skip_validation:
+            if request_fields and not isinstance(response, dict):
+                logging.warning(
+                    "Operative model validation failed. iModel "
+                    f"response not parsed into operative model: {response}"
+                )
+                if handle_validation == "raise":
+                    raise ValueError(
+                        "Operative model validation failed. iModel "
+                        f"response not parsed into operative model: {response}"
+                    )
+                if handle_validation == "return_none":
+                    return None
+                if handle_validation == "return_value":
+                    self.add_message(instruction=ins)
+                    self.add_message(assistant_response=res)
+                    return response
+            elif request_model and not isinstance(response, BaseModel):
+                logging.warning(
+                    f"Operative model validation failed. iModel response"
+                    f" not parsed into operative model: {response}"
+                )
+                if handle_validation == "raise":
+                    raise ValueError(
+                        f"Operative model validation failed. iModel response"
+                        f" not parsed into operative model: {response}"
+                    )
+                if handle_validation == "return_none":
+                    return None
+                if handle_validation == "return_value":
+                    self.add_message(instruction=ins)
+                    self.add_message(assistant_response=res)
+                    return response
+
+        self.add_message(instruction=ins)
+        self.add_message(assistant_response=res)
+        return response
+
+    def to_df(self) -> pd.DataFrame:
+        dicts_ = []
+        for i in self.messages:
+            dict_ = i.to_dict()
+            for k in list(dict_.keys()):
+                if k not in MESSAGE_FIELDS:
+                    dict_.pop(k)
+            datetime_ = datetime.fromtimestamp(i.timestamp)
+            dict_["timestamp"] = datetime_.isoformat(sep="T", timespec="auto")
+            dict_["role"] = i.role.value
+
+            dicts_.append(dict_)
+        return pd.DataFrame(dicts_, columns=MESSAGE_FIELDS)
 
 
 __all__ = ["Branch"]
