@@ -1,6 +1,7 @@
 from typing import Any, Literal
 
 from lionfuncs import LN_UNDEFINED, Note, note, time
+from pydantic import BaseModel
 
 DEFAULT_SYSTEM = "You are a helpful AI assistant. Let's think step by step."
 
@@ -88,15 +89,22 @@ def prepare_instruction_content(
     context: str | dict | list | None = None,
     request_fields: dict | list[str] | None = None,
     plain_content: str | None = None,
+    request_model: BaseModel = None,
     images: str | list | None = None,
     image_detail: Literal["low", "high", "auto"] | None = None,
 ) -> Note:
     """Prepare the content for an instruction message."""
+
+    if request_fields and request_model:
+        raise ValueError(
+            "only one of request_fields or request_model can be provided"
+        )
+
     out_ = {}
     if guidance:
         out_["guidance"] = guidance
-
-    out_["instruction"] = instruction or "N/A"
+    if instruction:
+        out_["instruction"] = instruction
     if context:
         if not isinstance(context, str):
             out_["context"] = context
@@ -105,6 +113,14 @@ def prepare_instruction_content(
     if images:
         out_["images"] = images if isinstance(images, list) else [images]
         out_["image_detail"] = image_detail or "low"
+
+    if request_model:
+        schema = request_model.model_json_schema()
+        request_fields = schema.pop("properties")
+        if "context" not in out_:
+            out_["context"] = []
+        out_["context"].append({"respond_schema_info": schema})
+
     if request_fields:
         _fields = request_fields if isinstance(request_fields, dict) else {}
         if not isinstance(request_fields, dict):
@@ -113,6 +129,7 @@ def prepare_instruction_content(
         out_["request_response_format"] = prepare_request_response_format(
             request_fields=_fields
         )
+
     if plain_content:
         out_["plain_content"] = plain_content
 
