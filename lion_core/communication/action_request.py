@@ -98,7 +98,7 @@ class ActionRequest(RoledMessage):
         return self.action_response_id is not None
 
     @property
-    def request_dict(self) -> dict[str, Any]:
+    def action_request(self) -> dict[str, Any]:
         """
         Get the action request content as a dictionary.
 
@@ -115,7 +115,7 @@ class ActionRequest(RoledMessage):
         Returns:
             The arguments for the action request.
         """
-        return self.request_dict.get("arguments", {})
+        return self.action_request.get("arguments", {})
 
     @property
     def function(self) -> str:
@@ -125,7 +125,11 @@ class ActionRequest(RoledMessage):
         Returns:
             The function name for the action request.
         """
-        return self.request_dict.get("function", "")
+        return self.action_request.get("function", "")
+
+    @override
+    def _format_content(self) -> dict[str, Any]:
+        return {"role": self.role.value, "content": self.action_request}
 
 
 # File: lion_core/communication/action_request.py

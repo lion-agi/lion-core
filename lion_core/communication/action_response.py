@@ -1,6 +1,5 @@
 from typing import Any
 
-from lionabc.exceptions import LionValueError
 from lionfuncs import Note
 from typing_extensions import override
 
@@ -17,10 +16,8 @@ def prepare_action_response_content(
     func_output: Any,
 ) -> Note:
     """Prepare the content for an action response."""
-    if action_request.is_responded:
-        raise LionValueError("Action request already responded to")
 
-    dict_ = action_request.request_dict
+    dict_ = action_request.action_request
     dict_["output"] = func_output
     content = Note(action_request_id=action_request.ln_id)
     content["action_response"] = dict_
@@ -92,7 +89,7 @@ class ActionResponse(RoledMessage):
     def update_request(
         self,
         action_request: ActionRequest,
-        func_output: Any,
+        func_output: Any = None,
     ) -> None:
         """Update the action response with new request and output.
 
@@ -100,6 +97,7 @@ class ActionResponse(RoledMessage):
             action_request: The original action request being responded to.
             func_output: The output from the function in the request.
         """
+        func_output = func_output or self.func_output
         self.content = prepare_action_response_content(
             action_request=action_request,
             func_output=func_output,
@@ -108,6 +106,15 @@ class ActionResponse(RoledMessage):
             ["action_response_id"],
             self.ln_id,
         )
+
+    @property
+    def action_response(self) -> Any:
+        """Get the action response content."""
+        return self.content.get("action_response", {})
+
+    @override
+    def _format_content(self) -> dict[str, Any]:
+        return {"role": self.role.value, "content": self.action_response}
 
 
 # File: lion_core/communication/action_response.py
