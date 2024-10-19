@@ -260,8 +260,8 @@ def test_action_response_update_request_isolation():
     request2 = ActionRequest("func2", {"arg2": 2}, SysUtil.id(), SysUtil.id())
     response.update_request(request2, "result2")
 
-    assert request1.request_dict["function"] == "func1"
-    assert request1.request_dict["arguments"] == {"arg1": 1}
+    assert request1.action_request["function"] == "func1"
+    assert request1.action_request["arguments"] == {"arg1": 1}
     assert request1.is_responded
 
 

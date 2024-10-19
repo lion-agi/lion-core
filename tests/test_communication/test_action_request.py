@@ -59,7 +59,7 @@ def test_action_request_init():
         "test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id()
     )
     assert request.role == MessageRole.ASSISTANT
-    assert request.request_dict == {
+    assert request.action_request == {
         "function": "test_func",
         "arguments": {"arg1": 1},
     }
@@ -69,7 +69,7 @@ def test_action_request_init_with_callable():
     request = ActionRequest(
         dummy_func, {"x": 1, "y": 2}, SysUtil.id(), SysUtil.id()
     )
-    assert request.request_dict["function"] == "dummy_func"
+    assert request.action_request["function"] == "dummy_func"
 
 
 def test_action_request_init_with_message_load():
@@ -109,7 +109,7 @@ def test_action_request_request_dict():
     request = ActionRequest(
         "test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id()
     )
-    assert request.request_dict == {
+    assert request.action_request == {
         "function": "test_func",
         "arguments": {"arg1": 1},
     }
@@ -125,13 +125,13 @@ def test_action_request_action_response_id():
 # Edge cases and additional tests for ActionRequest
 def test_action_request_with_empty_arguments():
     request = ActionRequest("test_func", {}, SysUtil.id(), SysUtil.id())
-    assert request.request_dict["arguments"] == {}
+    assert request.action_request["arguments"] == {}
 
 
 def test_action_request_with_very_long_function_name():
     long_name = "a" * 1000
     request = ActionRequest(long_name, {}, SysUtil.id(), SysUtil.id())
-    assert len(request.request_dict["function"]) == 1000
+    assert len(request.action_request["function"]) == 1000
 
 
 def test_action_request_with_complex_arguments():
@@ -143,7 +143,7 @@ def test_action_request_with_complex_arguments():
     request = ActionRequest(
         "test_func", complex_args, SysUtil.id(), SysUtil.id()
     )
-    assert request.request_dict["arguments"] == complex_args
+    assert request.action_request["arguments"] == complex_args
 
 
 def test_action_request_unicode():
@@ -151,7 +151,7 @@ def test_action_request_unicode():
     request = ActionRequest(
         "test_func", unicode_args, SysUtil.id(), SysUtil.id()
     )
-    assert request.request_dict["arguments"] == unicode_args
+    assert request.action_request["arguments"] == unicode_args
 
 
 def test_action_request_with_callable_and_kwargs():
@@ -161,8 +161,8 @@ def test_action_request_with_callable_and_kwargs():
     request = ActionRequest(
         func_with_kwargs, {"x": 1, "y": 2, "z": 3}, SysUtil.id(), SysUtil.id()
     )
-    assert request.request_dict["function"] == "func_with_kwargs"
-    assert request.request_dict["arguments"] == {"x": 1, "y": 2, "z": 3}
+    assert request.action_request["function"] == "func_with_kwargs"
+    assert request.action_request["arguments"] == {"x": 1, "y": 2, "z": 3}
 
 
 def test_action_request_serialization():
@@ -178,7 +178,7 @@ def test_action_request_serialization():
     # Deserialize
     reconstructed_request = ActionRequest.from_dict(json.loads(request_json))
 
-    assert reconstructed_request.request_dict == request.request_dict
+    assert reconstructed_request.request_dict == request.action_request
 
 
 def test_action_request_with_very_deep_nesting():
@@ -190,7 +190,7 @@ def test_action_request_with_very_deep_nesting():
     deep_args = create_nested_dict(100)  # Very deep nesting
     request = ActionRequest("deep_func", deep_args, SysUtil.id(), SysUtil.id())
 
-    assert request.request_dict["arguments"] == deep_args
+    assert request.action_request["arguments"] == deep_args
 
 
 def test_action_request_thread_safety():
@@ -247,7 +247,7 @@ def test_action_request_with_various_callables():
 
     for func in [normal_func, async_func]:
         request = ActionRequest(func, {}, SysUtil.id(), SysUtil.id())
-        assert isinstance(request.request_dict["function"], str)
+        assert isinstance(request.action_request["function"], str)
 
 
 # Test with maximum possible arguments
@@ -256,7 +256,7 @@ def test_action_request_max_arguments():
     request = ActionRequest(
         "max_args_func", max_args, SysUtil.id(), SysUtil.id()
     )
-    assert len(request.request_dict["arguments"]) == 1000
+    assert len(request.action_request["arguments"]) == 1000
 
 
 # Test with various data types in arguments
@@ -274,4 +274,4 @@ def test_action_request_various_data_types():
     request = ActionRequest(
         "data_types_func", args, SysUtil.id(), SysUtil.id()
     )
-    assert request.request_dict["arguments"] == args
+    assert request.action_request["arguments"] == args
