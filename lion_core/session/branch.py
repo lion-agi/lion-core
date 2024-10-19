@@ -34,13 +34,13 @@ from lion_core.session.utils import _chat, _operate
 #     pass
 
 MESSAGE_FIELDS = [
-    "ln_id",
     "timestamp",
+    "lion_class",
     "role",
     "content",
+    "ln_id",
     "sender",
     "recipient",
-    "lion_class",
     "metadata",
 ]
 
@@ -56,11 +56,11 @@ class Branch(BaseSession, Traversal):
     messages: Pile = Field(default_factory=Pile)
     tool_manager: ToolManager = Field(default_factory=ToolManager)
     mailbox: Exchange = Field(default_factory=Exchange)
-    progress: Progression | None = Field(default_factory=progression)
+    progress: Progression = Field(default_factory=progression)
     system: System | None = Field(None)
-    user: str | None = Field(None)
+    user: str = "user"
     imodel: iModel | None = Field(None)
-    operative_model: type[OperativeModel] | None = Field(None)
+    operative_model: type[BaseModel] | None = Field(None)
 
     # _converter_registry: ClassVar = BranchConverterRegistry
 
@@ -404,10 +404,6 @@ class Branch(BaseSession, Traversal):
             raise ValueError("Invalid progress")
         return [self.messages[i].chat_msg for i in (progress or self.progress)]
 
-    def _is_invoked(self) -> bool:
-        """Check if the last message is an ActionResponse."""
-        return isinstance(self.messages[-1], ActionResponse)
-
     async def operate(
         self,
         instruction=None,
@@ -428,6 +424,9 @@ class Branch(BaseSession, Traversal):
             "raise", "return_value", "return_none"
         ] = "return_value",
         skip_validation: bool = False,
+        handle_unmatched: Literal[
+            "ignore", "raise", "remove", "fill", "force"
+        ] = "force",
         **kwargs,
     ):
         self = self or Branch()
@@ -439,6 +438,7 @@ class Branch(BaseSession, Traversal):
             tool_schemas = self.tool_manager.get_tool_schema(tools)
 
         responses_model, ins, res = await _operate(
+            branch=self,
             instruction=instruction,
             guidance=guidance,
             context=context,
@@ -451,6 +451,7 @@ class Branch(BaseSession, Traversal):
             invoke_action=invoke_action,
             messages=[self.messages[i] for i in progress],
             tool_schemas=tool_schemas,
+            handle_unmatched=handle_unmatched,
             **kwargs,
         )
         if num_parse_retries > 10:
@@ -474,6 +475,7 @@ class Branch(BaseSession, Traversal):
                     actions=actions,
                     messages=[self.messages[i] for i in progress],
                     tool_schemas=tool_schemas,
+                    handle_unmatched=handle_unmatched,
                     **responses_model,
                 )
                 num_parse_retries -= 1
@@ -647,12 +649,12 @@ class Branch(BaseSession, Traversal):
                     return response
             elif request_model and not isinstance(response, BaseModel):
                 logging.warning(
-                    f"Operative model validation failed. iModel response"
+                    "Operative model validation failed. iModel response"
                     f" not parsed into operative model: {response}"
                 )
                 if handle_validation == "raise":
                     raise ValueError(
-                        f"Operative model validation failed. iModel response"
+                        "Operative model validation failed. iModel response"
                         f" not parsed into operative model: {response}"
                     )
                 if handle_validation == "return_none":
@@ -669,12 +671,12 @@ class Branch(BaseSession, Traversal):
     def to_df(self) -> pd.DataFrame:
         dicts_ = []
         for i in self.messages:
-            dict_ = i.to_dict()
+            dict_: dict = i.to_dict()
             for k in list(dict_.keys()):
                 if k not in MESSAGE_FIELDS:
                     dict_.pop(k)
             datetime_ = datetime.fromtimestamp(i.timestamp)
-            dict_["timestamp"] = datetime_.isoformat(sep="T", timespec="auto")
+            dict_["timestamp"] = datetime_.isoformat(timespec="auto")
             dict_["role"] = i.role.value
 
             dicts_.append(dict_)

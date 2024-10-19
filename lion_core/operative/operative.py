@@ -53,7 +53,7 @@ class ActionRequestModel(BaseModel):
         description=(
             "Specify the name of the function to execute. **Choose "
             "from the provided "
-            "`tool_schema`; do not invent function names.**"
+            "`tool_schemas`; do not invent function names.**"
         ),
         examples=["print", "add", "len"],
     )
@@ -64,7 +64,7 @@ class ActionRequestModel(BaseModel):
             "Provide the arguments to pass to the function as a "
             "dictionary. **Use "
             "argument names and types as specified in the "
-            "`tool_schema`; do not "
+            "`tool_schemas`; do not "
             "invent argument names.**"
         ),
         examples=[{"num1": 1, "num2": 2}, {"x": "hello", "y": "world"}],
@@ -162,8 +162,13 @@ class StepModel(BaseModel):
             fields.pop("action_requests", None)
             fields.pop("action_required", None)
 
+        name = None
+        if hasattr(operative_model, "class_name"):
+            name = operative_model.class_name()
+        else:
+            name = operative_model.__name__
         return create_model(
-            operative_model.class_name() + "StepRequest",
+            name + "StepRequest",
             __base__=operative_model,
             **fields,
         )
@@ -193,8 +198,14 @@ class StepModel(BaseModel):
             fields.pop("action_responses", None)
             fields.pop("action_requests", None)
 
+        name = None
+        if hasattr(operative_model, "class_name"):
+            name = operative_model.class_name()
+        else:
+            name = operative_model.__name__
+
         return create_model(
-            operative_model.class_name() + "StepResponse",
+            name + "StepResponse",
             __base__=operative_model,
             **fields,
         )

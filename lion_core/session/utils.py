@@ -2,7 +2,7 @@ import logging
 from typing import Literal
 
 from lion_service import iModel
-from lionfuncs import alcall, md_to_json
+from lionfuncs import alcall, copy, md_to_json, validate_mapping
 from pydantic import BaseModel
 
 from lion_core.action.function_calling import FunctionCalling
@@ -10,6 +10,7 @@ from lion_core.communication.assistant_response import AssistantResponse
 from lion_core.communication.instruction import Instruction
 from lion_core.communication.message import RoledMessage
 from lion_core.operative.operative import (
+    ActionRequestModel,
     ActionResponseModel,
     OperativeModel,
     StepModel,
@@ -32,6 +33,9 @@ async def _operate(
     tool_schemas=None,
     images: list = None,
     image_detail: Literal["low", "high", "auto"] = None,
+    handle_unmatched: Literal[
+        "ignore", "raise", "remove", "fill", "force"
+    ] = "force",
     **kwargs,
 ):
     """
@@ -63,26 +67,30 @@ async def _operate(
     res = AssistantResponse(
         assistant_response=api_response,
         sender=branch,
-        recipient=None,
+        recipient=branch.user,
     )
-    print(res.response)
-    res.content["assistant_response"] = md_to_json(res.response)
-    dict_ = res.content["assistant_response"]
-    dict1 = {k: v for k, v in dict_.items() if k in request_model.model_fields}
+    res.content["assistant_response"] = validate_mapping(
+        res.response,
+        request_model.model_fields,
+        handle_unmatched=handle_unmatched,
+    )
+    dict_ = copy(res.content["assistant_response"])
 
     try:
-        request_model = operative_model.model_validate(dict1)
+        request_model = operative_model.model_validate(dict_)
     except Exception:
         request_model = request_model()
 
     if (
         actions
         and invoke_action
+        and hasattr(request_model, "action_required")
+        and request_model.action_required
         and hasattr(request_model, "action_requests")
         and request_model.action_requests
     ):
 
-        async def _invoke_action(i):
+        async def _invoke_action(i: ActionRequestModel):
             tool = branch.tool_manager.registry.get(i.function, None)
             if tool:
                 func_call = FunctionCalling(tool=tool, arguments=i.arguments)
