@@ -60,10 +60,10 @@ class Branch(BaseSession, Traversal):
     tool_manager: ToolManager = Field(default_factory=ToolManager)
     mailbox: Exchange = Field(default_factory=Exchange)
     progress: Progression = Field(default_factory=progression)
-    system: System | None = Field(None)
+    system: System | None = None
     user: str = "user"
-    imodel: iModel | None = Field(None)
-    operative_model: type[BaseModel] | None = Field(None)
+    imodel: iModel | None = None
+    operative_model: type[BaseModel] | None = BaseModel
 
     # _converter_registry: ClassVar = BranchConverterRegistry
 
