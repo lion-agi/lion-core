@@ -2,7 +2,7 @@ import logging
 from typing import Literal
 
 from lion_service import iModel
-from lionfuncs import alcall, copy, md_to_json, validate_mapping
+from lionfuncs import alcall, copy, md_to_json, to_dict, validate_mapping
 from pydantic import BaseModel
 
 from lion_core.action.function_calling import FunctionCalling
@@ -15,6 +15,17 @@ from lion_core.operative.operative import (
     OperativeModel,
     StepModel,
 )
+
+
+async def _invoke_action(i: ActionRequestModel, branch=None):
+    tool = branch.tool_manager.registry.get(i.function, None)
+    if tool:
+        func_call = FunctionCalling(tool, arguments=i.arguments)
+        result = await func_call.invoke()
+        return ActionResponseModel(
+            function=i.function, arguments=i.arguments, output=result
+        )
+    return None
 
 
 async def _operate(
@@ -77,7 +88,7 @@ async def _operate(
     dict_ = copy(res.content["assistant_response"])
 
     try:
-        request_model = operative_model.model_validate(dict_)
+        request_model = request_model.model_validate(dict_)
     except Exception:
         request_model = request_model()
 
@@ -90,19 +101,10 @@ async def _operate(
         and request_model.action_requests
     ):
 
-        async def _invoke_action(i: ActionRequestModel):
-            tool = branch.tool_manager.registry.get(i.function, None)
-            if tool:
-                func_call = FunctionCalling(tool=tool, arguments=i.arguments)
-                result = await func_call.invoke()
-                return ActionResponseModel(
-                    function=i.function, arguments=i.arguments, output=result
-                )
-            return None
-
-        action_responses = alcall(
-            request_model.action_requests, _invoke_action, dropna=True
+        action_responses = await alcall(
+            request_model.action_requests, _invoke_action, branch=branch
         )
+        action_responses = [to_dict(i) for i in action_responses if i]
         dict_["action_responses"] = action_responses
 
     try:
@@ -149,6 +151,11 @@ async def _chat(
     )
     if tool_schemas:
         ins.update_context(tool_schemas=tool_schemas)
+        guide = ins.guidance or ""
+        guide += "\n\nwhen providing function arguments, please use "
+        guide += "the following format:\n\n"
+        guide += "{'function': ..., 'arguments': {...}}\n\n"
+        ins.update_guidance(guide)
 
     messages.append(ins)
     kwargs["messages"] = [m.chat_msg for m in messages]

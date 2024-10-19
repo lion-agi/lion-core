@@ -1,11 +1,12 @@
 import logging
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any, Literal
 
 import pandas as pd
 from lion_service import iModel
 from lionabc import Traversal
-from lionfuncs import is_same_dtype
+from lionfuncs import alcall, is_same_dtype, to_dict
 from pydantic import BaseModel, Field, model_validator
 
 from lion_core.action import Tool, ToolManager
@@ -23,8 +24,12 @@ from lion_core.communication import (
 # from lion_core.converter import ConverterRegistry
 from lion_core.generic import Exchange, Pile, Progression, progression
 from lion_core.session.base import BaseSession
-from lion_core.session.msg_handlers import create_message, validate_message
-from lion_core.session.utils import _chat, _operate
+from lion_core.session.msg_handlers import (
+    create_action_request_model,
+    create_message,
+    validate_message,
+)
+from lion_core.session.utils import _chat, _invoke_action, _operate
 
 # class BranchConverterRegistry(ConverterRegistry):
 #     """Registry for Branch converters."""
@@ -65,7 +70,8 @@ class Branch(BaseSession, Traversal):
     @model_validator(mode="before")
     def _validate_input(cls, data: dict) -> dict:
         messages = data.pop("messages", None)
-        data["messages"] = cls.messages.__class__(
+
+        data["messages"] = Pile(
             validate_message(messages),
             {RoledMessage},
             strict=False,
@@ -128,7 +134,7 @@ class Branch(BaseSession, Traversal):
         action_response_model=None,
         delete_previous_system: bool = None,
         metadata=None,
-    ) -> bool:
+    ):
         _msg = create_message(
             sender=sender,
             recipient=recipient,
@@ -177,14 +183,14 @@ class Branch(BaseSession, Traversal):
             _msg.metadata.update(metadata, ["extra"])
 
         self.messages.include(_msg)
-        return _msg
 
     def clear_messages(self) -> None:
         """Clear all messages except the system message."""
         self.messages.clear()
         self.progress.clear()
-        self.messages.include(self.system)
-        self.progress.insert(0, self.system)
+        if self.system:
+            self.messages.include(self.system)
+            self.progress.insert(0, self.system)
 
     def _change_system(
         self,
@@ -318,7 +324,7 @@ class Branch(BaseSession, Traversal):
         Returns:
             Pile: A Pile containing all assistant responses.
         """
-        return self.messages.__class__(
+        return Pile(
             [
                 self.messages[i]
                 for i in self.progress
@@ -425,14 +431,23 @@ class Branch(BaseSession, Traversal):
         handle_unmatched: Literal[
             "ignore", "raise", "remove", "fill", "force"
         ] = "force",
+        clear_messages: bool = False,
         **kwargs,
     ):
-        self = self or Branch()
+        if clear_messages:
+            self.clear_messages()
+
         progress = progress or self.progress
 
         tool_schemas = None
         if tools:
-            self.register_tools(tools)
+            tools = tools if isinstance(tools, list) else [tools]
+            for i in tools:
+                if (
+                    isinstance(i, Tool | Callable)
+                    and i not in self.tool_manager
+                ):
+                    self.tool_manager.register_tools(i)
             tool_schemas = self.tool_manager.get_tool_schema(tools)
 
         responses_model, ins, res = await _operate(
@@ -462,6 +477,7 @@ class Branch(BaseSession, Traversal):
         if isinstance(responses_model, dict):
             while num_parse_retries > 0 and isinstance(responses_model, dict):
                 responses_model, ins, res = await _operate(
+                    branch=self,
                     instruction=instruction,
                     guidance=guidance,
                     context=context,
@@ -508,28 +524,48 @@ class Branch(BaseSession, Traversal):
 
         if action_responses:
             for i in action_responses:
-                act_req = ActionRequest(
-                    function=i.function,
-                    arguments=i.arguments,
-                    sender=self,
-                    recipient=self.tool_manager.registry[i.function].ln_id,
-                )
-                act_req = self.add_message(action_request=act_req)
-                self.add_message(
-                    action_request=act_req,
-                    action_response_model=i,
-                    sender=self.tool_manager.registry[i.function].ln_id,
-                    recipient=self,
-                )
+                i = to_dict(i)
+                if i.get("output", None):
+                    act_req = ActionRequest(
+                        function=i["function"],
+                        arguments=i["arguments"],
+                        sender=self,
+                        recipient=self.tool_manager.registry[
+                            i["function"]
+                        ].ln_id,
+                    )
+                    act_res = ActionResponse(
+                        action_request=act_req,
+                        sender=self.tool_manager.registry[i["function"]].ln_id,
+                        func_output=i["output"],
+                    )
+
+                    self.add_message(
+                        action_request=act_req,
+                        sender=act_req.sender,
+                        recipient=act_req.recipient,
+                    )
+
+                    self.add_message(
+                        action_request=act_req,
+                        action_response=act_res,
+                        sender=act_res.sender,
+                    )
 
         elif isinstance(responses_model, BaseModel) and hasattr(
             responses_model, "action_requests"
         ):
             for i in responses_model.action_requests:
+                i = to_dict(i)
+                act_req = ActionRequest(
+                    function=i["function"],
+                    arguments=i["arguments"],
+                    sender=self,
+                )
                 self.add_message(
-                    action_request_model=i,
-                    sender=self.ln_id,
-                    recipient=self.tool_manager.registry[i.function].ln_id,
+                    action_request=act_req,
+                    sender=act_req.sender,
+                    recipient=None,
                 )
 
         return responses_model
@@ -554,14 +590,24 @@ class Branch(BaseSession, Traversal):
             "raise", "return_value", "return_none"
         ] = "return_value",
         skip_validation: bool = False,
+        clear_messages: bool = False,
+        invoke_action: bool = False,
         **kwargs,
     ):
-        self = self or Branch()
+        if clear_messages:
+            self.clear_messages()
         progress = progress or self.progress
 
         tool_schemas = None
         if tools:
-            self.register_tools(tools)
+            tools = tools if isinstance(tools, list) else [tools]
+            for i in tools:
+                if (
+                    isinstance(i, Tool | Callable)
+                    and i not in self.tool_manager
+                ):
+                    self.tool_manager.register_tools(i)
+
             tool_schemas = self.tool_manager.get_tool_schema(tools)
 
         response, ins, res = await _chat(
@@ -664,6 +710,62 @@ class Branch(BaseSession, Traversal):
 
         self.add_message(instruction=ins)
         self.add_message(assistant_response=res)
+
+        action_request_models = create_action_request_model(response)
+        if action_request_models:
+            if invoke_action:
+                try:
+                    action_responses = await alcall(
+                        action_request_models, _invoke_action, branch=self
+                    )
+                except Exception as e:
+                    logging.error(f"Failed to invoke action: {e}")
+                    action_responses = []
+
+                if action_responses:
+                    for i in action_responses:
+                        i = to_dict(i)
+                        if i.get("output", None):
+                            act_req = ActionRequest(
+                                function=i["function"],
+                                arguments=i["arguments"],
+                                sender=self,
+                                recipient=self.tool_manager.registry[
+                                    i["function"]
+                                ].ln_id,
+                            )
+                            act_res = ActionResponse(
+                                action_request=act_req,
+                                sender=self.tool_manager.registry[
+                                    i["function"]
+                                ].ln_id,
+                                func_output=i["output"],
+                            )
+
+                            self.add_message(
+                                action_request=act_req,
+                                sender=act_req.sender,
+                                recipient=act_req.recipient,
+                            )
+
+                            self.add_message(
+                                action_request=act_req,
+                                action_response=act_res,
+                                sender=act_res.sender,
+                            )
+            else:
+                for i in action_request_models:
+                    i = to_dict(i)
+                    act_req = ActionRequest(
+                        function=i["function"],
+                        arguments=i["arguments"],
+                        sender=self,
+                    )
+                    self.add_message(
+                        action_request=act_req,
+                        sender=act_req.sender,
+                        recipient=None,
+                    )
         return response
 
     def to_df(self) -> pd.DataFrame:

@@ -1,4 +1,7 @@
-from .create_action_request import create_action_request
+from .create_action_request import (
+    create_action_request,
+    create_action_request_model,
+)
 from .create_action_response import create_action_response
 from .create_assistant_response import create_assistant_response
 from .create_instruction import create_instruction
@@ -14,4 +17,5 @@ __all__ = [
     "create_action_response",
     "create_message",
     "validate_message",
+    "create_action_request_model",
 ]
