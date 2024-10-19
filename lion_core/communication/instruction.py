@@ -2,6 +2,7 @@ import inspect
 from typing import Any, Literal
 
 from lionabc.exceptions import LionTypeError
+from pydantic import BaseModel
 from typing_extensions import override
 
 from lion_core.communication.message import (
@@ -33,6 +34,7 @@ class Instruction(RoledMessage):
         sender: Any | MessageFlag = None,
         recipient: Any | MessageFlag = None,
         request_fields: dict | list | MessageFlag = None,
+        request_model: BaseModel | MessageFlag = None,
         plain_content: str | None = None,
         image_detail: Literal["low", "high", "auto"] | MessageFlag = None,
         protected_init_params: dict | None = None,
@@ -46,6 +48,8 @@ class Instruction(RoledMessage):
             recipient,
             request_fields,
             image_detail,
+            plain_content,
+            request_model,
         ]
 
         if all(x == MessageFlag.MESSAGE_LOAD for x in message_flags):
@@ -66,6 +70,7 @@ class Instruction(RoledMessage):
                 request_fields=request_fields,
                 plain_content=plain_content,
                 image_detail=image_detail,
+                request_model=request_model,
             ),
             sender=sender or "user",
             recipient=recipient or "N/A",
