@@ -67,12 +67,12 @@ class Branch(BaseSession, Traversal):
         operative_model (type[BaseModel] | None): Model for operation results.
     """
 
-    messages: Pile = Field(default_factory=Pile)
-    tool_manager: ToolManager = Field(default_factory=ToolManager)
-    mailbox: Exchange = Field(default_factory=Exchange)
-    progress: Progression = Field(default_factory=progression)
+    messages: Pile | None = Field(default_factory=Pile)
+    tool_manager: ToolManager | None = Field(default_factory=ToolManager)
+    mailbox: Exchange | None = Field(default_factory=Exchange)
+    progress: Progression | None = Field(default_factory=progression)
     system: System | None = None
-    user: str = "user"
+    user: str | None = "user"
     imodel: iModel | None = None
     operative_model: type[BaseModel] | None = BaseModel
 
@@ -99,7 +99,10 @@ class Branch(BaseSession, Traversal):
             Exchange(),
         )
         if "tools" in data:
-            data["tool_manager"].register_tools(data.pop("tools"))
+            tool_manager = data.get("tool_manager", None)
+            tool_manager = tool_manager or ToolManager()
+            tool_manager.register_tools(data.pop("tools"))
+            data["tool_manager"] = tool_manager
         return cls.validate_system(data)
 
     @model_validator(mode="after")
