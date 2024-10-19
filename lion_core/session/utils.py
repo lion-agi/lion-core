@@ -57,16 +57,26 @@ async def _operate(
         reason=reason, actions=actions, operative_model=operative_model
     )
 
-    ins = Instruction(
-        instruction=instruction,
-        guidance=guidance,
-        context=context,
-        sender=sender,
-        recipient=recipient,
-        request_model=request_model,
-        image_detail=image_detail,
-        images=images,
-    )
+    ins = None
+    if isinstance(instruction, Instruction):
+        ins = instruction
+        if context:
+            ins.update_context(context)
+        if images:
+            ins.update_images(images=images, image_detail=image_detail)
+        if guidance:
+            ins.update_guidance(guidance)
+    else:
+        ins = Instruction(
+            instruction=instruction,
+            guidance=guidance,
+            context=context,
+            sender=sender,
+            recipient=recipient,
+            request_model=request_model,
+            image_detail=image_detail,
+            images=images,
+        )
     if tool_schemas:
         ins.update_context(tool_schemas=tool_schemas)
 
@@ -138,17 +148,36 @@ async def _chat(
     if request_model and request_fields:
         raise ValueError("Cannot have both request_model and request_fields")
 
-    ins = Instruction(
-        instruction=instruction,
-        guidance=guidance,
-        context=context,
-        sender=sender,
-        recipient=recipient,
-        request_model=request_model,
-        image_detail=image_detail,
-        images=images,
-        request_fields=request_fields,
-    )
+    ins = None
+    if isinstance(instruction, Instruction):
+        if context:
+            instruction.update_context(context)
+
+        if request_model:
+            schema = request_model.model_json_schema()
+            request_fields = schema.pop("properties")
+            instruction.update_context(respond_schema_info=schema)
+
+        if request_fields:
+            instruction.update_request_fields(request_fields=request_fields)
+        if images:
+            instruction.update_images(images=images, image_detail=image_detail)
+        if guidance:
+            instruction.update_guidance(guidance)
+        ins = instruction
+
+    else:
+        ins = Instruction(
+            instruction=instruction,
+            guidance=guidance,
+            context=context,
+            sender=sender,
+            recipient=recipient,
+            request_model=request_model,
+            image_detail=image_detail,
+            images=images,
+            request_fields=request_fields,
+        )
     if tool_schemas:
         ins.update_context(tool_schemas=tool_schemas)
         guide = ins.guidance or ""

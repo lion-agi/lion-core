@@ -71,8 +71,12 @@ class ToolManager(BaseManager):
             TypeError: If the provided tool is not a Tool object or callable.
         """
         if not update and tool in self:
-            func_name = getattr(tool, "function_name", tool)
-            raise ValueError(f"Tool {func_name} is already registered.")
+            name = None
+            if isinstance(tool, Tool):
+                name = tool.function_name
+            elif callable(tool):
+                name = tool.__name__
+            raise ValueError(f"Tool {name} is already registered.")
 
         if callable(tool):
             tool = func_to_tool(tool)[0]
@@ -84,6 +88,7 @@ class ToolManager(BaseManager):
     def register_tools(
         self,
         tools: list[REGISTERABLE_TOOL] | REGISTERABLE_TOOL,
+        update: bool = False,
     ) -> None:
         """Register multiple tools in the registry.
 
@@ -97,7 +102,7 @@ class ToolManager(BaseManager):
         """
         tools_list = tools if isinstance(tools, list) else [tools]
         [
-            self.register_tool(tool)
+            self.register_tool(tool, update=update)
             for tool in to_list(tools_list, dropna=True, flatten=True)
         ]
 

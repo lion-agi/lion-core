@@ -23,6 +23,7 @@ from lion_core.communication import (
 
 # from lion_core.converter import ConverterRegistry
 from lion_core.generic import Exchange, Pile, Progression, progression
+from lion_core.generic.base import RealElement
 from lion_core.session.base import BaseSession
 from lion_core.session.msg_handlers import (
     create_action_request_model,
@@ -54,6 +55,16 @@ class Branch(BaseSession, Traversal):
 
     This class manages a conversation branch, including messages, tools,
     and communication within the branch.
+
+    Attributes:
+        messages (Pile): Collection of messages in the branch.
+        tool_manager (ToolManager): Manages tools available in the branch.
+        mailbox (Exchange): Handles mail communication for the branch.
+        progress (Progression): Tracks the order of messages.
+        system (System | None): System message for the branch.
+        user (str): Identifier for the user in the conversation.
+        imodel (iModel | None): AI model associated with the branch.
+        operative_model (type[BaseModel] | None): Model for operation results.
     """
 
     messages: Pile = Field(default_factory=Pile)
@@ -100,10 +111,10 @@ class Branch(BaseSession, Traversal):
 
     def set_system(self, system: System) -> None:
         """
-        Set or update the system message for the branch.
+        Sets or updates the system message for the branch.
 
         Args:
-            system: The new system message.
+            system (System): The new system message to set.
         """
         if len(self.progress) < 1:
             self.messages.include(system)
@@ -135,6 +146,16 @@ class Branch(BaseSession, Traversal):
         delete_previous_system: bool = None,
         metadata=None,
     ):
+        """
+        Adds a new message to the branch.
+
+        Supports various message types including instructions, system messages,
+        assistant responses, and action requests/responses.
+
+        Args:
+            **kwargs: Keyword arguments for message creation.
+        """
+
         _msg = create_message(
             sender=sender,
             recipient=recipient,
@@ -185,7 +206,7 @@ class Branch(BaseSession, Traversal):
         self.messages.include(_msg)
 
     def clear_messages(self) -> None:
-        """Clear all messages except the system message."""
+        """Clears all messages from the branch except the system message."""
         self.messages.clear()
         self.progress.clear()
         if self.system:
@@ -220,13 +241,13 @@ class Branch(BaseSession, Traversal):
         request_source: str,
     ) -> None:
         """
-        Send a mail to a recipient.
+        Sends a mail to a recipient.
 
         Args:
-            recipient: The recipient's ID.
-            category: The category of the mail.
-            package: The content of the mail.
-            request_source: The source of the request.
+            recipient (str): The recipient's ID.
+            category (str): The category of the mail.
+            package (Any): The content of the mail.
+            request_source (str): The source of the request.
         """
         package = Package(
             category=category,
@@ -253,13 +274,13 @@ class Branch(BaseSession, Traversal):
 
         Args:
             sender (str): The ID of the sender.
-            message (bool, optional): Whether to process message mails.
-            tool (bool, optional): Whether to process tool mails.
-            imodel (bool, optional): Whether to process imodel mails.
+            message (bool): Whether to process message mails.
+            tool (bool): Whether to process tool mails.
+            imodel (bool): Whether to process imodel mails.
 
         Raises:
-            ValueError: If the sender does not exist or the mail category
-                is invalid.
+            ValueError: If the sender does not exist or the mail category is
+            invalid.
         """
         skipped_requests = progression()
         if sender not in self.mailbox.pending_ins.keys():
@@ -298,16 +319,14 @@ class Branch(BaseSession, Traversal):
             self.mailbox.pending_ins.pop(sender)
 
     def receive_all(self) -> None:
-        """
-        Receives mail from all senders.
-        """
+        """Receives mail from all senders."""
         for key in list(self.mailbox.pending_ins.keys()):
             self.receive(key)
 
     @property
     def last_response(self) -> AssistantResponse | None:
         """
-        Get the last assistant response.
+        Retrieves the last assistant response in the branch.
 
         Returns:
             AssistantResponse | None: The last assistant response, if any.
@@ -319,7 +338,7 @@ class Branch(BaseSession, Traversal):
     @property
     def assistant_responses(self) -> Pile:
         """
-        Get all assistant responses as a Pile.
+        Retrieves all assistant responses in the branch.
 
         Returns:
             Pile: A Pile containing all assistant responses.
@@ -332,43 +351,75 @@ class Branch(BaseSession, Traversal):
             ]
         )
 
-    def update_last_instruction_meta(self, meta: dict) -> None:
+    @property
+    def action_requests(self) -> Pile:
         """
-        Update metadata of the last instruction.
+        Retrieves all action requests in the branch.
 
-        Args:
-            meta (dict): Metadata to update.
+        Returns:
+            Pile: A Pile containing all action requests.
         """
-        for i in reversed(self.progress):
-            if isinstance(self.messages[i], Instruction):
-                self.messages[i].metadata.update(meta, ["extra"])
-                return
+        return Pile(
+            [
+                self.messages[i]
+                for i in self.progress
+                if isinstance(self.messages[i], ActionRequest)
+            ]
+        )
+
+    @property
+    def action_responses(self) -> Pile:
+        """
+        Retrieves all action responses in the branch.
+
+        Returns:
+            Pile: A Pile containing all action responses.
+        """
+        return Pile(
+            [
+                self.messages[i]
+                for i in self.progress
+                if isinstance(self.messages[i], ActionResponse)
+            ]
+        )
+
+    @property
+    def instructions(self) -> Pile:
+        """
+        Retrieves all instructions in the branch.
+
+        Returns:
+            Pile: A Pile containing all instructions.
+        """
+        return Pile(
+            [
+                self.messages[i]
+                for i in self.progress
+                if isinstance(self.messages[i], Instruction)
+            ]
+        )
 
     def has_tools(self) -> bool:
         """
-        Check if the branch has any registered tools.
+        Checks if the branch has any registered tools.
 
         Returns:
             bool: True if tools are registered, False otherwise.
         """
         return self.tool_manager.registry != {}
 
-    def register_tools(self, tools: Any) -> None:
+    def register_tools(self, tools: Any, update: bool = False) -> None:
         """
-        Register new tools to the tool manager.
+        Registers new tools to the tool manager.
 
         Args:
             tools (Any): Tools to be registered.
         """
-        self.tool_manager.register_tools(tools=tools)
+        self.tool_manager.register_tools(tools=tools, update=update)
 
-    def delete_tools(
-        self,
-        tools: Any,
-        verbose: bool = True,
-    ) -> bool:
+    def delete_tools(self, tools: Any, verbose: bool = True) -> bool:
         """
-        Delete specified tools from the tool manager.
+        Deletes specified tools from the tool manager.
 
         Args:
             tools (Any): Tools to be deleted.
@@ -399,10 +450,16 @@ class Branch(BaseSession, Traversal):
 
     def to_chat_messages(self, progress=None) -> list[dict[str, Any]]:
         """
-        Convert messages to a list of chat message dictionaries.
+        Converts messages to a list of chat message dictionaries.
+
+        Args:
+            progress (Progression, optional): Specific progression to convert.
 
         Returns:
             list[dict[str, Any]]: A list of chat message dictionaries.
+
+        Raises:
+            ValueError: If the provided progress is invalid.
         """
         if not all(i in self.messages for i in (progress or self.progress)):
             raise ValueError("Invalid progress")
@@ -433,7 +490,55 @@ class Branch(BaseSession, Traversal):
         ] = "force",
         clear_messages: bool = False,
         **kwargs,
-    ):
+    ) -> BaseModel:
+        """
+        Performs an operation on the branch using AI models and tools.
+
+        This method processes the conversation using AI models and tools,
+        and can invoke actions based on the results. It's designed for more
+        structured interactions compared to the chat method.
+
+        Args:
+            instruction (Any): The main instruction for the operation.
+            guidance (Any): Additional guidance for the AI model.
+            context (Any): Context information for the operation.
+            sender (Any): The sender of the instruction.
+            recipient (Any): The intended recipient of the result.
+            progress (Progression): Specific conversation progress to use.
+            operative_model (type[BaseModel]): Model for operation results.
+            imodel (iModel): The AI model to use for the operation.
+            reason (bool): Whether to include reasoning in the response.
+            actions (bool): Whether to include action requests in the response.
+            tools (Any): Tools to make available for the operation.
+            invoke_action (bool): Whether to invoke actions from the response.
+            num_parse_retries (int): Number of retries for parsing the response
+            retry_imodel (iModel): Alternative AI model for retries.
+            handle_validation (Literal["raise", "return_value", "return_none"])
+                :How to handle validation failures.
+            skip_validation (bool): Whether to skip response validation.
+            handle_unmatched (Literal["ignore", "raise", "remove", "fill",
+                "force"]): How to handle unmatched fields in the response.
+            clear_messages (bool): Whether to clear previous messages.
+            **kwargs: Additional keyword arguments for the operation.
+
+        Returns:
+            BaseModel: The result of the operation, as an instance
+            of the operative_model.
+
+        Raises:
+            ValueError: If validation fails and handle_validation is set
+                to "raise".
+
+        Note:
+            - This method adds the instruction and response to the branch's
+                messages.
+            - If tools are provided, they are registered with the tool manager.
+            - Actions in the response are automatically invoked if
+                invoke_action is True.
+            - The method can handle unmatched fields in the response based on
+                the handle_unmatched parameter.
+        """
+
         if clear_messages:
             self.clear_messages()
 
@@ -572,12 +677,12 @@ class Branch(BaseSession, Traversal):
 
     async def chat(
         self,
-        instruction=None,
-        guidance=None,
-        context=None,
-        sender=None,
-        recipient=None,
-        progress=None,
+        instruction: Any = None,
+        guidance: str | dict | list = None,
+        context: str | dict | list = None,
+        sender: RealElement | str | None = None,
+        recipient: RealElement | str | None = None,
+        progress: Progression | list | None = None,
         request_model: type[BaseModel] = None,
         request_fields: dict = None,
         imodel: iModel = None,
@@ -593,7 +698,54 @@ class Branch(BaseSession, Traversal):
         clear_messages: bool = False,
         invoke_action: bool = False,
         **kwargs,
-    ):
+    ) -> str | dict | BaseModel:
+        """
+        Initiates a chat interaction in the branch using AI models and tools.
+
+        This method processes a chat interaction, potentially invoking AI model
+        and tools based on the conversation. It can handle various types of
+        inputs and outputs, including structured data and images.
+
+        Args:
+            instruction (Any): The main instruction or query for the chat.
+            guidance (Any): Additional guidance for the AI model.
+            context (Any): Context information for the chat.
+            sender (Any): The sender of the message.
+            recipient (Any): The intended recipient of the message.
+            progress (Progression): Specific conversation progress to use.
+            request_model (type[BaseModel]): Pydantic model for structured
+                output
+            request_fields (dict): Fields to request in the output.
+            imodel (iModel): The AI model to use for generation.
+            images (list): List of images to include in the chat.
+            image_detail (Literal["low", "high", "auto"], optional):
+                Image detail level.
+            tools (Any): Tools to make available for the chat.
+            num_parse_retries (int): Number of retries for parsing the response
+            retry_imodel (iModel): Alternative AI model for retries.
+            handle_validation (Literal["raise", "return_value", "return_none"])
+                : How to handle validation failures.
+            skip_validation (bool): Whether to skip response validation.
+            clear_messages (bool): Whether to clear previous messages.
+            invoke_action (bool): Whether to invoke actions from the response.
+            **kwargs: Additional keyword arguments for the chat process.
+
+        Returns:
+            str | dict | BaseModel: The response from the chat interaction.
+                The type depends on the request_model and request_fields
+                parameters.
+
+        Raises:
+            ValueError: If validation fails and handle_validation is
+                set to "raise".
+
+        Note:
+            - This method adds the instruction and response to the
+                branch's messages.
+            - If tools are provided, they are registered with the tool manager.
+            - Action requests in the response can be automatically invoked if
+            invoke_action is True.
+        """
         if clear_messages:
             self.clear_messages()
         progress = progress or self.progress
