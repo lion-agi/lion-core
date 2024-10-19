@@ -122,23 +122,18 @@ class StepModel(BaseModel):
     def parse_request_to_response(
         cls,
         request: OperativeModel,
+        operative_model: type[OperativeModel],
         exclude_fields: list | dict | None = None,
         include_fields: list | dict | None = None,
-        action_responses: list[ActionResponseModel] | None = None,
+        **kwargs,
     ) -> OperativeModel:
         response_model = cls.as_response_model(
             request,
             exclude_fields=exclude_fields,
             include_fields=include_fields,
+            operative_model=operative_model,
         )
-
-        config = request.to_dict()
-        if (
-            action_responses
-            and "action_responses" in response_model.model_fields
-        ):
-            config["action_responses"] = action_responses
-        return response_model(**config)
+        return response_model(**kwargs)
 
     @classmethod
     def as_request_model(
