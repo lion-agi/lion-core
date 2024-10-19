@@ -1,7 +1,6 @@
 from typing import Any, Literal
 
-from lion_core.communication.instruction import Instruction
-from lion_core.communication.message import MessageFlag
+from lion_core.communication import Instruction, MessageFlag
 
 
 def create_instruction(

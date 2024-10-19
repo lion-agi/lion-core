@@ -4,7 +4,7 @@ from .assistant_response import AssistantResponse
 from .instruction import Instruction
 from .mail import Mail
 from .mail_manager import MailManager
-from .message import RoledMessage
+from .message import MessageFlag, RoledMessage
 from .package import Package
 from .start_mail import StartMail
 from .system import System
@@ -20,4 +20,5 @@ __all__ = [
     "Package",
     "StartMail",
     "System",
+    "MessageFlag",
 ]

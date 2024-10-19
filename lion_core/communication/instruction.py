@@ -10,15 +10,14 @@ from lion_core.communication.message import (
     MessageRole,
     RoledMessage,
 )
-from lion_core.form.base import BaseForm
-from lion_core.form.form import Form
-
-from .utils import (
+from lion_core.communication.utils import (
     format_image_content,
     format_text_content,
     prepare_instruction_content,
     prepare_request_response_format,
 )
+from lion_core.form.base import BaseForm
+from lion_core.form.form import Form
 
 
 class Instruction(RoledMessage):
@@ -34,21 +33,22 @@ class Instruction(RoledMessage):
         sender: Any | MessageFlag = None,
         recipient: Any | MessageFlag = None,
         request_fields: dict | list | MessageFlag = None,
-        request_model: BaseModel | MessageFlag = None,
-        plain_content: str | None = None,
+        plain_content: str | MessageFlag = None,
         image_detail: Literal["low", "high", "auto"] | MessageFlag = None,
+        request_model: BaseModel | MessageFlag = None,
         protected_init_params: dict | None = None,
     ) -> None:
         """Initialize an Instruction instance."""
         message_flags = [
             instruction,
             context,
+            guidance,
             images,
             sender,
             recipient,
             request_fields,
-            image_detail,
             plain_content,
+            image_detail,
             request_model,
         ]
 

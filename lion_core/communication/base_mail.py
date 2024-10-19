@@ -4,7 +4,7 @@ from lionabc import Communicatable
 from lionabc.exceptions import LionIDError, LionValueError
 from pydantic import Field, field_validator
 
-from lion_core.generic.element import Element
+from lion_core.generic import Element
 from lion_core.sys_utils import SysUtil
 
 

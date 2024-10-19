@@ -7,7 +7,7 @@ from pydantic import Field, field_validator
 from pydantic_core import PydanticUndefined
 
 from lion_core.form.utils import ERR_MAP
-from lion_core.generic.component import Component
+from lion_core.generic import Component
 
 
 class BaseForm(Component, MutableRecord):

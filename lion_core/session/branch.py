@@ -9,23 +9,21 @@ from lionfuncs import is_same_dtype
 from pydantic import BaseModel, Field, model_validator
 
 from lion_core.action import Tool, ToolManager
-from lion_core.communication.action_request import ActionRequest
-from lion_core.communication.action_response import ActionResponse
-from lion_core.communication.assistant_response import AssistantResponse
-from lion_core.communication.instruction import Instruction
-from lion_core.communication.mail import Mail
-from lion_core.communication.message import RoledMessage
-from lion_core.communication.package import Package
-from lion_core.communication.system import System
+from lion_core.communication import (
+    ActionRequest,
+    ActionResponse,
+    AssistantResponse,
+    Instruction,
+    Mail,
+    Package,
+    RoledMessage,
+    System,
+)
 
 # from lion_core.converter import ConverterRegistry
-from lion_core.generic.exchange import Exchange
-from lion_core.generic.pile import Pile
-from lion_core.generic.progression import Progression, progression
-from lion_core.operative.operative import OperativeModel
+from lion_core.generic import Exchange, Pile, Progression, progression
 from lion_core.session.base import BaseSession
-from lion_core.session.msg_handlers.create_message import create_message
-from lion_core.session.msg_handlers.validate_message import validate_message
+from lion_core.session.msg_handlers import create_message, validate_message
 from lion_core.session.utils import _chat, _operate
 
 # class BranchConverterRegistry(ConverterRegistry):
@@ -67,7 +65,7 @@ class Branch(BaseSession, Traversal):
     @model_validator(mode="before")
     def _validate_input(cls, data: dict) -> dict:
         messages = data.pop("messages", None)
-        data["messages"] = cls.pile_type(
+        data["messages"] = cls.messages.__class__(
             validate_message(messages),
             {RoledMessage},
             strict=False,
@@ -320,7 +318,7 @@ class Branch(BaseSession, Traversal):
         Returns:
             Pile: A Pile containing all assistant responses.
         """
-        return self.pile_type(
+        return self.messages.__class__(
             [
                 self.messages[i]
                 for i in self.progress
@@ -412,7 +410,7 @@ class Branch(BaseSession, Traversal):
         sender=None,
         recipient=None,
         progress: Progression = None,
-        operative_model: type[OperativeModel] = None,
+        operative_model: type[BaseModel] = None,
         imodel: iModel = None,
         reason: bool = True,
         actions: bool = False,
@@ -544,7 +542,7 @@ class Branch(BaseSession, Traversal):
         sender=None,
         recipient=None,
         progress=None,
-        request_model: type[OperativeModel] = None,
+        request_model: type[BaseModel] = None,
         request_fields: dict = None,
         imodel: iModel = None,
         images: list = None,

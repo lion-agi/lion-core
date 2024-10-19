@@ -1,4 +1,4 @@
-from lion_core.communication.assistant_response import AssistantResponse
+from lion_core.communication import AssistantResponse
 
 
 def create_assistant_response(

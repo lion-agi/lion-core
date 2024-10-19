@@ -7,7 +7,7 @@ from lionfuncs import to_dict, to_list
 
 from lion_core.action.function_calling import FunctionCalling
 from lion_core.action.tool import Tool, func_to_tool
-from lion_core.communication.action_request import ActionRequest
+from lion_core.communication import ActionRequest
 
 REGISTERABLE_TOOL = Tool | Callable[..., Any]
 FINDABLE_TOOL = REGISTERABLE_TOOL | str

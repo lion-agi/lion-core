@@ -7,8 +7,7 @@ from lion_core.communication.message import (
     MessageRole,
     RoledMessage,
 )
-
-from .utils import format_system_content
+from lion_core.communication.utils import format_system_content
 
 
 class System(RoledMessage):

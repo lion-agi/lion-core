@@ -1,7 +1,6 @@
 from lionabc.exceptions import LionValueError
 
-from lion_core.communication.action_request import ActionRequest
-from lion_core.communication.action_response import ActionResponse
+from lion_core.communication import ActionRequest, ActionResponse
 from lion_core.operative.operative import ActionResponseModel
 
 

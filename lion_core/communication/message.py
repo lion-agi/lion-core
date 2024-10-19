@@ -10,8 +10,7 @@ from typing_extensions import override
 from lion_core import message_log_manager
 from lion_core._class_registry import get_class
 from lion_core.communication.base_mail import BaseMail
-from lion_core.generic.component import Component
-from lion_core.generic.log import Log
+from lion_core.generic import Component, Log
 
 
 class MessageField(str, Enum):
