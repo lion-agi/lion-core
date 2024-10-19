@@ -52,5 +52,9 @@ class System(RoledMessage):
         """Retrieve the system information stored in the message content."""
         return self.content.get("system_info", None)
 
+    @override
+    def _format_content(self) -> dict[str, Any]:
+        return {"role": self.role.value, "content": self.system_info}
+
 
 # File: lion_core/communication/system.py
