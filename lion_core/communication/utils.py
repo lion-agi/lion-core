@@ -1,6 +1,7 @@
 from typing import Any, Literal
 
 from lionfuncs import LN_UNDEFINED, Note, note, time
+from lionfuncs.integrations.pydantic_ import break_down_pydantic_annotation
 from pydantic import BaseModel
 
 DEFAULT_SYSTEM = "You are a helpful AI assistant. Let's think step by step."
@@ -116,7 +117,7 @@ def prepare_instruction_content(
 
     if request_model:
         schema = request_model.model_json_schema()
-        request_fields = schema.pop("properties")
+        request_fields = break_down_pydantic_annotation(request_model)
         if "context" not in out_:
             out_["context"] = []
         out_["context"].append({"respond_schema_info": schema})
