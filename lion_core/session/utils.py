@@ -2,131 +2,18 @@ import logging
 from typing import Literal
 
 from lion_service import iModel
-from lionfuncs import alcall, copy, md_to_json, to_dict, validate_mapping
+from lionfuncs import md_to_json
 from pydantic import BaseModel
 
-from lion_core.action.function_calling import FunctionCalling
 from lion_core.communication.assistant_response import AssistantResponse
 from lion_core.communication.instruction import Instruction
 from lion_core.communication.message import RoledMessage
-from lion_core.operative.operative import (
-    ActionRequestModel,
-    ActionResponseModel,
-    OperativeModel,
-    StepModel,
+
+RETRY_PROMPT = (
+    "the following text is of invalid format. \n\n {response}"
+    "please provide a valid JSON-PARSABLE response format according "
+    "to the following model\n\n ```json\n{request_model}\n``` \n\n"
 )
-
-
-async def _invoke_action(i: ActionRequestModel, branch=None):
-    tool = branch.tool_manager.registry.get(i.function, None)
-    if tool:
-        func_call = FunctionCalling(tool, arguments=i.arguments)
-        result = await func_call.invoke()
-        return ActionResponseModel(
-            function=i.function, arguments=i.arguments, output=result
-        )
-    return None
-
-
-async def _operate(
-    branch=None,
-    instruction=None,
-    guidance=None,
-    context=None,
-    sender=None,
-    recipient=None,
-    operative_model: type[OperativeModel] = None,
-    imodel: iModel = None,
-    reason: bool = True,
-    actions: bool = True,
-    invoke_action: bool = True,
-    messages: list[RoledMessage] = [],
-    tool_schemas=None,
-    images: list = None,
-    image_detail: Literal["low", "high", "auto"] = None,
-    handle_unmatched: Literal[
-        "ignore", "raise", "remove", "fill", "force"
-    ] = "force",
-    **kwargs,
-):
-    """
-    additional payload to be passed into imodel api call
-    """
-
-    request_model: type[BaseModel] = StepModel.as_request_model(
-        reason=reason, actions=actions, operative_model=operative_model
-    )
-
-    ins = None
-    if isinstance(instruction, Instruction):
-        ins = instruction
-        if context:
-            ins.update_context(context)
-        if images:
-            ins.update_images(images=images, image_detail=image_detail)
-        if guidance:
-            ins.update_guidance(guidance)
-    else:
-        ins = Instruction(
-            instruction=instruction,
-            guidance=guidance,
-            context=context,
-            sender=sender,
-            recipient=recipient,
-            request_model=request_model,
-            image_detail=image_detail,
-            images=images,
-        )
-    if tool_schemas:
-        ins.update_context(tool_schemas=tool_schemas)
-
-    messages.append(ins)
-    kwargs["messages"] = [m.chat_msg for m in messages]
-
-    api_request = imodel.parse_to_data_model(**kwargs)
-    api_response = await imodel.invoke(**api_request)
-    res = AssistantResponse(
-        assistant_response=api_response,
-        sender=branch,
-        recipient=branch.user,
-    )
-    res.content["assistant_response"] = validate_mapping(
-        res.response,
-        request_model.model_fields,
-        handle_unmatched=handle_unmatched,
-    )
-    dict_ = copy(res.content["assistant_response"])
-
-    try:
-        request_model = request_model.model_validate(dict_)
-    except Exception:
-        request_model = request_model()
-
-    if (
-        actions
-        and invoke_action
-        and hasattr(request_model, "action_required")
-        and request_model.action_required
-        and hasattr(request_model, "action_requests")
-        and request_model.action_requests
-    ):
-
-        action_responses = await alcall(
-            request_model.action_requests, _invoke_action, branch=branch
-        )
-        action_responses = [to_dict(i) for i in action_responses if i]
-        dict_["action_responses"] = action_responses
-
-    try:
-        reponses_model = StepModel.parse_request_to_response(
-            request=request_model, operative_model=operative_model, **dict_
-        )
-        return reponses_model, ins, res
-    except Exception as e:
-        logging.error(
-            f"Failed to parse model response into operative model: {e}"
-        )
-        return dict_, ins, res
 
 
 async def _chat(
@@ -136,7 +23,7 @@ async def _chat(
     context=None,
     sender=None,
     recipient=None,
-    request_model: type[OperativeModel] = None,
+    request_model: type[BaseModel] = None,
     request_fields: dict = None,
     imodel: iModel = None,
     messages: list[RoledMessage] = [],
@@ -212,3 +99,85 @@ async def _chat(
             )
             return res.response, ins, res
     return res.response, ins, res
+
+
+# async def _chat(
+#     self,
+#     instruction=None,
+#     guidance=None,
+#     context=None,
+#     sender=None,
+#     recipient=None,
+#     request_model: type[BaseModel] = None,
+#     request_fields: dict = None,
+#     progress = None,
+#     imodel: iModel = None,
+#     messages: list[RoledMessage] = [],
+#     tool_schemas=None,
+#     images: list = None,
+#     image_detail: Literal["low", "high", "auto"] = None,
+#     **kwargs,
+# ) -> BaseModel | str | dict:
+#     if request_model and request_fields:
+#         raise ValueError("Cannot have both request_model and request_fields")
+#     ins = None
+#     if isinstance(instruction, Instruction):
+#         ins = instruction
+#         ins.update_request_model(request_model)
+#         if context:
+#             ins.update_context(context)
+#         if images:
+#             ins.update_images(images=images, image_detail=image_detail)
+#         if guidance:
+#             ins.update_guidance(guidance)
+#     else:
+#         ins = Instruction(
+#             instruction=instruction,
+#             guidance=guidance,
+#             context=context,
+#             sender=sender,
+#             recipient=recipient,
+#             request_model=request_model,
+#             image_detail=image_detail,
+#             images=images,
+#         )
+#     if tool_schemas:
+#         ins.update_context(tool_schemas=tool_schemas)
+#         guide = ins.guidance or ""
+#         guide += "\n\nwhen providing function arguments, please use "
+#         guide += "the following format:\n\n"
+#         guide += "{'function': ..., 'arguments': {...}}\n\n"
+#         ins.update_guidance(guide)
+
+#     messages = [self.messages[i] for i in (progress or self.progress)]
+#     messages.append(ins)
+#     kwargs["messages"] = [m.chat_msg for m in messages]
+
+#     imodel = imodel or self.imodel
+#     api_request = imodel.parse_to_data_model(**kwargs)
+#     api_response = await imodel.invoke(**api_request)
+#     res = AssistantResponse(
+#         assistant_response=api_response,
+#         sender=self,
+#         recipient=self.user,
+#     )
+#     self.add_message(instruction=ins)
+#     self.add_message(assistant_response=res)
+
+#     if request_fields or request_model:
+#         try:
+#             dict_ = md_to_json(res.response)
+#             res.content["assistant_response"] = copy(dict_)
+#         except Exception:
+#             pass
+
+#     if request_model:
+#         try:
+#             res1 = res.content["assistant_response"]
+#             return request_model.model_validate(res1)
+#         except Exception as e:
+#             logging.error(
+#                 f"Failed to parse model response into operative model: {e}"
+#             )
+
+#     return res.content["assistant_response"]
