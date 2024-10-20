@@ -1,7 +1,7 @@
 from lionabc.exceptions import LionValueError
 
 from lion_core.communication.action_request import ActionRequest
-from lion_core.operative.operative import ActionRequestModel
+from lion_core.operative.step_model import ActionRequestModel
 from lion_core.session.msg_handlers.utils import extract_action_blocks
 
 

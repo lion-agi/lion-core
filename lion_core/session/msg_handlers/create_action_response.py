@@ -1,7 +1,7 @@
 from lionabc.exceptions import LionValueError
 
 from lion_core.communication import ActionRequest, ActionResponse
-from lion_core.operative.operative import ActionResponseModel
+from lion_core.operative.step_model import ActionResponseModel
 
 
 def create_action_response(
