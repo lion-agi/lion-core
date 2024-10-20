@@ -31,8 +31,8 @@ class ActionResponse(RoledMessage):
     def __init__(
         self,
         action_request: ActionRequest | MessageFlag,
-        sender: Any | MessageFlag,
-        func_output: Any | MessageFlag,
+        sender: Any | MessageFlag = None,
+        func_output: Any | MessageFlag = None,
         protected_init_params: dict | None = None,
     ) -> None:
         """Initialize an ActionResponse instance.

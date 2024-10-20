@@ -2,6 +2,7 @@ import inspect
 from typing import Any, Literal
 
 from lionabc.exceptions import LionTypeError
+from lionfuncs import break_down_pydantic_annotation
 from pydantic import BaseModel
 from typing_extensions import override
 
@@ -111,6 +112,17 @@ class Instruction(RoledMessage):
         raise LionTypeError(
             "Invalid guidance. Guidance must be a string.",
         )
+
+    def update_request_model(self, request_model: BaseModel) -> None:
+        request_fields = break_down_pydantic_annotation(request_model)
+        self.update_context(
+            respond_schema_info=request_model.model_json_schema()
+        )
+        self.content["request_fields"] = request_fields
+        format_ = prepare_request_response_format(
+            request_fields=self.content["request_fields"],
+        )
+        self.content["request_response_format"] = format_
 
     def update_request_fields(self, request_fields: dict) -> None:
         """Update the requested fields in the instruction."""
