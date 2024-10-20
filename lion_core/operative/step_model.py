@@ -1,101 +1,12 @@
 import logging
 from typing import Any
 
-from lionabc import AbstractElement
-from lionfuncs import copy, to_dict, to_num, validate_boolean, validate_str
+from lionfuncs import copy, validate_boolean
 from pydantic import BaseModel, Field, create_model, field_validator
 
-from lion_core.operative.utils import prepare_fields
-
-
-class ReasonModel(BaseModel):
-
-    title: str | None = None
-    content: str | None = None
-    confidence_score: float | None = Field(  # -1 means failed to parse
-        None,
-        description=(
-            "Provide an objective numeric confidence score between 0 and"
-            " 1 (with 3 decimal places) indicating how likely you "
-            "successfully achieved the task according to user expectation."
-            " Interpret the score as:\n"
-            "- **1**: Very confident in a good job.\n"
-            "- **0**: Not confident at all.\n"
-            "- **[0.8, 1]**: You can continue the path of reasoning if "
-            "needed.\n"
-            "- **[0.5, 0.8)**: Recheck your reasoning and consider "
-            "reverting to a "
-            "previous, more confident reasoning path.\n"
-            "- **[0, 0.5)**: Stop because the reasoning is starting "
-            "to be off track."
-        ),
-        examples=[0.821, 0.257, 0.923, 0.439],
-    )
-
-    @field_validator("confidence_score", mode="before")
-    def validate_confidence_score(cls, value: Any) -> float:
-        try:
-            return to_num(
-                value,
-                upper_bound=1,
-                lower_bound=0,
-                num_type=float,
-                precision=3,
-            )
-        except Exception:
-            return -1
-
-
-class ActionRequestModel(BaseModel):
-
-    function: str | None = Field(
-        None,
-        title="Function",
-        description=(
-            "Specify the name of the function to execute. **Choose "
-            "from the provided "
-            "`tool_schemas`; do not invent function names.**"
-        ),
-        examples=["print", "add", "len"],
-    )
-    arguments: dict[str, Any] = Field(
-        {},
-        title="Arguments",
-        description=(
-            "Provide the arguments to pass to the function as a "
-            "dictionary. **Use "
-            "argument names and types as specified in the "
-            "`tool_schemas`; do not "
-            "invent argument names.**"
-        ),
-        examples=[{"num1": 1, "num2": 2}, {"x": "hello", "y": "world"}],
-    )
-
-    @field_validator("function", mode="before")
-    def validate_function(cls, value: Any) -> str:
-        return validate_str(value, "function")
-
-    @field_validator("arguments", mode="before")
-    def validate_arguments(cls, value: Any) -> dict[str, Any]:
-        return to_dict(
-            value,
-            fuzzy_parse=True,
-            suppress=True,
-            recursive=True,
-        )
-
-
-class ActionResponseModel(BaseModel):
-
-    function: str
-    arguments: dict[str, Any]
-    output: Any
-
-
-class OperativeModel(BaseModel, AbstractElement):
-
-    def to_dict(self):
-        return self.model_dump()
+from .action_model import ActionRequestModel, ActionResponseModel
+from .reason_model import ReasonModel
+from .utils import prepare_fields
 
 
 class StepModel(BaseModel):
@@ -153,12 +64,12 @@ class StepModel(BaseModel):
     @classmethod
     def parse_request_to_response(
         cls,
-        request: OperativeModel,
-        operative_model: type[OperativeModel],
+        request: BaseModel,
+        operative_model: type[BaseModel],
         exclude_fields: list | dict | None = None,
         include_fields: list | dict | None = None,
         **kwargs,
-    ) -> OperativeModel:
+    ) -> BaseModel:
         response_model = cls.as_response_model(
             request,
             exclude_fields=exclude_fields,
@@ -174,12 +85,11 @@ class StepModel(BaseModel):
         actions: bool = False,
         exclude_fields: list | dict | None = None,
         include_fields: list | dict | None = None,
-        operative_model: type[OperativeModel] | None = None,
+        operative_model: type[BaseModel] | None = None,
         **kwargs,
     ):
-        operative_model = operative_model or OperativeModel
+        operative_model = operative_model or BaseModel
         fields = copy(cls.model_fields)
-        fields.pop("action_responses", None)
 
         fields = prepare_fields(
             exclude_fields=exclude_fields,
@@ -187,6 +97,7 @@ class StepModel(BaseModel):
             **fields,
             **kwargs,
         )
+        fields.pop("action_responses", None)
 
         if not reason:
             fields.pop("reason", None)
@@ -199,8 +110,11 @@ class StepModel(BaseModel):
             name = operative_model.class_name()
         else:
             name = operative_model.__name__
+            if name == "BaseModel":
+                name = cls.__name__
+
         return create_model(
-            name + "StepRequest",
+            name + "Request",
             __base__=operative_model,
             **fields,
         )
@@ -208,45 +122,47 @@ class StepModel(BaseModel):
     @classmethod
     def as_response_model(
         cls,
-        request: OperativeModel,
+        request_model: BaseModel,
         exclude_fields: list | dict | None = None,
         include_fields: list | dict | None = None,
-        operative_model: type[OperativeModel] | None = None,
+        operative_model: type[BaseModel] | None = None,
         **kwargs,
     ):
-        operative_model = operative_model or OperativeModel
+        operative_model = operative_model or BaseModel
         fields = copy(cls.model_fields)
         fields: dict = prepare_fields(
-            exclude_fields=exclude_fields,
             include_fields=include_fields,
+            exclude_fields=exclude_fields,
             **fields,
             **kwargs,
         )
 
-        if ("action_required" not in request.model_fields) or (
-            not request.action_required
+        if ("action_required" not in request_model.model_fields) or (
+            not request_model.action_required
         ):
             fields.pop("action_required", None)
             fields.pop("action_responses", None)
             fields.pop("action_requests", None)
 
+        if "reason" not in request_model.model_fields:
+            fields.pop("reason", None)
+
         name = None
         if hasattr(operative_model, "class_name"):
-            name = operative_model.class_name()
+            if callable(operative_model.class_name):
+                name = operative_model.class_name()
+            else:
+                name = operative_model.class_name
         else:
             name = operative_model.__name__
+            if name == "BaseModel":
+                name = cls.__name__
 
         return create_model(
-            name + "StepResponse",
+            name + "Response",
             __base__=operative_model,
             **fields,
         )
 
 
-__all__ = [
-    "OperativeModel",
-    "StepModel",
-    "ActionRequestModel",
-    "ActionResponseModel",
-    "ReasonModel",
-]
+__all__ = ["StepModel"]
