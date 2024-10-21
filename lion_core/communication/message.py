@@ -76,15 +76,6 @@ class RoledMessage(Relational, Component, BaseMail):
             return MessageRole(v)
         raise ValueError(f"Invalid message role: {v}")
 
-    def _format_content(self) -> dict[str, Any]:
-        """Format the message content for chat representation."""
-        content = None
-        if self.content.get("images", None):
-            content = self.content.to_dict()
-        else:
-            content = str(self.content.to_dict())
-        return {"role": self.role.value, "content": content}
-
     def clone(self) -> "RoledMessage":
         """Creates a copy of the current RoledMessage object."""
         cls = self.__class__

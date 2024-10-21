@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import inspect
 from typing import Any, Literal
 
 from lionabc.exceptions import LionTypeError
-from lionfuncs import break_down_pydantic_annotation
+from lionfuncs import break_down_pydantic_annotation, copy, to_str
 from pydantic import BaseModel
 from typing_extensions import override
 
@@ -78,17 +80,25 @@ class Instruction(RoledMessage):
         )
 
     @property
-    def guidance(self):
+    def guidance(self) -> str | None:
         """Return the guidance content."""
         return self.content.get(["guidance"], None)
 
     @property
-    def instruction(self):
+    def instruction(self) -> str | dict | None:
         """Return the main instruction content."""
         if "plain_content" in self.content:
             return self.content.get(["plain_content"])
         else:
             return self.content.get(["instruction"], None)
+
+    def update_instruction(
+        self, instruction: str | dict = None, plain_content: str | None = None
+    ) -> None:
+        if instruction:
+            self.content["instruction"] = instruction
+        if plain_content:
+            self.content["plain_content"] = plain_content
 
     def update_images(
         self,
@@ -106,23 +116,24 @@ class Instruction(RoledMessage):
 
     def update_guidance(self, guidance: str) -> None:
         """Update the guidance content of the instruction."""
-        if guidance and isinstance(guidance, str):
-            self.content["guidance"] = guidance
+        if guidance:
+            self.content["guidance"] = (
+                to_str(guidance) if not isinstance(guidance, str) else guidance
+            )
             return
         raise LionTypeError(
             "Invalid guidance. Guidance must be a string.",
         )
 
-    def update_request_model(self, request_model: BaseModel) -> None:
+    def update_request_model(
+        self, request_model: BaseModel | type[BaseModel]
+    ) -> None:
         request_fields = break_down_pydantic_annotation(request_model)
         self.update_context(
             respond_schema_info=request_model.model_json_schema()
         )
-        self.content["request_fields"] = request_fields
-        format_ = prepare_request_response_format(
-            request_fields=self.content["request_fields"],
-        )
-        self.content["request_response_format"] = format_
+        self.content["request_fields"] = {}
+        self.update_request_fields(request_fields)
 
     def update_request_fields(self, request_fields: dict) -> None:
         """Update the requested fields in the instruction."""
@@ -138,7 +149,38 @@ class Instruction(RoledMessage):
         if args:
             self.content["context"].extend(args)
         if kwargs:
-            self.content["context"].append(kwargs)
+            kwargs = copy(kwargs)
+            for k, v in kwargs.items():
+                self.content["context"].append({k: v})
+
+    def update(
+        self,
+        *args,
+        guidance: str | None = None,
+        instruction: str | dict | None = None,
+        request_fields: dict | list[str] | None = None,
+        plain_content: str | None = None,
+        request_model: BaseModel | None = None,
+        images: str | list | None = None,
+        image_detail: Literal["low", "high", "auto"] | None = None,
+        **kwargs,
+    ):
+        if request_model and request_fields:
+            raise ValueError(
+                "You cannot pass both request_model and request_fields "
+                "to create_instruction"
+            )
+        if guidance:
+            self.update_guidance(guidance)
+        if instruction or plain_content:
+            self.update_instruction(instruction, plain_content)
+        if request_fields:
+            self.update_request_fields(request_fields)
+        if request_model:
+            self.update_request_model(request_model)
+        if images:
+            self.update_images(images, image_detail)
+        self.update_context(*args, **kwargs)
 
     @override
     def _format_content(self) -> dict[str, Any]:
@@ -171,7 +213,7 @@ class Instruction(RoledMessage):
         fill_inputs: bool = True,
         none_as_valid_value: bool = False,
         input_value_kwargs: dict = None,
-    ) -> "Instruction":
+    ) -> Instruction:
         """Create an Instruction instance from a form."""
         try:
             if inspect.isclass(form) and issubclass(form, Form):
