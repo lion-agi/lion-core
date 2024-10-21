@@ -13,7 +13,7 @@
 
 | Feature | Description |
 |---------|-------------|
-| 🧘‍♂️ **Minimal Dependencies** | Built with only `Pydantic`, ensuring a lightweight and maintainable codebase |
+| 🧘‍♂️ **Minimal Dependencies** | Built with only `Pydantic` and `Pandas`, ensuring a lightweight and maintainable codebase |
 | 🧩 **Extensible Architecture** | Modular design adaptable to a wide range of computational needs |
 | ⚡ **Performance-Focused** | Optimized data structures and algorithms for efficient large-scale data processing |
 | 🛡️ **Type-Safe** | Leveraging Pydantic for robust type checking and data validation |
