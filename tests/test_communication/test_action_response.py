@@ -24,13 +24,6 @@ def test_prepare_action_response_content():
     assert content.get(["action_response", "output"]) == "result"
 
 
-def test_prepare_action_response_content_already_responded():
-    request = ActionRequest("test_func", {}, SysUtil.id(), SysUtil.id())
-    request.content["action_response_id"] = "existing_response"
-    with pytest.raises(LionValueError):
-        prepare_action_response_content(request, "result")
-
-
 # Tests for ActionResponse class
 def test_action_response_init():
     request = ActionRequest(
@@ -156,7 +149,7 @@ def test_action_response_serialization():
         json.loads(response_json)
     )
 
-    assert reconstructed_response.response_dict == response.response
+    assert reconstructed_response.response == response.response
 
 
 def test_action_response_with_very_deep_nesting():

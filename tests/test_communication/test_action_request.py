@@ -178,7 +178,7 @@ def test_action_request_serialization():
     # Deserialize
     reconstructed_request = ActionRequest.from_dict(json.loads(request_json))
 
-    assert reconstructed_request.request_dict == request.request
+    assert reconstructed_request.request == request.request
 
 
 def test_action_request_with_very_deep_nesting():

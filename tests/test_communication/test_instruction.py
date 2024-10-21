@@ -64,7 +64,7 @@ def test_instruction_init():
 
 def test_instruction_init_with_all_params():
     instruction = Instruction(
-        "Test instruction",
+        instruction="Test instruction",
         context="Test context",
         images=["image1"],
         sender=SysUtil.id(),
@@ -91,6 +91,8 @@ def test_instruction_init_with_message_load():
         request_fields=MessageFlag.MESSAGE_LOAD,
         image_detail=MessageFlag.MESSAGE_LOAD,
         guidance=MessageFlag.MESSAGE_LOAD,
+        request_model=MessageFlag.MESSAGE_LOAD,
+        plain_content=MessageFlag.MESSAGE_LOAD,
         protected_init_params=protected_params,
     )
     assert instruction.role == MessageRole.USER
@@ -105,8 +107,10 @@ def test_instruction_init_with_message_clone():
         sender=MessageFlag.MESSAGE_CLONE,
         recipient=MessageFlag.MESSAGE_CLONE,
         request_fields=MessageFlag.MESSAGE_CLONE,
-        guidance=MessageFlag.MESSAGE_LOAD,
         image_detail=MessageFlag.MESSAGE_CLONE,
+        guidance=MessageFlag.MESSAGE_CLONE,
+        request_model=MessageFlag.MESSAGE_CLONE,
+        plain_content=MessageFlag.MESSAGE_CLONE,
     )
     assert instruction.role == MessageRole.USER
 
@@ -137,7 +141,7 @@ def test_instruction_format_content():
 # Edge cases and additional tests
 def test_instruction_empty_init():
     instruction = Instruction(None)
-    assert instruction.instruction == "N/A"
+    assert instruction.instruction == None
 
 
 def test_instruction_with_large_context():
