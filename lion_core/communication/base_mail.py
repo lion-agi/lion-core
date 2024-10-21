@@ -9,7 +9,18 @@ from lion_core.sys_utils import SysUtil
 
 
 def validate_sender_recipient(value: Any, /) -> str:
-    """Validate the sender and recipient fields for mail-like communication."""
+    """
+    Validate the sender and recipient fields for mail-like communication.
+
+    Args:
+        value (Any): The value to validate.
+
+    Returns:
+        str: The validated sender or recipient value.
+
+    Raises:
+        LionValueError: If the value is not a valid sender or recipient.
+    """
     if value in ["system", "user", "N/A", "assistant"]:
         return value
 
@@ -23,41 +34,29 @@ def validate_sender_recipient(value: Any, /) -> str:
 
 
 class BaseMail(Element, Communicatable):
-    """Base class for mail-like communication in the LION system.
+    """
+    Base class for mail-like communication in the LION system.
 
     Attributes:
-        sender: The ID of the sender node.
-        recipient: The ID of the recipient node.
+        sender (str): The ID of the sender node.
+        recipient (str): The ID of the recipient node.
     """
 
     sender: str = Field(
         default="N/A",
         title="Sender",
-        description="The ID of the sender node, or 'system', 'user', "
-        "or 'assistant'.",
+        description="The ID of the sender node or a role.",
     )
 
     recipient: str = Field(
         default="N/A",
         title="Recipient",
-        description="The ID of the recipient node, or 'system', 'user', "
-        "or 'assistant'.",
+        description="The ID of the recipient node, or a role",
     )
 
     @field_validator("sender", "recipient", mode="before")
     @classmethod
     def _validate_sender_recipient(cls, value: Any) -> str:
-        """Validate the sender and recipient fields.
-
-        Args:
-            value: The value to validate for the sender or recipient.
-
-        Returns:
-            The validated sender or recipient ID.
-
-        Raises:
-            LionValueError: If the value is not a valid sender or recipient.
-        """
         return validate_sender_recipient(value)
 
 

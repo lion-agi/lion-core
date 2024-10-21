@@ -157,10 +157,10 @@ class Branch(BaseSession, Traversal):
         images: list = None,
         image_detail: Literal["low", "high", "auto"] | None = None,
         assistant_response: AssistantResponse | str = None,
-        action_request_message: ActionRequest = None,
-        action_response_message: ActionResponse = None,
-        act_request_model: ActRequestModel = None,
-        act_response_model: ActResponseModel = None,
+        action_request: ActionRequest = None,
+        action_response: ActionResponse = None,
+        action_request_model: ActRequestModel = None,
+        action_response_model: ActResponseModel = None,
         delete_previous_system: bool = None,
         metadata=None,
     ):
@@ -180,10 +180,10 @@ class Branch(BaseSession, Traversal):
             images=images,
             image_detail=image_detail,
             assistant_response=assistant_response,
-            action_request_message=action_request_message,
-            action_response_message=action_response_message,
-            act_request_model=act_request_model,
-            act_response_model=act_response_model,
+            action_request=action_request,
+            action_response=action_response,
+            action_request_model=action_request_model,
+            action_response_model=action_response_model,
         )
 
         if isinstance(_msg, System):
@@ -527,14 +527,14 @@ class Branch(BaseSession, Traversal):
 
             if not action_request_model:
                 action_request_model = ActRequestModel.parse_to_model(
-                    action_request_message=action_request,
+                    action_request=action_request,
                 )
 
             tool: Tool = self.tool_manager.registry.get(
                 action_request.function
             )
             if action_request not in self.messages:
-                self.add_message(action_request_message=action_request)
+                self.add_message(action_request=action_request)
             func_call = FunctionCalling(
                 func_tool=tool,
                 arguments=action_request.arguments,
@@ -542,15 +542,15 @@ class Branch(BaseSession, Traversal):
             )
             result = await func_call.invoke()
             action_response_model = ActResponseModel.parse_to_model(
-                action_request_message=action_request, output=result
+                action_request=action_request, output=result
             )
             action_response = action_response_model.to_message(
-                action_request_message=action_request,
+                action_request=action_request,
                 function_calling=func_call,
             )
             self.add_message(
-                action_request_message=action_request,
-                action_response_message=action_response,
+                action_request=action_request,
+                action_response=action_response,
             )
             return action_response_model
         except Exception as e:
@@ -621,29 +621,29 @@ class Branch(BaseSession, Traversal):
         self.add_message(instruction=ins)
         self.add_message(assistant_response=res)
 
-        act_request_models = None
-        act_response_models = None
+        action_request_models = None
+        action_response_models = None
 
         if skip_validation:
             return res.response
 
         if tools:
-            act_request_models = ActRequestModel.parse_to_model(
+            action_request_models = ActRequestModel.parse_to_model(
                 text=res.response,
             )
 
-        if act_request_models and invoke_action:
-            act_response_models = await alcall(
-                act_request_models,
+        if action_request_models and invoke_action:
+            action_response_models = await alcall(
+                action_request_models,
                 self.invoke_action,
                 suppress_errors=True,
                 timed_config=action_timed_config,
             )
 
-        if act_request_models and not act_response_models:
-            for i in act_request_models:
+        if action_request_models and not action_response_models:
+            for i in action_request_models:
                 self.add_message(
-                    act_request_model=i,
+                    action_request_model=i,
                     sender=self,
                     recipient=None,
                 )
@@ -878,7 +878,7 @@ class Branch(BaseSession, Traversal):
                     sender=self,
                 )
                 self.add_message(
-                    action_request_message=act_req,
+                    action_request=act_req,
                     sender=act_req.sender,
                     recipient=None,
                 )

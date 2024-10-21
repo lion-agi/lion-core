@@ -48,18 +48,16 @@ class ActRequestModel(BaseModel):
     @classmethod
     def parse_to_model(
         cls,
-        action_request_message: ActionRequest = None,
+        action_request: ActionRequest = None,
         text: str | None = None,
         function: str | None = None,
         arguments: dict[str, Any] = {},
     ) -> list[ActRequestModel]:
-        if action_request_message and isinstance(
-            action_request_message, ActionRequest
-        ):
+        if action_request and isinstance(action_request, ActionRequest):
             return [
                 cls(
-                    function=action_request_message.function,
-                    arguments=action_request_message.arguments,
+                    function=action_request.function,
+                    arguments=action_request.arguments,
                 )
             ]
         if function and arguments:
@@ -88,26 +86,26 @@ class ActResponseModel(BaseModel):
     @classmethod
     def parse_to_model(
         cls,
-        action_request_message: ActionRequest,
+        action_request: ActionRequest,
         output: Any,
     ) -> ActResponseModel:
         return cls(
-            function=action_request_message.function,
-            arguments=action_request_message.arguments,
+            function=action_request.function,
+            arguments=action_request.arguments,
             output=output,
         )
 
     def to_message(
         self,
-        action_request_message: ActionRequest,
+        action_request: ActionRequest,
         function_calling: FunctionCalling = None,
     ) -> ActionResponse:
         act_res = ActionResponse(
-            action_request=action_request_message,
+            action_request=action_request,
             sender=(
                 function_calling.func_tool.ln_id if function_calling else None
             ),
-            func_output=self.output,
+            output=self.output,
         )
         if function_calling:
             log = function_calling.to_log()

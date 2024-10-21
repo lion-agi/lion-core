@@ -9,20 +9,25 @@ from lion_core.communication.package import Package, PackageCategory
 
 
 class Mail(BaseMail):
-    """A mail component with sender, recipient, and package."""
+    """
+    A mail component with sender, recipient, and package.
+
+    Attributes:
+        sender (str): The ID of the sender node.
+        recipient (str): The ID of the recipient node.
+        package (Package): The package to be delivered.
+    """
 
     sender: str = Field(
         ...,
         title="Sender",
-        description="The ID of the sender node, or 'system', 'user', "
-        "or 'assistant'.",
+        description="The ID of the sender node, or a role",
     )
 
     recipient: str = Field(
         ...,
         title="Recipient",
-        description="The ID of the recipient node, or 'system', 'user', "
-        "or 'assistant'.",
+        description="The ID of the recipient node, or a role",
     )
 
     package: Package = Field(
@@ -33,7 +38,12 @@ class Mail(BaseMail):
 
     @property
     def category(self) -> PackageCategory:
-        """Return the category of the package."""
+        """
+        Return the category of the package.
+
+        Returns:
+            PackageCategory: The category of the package.
+        """
         return self.package.category
 
     @override

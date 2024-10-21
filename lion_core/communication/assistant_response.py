@@ -22,7 +22,8 @@ class AssistantResponse(RoledMessage):
         recipient: Any | MessageFlag,
         protected_init_params: dict | None = None,
     ) -> None:
-        """Initialize an AssistantResponse instance.
+        """
+        Initialize an AssistantResponse instance.
 
         Args:
             assistant_response: The content of the assistant's response.
@@ -91,12 +92,17 @@ class AssistantResponse(RoledMessage):
             self.content["assistant_response"] = ""
 
     @property
-    def response(self) -> Any:
-        """Return the assistant response content."""
-        return self.content.get("assistant_response")
+    def response(self) -> str:
+        """
+        Return the assistant response content.
+
+        Returns:
+            Any: The content of the assistant's response.
+        """
+        return to_str(self.content.get("assistant_response"))
 
     @override
-    def _format_content(self) -> dict[str, Any]:
+    def _format_content(self) -> dict[str, str]:
         return {"role": self.role.value, "content": self.response}
 
 

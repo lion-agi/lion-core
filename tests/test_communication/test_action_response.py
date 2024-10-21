@@ -38,7 +38,7 @@ def test_action_response_init():
     )
     response = ActionResponse(request, SysUtil.id(), "result")
     assert response.role == MessageRole.ASSISTANT
-    assert response.func_output == "result"
+    assert response.output == "result"
     assert request.is_responded
 
 
@@ -69,7 +69,7 @@ def test_action_response_init_with_message_clone():
 def test_action_response_func_output():
     request = ActionRequest("test_func", {}, SysUtil.id(), SysUtil.id())
     response = ActionResponse(request, SysUtil.id(), "result")
-    assert response.func_output == "result"
+    assert response.output == "result"
 
 
 def test_action_response_response_dict():
@@ -77,7 +77,7 @@ def test_action_response_response_dict():
         "test_func", {"arg1": 1}, SysUtil.id(), SysUtil.id()
     )
     response = ActionResponse(request, SysUtil.id(), "result")
-    assert response.response_dict == {
+    assert response.response == {
         "function": "test_func",
         "arguments": {"arg1": 1},
         "output": "result",
@@ -97,9 +97,9 @@ def test_action_response_update_request():
     request2 = ActionRequest("func2", {"arg2": 2}, SysUtil.id(), SysUtil.id())
     response.update_request(request2, "result2")
 
-    assert response.func_output == "result2"
-    assert response.response_dict["function"] == "func2"
-    assert response.response_dict["arguments"] == {"arg2": 2}
+    assert response.output == "result2"
+    assert response.response["function"] == "func2"
+    assert response.response["arguments"] == {"arg2": 2}
     assert request2.is_responded
 
 
@@ -107,14 +107,14 @@ def test_action_response_update_request():
 def test_action_response_with_none_output():
     request = ActionRequest("test_func", {}, SysUtil.id(), SysUtil.id())
     response = ActionResponse(request, SysUtil.id(), None)
-    assert response.func_output is None
+    assert response.output is None
 
 
 def test_action_response_with_large_output():
     request = ActionRequest("test_func", {}, SysUtil.id(), SysUtil.id())
     large_output = "a" * 1000000  # 1MB string
     response = ActionResponse(request, SysUtil.id(), large_output)
-    assert len(response.func_output) == 1000000
+    assert len(response.output) == 1000000
 
 
 def test_action_response_unicode():
@@ -122,7 +122,7 @@ def test_action_response_unicode():
         "test_func", {"arg": "你好世界"}, SysUtil.id(), SysUtil.id()
     )
     response = ActionResponse(request, SysUtil.id(), "こんにちは世界")
-    assert response.func_output == "こんにちは世界"
+    assert response.output == "こんにちは世界"
 
 
 def test_action_response_update_with_different_argument_structure():
@@ -134,8 +134,8 @@ def test_action_response_update_with_different_argument_structure():
     )
     response.update_request(request2, {"complex": "output"})
 
-    assert response.response_dict["arguments"] == {"arg2": [1, 2, 3]}
-    assert response.func_output == {"complex": "output"}
+    assert response.response["arguments"] == {"arg2": [1, 2, 3]}
+    assert response.output == {"complex": "output"}
 
 
 def test_action_response_serialization():
@@ -156,7 +156,7 @@ def test_action_response_serialization():
         json.loads(response_json)
     )
 
-    assert reconstructed_response.response_dict == response.response_dict
+    assert reconstructed_response.response_dict == response.response
 
 
 def test_action_response_with_very_deep_nesting():
@@ -169,7 +169,7 @@ def test_action_response_with_very_deep_nesting():
     request = ActionRequest("deep_func", deep_args, SysUtil.id(), SysUtil.id())
     response = ActionResponse(request, SysUtil.id(), create_nested_dict(100))
 
-    assert response.func_output == deep_args
+    assert response.output == deep_args
 
 
 def test_action_response_thread_safety():
@@ -214,7 +214,7 @@ def test_action_response_with_very_long_function_name():
     long_name = "a" * 1000
     request = ActionRequest(long_name, {}, SysUtil.id(), SysUtil.id())
     response = ActionResponse(request, SysUtil.id(), "result")
-    assert len(response.response_dict["function"]) == 1000
+    assert len(response.response["function"]) == 1000
 
 
 def test_action_response_with_maximum_arguments():
@@ -223,7 +223,7 @@ def test_action_response_with_maximum_arguments():
         "max_args_func", max_args, SysUtil.id(), SysUtil.id()
     )
     response = ActionResponse(request, SysUtil.id(), "result")
-    assert len(response.response_dict["arguments"]) == 1000
+    assert len(response.response["arguments"]) == 1000
 
 
 def test_action_response_update_request_idempotency():
@@ -234,9 +234,9 @@ def test_action_response_update_request_idempotency():
     response.update_request(request2, "result2")
     # response.update_request(request2, "result2")  # Update with the same request again
 
-    assert response.func_output == "result2"
-    assert response.response_dict["function"] == "func2"
-    assert response.response_dict["arguments"] == {"arg2": 2}
+    assert response.output == "result2"
+    assert response.response["function"] == "func2"
+    assert response.response["arguments"] == {"arg2": 2}
     assert request2.is_responded
 
 
@@ -248,8 +248,8 @@ def test_action_response_with_very_large_request_and_response():
     large_output = "b" * 1000000  # 1MB of output
     response = ActionResponse(request, SysUtil.id(), large_output)
 
-    assert len(response.response_dict["arguments"]["arg"]) == 1000000
-    assert len(response.func_output) == 1000000
+    assert len(response.response["arguments"]["arg"]) == 1000000
+    assert len(response.output) == 1000000
 
 
 # Test to ensure that updating a response doesn't affect the original request
@@ -260,8 +260,8 @@ def test_action_response_update_request_isolation():
     request2 = ActionRequest("func2", {"arg2": 2}, SysUtil.id(), SysUtil.id())
     response.update_request(request2, "result2")
 
-    assert request1.action_request["function"] == "func1"
-    assert request1.action_request["arguments"] == {"arg1": 1}
+    assert request1.request["function"] == "func1"
+    assert request1.request["arguments"] == {"arg1": 1}
     assert request1.is_responded
 
 
@@ -275,8 +275,8 @@ def test_action_response_update_with_different_types():
     )
     response.update_request(request2, 42)
 
-    assert response.func_output == 42
-    assert response.response_dict["arguments"] == {"arg2": "string"}
+    assert response.output == 42
+    assert response.response["arguments"] == {"arg2": "string"}
 
 
 # Test to ensure that the action_request_id is properly updated

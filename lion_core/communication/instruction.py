@@ -24,7 +24,12 @@ from lion_core.form.form import Form
 
 
 class Instruction(RoledMessage):
-    """Represents an instruction message in the system."""
+    """
+    Represents an instruction message in the system.
+
+    This class encapsulates various components of an instruction, including
+    the main instruction content, guidance, context, and request fields.
+    """
 
     @override
     def __init__(
@@ -41,7 +46,22 @@ class Instruction(RoledMessage):
         request_model: BaseModel | MessageFlag = None,
         protected_init_params: dict | None = None,
     ) -> None:
-        """Initialize an Instruction instance."""
+        """
+        Initialize an Instruction instance.
+
+        Args:
+            instruction: The main instruction content.
+            context: Additional context for the instruction.
+            guidance: Guidance information for the instruction.
+            images: List of images associated with the instruction.
+            sender: The sender of the instruction.
+            recipient: The recipient of the instruction.
+            request_fields: Fields requested in the instruction.
+            plain_content: Plain text content of the instruction.
+            image_detail: Level of detail for images.
+            request_model: A BaseModel for structured requests.
+            protected_init_params: Protected initialization parameters.
+        """
         message_flags = [
             instruction,
             context,
@@ -81,20 +101,27 @@ class Instruction(RoledMessage):
 
     @property
     def guidance(self) -> str | None:
-        """Return the guidance content."""
+        """Return the guidance content of the instruction."""
         return self.content.get(["guidance"], None)
 
     @property
     def instruction(self) -> str | dict | None:
         """Return the main instruction content."""
         if "plain_content" in self.content:
-            return self.content.get(["plain_content"])
+            return self.content["plain_content"]
         else:
             return self.content.get(["instruction"], None)
 
     def update_instruction(
         self, instruction: str | dict = None, plain_content: str | None = None
     ) -> None:
+        """
+        Update the instruction content.
+
+        Args:
+            instruction: New instruction content.
+            plain_content: New plain text content.
+        """
         if instruction:
             self.content["instruction"] = instruction
         if plain_content:
@@ -105,7 +132,13 @@ class Instruction(RoledMessage):
         images: list | str,
         image_detail: Literal["low", "high", "auto"] = None,
     ) -> None:
-        """Add new images and update the image detail level."""
+        """
+        Add new images and update the image detail level.
+
+        Args:
+            images: New images to add.
+            image_detail: New image detail level.
+        """
         images = images if isinstance(images, list) else [images]
         _ima: list = self.content.get(["images"], [])
         _ima.extend(images)
@@ -115,7 +148,15 @@ class Instruction(RoledMessage):
             self.content["image_detail"] = image_detail
 
     def update_guidance(self, guidance: str) -> None:
-        """Update the guidance content of the instruction."""
+        """
+        Update the guidance content of the instruction.
+
+        Args:
+            guidance: New guidance content.
+
+        Raises:
+            LionTypeError: If guidance is not a string.
+        """
         if guidance:
             self.content["guidance"] = (
                 to_str(guidance) if not isinstance(guidance, str) else guidance
@@ -128,6 +169,12 @@ class Instruction(RoledMessage):
     def update_request_model(
         self, request_model: BaseModel | type[BaseModel]
     ) -> None:
+        """
+        Update the request model and related fields.
+
+        Args:
+            request_model: New request model.
+        """
         request_fields = break_down_pydantic_annotation(request_model)
         self.update_context(
             respond_schema_info=request_model.model_json_schema()
@@ -136,7 +183,12 @@ class Instruction(RoledMessage):
         self.update_request_fields(request_fields)
 
     def update_request_fields(self, request_fields: dict) -> None:
-        """Update the requested fields in the instruction."""
+        """
+        Update the requested fields in the instruction.
+
+        Args:
+            request_fields: New request fields to update.
+        """
         self.content["request_fields"].update(request_fields)
         format_ = prepare_request_response_format(
             request_fields=self.content["request_fields"],
@@ -144,7 +196,13 @@ class Instruction(RoledMessage):
         self.content["request_response_format"] = format_
 
     def update_context(self, *args, **kwargs) -> None:
-        """Add new context to the instruction."""
+        """
+        Add new context to the instruction.
+
+        Args:
+            *args: Positional arguments to add to context.
+            **kwargs: Keyword arguments to add to context.
+        """
         self.content["context"] = self.content.get("context", [])
         if args:
             self.content["context"].extend(args)
@@ -165,6 +223,23 @@ class Instruction(RoledMessage):
         image_detail: Literal["low", "high", "auto"] | None = None,
         **kwargs,
     ):
+        """
+        Update multiple aspects of the instruction.
+
+        Args:
+            *args: Positional arguments for context update.
+            guidance: New guidance content.
+            instruction: New instruction content.
+            request_fields: New request fields.
+            plain_content: New plain text content.
+            request_model: New request model.
+            images: New images to add.
+            image_detail: New image detail level.
+            **kwargs: Additional keyword arguments for context update.
+
+        Raises:
+            ValueError: If both request_model and request_fields are provided.
+        """
         if request_model and request_fields:
             raise ValueError(
                 "You cannot pass both request_model and request_fields "
@@ -214,7 +289,28 @@ class Instruction(RoledMessage):
         none_as_valid_value: bool = False,
         input_value_kwargs: dict = None,
     ) -> Instruction:
-        """Create an Instruction instance from a form."""
+        """
+        Create an Instruction instance from a form.
+
+        Args:
+            form: The form to create the instruction from.
+            sender: The sender of the instruction.
+            recipient: The recipient of the instruction.
+            images: Images to include in the instruction.
+            image_detail: Image detail level.
+            strict: Whether to use strict mode.
+            assignment: Assignment for the form.
+            task_description: Description of the task.
+            fill_inputs: Whether to fill input fields.
+            none_as_valid_value: Whether to treat None as a valid value.
+            input_value_kwargs: Additional keyword arguments for input values.
+
+        Returns:
+            An Instruction instance created from the form.
+
+        Raises:
+            LionTypeError: If the form is invalid.
+        """
         try:
             if inspect.isclass(form) and issubclass(form, Form):
                 form = form(

@@ -15,6 +15,20 @@ def prepare_action_request(
     function: str | Callable,
     arguments: dict,
 ) -> Note:
+    """
+    Prepare an action request Note.
+
+    Args:
+        function: The function name or callable to be invoked.
+        arguments: The arguments for the function.
+
+    Returns:
+        Note: A Note object containing the action request.
+
+    Raises:
+        ValueError: If the arguments are invalid.
+    """
+
     def _prepare_arguments(_arg: Any) -> dict[str, Any]:
         if _arg is None:
             return {}
@@ -49,10 +63,10 @@ class ActionRequest(RoledMessage):
         protected_init_params: dict | None = None,
     ) -> None:
         """
-        Initializes an ActionRequest instance.
+        Initialize an ActionRequest instance.
 
         Args:
-            func: The function to be invoked.
+            function: The function to be invoked.
             arguments: The arguments for the function.
             sender: The sender of the request.
             recipient: The recipient of the request.
@@ -83,7 +97,7 @@ class ActionRequest(RoledMessage):
         Get the ID of the corresponding action response, if any.
 
         Returns:
-            The ID of the action response, or None if not responded.
+            str | None: The ID of the action response, or None if not responded
         """
         return self.content.get("action_response_id", None)
 
@@ -93,17 +107,17 @@ class ActionRequest(RoledMessage):
         Check if the action request has been responded to.
 
         Returns:
-            True if the action request has been responded to, else False.
+            bool: True if the action request has been responded to, else False.
         """
         return self.action_response_id is not None
 
     @property
-    def action_request(self) -> dict[str, Any]:
+    def request(self) -> dict[str, Any]:
         """
         Get the action request content as a dictionary.
 
         Returns:
-            The action request content.
+            dict[str, Any]: The action request content.
         """
         a = copy(self.content.get("action_request", {}))
         a.pop("output", None)
@@ -115,9 +129,9 @@ class ActionRequest(RoledMessage):
         Get the arguments for the action request.
 
         Returns:
-            The arguments for the action request.
+            dict[str, Any]: The arguments for the action request.
         """
-        return self.action_request.get("arguments", {})
+        return self.request.get("arguments", {})
 
     @property
     def function(self) -> str:
@@ -125,13 +139,13 @@ class ActionRequest(RoledMessage):
         Get the function name for the action request.
 
         Returns:
-            The function name for the action request.
+            str: The function name for the action request.
         """
-        return self.action_request.get("function", "")
+        return self.request.get("function", "")
 
     @override
     def _format_content(self) -> dict[str, Any]:
-        return {"role": self.role.value, "content": self.action_request}
+        return {"role": self.role.value, "content": self.request}
 
 
 # File: lion_core/communication/action_request.py

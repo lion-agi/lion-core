@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 from enum import Enum
 from typing import Any
@@ -39,8 +41,13 @@ class MessageFlag(str, Enum):
     MESSAGE_LOAD = "MESSAGE_LOAD"
 
 
-class RoledMessage(Relational, Component, BaseMail):
-    """A base class representing a message with roles and properties."""
+class RoledMessage(Component, BaseMail, Relational):
+    """
+    A base class representing a message with roles and properties.
+
+    This class combines functionality from Relational, Component, and BaseMail
+    to create a versatile message object with role-based behavior.
+    """
 
     content: Note = Field(
         default_factory=Note,
@@ -55,7 +62,13 @@ class RoledMessage(Relational, Component, BaseMail):
 
     @property
     def image_content(self) -> list[dict[str, Any]] | None:
-        """Return image content if present in the message."""
+        """
+        Return image content if present in the message.
+
+        Returns:
+            Optional[List[Dict[str, Any]]]: A list of image content
+                dictionaries, or None if no images are present.
+        """
         msg_ = self.chat_msg
         if isinstance(msg_, dict) and isinstance(msg_["content"], list):
             return [i for i in msg_["content"] if i["type"] == "image_url"]
@@ -63,7 +76,13 @@ class RoledMessage(Relational, Component, BaseMail):
 
     @property
     def chat_msg(self) -> dict[str, Any] | None:
-        """Return message in chat representation."""
+        """
+        Return message in chat representation.
+
+        Returns:
+            Optional[Dict[str, Any]]: The message in chat format, or None
+                if formatting fails.
+        """
         try:
             return self._format_content()
         except Exception:
@@ -76,8 +95,13 @@ class RoledMessage(Relational, Component, BaseMail):
             return MessageRole(v)
         raise ValueError(f"Invalid message role: {v}")
 
-    def clone(self) -> "RoledMessage":
-        """Creates a copy of the current RoledMessage object."""
+    def clone(self) -> RoledMessage:
+        """
+        Creates a copy of the current RoledMessage object.
+
+        Returns:
+            RoledMessage: A new instance with copied attributes.
+        """
         cls = self.__class__
         signature = inspect.signature(cls.__init__)
         param_num = len(signature.parameters) - 2
@@ -93,9 +117,21 @@ class RoledMessage(Relational, Component, BaseMail):
 
     @override
     @classmethod
-    def from_dict(cls, data: dict, /, **kwargs: Any) -> "RoledMessage":
-        """Loads a RoledMessage object from a dictionary."""
+    def from_dict(cls, data: dict, /, **kwargs: Any) -> RoledMessage:
+        """
+        Loads a RoledMessage object from a dictionary.
+
+        Args:
+            data: The dictionary containing the message data.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            RoledMessage: An instance of RoledMessage created from
+                the dictionary.
+        """
         data = copy(data)
+        if kwargs:
+            data.update(kwargs)
         if "lion_class" in data:
             cls = get_class(data.pop("lion_class"))
         signature = inspect.signature(cls.__init__)
@@ -121,7 +157,12 @@ class RoledMessage(Relational, Component, BaseMail):
 
     @override
     def __str__(self) -> str:
-        """Provides a string representation of the message."""
+        """
+        Provides a string representation of the message.
+
+        Returns:
+            str: A string representation of the message.
+        """
         content_preview = (
             f"{str(self.content)[:75]}..."
             if len(str(self.content)) > 75
@@ -133,6 +174,12 @@ class RoledMessage(Relational, Component, BaseMail):
         )
 
     def to_log(self) -> Log:
+        """
+        Convert the message to a Log object.
+
+        Returns:
+            Log: A Log object representing the message.
+        """
         dict_ = self.to_dict()
         content = dict_.pop("content")
         _log = Log(
@@ -142,6 +189,8 @@ class RoledMessage(Relational, Component, BaseMail):
         return _log
 
     async def alog(self):
+        """Asynchronously log the message to the message log manager."""
+
         await message_log_manager.alog(self.to_log())
 
     @field_serializer("content")
