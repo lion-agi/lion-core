@@ -146,11 +146,11 @@ def test_assistant_response_invalid_utf8():
 @pytest.mark.parametrize(
     "content",
     [
-        123,
-        3.14,
-        True,
-        ["list", "item"],
-        {"nested": "dict"},
+        "123",
+        "3.14",
+        "True",
+        '["list", "item"]',
+        '{"nested": "dict"}',
     ],
 )
 def test_assistant_response_various_content_types(content):
@@ -206,7 +206,7 @@ def test_assistant_response_complex_content():
 # Test assistant response with missing 'content' key
 def test_assistant_response_missing_content_key():
     response = AssistantResponse({"other_key": "value"}, "assistant", "user")
-    assert response.response == {"other_key": "value"}
+    assert response.response == '{"other_key": "value"}'
 
 
 # Test assistant response with non-dict input

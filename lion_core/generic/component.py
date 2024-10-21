@@ -3,7 +3,7 @@ from functools import singledispatchmethod
 from typing import Annotated, Any, ClassVar, TypeVar
 
 from lionabc.exceptions import LionValueError
-from lionfuncs import LN_UNDEFINED, copy, time
+from lionfuncs import LN_UNDEFINED, Note, copy, time
 from pydantic import Field, field_serializer, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
@@ -12,7 +12,6 @@ from typing_extensions import override
 from lion_core._class_registry import get_class
 from lion_core.generic.component_adapter import ComponentAdapterRegistry
 from lion_core.generic.element import Element
-from lion_core.generic.note import Note
 from lion_core.protocols.adapter import Adapter, AdapterRegistry
 
 T = TypeVar("T", bound=Element)
@@ -213,7 +212,7 @@ class Component(Element):
         """
         dict_ = self.model_dump(**kwargs)
         if isinstance(self.content, Note):
-            dict_["content"] = dict_["content"]["content"]
+            dict_["content"] = self.content.content
         extra_fields = dict_.pop("extra_fields", {})
         dict_ = {**dict_, **extra_fields, "lion_class": self.class_name()}
         for i in list(dict_.keys()):

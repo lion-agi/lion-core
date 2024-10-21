@@ -193,7 +193,7 @@ Set an item or nested item in the Note using indexing.
 ### Creating a Note
 
 ```python
-from lion_core.generic.note import Note, note
+from lionfuncs import Note, note
 
 # Create a Note instance
 my_note = Note(name="John Doe", age=30, address={"city": "New York", "country": "USA"})

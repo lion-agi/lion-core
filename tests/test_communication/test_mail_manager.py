@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from lionabc import Observable
+from lionabc.exceptions import ItemNotFoundError
 
 from lion_core.communication.mail import Mail
 from lion_core.communication.mail_manager import MailManager
@@ -132,17 +133,17 @@ def test_mail_manager_add_invalid_source():
 
 
 def test_mail_manager_delete_nonexistent_source(mail_manager):
-    with pytest.raises(ValueError):
+    with pytest.raises(ItemNotFoundError):
         mail_manager.delete_source(SysUtil.id())
 
 
 def test_mail_manager_collect_nonexistent_sender(mail_manager):
-    with pytest.raises(ValueError):
+    with pytest.raises(ItemNotFoundError):
         mail_manager.collect(SysUtil.id())
 
 
 def test_mail_manager_send_nonexistent_recipient(mail_manager):
-    with pytest.raises(ValueError):
+    with pytest.raises(ItemNotFoundError):
         mail_manager.send(SysUtil.id())
 
 
@@ -153,7 +154,7 @@ def test_mail_manager_collect_with_nonexistent_recipient(
         SysUtil.id(), SysUtil.id(), PackageCategory.MESSAGE, "content"
     )
     mock_source.mailbox.include(mock_mail, "out")
-    with pytest.raises(ValueError):
+    with pytest.raises(ItemNotFoundError):
         mail_manager.collect(mock_source.ln_id)
 
 

@@ -1,6 +1,6 @@
 from typing import Any
 
-from lionabc.exceptions import LionValueError
+from lionfuncs import Note, copy
 from typing_extensions import override
 
 from lion_core.communication.action_request import ActionRequest
@@ -9,19 +9,24 @@ from lion_core.communication.message import (
     MessageRole,
     RoledMessage,
 )
-from lion_core.generic.note import Note
 
 
 def prepare_action_response_content(
     action_request: ActionRequest,
-    func_output: Any,
+    output: Any,
 ) -> Note:
-    """Prepare the content for an action response."""
-    if action_request.is_responded:
-        raise LionValueError("Action request already responded to")
+    """
+    Prepare the content for an action response.
 
-    dict_ = action_request.request_dict
-    dict_["output"] = func_output
+    Args:
+        action_request: The original action request.
+        func_output: The output from the function execution.
+
+    Returns:
+        Note: A Note object containing the action response content.
+    """
+    dict_ = action_request.request
+    dict_["output"] = output
     content = Note(action_request_id=action_request.ln_id)
     content["action_response"] = dict_
     return content
@@ -34,11 +39,12 @@ class ActionResponse(RoledMessage):
     def __init__(
         self,
         action_request: ActionRequest | MessageFlag,
-        sender: Any | MessageFlag,
-        func_output: Any | MessageFlag,
+        sender: Any | MessageFlag = None,
+        output: Any | MessageFlag = None,
         protected_init_params: dict | None = None,
     ) -> None:
-        """Initialize an ActionResponse instance.
+        """
+        Initialize an ActionResponse instance.
 
         Args:
             action_request: The original action request to respond to.
@@ -49,10 +55,11 @@ class ActionResponse(RoledMessage):
         message_flags = [
             action_request,
             sender,
-            func_output,
+            output,
         ]
 
         if all(x == MessageFlag.MESSAGE_LOAD for x in message_flags):
+            protected_init_params = protected_init_params or {}
             super().__init__(**protected_init_params)
             return
 
@@ -66,21 +73,31 @@ class ActionResponse(RoledMessage):
             recipient=action_request.sender,
             content=prepare_action_response_content(
                 action_request=action_request,
-                func_output=func_output,
+                output=output,
             ),
         )
         self.update_request(
             action_request=action_request,
-            func_output=func_output,
+            output=output,
         )
 
     @property
-    def func_output(self) -> Any:
+    def function(self) -> str:
+        """Get the function name from the action response."""
+        return copy(self.content.get(["action_response", "function"]))
+
+    @property
+    def arguments(self) -> dict[str, Any]:
+        """Get the function arguments from the action response."""
+        return copy(self.content.get(["action_response", "arguments"]))
+
+    @property
+    def output(self) -> Any:
         """Get the function output from the action response."""
         return self.content.get(["action_response", "output"])
 
     @property
-    def response_dict(self) -> dict[str, Any]:
+    def response(self) -> dict[str, Any]:
         """Get the action response as a dictionary."""
         return self.content.get("action_response", {})
 
@@ -92,7 +109,7 @@ class ActionResponse(RoledMessage):
     def update_request(
         self,
         action_request: ActionRequest,
-        func_output: Any,
+        output: Any = None,
     ) -> None:
         """Update the action response with new request and output.
 
@@ -100,14 +117,19 @@ class ActionResponse(RoledMessage):
             action_request: The original action request being responded to.
             func_output: The output from the function in the request.
         """
+        output = output or self.output
         self.content = prepare_action_response_content(
             action_request=action_request,
-            func_output=func_output,
+            output=output,
         )
         action_request.content.set(
             ["action_response_id"],
             self.ln_id,
         )
+
+    @override
+    def _format_content(self) -> dict[str, Any]:
+        return {"role": self.role.value, "content": self.response}
 
 
 # File: lion_core/communication/action_response.py

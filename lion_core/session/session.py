@@ -3,16 +3,19 @@ from typing import Any
 from lionabc import BaseiModel
 from lionabc.exceptions import ItemNotFoundError, LionValueError
 from lionfuncs import LN_UNDEFINED
-from pydantic import Field, PrivateAttr
+from pydantic import Field
 
-from lion_core.action.tool_manager import ToolManager
-from lion_core.communication.mail_manager import MailManager
-from lion_core.communication.message import RoledMessage
-from lion_core.generic.exchange import Exchange
-from lion_core.generic.flow import Flow
-from lion_core.generic.pile import Pile, pile
-from lion_core.generic.progression import Progression, progression
-from lion_core.generic.utils import to_list_type
+from lion_core.action import ToolManager
+from lion_core.communication import MailManager, RoledMessage
+from lion_core.generic import (
+    Exchange,
+    Flow,
+    Pile,
+    Progression,
+    pile,
+    progression,
+    to_list_type,
+)
 from lion_core.session.base import BaseSession
 from lion_core.session.branch import Branch
 from lion_core.sys_utils import SysUtil
@@ -30,12 +33,13 @@ class Session(BaseSession):
         conversations (Flow | None): Manages conversation flow.
     """
 
-    branches: Pile | None = Field(None)
-    default_branch: Branch | None = Field(None, exclude=True)
-    mail_transfer: Exchange | None = Field(None)
-    mail_manager: MailManager | None = Field(None, exclude=True)
-    conversations: Flow | None = Field(None)
-    _branch_type: type[Branch] = PrivateAttr(Branch)
+    branches: Pile = Field(default_factory=pile)
+    default_branch: Branch | None = Field(default_factory=Branch, exclude=True)
+    mail_transfer: Exchange | None = Field(default_factory=Exchange)
+    mail_manager: MailManager | None = Field(
+        default_factory=MailManager, exclude=True
+    )
+    conversations: Flow | None = Field(default_factory=Flow)
 
     async def new_branch(
         self,
@@ -51,27 +55,27 @@ class Session(BaseSession):
         tools: Any = None,
         **kwargs,  # additional branch parameters
     ) -> Branch:
-        if system in [None, LN_UNDEFINED]:
+        if system in [None, LN_UNDEFINED] and self.system:
             system = self.system.clone()
             system.sender = self.ln_id
             system_sender = self.ln_id
 
-        branch = self._branch_type(
-            system=system,
-            system_sender=system_sender,
-            system_datetime=system_datetime,
-            name=name,
-            user=user,
-            imodel=imodel or self.imodel,
-            messages=messages,
-            progress=progress,
-            tool_manager=tool_manager,
-            tools=tools,
-            **kwargs,
-        )
+        kwargs["system"] = system
+        kwargs["system_sender"] = system_sender
+        kwargs["system_datetime"] = system_datetime
+        kwargs["user"] = user
+        kwargs["name"] = name
+        kwargs["imodel"] = imodel
+        kwargs["messages"] = messages
+        kwargs["progress"] = progress
+        kwargs["tool_manager"] = tool_manager
+        kwargs["tools"] = tools
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
+
+        branch = Branch(**kwargs)
 
         self.conversations.register(branch.progress, name=name)
-        self.branches.include(branch)
+        await self.branches.ainclude(branch)
         self.mail_manager.add_sources(branch)
         if self.default_branch is None:
             self.default_branch = branch

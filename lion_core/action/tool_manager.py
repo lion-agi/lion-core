@@ -7,7 +7,7 @@ from lionfuncs import to_dict, to_list
 
 from lion_core.action.function_calling import FunctionCalling
 from lion_core.action.tool import Tool, func_to_tool
-from lion_core.communication.action_request import ActionRequest
+from lion_core.communication import ActionRequest
 
 REGISTERABLE_TOOL = Tool | Callable[..., Any]
 FINDABLE_TOOL = REGISTERABLE_TOOL | str
@@ -71,8 +71,12 @@ class ToolManager(BaseManager):
             TypeError: If the provided tool is not a Tool object or callable.
         """
         if not update and tool in self:
-            func_name = getattr(tool, "function_name", tool)
-            raise ValueError(f"Tool {func_name} is already registered.")
+            name = None
+            if isinstance(tool, Tool):
+                name = tool.function_name
+            elif callable(tool):
+                name = tool.__name__
+            raise ValueError(f"Tool {name} is already registered.")
 
         if callable(tool):
             tool = func_to_tool(tool)[0]
@@ -84,6 +88,7 @@ class ToolManager(BaseManager):
     def register_tools(
         self,
         tools: list[REGISTERABLE_TOOL] | REGISTERABLE_TOOL,
+        update: bool = False,
     ) -> None:
         """Register multiple tools in the registry.
 
@@ -97,7 +102,7 @@ class ToolManager(BaseManager):
         """
         tools_list = tools if isinstance(tools, list) else [tools]
         [
-            self.register_tool(tool)
+            self.register_tool(tool, update=update)
             for tool in to_list(tools_list, dropna=True, flatten=True)
         ]
 
@@ -236,6 +241,12 @@ class ToolManager(BaseManager):
         """Retrieve the schema for a specific tool."""
         if isinstance(tool, dict):
             return tool
+        if isinstance(tool, Callable):
+            name = tool.__name__
+            if name in self.registry:
+                return self.registry[name].schema_
+            raise ValueError(f"Tool {name} is not registered.")
+
         elif isinstance(tool, Tool) or isinstance(tool, str):
             name = tool.function_name if isinstance(tool, Tool) else tool
             if name in self.registry:

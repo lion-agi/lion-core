@@ -5,13 +5,12 @@ from typing import Any
 
 from lionabc import Action, Condition
 from lionabc.exceptions import LionOperationError
-from lionfuncs import to_dict, to_list, ucall
+from lionfuncs import Note, note, to_dict, to_list, ucall
 from pydantic import Field, PrivateAttr
 from typing_extensions import override
 
 from lion_core.form.base import BaseForm
 from lion_core.generic.element import Element
-from lion_core.generic.note import Note, note
 
 RULE_SYS_FIELDS = [
     "base_config",

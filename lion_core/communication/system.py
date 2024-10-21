@@ -1,6 +1,5 @@
 from typing import Any
 
-from lionfuncs import time
 from typing_extensions import override
 
 from lion_core.communication.message import (
@@ -8,28 +7,25 @@ from lion_core.communication.message import (
     MessageRole,
     RoledMessage,
 )
-from lion_core.generic.note import Note
-
-DEFAULT_SYSTEM = "You are a helpful AI assistant. Let's think step by step."
-
-
-def format_system_content(
-    system_datetime: bool | str | None,
-    system_message: str,
-) -> Note:
-    """Format the system content with optional datetime information."""
-    system_message = system_message or DEFAULT_SYSTEM
-    if not system_datetime:
-        return Note(system_info=str(system_message))
-    if isinstance(system_datetime, str):
-        return Note(system_info=f"{system_message}. Date: {system_datetime}")
-    if system_datetime:
-        date = time(type_="iso", timespec="minutes")
-        return Note(system_info=f"{system_message}. System Date: {date}")
+from lion_core.communication.utils import format_system_content
 
 
 class System(RoledMessage):
-    """Represents a system message in a language model conversation."""
+    """
+    Represents a system message in a language model conversation.
+
+    This class extends RoledMessage to provide functionality specific to
+    system messages, which are typically used to set the context or provide
+    instructions to the language model.
+
+    Example:
+        >>> system_msg = System(
+            system="You are a helpful assistant.",
+            system_datetime=True
+            )
+        >>> print(system_msg.system_info)
+        'You are a helpful assistant. System Date: 2023-06-01T12:00:00'
+    """
 
     @override
     def __init__(
@@ -40,7 +36,19 @@ class System(RoledMessage):
         system_datetime: bool | str | None | MessageFlag = None,
         protected_init_params: dict | None = None,
     ):
-        """Initialize a System message instance."""
+        """
+        Initialize a System message instance.
+
+        Args:
+            system_message: The content of the system message.
+            sender: The sender of the system message.
+            recipient: The recipient of the system message.
+            system_datetime: Flag to include system datetime in the message.
+            protected_init_params: Protected initialization parameters.
+
+        Raises:
+            ValueError: If invalid combination of parameters is provided.
+        """
         if all(
             x == MessageFlag.MESSAGE_LOAD
             for x in [system, sender, recipient, system_datetime]
@@ -66,8 +74,17 @@ class System(RoledMessage):
 
     @property
     def system_info(self) -> Any:
-        """Retrieve the system information stored in the message content."""
+        """
+        Retrieve the system information stored in the message content.
+
+        Returns:
+            Any: The system information.
+        """
         return self.content.get("system_info", None)
+
+    @override
+    def _format_content(self) -> dict[str, Any]:
+        return {"role": self.role.value, "content": self.system_info}
 
 
 # File: lion_core/communication/system.py

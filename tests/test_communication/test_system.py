@@ -1,12 +1,9 @@
 import pytest
+from lionfuncs import Note
 
 from lion_core.communication.message import MessageFlag, MessageRole
-from lion_core.communication.system import (
-    DEFAULT_SYSTEM,
-    System,
-    format_system_content,
-)
-from lion_core.generic.note import Note
+from lion_core.communication.system import System
+from lion_core.communication.utils import DEFAULT_SYSTEM, format_system_content
 from lion_core.sys_utils import SysUtil
 
 

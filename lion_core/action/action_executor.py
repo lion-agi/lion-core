@@ -6,8 +6,7 @@ from typing_extensions import override
 
 from lion_core.action.action_processor import ActionProcessor
 from lion_core.action.base import ObservableAction
-from lion_core.generic.pile import Pile, pile
-from lion_core.generic.progression import Progression, progression
+from lion_core.generic import Pile, Progression, pile, progression
 
 
 class ActionExecutor(BaseExecutor):
