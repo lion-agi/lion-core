@@ -75,6 +75,7 @@ class ActionRequest(RoledMessage):
         message_flags = [function, arguments, sender, recipient]
 
         if all(x == MessageFlag.MESSAGE_LOAD for x in message_flags):
+            protected_init_params = protected_init_params or {}
             super().__init__(**protected_init_params)
             return
 

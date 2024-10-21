@@ -34,7 +34,7 @@ class Instruction(RoledMessage):
     @override
     def __init__(
         self,
-        instruction: Any | MessageFlag = None,
+        instruction: Any | MessageFlag,
         context: Any | MessageFlag = None,
         guidance: Any | MessageFlag = None,
         images: list | MessageFlag = None,
@@ -76,6 +76,7 @@ class Instruction(RoledMessage):
         ]
 
         if all(x == MessageFlag.MESSAGE_LOAD for x in message_flags):
+            protected_init_params = protected_init_params or {}
             super().__init__(**protected_init_params)
             return
 

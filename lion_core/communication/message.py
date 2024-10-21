@@ -212,5 +212,13 @@ class RoledMessage(Component, BaseMail, Relational):
             output_dict.update(info_dict)
         return output_dict
 
+    def _format_content(self) -> dict[str, Any]:
+        """Format the message content for chat representation."""
+        if self.content.get("images", None):
+            content = self.content.to_dict()
+        else:
+            content = str(self.content.to_dict())
+        return {"role": self.role.value, "content": content}
+
 
 # File: lion_core/communication/message.py
