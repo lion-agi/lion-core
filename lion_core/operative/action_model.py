@@ -11,7 +11,7 @@ from lion_core.communication import ActionRequest, ActionResponse
 from .utils import parse_action_request
 
 
-class ActionRequestModel(BaseModel):
+class ActRequestModel(BaseModel):
 
     function: str | None = Field(
         None,
@@ -52,7 +52,7 @@ class ActionRequestModel(BaseModel):
         text: str | None = None,
         function: str | None = None,
         arguments: dict[str, Any] = {},
-    ) -> list[ActionRequestModel]:
+    ) -> list[ActRequestModel]:
         if action_request_message and isinstance(
             action_request_message, ActionRequest
         ):
@@ -69,7 +69,7 @@ class ActionRequestModel(BaseModel):
             _dicts = parse_action_request(text)
             _dicts = [i for i in _dicts if i]
             if _dicts:
-                return [cls(**i) for i in _dicts]
+                return [cls.model_validate(i) for i in _dicts]
         return []
 
     def to_message(self) -> ActionRequest:
@@ -79,7 +79,7 @@ class ActionRequestModel(BaseModel):
         )
 
 
-class ActionResponseModel(BaseModel):
+class ActResponseModel(BaseModel):
 
     function: str
     arguments: dict[str, Any]
@@ -90,7 +90,7 @@ class ActionResponseModel(BaseModel):
         cls,
         action_request_message: ActionRequest,
         output: Any,
-    ) -> ActionResponseModel:
+    ) -> ActResponseModel:
         return cls(
             function=action_request_message.function,
             arguments=action_request_message.arguments,
@@ -100,14 +100,16 @@ class ActionResponseModel(BaseModel):
     def to_message(
         self,
         action_request_message: ActionRequest,
-        func_call: FunctionCalling = None,
+        function_calling: FunctionCalling = None,
     ) -> ActionResponse:
         act_res = ActionResponse(
             action_request=action_request_message,
-            sender=func_call.func_tool.ln_id if func_call else None,
+            sender=(
+                function_calling.func_tool.ln_id if function_calling else None
+            ),
             func_output=self.output,
         )
-        if func_call:
-            log = func_call.to_log()
+        if function_calling:
+            log = function_calling.to_log()
             act_res.metadata["log"] = log.to_dict()
         return act_res
