@@ -1,22 +1,20 @@
 from typing import Any
 
-from lionfuncs import LN_UNDEFINED
-
 from lion_core.communication.system import System
 
 
-def create_system(
+def create_system_message(
     system: Any = None,
-    sender=None,
-    recipient=None,
-    system_datetime=None,
+    sender: Any = None,
+    recipient: Any = None,
+    system_datetime: bool | str = None,
 ) -> System:
     config = {
         "sender": sender,
         "recipient": recipient,
         "system_datetime": system_datetime,
     }
-    config = {k: v for k, v in config.items() if v not in [None, LN_UNDEFINED]}
+    config = {k: v for k, v in config.items() if v}
 
     if not system:
         return System(DEFAULT_SYSTEM, **config)

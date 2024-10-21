@@ -1,31 +1,45 @@
-from lion_core.communication.action_request import ActionRequest
-from lion_core.communication.action_response import ActionResponse
+from typing import Any, Literal
 
-from .create_action_request import create_action_request
-from .create_action_response import create_action_response
-from .create_assistant_response import create_assistant_response
-from .create_instruction import create_instruction
-from .create_system import create_system
+from lionabc import Observable
+from pydantic import BaseModel
+
+from lion_core.communication import (
+    ActionRequest,
+    ActionResponse,
+    AssistantResponse,
+    Instruction,
+    System,
+)
+from lion_core.operative.action_model import ActRequestModel, ActResponseModel
+
+from .create_action_request_msg import create_action_request_message
+from .create_action_response_msg import create_action_response_message
+from .create_assistant_response_msg import create_assistant_response_message
+from .create_instruction_msg import create_instruction_message
+from .create_system_msg import create_system_message
 
 
 def create_message(
-    sender=None,
-    recipient=None,
-    instruction=None,
-    context=None,
-    guidance=None,
-    request_fields=None,
-    system=None,
-    system_sender=None,
-    system_datetime=None,
-    images=None,
-    image_detail=None,
-    assistant_response=None,
-    action_request: ActionRequest = None,
-    action_response: ActionResponse = None,
-    action_request_model=None,
-    action_response_model=None,
+    sender: Observable | str = None,
+    recipient: Observable | str = None,
+    instruction: Instruction | str | dict = None,
+    context: Any = None,
+    guidance: str | dict = None,
+    plain_content: str = None,
+    request_fields: list[str] | dict = None,
+    request_model: type[BaseModel] | BaseModel = None,
+    system: System | str | dict = None,
+    system_sender: Observable | str = None,
+    system_datetime: bool | str = None,
+    images: list = None,
+    image_detail: Literal["low", "high", "auto"] | None = None,
+    assistant_response: AssistantResponse | str = None,
+    action_request_message: ActionRequest = None,
+    action_response_message: ActionResponse = None,
+    act_request_model: ActRequestModel = None,
+    act_response_model: ActResponseModel = None,
 ):
+    """kwargs for additional instruction context"""
     if (
         len(
             [
@@ -38,34 +52,38 @@ def create_message(
     ):
         raise ValueError("Error: Message can only have one role")
 
-    if action_response_model or action_response:
-        return create_action_response(
-            action_request=action_request,
-            action_response_model=action_response_model,
+    if act_response_model or action_response_message:
+        if not action_request_message:
+            raise ValueError(
+                "Error: Action response must have an action request."
+            )
+        return create_action_response_message(
+            action_request_message=action_request_message,
+            act_response_model=act_response_model,
             sender=sender,
-            action_response=action_response,
+            action_response_message=action_response_message,
         )
-    if action_request_model or action_request:
-        return create_action_request(
+    if act_request_model or action_request_message:
+        return create_action_request_message(
+            act_request_model=act_request_model,
             sender=sender,
             recipient=recipient,
-            action_request_model=action_request_model,
-            action_request=action_request,
+            action_request_message=action_request_message,
         )
     if system:
-        return create_system(
+        return create_system_message(
             system=system,
             sender=system_sender,
             recipient=recipient,
             system_datetime=system_datetime,
         )
     if assistant_response:
-        return create_assistant_response(
+        return create_assistant_response_message(
             sender=sender,
             recipient=recipient,
             assistant_response=assistant_response,
         )
-    return create_instruction(
+    return create_instruction_message(
         sender=sender,
         recipient=recipient,
         instruction=instruction,
@@ -74,4 +92,6 @@ def create_message(
         request_fields=request_fields,
         images=images,
         image_detail=image_detail,
+        request_model=request_model,
+        plain_content=plain_content,
     )
