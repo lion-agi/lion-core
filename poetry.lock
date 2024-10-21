@@ -233,13 +233,13 @@ files = [
 
 [[package]]
 name = "lionfuncs"
-version = "1.1.2"
+version = "1.2.1"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "lionfuncs-1.1.2-py3-none-any.whl", hash = "sha256:e12f77b8fd68437c1c4453bd02e64e399f539b696722cc6f2da5b11f19d48c32"},
-    {file = "lionfuncs-1.1.2.tar.gz", hash = "sha256:6b3c2eb7f0474258f917fbc160502b564690ba9d0a1cb93feb28f967792dac8b"},
+    {file = "lionfuncs-1.2.1-py3-none-any.whl", hash = "sha256:34245569ec5023a9bc62a474d53345ae959eea32f94e20b20a2ce5be74465122"},
+    {file = "lionfuncs-1.2.1.tar.gz", hash = "sha256:985071973e168abf2fa1e6e899d6df052d7093db567297b16ab973917c703e58"},
 ]
 
 [package.dependencies]
