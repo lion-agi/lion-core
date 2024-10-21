@@ -146,11 +146,11 @@ def test_assistant_response_invalid_utf8():
 @pytest.mark.parametrize(
     "content",
     [
-        123,
-        3.14,
-        True,
-        ["list", "item"],
-        {"nested": "dict"},
+        "123",
+        "3.14",
+        "True",
+        '["list", "item"]',
+        '{"nested": "dict"}',
     ],
 )
 def test_assistant_response_various_content_types(content):

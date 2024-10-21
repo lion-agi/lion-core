@@ -2,6 +2,7 @@ from typing import Any, NoReturn
 
 from lionabc import Action, EventStatus
 from lionabc.exceptions import LionAccessError
+from lionfuncs import to_dict
 from pydantic import PrivateAttr
 from typing_extensions import override
 
@@ -52,6 +53,20 @@ class ObservableAction(Element, Action):
         dict_ = self.to_dict()
         content = {k: dict_[k] for k in self._content_fields if k in dict_}
         loginfo = {k: dict_[k] for k in dict_ if k not in self._content_fields}
+        content = to_dict(
+            content,
+            use_model_dump=True,
+            recursive=True,
+            recursive_python_only=False,
+            max_recursive_depth=5,
+        )
+        loginfo = to_dict(
+            loginfo,
+            use_model_dump=True,
+            recursive=True,
+            recursive_python_only=False,
+            max_recursive_depth=5,
+        )
         return Log(content=content, loginfo=loginfo)
 
     @classmethod
