@@ -3,7 +3,7 @@ from pydantic import model_validator
 
 from lion_core.communication import System
 from lion_core.generic.node import Node
-from lion_core.session.msg_handlers import create_system
+from lion_core.session.msg_handlers import create_system_message
 from lion_core.sys_utils import SysUtil
 
 
@@ -22,7 +22,7 @@ class BaseSession(Node, AbstractSpace):
         sender = data.pop("system_sender", None)
         system_datetime = data.pop("system_datetime", None)
 
-        system = create_system(
+        system = create_system_message(
             system=system,
             sender=sender,
             system_datetime=system_datetime,
