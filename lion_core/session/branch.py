@@ -742,7 +742,7 @@ class Branch(BaseSession, Traversal):
         field_descriptions: dict[str, str] | None = None,
         frozen: bool = False,
         extra_fields: dict[str, FieldInfo] | None = None,
-        use_all_fields: bool = True,
+        use_all_fields: bool = False,
         tools: Any = None,
         images: list = None,
         image_detail: Literal["low", "high", "auto"] = None,
@@ -868,6 +868,7 @@ class Branch(BaseSession, Traversal):
                 logging.warning(
                     f"Failed to parse model response into operative model: {e}"
                 )
+                request_model = dict_
 
         elif (
             hasattr(request_model, "action_requests")
@@ -953,7 +954,7 @@ class Branch(BaseSession, Traversal):
         field_descriptions: dict[str, str] | None = None,
         frozen: bool = False,
         extra_fields: dict[str, FieldInfo] | None = None,
-        use_all_fields: bool = True,
+        use_all_fields: bool = False,
         tool_schemas=None,
         images: list = None,
         image_detail: Literal["low", "high", "auto"] = None,
