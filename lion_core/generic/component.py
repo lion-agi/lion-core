@@ -464,7 +464,7 @@ class Component(Element):
                 f"field {field_name} has no attribute {attr}",
             )
 
-    def field_annotation(self, field_name: Any, /) -> dict[str, Any]:
+    def field_annotation(self, field_name: Any = None, /) -> dict[str, Any]:
         """Get the annotation of a field."""
         return self._field_annotation(field_name)
 
