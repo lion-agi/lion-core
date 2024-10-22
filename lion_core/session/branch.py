@@ -691,6 +691,7 @@ class Branch(BaseSession, Traversal):
                         instruction="reformat text into specified model",
                         context=res.response,
                         request_model=request_model,
+                        request_fields=request_fields,
                         progress=[],
                         imodel=retry_imodel or imodel,
                         **retry_kwargs,
@@ -732,6 +733,7 @@ class Branch(BaseSession, Traversal):
         reason: bool = True,
         actions: bool = True,
         exclude_fields: list | dict | None = None,
+        include_fields: list | dict | None = None,
         config_dict: ConfigDict | None = None,
         doc: str | None = None,
         validators: dict = None,
@@ -740,7 +742,7 @@ class Branch(BaseSession, Traversal):
         field_descriptions: dict[str, str] | None = None,
         frozen: bool = False,
         extra_fields: dict[str, FieldInfo] | None = None,
-        use_all_fields: bool = True,
+        use_all_fields: bool = False,
         tools: Any = None,
         images: list = None,
         image_detail: Literal["low", "high", "auto"] = None,
@@ -786,6 +788,7 @@ class Branch(BaseSession, Traversal):
             reason=reason,
             actions=actions,
             exclude_fields=exclude_fields,
+            include_fields=include_fields,
             config_dict=config_dict,
             doc=doc,
             validators=validators,
@@ -865,6 +868,7 @@ class Branch(BaseSession, Traversal):
                 logging.warning(
                     f"Failed to parse model response into operative model: {e}"
                 )
+                request_model = dict_
 
         elif (
             hasattr(request_model, "action_requests")
@@ -941,6 +945,7 @@ class Branch(BaseSession, Traversal):
         reason: bool = True,
         actions: bool = True,
         exclude_fields: list | dict | None = None,
+        include_fields: list | dict | None = None,
         config_dict: ConfigDict | None = None,
         doc: str | None = None,
         validators: dict = None,
@@ -949,7 +954,7 @@ class Branch(BaseSession, Traversal):
         field_descriptions: dict[str, str] | None = None,
         frozen: bool = False,
         extra_fields: dict[str, FieldInfo] | None = None,
-        use_all_fields: bool = True,
+        use_all_fields: bool = False,
         tool_schemas=None,
         images: list = None,
         image_detail: Literal["low", "high", "auto"] = None,
@@ -967,6 +972,7 @@ class Branch(BaseSession, Traversal):
             reason=reason,
             actions=actions,
             exclude_fields=exclude_fields,
+            include_fields=include_fields,
             operative_model=operative_model,
             config_dict=config_dict,
             doc=doc,
@@ -999,7 +1005,7 @@ class Branch(BaseSession, Traversal):
 
         def _validate_pydantic(_s, pyd=True):
             d_ = validate_mapping(
-                res.response,
+                _s,
                 request_model.model_fields,
                 handle_unmatched=handle_unmatched,
                 fuzzy_match=True,
@@ -1036,7 +1042,7 @@ class Branch(BaseSession, Traversal):
                 except Exception:
                     if num_parse_retries == 1:
                         try:
-                            dict_ = _validate_pydantic(res.response, False)
+                            dict_ = _validate_pydantic(res1.response, False)
                             break
                         except Exception:
                             dict_ = res.response
