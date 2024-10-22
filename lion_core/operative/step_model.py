@@ -85,7 +85,7 @@ class StepModel(BaseModel):
         field_descriptions: dict[str, str] | None = None,
         frozen: bool = False,
         extra_fields: dict[str, FieldInfo] | None = None,
-        use_all_fields: bool = True,
+        use_all_fields: bool = False,
     ) -> BaseModel:
         response_model = cls.as_response_model(
             request_model=request_model,
@@ -120,7 +120,7 @@ class StepModel(BaseModel):
         field_descriptions: dict[str, str] | None = None,
         frozen: bool = False,
         extra_fields: dict[str, FieldInfo] | None = None,
-        use_all_fields: bool = True,
+        use_all_fields: bool = False,
     ) -> type[BaseModel]:
         """kwargs, extra fields, dict[str: FieldInfo]"""
 
@@ -176,7 +176,7 @@ class StepModel(BaseModel):
         field_descriptions: dict[str, str] | None = None,
         frozen: bool = False,
         extra_fields: dict[str, FieldInfo] | None = None,
-        use_all_fields: bool = True,
+        use_all_fields: bool = False,
     ) -> type[BaseModel]:
 
         exclude_fields = exclude_fields or []
