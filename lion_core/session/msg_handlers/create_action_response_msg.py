@@ -3,13 +3,13 @@ from typing import Any
 from lionabc.exceptions import LionValueError
 
 from lion_core.communication import ActionRequest, ActionResponse
-from lion_core.operative.step_model import ActResponseModel
+from lion_core.operative.step_model import ActionResponseModel
 
 
 def create_action_response(
     *,
     action_request: ActionRequest,
-    action_response_model: ActResponseModel,
+    action_response_model: ActionResponseModel,
     sender: Any = None,
     action_response: ActionResponse | None = None,
 ) -> ActionResponse:

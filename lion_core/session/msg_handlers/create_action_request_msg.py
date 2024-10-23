@@ -3,12 +3,12 @@ from typing import Any
 from lionabc.exceptions import LionValueError
 
 from lion_core.communication.action_request import ActionRequest
-from lion_core.operative.step_model import ActRequestModel
+from lion_core.operative.step_model import ActionRequestModel
 
 
 def create_action_request(
     *,
-    action_request_model: ActRequestModel,
+    action_request_model: ActionRequestModel,
     sender: Any,
     recipient: Any,
     action_request: ActionRequest | None = None,

@@ -5,13 +5,10 @@ from typing import Any
 from lionfuncs import to_dict
 from pydantic import BaseModel, Field, field_validator
 
-from lion_core.action import FunctionCalling
-from lion_core.communication import ActionRequest, ActionResponse
-
 from .utils import parse_action_request
 
 
-class ActRequestModel(BaseModel):
+class ActionRequestModel(BaseModel):
 
     function: str | None = Field(
         None,
@@ -46,68 +43,32 @@ class ActRequestModel(BaseModel):
         )
 
     @classmethod
-    def parse_to_model(
-        cls,
-        action_request: ActionRequest = None,
-        text: str | None = None,
-        function: str | None = None,
-        arguments: dict[str, Any] = {},
-    ) -> list[ActRequestModel]:
-        if action_request and isinstance(action_request, ActionRequest):
-            return [
-                cls(
-                    function=action_request.function,
-                    arguments=action_request.arguments,
-                )
-            ]
-        if function and arguments:
-            return [cls(function=function, arguments=arguments)]
+    def create(cls, data: Any, /) -> list[ActionRequestModel]:
 
-        if text:
-            _dicts = parse_action_request(text)
-            _dicts = [i for i in _dicts if i]
-            if _dicts:
-                return [cls.model_validate(i) for i in _dicts]
+        if (
+            hasattr(data, "function")
+            and isinstance(data.function, str)
+            and hasattr(data, "arguments")
+        ):
+            data = {"function": data.function, "arguments": data.arguments}
+
+        _dicts = parse_action_request(data)
+        if _dicts:
+            return [cls.model_validate(i) for i in _dicts]
+
         return []
 
-    def to_message(self) -> ActionRequest:
-        return ActionRequest(
-            function=self.function,
-            arguments=self.arguments,
-        )
 
-
-class ActResponseModel(BaseModel):
+class ActionResponseModel(BaseModel):
 
     function: str
     arguments: dict[str, Any]
     output: Any
 
     @classmethod
-    def parse_to_model(
-        cls,
-        action_request: ActionRequest,
-        output: Any,
-    ) -> ActResponseModel:
+    def create(cls, action_request_model: ActionRequestModel, output: Any):
         return cls(
-            function=action_request.function,
-            arguments=action_request.arguments,
+            function=action_request_model.function,
+            arguments=action_request_model.arguments,
             output=output,
         )
-
-    def to_message(
-        self,
-        action_request: ActionRequest,
-        function_calling: FunctionCalling = None,
-    ) -> ActionResponse:
-        act_res = ActionResponse(
-            action_request=action_request,
-            sender=(
-                function_calling.func_tool.ln_id if function_calling else None
-            ),
-            output=self.output,
-        )
-        if function_calling:
-            log = function_calling.to_log()
-            act_res.metadata["log"] = log.to_dict()
-        return act_res
