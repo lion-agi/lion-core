@@ -1,10 +1,10 @@
 import atexit
 import json
-import os
 from pathlib import Path
 from typing import Any, TypeVar
 
 from lionabc import BaseManager
+from lionfuncs import create_path
 
 from lion_core.generic.log import Log
 from lion_core.generic.pile import Pile, pile
@@ -19,9 +19,9 @@ class LogManager(BaseManager):
         self,
         logs: Any = None,
         persist_dir: str | None = None,
-        persist_path: str | None = None,
         subfolder: str | None = None,
         file_prefix: str | None = None,
+        capacity: int = 1000,
     ) -> None:
         """Initialize the LogManager.
 
@@ -34,9 +34,9 @@ class LogManager(BaseManager):
         """
         self.logs: Pile[T] = pile(logs or {}, item_type={Log})
         self.persist_dir = persist_dir
-        self.persist_path = persist_path
         self.file_prefix = file_prefix
         self.subfolder = subfolder
+        self.capacity = capacity
         atexit.register(self.save_at_exit)
 
     async def alog(self, log_: Log, /) -> None:
@@ -46,10 +46,10 @@ class LogManager(BaseManager):
             log_: The log to add.
         """
         await self.logs.ainclude(log_)
+        if self.logs.size() >= self.capacity:
+            await self.adump()
 
-    async def adump(
-        self, clear: bool = True, persist_path: str | Path | None = None
-    ) -> dict:
+    async def adump(self, clear: bool = True) -> dict:
         """Asynchronously dump logs and save them.
 
         Args:
@@ -60,35 +60,28 @@ class LogManager(BaseManager):
             The dumped log data.
         """
         async with self.logs.async_lock:
-            id_ = self.logs[-1].ln_id[:-6]
             data = self.logs.to_dict()
+            self._save(data)
             if clear:
                 self.logs.clear()
-            self._save(id_=id_, data=data, persist_path=persist_path)
         return data
 
-    def dump(
-        self, clear: bool = True, persist_path: str | Path | None = None
-    ) -> dict:
+    def dump(self, clear: bool = True) -> dict:
         """Dump logs and save them.
 
         Args:
             clear: Whether to clear logs after dumping.
-            persist_path: Path to save the dumped logs.
 
         Returns:
             The dumped log data.
         """
-        id_ = self.logs[-1].ln_id[:-6]
         data = self.logs.to_dict()
         if clear:
             self.logs.clear()
-        self._save(id_=id_, data=data, persist_path=persist_path)
+        self._save(data)
         return data
 
-    def _save(
-        self, id_: str, data: dict, persist_path: str | Path | None = None
-    ) -> None:
+    def _save(self, data: dict) -> None:
         """Save log data to a file.
 
         Args:
@@ -96,22 +89,23 @@ class LogManager(BaseManager):
             data: Log data to save.
             persist_path: Path to save the log file.
         """
-        persist_path = persist_path or self.persist_path
 
-        if not persist_path:
-            persist_dir = self.persist_dir or "./data/logs"
-            if str(persist_dir).endswith("/"):
-                persist_dir = str(persist_dir)[:-1]
-            if self.subfolder:
-                persist_dir = f"{persist_dir}/{self.subfolder}"
-            persist_path = f"{persist_dir}/{self.file_prefix or ''}{id_}.json"
+        directory = self.persist_dir or "./data/logs"
+        if (directory := str(directory)).endswith("/"):
+            directory = directory[:-1]
+        if self.subfolder:
+            directory = f"{directory}/{self.subfolder}"
 
-        os.makedirs(os.path.dirname(persist_path), exist_ok=True)
+        fp = create_path(
+            directory=directory,
+            filename=self.file_prefix or "",
+            extension=".json",
+            timestamp=True,
+            random_hash_digits=5,
+        )
+        json.dump(data, fp)
 
-        with open(persist_path, "w") as f:
-            json.dump(data, f)
-
-    def load_json(self, persist_path: str | Path | None = None) -> None:
+    def load(self, persist_path: str | Path) -> None:
         """Load logs from a JSON file.
 
         Args:
@@ -120,11 +114,10 @@ class LogManager(BaseManager):
         Raises:
             FileNotFoundError: If the log file is not found.
         """
-        persist_path = persist_path or self.persist_path
         try:
             with open(persist_path) as f:
                 data = json.load(f)
-            self.logs = Pile.load(data=data)
+            self.logs = Pile.from_dict(data)
         except FileNotFoundError:
             raise FileNotFoundError(f"Log file not found at {persist_path}")
 
