@@ -29,6 +29,7 @@ class FunctionCalling(ObservableAction):
     )
     arguments: dict[str, Any] | None = None
     function_name: str | None = None
+    _output: Any | None = PrivateAttr(default=None)
 
     def __init__(
         self,
@@ -89,6 +90,7 @@ class FunctionCalling(ObservableAction):
                 result = self.func_tool.parser(result)
 
             await self.alog()
+            self._output = result
             return result
 
         except Exception as e:
