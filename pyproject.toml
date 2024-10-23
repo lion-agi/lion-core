@@ -10,7 +10,7 @@ classifiers = [
 
 [tool.poetry]
 name = "lion-core"
-version = "0.5.1"
+version = "0.5.2"
 description = "A core package for the Lion framework."
 authors = ["HaiyangLi <quantocean.li@gmail.com>"]
 readme = "README.md"
@@ -18,7 +18,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 lionfuncs = "^1.2.1"
-lionabc = "^1.0.1"
+lionabc = "^1.1.0"
 lion-service = "^1.0.1"
 
 
