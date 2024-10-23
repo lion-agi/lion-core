@@ -120,6 +120,14 @@ DEFAULT_RETRY_CONFIG = RetryConfig(
     error_map=None,
 )
 
+DEFAULT_CHAT_CONFIG = {
+    "provider": "openai",
+    "api_key": "OPENAI_API_KEY",
+    "model": "gpt-4o-mini",
+    "task": "chat",
+    "interval_tokens": 100_000,
+    "interval_requests": 1_000,
+}
 
 DEFAULT_TIMEZONE = timezone.utc
 BASE_LION_FIELDS = set(BaseLionFields.__members__.values())
