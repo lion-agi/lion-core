@@ -8,6 +8,7 @@ from typing_extensions import override
 
 from lion_core import event_log_manager
 from lion_core.generic import Element, Log
+from lion_core.log_manager import LogManager
 from lion_core.setting import (
     DEFAULT_TIMED_FUNC_CALL_CONFIG,
     TimedFuncCallConfig,
@@ -22,6 +23,7 @@ class ObservableAction(Element, Action):
     execution_error: str | None = None
     _timed_config: TimedFuncCallConfig | None = PrivateAttr(None)
     _content_fields: list = PrivateAttr(["execution_response"])
+    _log: Log | None = PrivateAttr(None)
 
     @override
     def __init__(
@@ -39,9 +41,19 @@ class ObservableAction(Element, Action):
             timed_config = TimedFuncCallConfig(**timed_config)
             self._timed_config = timed_config
 
-    async def alog(self) -> Log:
-        """Log the action asynchronously."""
-        await event_log_manager.alog(self.to_log())
+    @property
+    def log_id(self) -> str:
+        _l = self.to_log()
+        return _l.ln_id
+
+    async def alog(self, log_manager: LogManager = event_log_manager) -> str:
+        """
+        Log the action asynchronously.
+        return log ln_id
+        """
+        _l = self.to_log()
+        await log_manager.alog(_l)
+        return _l.ln_id
 
     def to_log(self) -> Log:
         """
@@ -50,6 +62,9 @@ class ObservableAction(Element, Action):
         Returns:
             BaseLog: A log entry representing the action.
         """
+        if self._log:
+            return self._log
+
         dict_ = self.to_dict()
         content = {k: dict_[k] for k in self._content_fields if k in dict_}
         loginfo = {k: dict_[k] for k in dict_ if k not in self._content_fields}
@@ -67,7 +82,8 @@ class ObservableAction(Element, Action):
             recursive_python_only=False,
             max_recursive_depth=5,
         )
-        return Log(content=content, loginfo=loginfo)
+        self._log = Log(content=content, loginfo=loginfo)
+        return self._log
 
     @classmethod
     def from_dict(cls, data: dict, /, **kwargs: Any) -> NoReturn:
