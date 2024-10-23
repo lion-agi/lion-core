@@ -6,18 +6,11 @@ from typing import Any, Literal
 import pandas as pd
 from lion_service import iModel
 from lionabc import Observable, Traversal
-from lionfuncs import (
-    alcall,
-    copy,
-    is_same_dtype,
-    md_to_json,
-    to_dict,
-    validate_mapping,
-)
+from lionfuncs import alcall, copy, is_same_dtype, md_to_json, validate_mapping
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic.fields import FieldInfo
 
-from lion_core.action import FunctionCalling, Tool, ToolManager
+from lion_core.action import Tool, ToolManager
 from lion_core.communication import (
     ActionRequest,
     ActionResponse,
@@ -32,16 +25,24 @@ from lion_core.communication import (
 # from lion_core.converter import ConverterRegistry
 from lion_core.generic import Exchange, Pile, Progression, progression
 from lion_core.generic.base import RealElement
-from lion_core.operative.action_model import ActRequestModel, ActResponseModel
-from lion_core.operative.step_model import StepModel
+from lion_core.operative.action_model import (
+    ActionRequestModel,
+    ActionResponseModel,
+)
 from lion_core.session.base import BaseSession
 from lion_core.session.msg_handlers import (
     create_instruction_message,
-    create_message,
     validate_message,
 )
 from lion_core.setting import TimedFuncCallConfig
 from lion_core.sys_utils import SysUtil
+
+from .utils import (
+    create_action,
+    create_message,
+    create_step_request_model,
+    create_step_response,
+)
 
 # class BranchConverterRegistry(ConverterRegistry):
 #     """Registry for Branch converters."""
@@ -159,8 +160,8 @@ class Branch(BaseSession, Traversal):
         assistant_response: AssistantResponse | str = None,
         action_request: ActionRequest = None,
         action_response: ActionResponse = None,
-        action_request_model: ActRequestModel = None,
-        action_response_model: ActResponseModel = None,
+        action_request_model: ActionRequestModel = None,
+        action_response_model: ActionResponseModel = None,
         delete_previous_system: bool = None,
         metadata=None,
     ):
@@ -233,7 +234,7 @@ class Branch(BaseSession, Traversal):
                 _msg.recipient = recipient or self.ln_id
 
         if metadata:
-            _msg.metadata.update(metadata, ["extra"])
+            _msg.metadata.update(["extra"], metadata)
 
         if _msg in self.messages:
             self.messages[_msg] = _msg
@@ -506,53 +507,45 @@ class Branch(BaseSession, Traversal):
 
     async def invoke_action(
         self,
-        action_request_model: ActRequestModel = None,
-        action_request: ActionRequest = None,
+        action_request: ActionRequestModel | ActionRequest,
         timed_config: dict | TimedFuncCallConfig | None = None,
         suppress_errors: bool = False,
-    ) -> ActResponseModel:
+    ) -> ActionResponseModel:
         try:
-            if action_request and action_request_model:
-                raise ValueError(
-                    "Cannot have both action_request and action_request_model"
-                )
-            if not action_request and not action_request_model:
-                raise ValueError(
-                    "Either action_request or action_request_model must "
-                    "be provided"
-                )
+            act_req_model = None
 
-            if not action_request:
-                action_request = action_request_model.to_message()
+            if isinstance(action_request, ActionRequest):
+                act_req_model = create_action(data=action_request.request)
 
-            if not action_request_model:
-                action_request_model = ActRequestModel.parse_to_model(
-                    action_request=action_request,
+            elif isinstance(action_request, ActionRequestModel):
+                act_req_model = action_request
+                action_request = create_message(
+                    sender=self,
+                    action_request_model=act_req_model,
                 )
 
-            tool: Tool = self.tool_manager.registry.get(
-                action_request.function
-            )
-            if action_request not in self.messages:
-                self.add_message(action_request=action_request)
-            func_call = FunctionCalling(
-                func_tool=tool,
-                arguments=action_request.arguments,
+            self.add_message(action_request=action_request)
+            func_call = await self.tool_manager.invoke(
+                action_request,
+                return_obj=True,
                 timed_config=timed_config,
             )
-            result = await func_call.invoke()
-            action_response_model = ActResponseModel.parse_to_model(
-                action_request=action_request, output=result
+            action_request.recipient = func_call.func_tool.ln_id
+            self.messages[action_request] = action_request
+
+            act_res_model = create_action(
+                action_request_model=act_req_model, output=func_call._output
             )
-            action_response = action_response_model.to_message(
-                action_request=action_request,
-                function_calling=func_call,
-            )
+
             self.add_message(
+                sender=action_request.recipient,
+                recipient=action_request.sender,
                 action_request=action_request,
-                action_response=action_response,
+                action_response_model=act_res_model,
+                metadata={"log": func_call.to_log()},
             )
-            return action_response_model
+
+            return act_res_model
         except Exception as e:
             if suppress_errors:
                 logging.warning(f"Failed to invoke action: {e}")
@@ -618,19 +611,18 @@ class Branch(BaseSession, Traversal):
             tool_schemas=self.get_tool_schema(tools) if tools else None,
             **kwargs,
         )
+        _response = res.response
         self.add_message(instruction=ins)
         self.add_message(assistant_response=res)
-
-        action_request_models = None
-        action_response_models = None
 
         if skip_validation:
             return res.response
 
+        action_request_models = None
+        action_response_models = None
+
         if tools:
-            action_request_models = ActRequestModel.parse_to_model(
-                text=res.response,
-            )
+            action_request_models = ActionRequestModel.create(res.response)
 
         if action_request_models and invoke_action:
             action_response_models = await alcall(
@@ -649,30 +641,30 @@ class Branch(BaseSession, Traversal):
                 )
 
         parse_success = False
+        out = None
 
-        _d = None
         if request_fields or request_model:
             while parse_success is False and num_parse_retries > 0:
                 if request_fields:
-                    _d = md_to_json(
+                    out = md_to_json(
                         res.response,
                         expected_keys=request_fields,
                         suppress=True,
                     )
-                    if _d and isinstance(_d, dict):
+                    if out and isinstance(out, dict):
                         parse_success = True
                         if res not in self.messages:
                             self.add_message(assistant_response=res)
 
                 elif request_model:
-                    _d = md_to_json(
+                    out = md_to_json(
                         res.response,
                         expected_keys=request_model.model_fields,
                         suppress=True,
                     )
-                    if _d and isinstance(_d, dict):
+                    if out and isinstance(out, dict):
                         try:
-                            _d = request_model.model_validate(_d)
+                            out = request_model.model_validate(out)
                             parse_success = True
                             if res not in self.messages:
                                 self.add_message(assistant_response=res)
@@ -698,7 +690,7 @@ class Branch(BaseSession, Traversal):
                     )
                     num_parse_retries -= 1
 
-        if request_fields and not isinstance(_d, dict):
+        if request_fields and not isinstance(out, dict):
             if handle_validation == "raise":
                 raise ValueError(
                     "Failed to parse response into request format"
@@ -706,9 +698,9 @@ class Branch(BaseSession, Traversal):
             if handle_validation == "return_none":
                 return None
             if handle_validation == "return_value":
-                return res.response
+                return _response
 
-        if request_model and not isinstance(_d, BaseModel):
+        if request_model and not isinstance(out, BaseModel):
             if handle_validation == "raise":
                 raise ValueError(
                     "Failed to parse response into request format"
@@ -716,9 +708,9 @@ class Branch(BaseSession, Traversal):
             if handle_validation == "return_none":
                 return None
             if handle_validation == "return_value":
-                return res.response
+                return _response
 
-        return _d if _d else res.response
+        return out or _response
 
     async def operate(
         self,
@@ -740,15 +732,10 @@ class Branch(BaseSession, Traversal):
         use_base_kwargs: bool = False,
         inherit_base: bool = True,
         field_descriptions: dict[str, str] | None = None,
-        frozen: bool = False,
         extra_fields: dict[str, FieldInfo] | None = None,
-        use_all_fields: bool = False,
         tools: Any = None,
         images: list = None,
         image_detail: Literal["low", "high", "auto"] = None,
-        handle_unmatched: Literal[
-            "ignore", "raise", "remove", "fill", "force"
-        ] = "force",
         num_parse_retries: int = 0,
         retry_imodel: iModel = None,
         retry_kwargs: dict = {},
@@ -776,7 +763,8 @@ class Branch(BaseSession, Traversal):
             )
             num_parse_retries = 5
 
-        request_model = await self._operate(
+        tool_schemas = self.get_tool_schema(tools) if tools else None
+        step_request = await self._operate(
             instruction=instruction,
             guidance=guidance,
             context=context,
@@ -795,13 +783,10 @@ class Branch(BaseSession, Traversal):
             use_base_kwargs=use_base_kwargs,
             inherit_base=inherit_base,
             field_descriptions=field_descriptions,
-            frozen=frozen,
             extra_fields=extra_fields,
-            use_all_fields=use_all_fields,
-            tool_schemas=self.get_tool_schema(tools) if tools else None,
+            tool_schemas=tool_schemas,
             images=images,
             image_detail=image_detail,
-            handle_unmatched=handle_unmatched,
             num_parse_retries=num_parse_retries,
             retry_imodel=retry_imodel,
             retry_kwargs=retry_kwargs,
@@ -809,50 +794,16 @@ class Branch(BaseSession, Traversal):
         )
 
         if skip_validation:
-            return request_model
+            return step_request
 
-        if isinstance(request_model, dict | str):
+        # start validation process
+        if isinstance(step_request, dict | str):
             if handle_validation == "raise":
-                request_: type[BaseModel] = StepModel.as_request_model(
+                req_model = create_step_request_model(
                     reason=reason,
                     actions=actions,
-                    operative_model=operative_model,
-                )
-                raise ValueError(
-                    "Operative model validation failed. iModel response"
-                    " not parsed into operative model:"
-                    f" {request_.__name__}"
-                )
-            if handle_validation == "return_none":
-                return None
-            if handle_validation == "return_value":
-                return request_model
-
-        if (
-            actions
-            and invoke_action
-            and hasattr(request_model, "action_required")
-            and request_model.action_required
-            and hasattr(request_model, "action_requests")
-            and request_model.action_requests
-        ):
-            action_response_models = await alcall(
-                request_model.action_requests,
-                self.invoke_action,
-                suppress_errors=True,
-                timed_config=action_timed_config,
-            )
-            dict_ = request_model.model_dump()
-            action_response_models = [
-                to_dict(i) for i in action_response_models if i
-            ]
-            dict_["action_responses"] = action_response_models
-
-            try:
-                return StepModel.parse_request_to_response(
-                    request_model=request_model,
-                    data=dict_,
                     exclude_fields=exclude_fields,
+                    include_fields=include_fields,
                     operative_model=operative_model,
                     config_dict=config_dict,
                     doc=doc,
@@ -860,33 +811,58 @@ class Branch(BaseSession, Traversal):
                     use_base_kwargs=use_base_kwargs,
                     inherit_base=inherit_base,
                     field_descriptions=field_descriptions,
-                    frozen=frozen,
                     extra_fields=extra_fields,
-                    use_all_fields=use_all_fields,
+                )
+                raise ValueError(
+                    "Operative model validation failed. iModel response"
+                    " not parsed into operative model:"
+                    f" {req_model.__name__}"
+                )
+            if handle_validation == "return_none":
+                return None
+            if handle_validation == "return_value":
+                return step_request
+
+        if (
+            actions
+            and invoke_action
+            and hasattr(step_request, "action_required")
+            and step_request.action_required
+            and hasattr(step_request, "action_requests")
+            and step_request.action_requests
+        ):
+            action_response_models = await alcall(
+                step_request.action_requests,
+                self.invoke_action,
+                suppress_errors=True,
+                timed_config=action_timed_config,
+            )
+            dict_ = step_request.model_dump()
+            dict_["action_responses"] = [
+                i.model_dump() for i in action_response_models if i
+            ]
+
+            try:
+                return create_step_response(
+                    step_request=step_request,
+                    operative_model=operative_model,
+                    exclude_fields=exclude_fields,
+                    **dict_,
                 )
             except Exception as e:
                 logging.warning(
                     f"Failed to parse model response into operative model: {e}"
                 )
-                request_model = dict_
+                step_request = dict_
 
         elif (
-            hasattr(request_model, "action_requests")
-            and request_model.action_requests
+            hasattr(step_request, "action_requests")
+            and step_request.action_requests
         ):
-            for i in request_model.action_requests:
-                i = to_dict(i)
-                act_req = ActionRequest(
-                    function=i["function"],
-                    arguments=i["arguments"],
-                    sender=self,
-                )
-                self.add_message(
-                    action_request=act_req,
-                    sender=act_req.sender,
-                    recipient=None,
-                )
-        return request_model
+            for i in step_request.action_requests:
+                self.add_message(action_request_model=i)
+
+        return step_request
 
     async def _invoke_imodel(
         self,
@@ -952,15 +928,10 @@ class Branch(BaseSession, Traversal):
         use_base_kwargs: bool = False,
         inherit_base: bool = True,
         field_descriptions: dict[str, str] | None = None,
-        frozen: bool = False,
         extra_fields: dict[str, FieldInfo] | None = None,
-        use_all_fields: bool = False,
         tool_schemas=None,
         images: list = None,
         image_detail: Literal["low", "high", "auto"] = None,
-        handle_unmatched: Literal[
-            "ignore", "raise", "remove", "fill", "force"
-        ] = "force",
         num_parse_retries: int = 0,
         retry_imodel: iModel = None,
         retry_kwargs: dict = {},
@@ -968,7 +939,8 @@ class Branch(BaseSession, Traversal):
     ) -> BaseModel | str | dict:
         imodel = imodel or self.imodel
         retry_imodel = retry_imodel or imodel
-        request_model: type[BaseModel] = StepModel.as_request_model(
+
+        step_request: type[BaseModel] = create_step_request_model(
             reason=reason,
             actions=actions,
             exclude_fields=exclude_fields,
@@ -980,9 +952,7 @@ class Branch(BaseSession, Traversal):
             use_base_kwargs=use_base_kwargs,
             inherit_base=inherit_base,
             field_descriptions=field_descriptions,
-            frozen=frozen,
             extra_fields=extra_fields,
-            use_all_fields=use_all_fields,
         )
 
         ins, res = await self._invoke_imodel(
@@ -991,7 +961,7 @@ class Branch(BaseSession, Traversal):
             context=context,
             sender=sender,
             recipient=recipient,
-            request_model=request_model,
+            request_model=step_request,
             progress=progress,
             imodel=imodel,
             tool_schemas=tool_schemas,
@@ -999,6 +969,7 @@ class Branch(BaseSession, Traversal):
             image_detail=image_detail,
             **kwargs,
         )
+        _response = res.response
 
         self.add_message(instruction=ins)
         self.add_message(assistant_response=res)
@@ -1006,36 +977,34 @@ class Branch(BaseSession, Traversal):
         def _validate_pydantic(_s, pyd=True):
             d_ = validate_mapping(
                 _s,
-                request_model.model_fields,
-                handle_unmatched=handle_unmatched,
+                step_request.model_fields,
+                handle_unmatched="force",
                 fuzzy_match=True,
             )
             if pyd:
-                step_request_model = request_model.model_validate(d_)
-                return d_, step_request_model
+                request_model = step_request.model_validate(d_)
+                return d_, request_model
             return d_
 
-        step_request_model = None
+        step_request = None
         dict_ = {}
 
         try:
-            dict_, step_request_model = _validate_pydantic(res.response, True)
+            dict_, step_request = _validate_pydantic(res.response)
 
         except Exception:
-            while num_parse_retries > 0 and step_request_model is None:
+            while num_parse_retries > 0 and step_request is None:
 
                 _, res1 = await self._invoke_imodel(
                     instruction="reformat text into specified model",
                     context=res.response,
-                    request_model=request_model,
+                    request_model=step_request,
                     progress=[],
                     imodel=retry_imodel,
                     **retry_kwargs,
                 )
                 try:
-                    dict_, step_request_model = _validate_pydantic(
-                        res1.response, True
-                    )
+                    dict_, step_request = _validate_pydantic(res1.response)
                     self.add_message(assistant_response=res1)
                     break
 
@@ -1056,23 +1025,26 @@ class Branch(BaseSession, Traversal):
                         f"Failed to parse response: {res.response}. "
                         f"Retrying with {retry_imodel.model} ..."
                     )
-                    step_request_model = None
+                    step_request = None
                     num_parse_retries -= 1
+                    res = res1
 
-        return step_request_model if step_request_model else dict_
+        return step_request or dict_ or _response
 
-    def to_df(self) -> pd.DataFrame:
+    def to_df(self, progress=None, /) -> pd.DataFrame:
         dicts_ = []
-        for i in self.messages:
-            dict_: dict = i.to_dict()
+        progress = progress or self.progress
+        for i in progress:
+            i: RoledMessage = self.messages[i]
+            dict_ = i.to_dict()
             for k in list(dict_.keys()):
                 if k not in MESSAGE_FIELDS:
                     dict_.pop(k)
             datetime_ = datetime.fromtimestamp(i.timestamp)
             dict_["timestamp"] = datetime_.isoformat(timespec="auto")
             dict_["role"] = i.role.value
-
             dicts_.append(dict_)
+
         return pd.DataFrame(dicts_, columns=MESSAGE_FIELDS)
 
 
