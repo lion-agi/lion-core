@@ -29,8 +29,8 @@ from lion_core.operative.step_model import StepModel
 from .msg_handlers import (
     create_action_request,
     create_action_response,
-    create_assistant_response_message,
-    create_instruction_message,
+    create_assistant_response,
+    create_instruction,
     create_system_message,
 )
 
@@ -123,12 +123,12 @@ def create_message(
             system_datetime=system_datetime,
         )
     if assistant_response:
-        return create_assistant_response_message(
+        return create_assistant_response(
             sender=sender,
             recipient=recipient,
             assistant_response=assistant_response,
         )
-    return create_instruction_message(
+    return create_instruction(
         sender=sender,
         recipient=recipient,
         instruction=instruction,
