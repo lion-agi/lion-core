@@ -5,8 +5,6 @@ from typing import Any
 from lionfuncs import to_dict
 from pydantic import BaseModel, Field, field_validator
 
-from .utils import parse_action_request
-
 
 class ActionRequestModel(BaseModel):
 
@@ -42,33 +40,9 @@ class ActionRequestModel(BaseModel):
             recursive=True,
         )
 
-    @classmethod
-    def create(cls, data: Any, /) -> list[ActionRequestModel]:
-
-        if (
-            hasattr(data, "function")
-            and isinstance(data.function, str)
-            and hasattr(data, "arguments")
-        ):
-            data = {"function": data.function, "arguments": data.arguments}
-
-        _dicts = parse_action_request(data)
-        if _dicts:
-            return [cls.model_validate(i) for i in _dicts]
-
-        return []
-
 
 class ActionResponseModel(BaseModel):
 
     function: str
     arguments: dict[str, Any]
     output: Any
-
-    @classmethod
-    def create(cls, action_request_model: ActionRequestModel, output: Any):
-        return cls(
-            function=action_request_model.function,
-            arguments=action_request_model.arguments,
-            output=output,
-        )
