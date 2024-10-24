@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from lion_core.communication import Instruction
 
 
-def create_instruction_message(
+def create_instruction(
     sender: Any = None,
     recipient: Any = None,
     instruction: str | dict = None,

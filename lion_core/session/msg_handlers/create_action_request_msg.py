@@ -8,9 +8,9 @@ from lion_core.operative.step_model import ActionRequestModel
 
 def create_action_request(
     *,
-    action_request_model: ActionRequestModel,
-    sender: Any,
-    recipient: Any,
+    action_request_model: ActionRequestModel | dict,
+    sender: Any = None,
+    recipient: Any = None,
     action_request: ActionRequest | None = None,
 ) -> ActionRequest:
     """Creates or returns an ActionRequest instance.
@@ -33,11 +33,26 @@ def create_action_request(
             raise LionValueError(
                 "Error: action request must be an instance of ActionRequest."
             )
+        if sender:
+            action_request.sender = sender
+        if recipient:
+            action_request.recipient = recipient
         return action_request
 
+    function = (
+        action_request_model["function"]
+        if isinstance(action_request_model, dict)
+        else action_request_model.function
+    )
+    arguments = (
+        action_request_model["arguments"]
+        if isinstance(action_request_model, dict)
+        else action_request_model.arguments
+    )
+
     return ActionRequest(
-        function=action_request_model.function,
-        arguments=action_request_model.arguments,
+        function=function,
+        arguments=arguments,
         sender=sender,
         recipient=recipient,
     )

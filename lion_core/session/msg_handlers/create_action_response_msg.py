@@ -1,5 +1,3 @@
-from typing import Any
-
 from lionabc.exceptions import LionValueError
 
 from lion_core.communication import ActionRequest, ActionResponse
@@ -9,8 +7,7 @@ from lion_core.operative.step_model import ActionResponseModel
 def create_action_response(
     *,
     action_request: ActionRequest,
-    action_response_model: ActionResponseModel,
-    sender: Any = None,
+    action_response_model: ActionResponseModel = None,
     action_response: ActionResponse | None = None,
 ) -> ActionResponse:
     """Creates or updates an ActionResponse based on the given parameters.
@@ -40,19 +37,12 @@ def create_action_response(
             raise LionValueError(
                 "Error: action response must be an instance of ActionResponse."
             )
-        if action_response_model:
-            action_response.update_request(
-                action_request=action_request,
-                output=action_response_model.output,
-            )
-        else:
-            action_response.update_request(
-                action_request=action_request,
-            )
+        if action_request.is_responded:
+            raise ValueError("Error: action request already has a response.")
+        action_request.content["action_response_id"] = action_response.ln_id
         return action_response
 
     return ActionResponse(
         action_request=action_request,
-        sender=sender,
         output=action_response_model.output,
     )
