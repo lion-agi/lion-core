@@ -72,6 +72,23 @@ class System(RoledMessage):
             recipient=recipient or "N/A",
         )
 
+    def update(
+        self,
+        system: Any = None,
+        sender: Any = None,
+        recipient: Any = None,
+        system_datetime: bool | str = None,
+    ) -> None:
+
+        if system:
+            self.content = format_system_content(
+                system_datetime=system_datetime, system_message=system
+            )
+        if sender:
+            self.sender = sender
+        if recipient:
+            self.recipient = recipient
+
     @property
     def system_info(self) -> Any:
         """
@@ -80,7 +97,11 @@ class System(RoledMessage):
         Returns:
             Any: The system information.
         """
-        return self.content.get("system_info", None)
+        if "system_datetime" in self.content:
+            msg = f"System datetime: {self.content['system_datetime']}\n\n"
+            return msg + f"{self.content['system']}"
+
+        return self.content["system"]
 
     @override
     def _format_content(self) -> dict[str, Any]:

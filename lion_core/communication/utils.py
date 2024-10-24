@@ -1,7 +1,6 @@
 from typing import Any, Literal
 
-from lionfuncs import LN_UNDEFINED, Note, note, time
-from lionfuncs.integrations.pydantic_ import break_down_pydantic_annotation
+from lionfuncs import LN_UNDEFINED, Note, break_down_pydantic_annotation, time
 from pydantic import BaseModel
 
 DEFAULT_SYSTEM = "You are a helpful AI assistant. Let's think step by step."
@@ -12,14 +11,10 @@ def format_system_content(
     system_message: str,
 ) -> Note:
     """Format the system content with optional datetime information."""
-    system_message = system_message or DEFAULT_SYSTEM
-    if not system_datetime:
-        return Note(system_info=str(system_message))
-    if isinstance(system_datetime, str):
-        return Note(system_info=f"{system_message}. Date: {system_datetime}")
+    content = Note(system=str(system_message or DEFAULT_SYSTEM))
     if system_datetime:
-        date = time(type_="iso", timespec="minutes")
-        return Note(system_info=f"{system_message}. System Date: {date}")
+        content["system_datetime"] = time(type_="iso", timespec="minutes")
+    return content
 
 
 def prepare_request_response_format(request_fields: dict) -> str:
@@ -101,26 +96,27 @@ def prepare_instruction_content(
             "only one of request_fields or request_model can be provided"
         )
 
-    out_ = {}
+    out_ = {"context": []}
     if guidance:
         out_["guidance"] = guidance
     if instruction:
         out_["instruction"] = instruction
     if context:
-        if not isinstance(context, str):
-            out_["context"] = context
+        if isinstance(context, list):
+            out_["context"].extend(context)
         else:
-            out_["context"] = [context]
+            out_["context"].append(context)
     if images:
         out_["images"] = images if isinstance(images, list) else [images]
         out_["image_detail"] = image_detail or "low"
 
     if request_model:
-        schema = request_model.model_json_schema()
         request_fields = break_down_pydantic_annotation(request_model)
         if "context" not in out_:
             out_["context"] = []
-        out_["context"].append({"respond_schema_info": schema})
+        out_["context"].append(
+            {"respond_schema_info": request_model.model_json_schema()}
+        )
 
     if request_fields:
         _fields = request_fields if isinstance(request_fields, dict) else {}
@@ -134,6 +130,6 @@ def prepare_instruction_content(
     if plain_content:
         out_["plain_content"] = plain_content
 
-    return note(
+    return Note(
         **{k: v for k, v in out_.items() if v not in [None, LN_UNDEFINED]},
     )
