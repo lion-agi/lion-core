@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from lion_core.action.function_calling import FunctionCalling
 from lion_core.action.tool import Tool, func_to_tool
 from lion_core.communication import ActionRequest
-from lion_core.setting import TimedFuncCallConfig
+from lion_core.generic import Log
 
 REGISTERABLE_TOOL = Tool | Callable[..., Any]
 FINDABLE_TOOL = Tool | Callable[..., Any] | str
@@ -105,10 +105,12 @@ class ToolManager(BaseManager):
         tools_list = tools if isinstance(tools, list) else [tools]
         [
             self.register_tool(tool, update=update)
-            for tool in to_list(tools_list, dropna=True, flatten=True)
+            for tool in to_list(
+                tools_list, dropna=True, flatten=True, unique=True
+            )
         ]
 
-    def match_tool(self, func_call: Any, **kwargs) -> FunctionCalling:
+    def match_tool(self, func_call: Any) -> FunctionCalling:
         """Match a function call to a registered tool.
 
         This method uses single dispatch to handle different input types.
@@ -124,10 +126,10 @@ class ToolManager(BaseManager):
             TypeError: If the input type is not supported.
             ValueError: If function is not registered or call format invalid.
         """
-        return self._match_tool(func_call, **kwargs)
+        return self._match_tool(func_call)
 
     @singledispatchmethod
-    def _match_tool(self, func_call: Any, **kwargs) -> FunctionCalling:
+    def _match_tool(self, func_call: Any) -> FunctionCalling:
         """Match a function call to a registered tool.
 
         This method uses single dispatch to handle different input types.
@@ -145,12 +147,12 @@ class ToolManager(BaseManager):
         """
         try:
             dict_ = to_dict(func_call)
-            return self._match_tool(dict_, **kwargs)
+            return self._match_tool(dict_)
         except Exception:
             raise TypeError(f"Unsupported type {type(func_call)}")
 
     @_match_tool.register
-    def _(self, func_call: tuple, **kwargs) -> FunctionCalling:
+    def _(self, func_call: tuple) -> FunctionCalling:
         """Match a function call tuple to a registered tool."""
         if len(func_call) == 2:
             function_name = func_call[0]
@@ -158,14 +160,12 @@ class ToolManager(BaseManager):
             tool = self.registry.get(function_name)
             if not tool:
                 raise ValueError(f"Function {function_name} is not registered")
-            return FunctionCalling(
-                func_tool=tool, arguments=arguments, **kwargs
-            )
+            return FunctionCalling(func_tool=tool, arguments=arguments)
         else:
             raise ValueError(f"Invalid function call {func_call}")
 
     @_match_tool.register
-    def _(self, func_call: dict, **kwargs) -> FunctionCalling:
+    def _(self, func_call: dict) -> FunctionCalling:
         """Match a function call dictionary to a registered tool."""
         if len(func_call) == 2 and (
             {
@@ -181,23 +181,20 @@ class ToolManager(BaseManager):
             return FunctionCalling(
                 func_tool=tool,
                 arguments=func_call["arguments"],
-                **kwargs,
             )
         raise ValueError(f"Invalid function call {func_call}")
 
     @_match_tool.register
-    def _(self, func_call: ActionRequest, **kwargs) -> FunctionCalling:
+    def _(self, func_call: ActionRequest) -> FunctionCalling:
         """Match an ActionRequest to a registered tool."""
         tool = self.registry.get(func_call.function)
         if not tool:
             func_ = func_call.function
             raise ValueError(f"Function {func_} is not registered.")
-        return FunctionCalling(
-            func_tool=tool, arguments=func_call.arguments, **kwargs
-        )
+        return FunctionCalling(func_tool=tool, arguments=func_call.arguments)
 
     @_match_tool.register
-    def _(self, func_call: str, **kwargs) -> FunctionCalling:
+    def _(self, func_call: str) -> FunctionCalling:
         """Parse a string and match it to a registered tool."""
         _call = None
         try:
@@ -206,16 +203,13 @@ class ToolManager(BaseManager):
             raise ValueError(f"Invalid function call {func_call}") from e
 
         if isinstance(_call, dict):
-            return self._match_tool(_call, **kwargs)
+            return self._match_tool(_call)
         raise ValueError(f"Invalid function call {func_call}")
 
     async def invoke(
         self,
         func_call: dict | str | ActionRequest | BaseModel,
-        return_obj=False,
-        timed_config: dict | TimedFuncCallConfig | None = None,
-        **kwargs,
-    ) -> Any | FunctionCalling:
+    ) -> tuple[Any, Log]:
         """Invoke a tool based on the provided function call.
 
         Args:
@@ -228,13 +222,8 @@ class ToolManager(BaseManager):
         Raises:
             ValueError: If function call can't be matched to registered tool.
         """
-        function_calling = self._match_tool(
-            func_call, timed_config=timed_config, **kwargs
-        )
-        result = await function_calling.invoke()
-        if return_obj:
-            return function_calling
-        return result
+        function_calling = self._match_tool(func_call)
+        return await function_calling.invoke()
 
     @property
     def schema_list(self) -> list[dict[str, Any]]:
