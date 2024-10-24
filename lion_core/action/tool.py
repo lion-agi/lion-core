@@ -1,9 +1,8 @@
 import json
 from collections.abc import Callable
-from datetime import datetime
 from typing import Any, Literal
 
-from lionfuncs import function_to_schema, to_list
+from lionfuncs import function_to_schema
 from pydantic import Field, field_serializer, field_validator
 from typing_extensions import override
 
@@ -110,9 +109,7 @@ class Tool(Element):
         Returns:
             A string representation of the Tool.
         """
-        timestamp_str = datetime.fromtimestamp(self.timestamp).isoformat(
-            timespec="minutes"
-        )
+        timestamp_str = self.created_datetime.isoformat(timespec="minutes")
         return (
             f"{self.class_name()}(ln_id={self.ln_id[:6]}.., "
             f"timestamp={timestamp_str}), "
@@ -141,8 +138,8 @@ def func_to_tool(
         ValueError: If the number of parsers doesn't match the number of
             functions.
     """
-    funcs = to_list(func_)
-    parsers = to_list(parser)
+    funcs = [func_] if not isinstance(func_, list) else func_
+    parsers = [parser] if not isinstance(parser, list) else parser
 
     if parser and len(funcs) != len(parsers):
         raise ValueError("Length of parser must match length of func, ")

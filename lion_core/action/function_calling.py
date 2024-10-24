@@ -8,6 +8,7 @@ from typing_extensions import override
 
 from lion_core.action.base import ObservableAction
 from lion_core.action.tool import Tool
+from lion_core.generic import Log
 from lion_core.setting import TimedFuncCallConfig
 
 
@@ -46,7 +47,7 @@ class FunctionCalling(ObservableAction):
         self.function_name = self.func_tool.function_name
 
     @override
-    async def invoke(self) -> Any | None:
+    async def invoke(self) -> tuple[Any, Log]:
         """Asynchronously invokes the function with stored arguments.
 
         Handles function invocation, applying pre/post-processing steps.
@@ -88,13 +89,12 @@ class FunctionCalling(ObservableAction):
             if self.func_tool.parser is not None:
                 result = self.func_tool.parser(result)
 
-            await self.alog()
-            return result
+            return result, self.to_log()
 
         except Exception as e:
             self.status = EventStatus.FAILED
             self.execution_error = str(e)
-            await self.alog()
+            return None, self.to_log()
 
     def __str__(self) -> str:
         """Returns a string representation of the function call."""

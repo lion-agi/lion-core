@@ -1,4 +1,5 @@
-from lionabc import AbstractSpace, BaseiModel
+from lion_service import iModel
+from lionabc import AbstractSpace
 from pydantic import model_validator
 
 from lion_core.communication import System
@@ -10,7 +11,7 @@ from lion_core.sys_utils import SysUtil
 class BaseSession(Node, AbstractSpace):
     system: System | None = None
     user: str = "user"
-    imodel: BaseiModel | None = None
+    imodel: iModel | None = None
     name: str | None = None
 
     @model_validator(mode="before")

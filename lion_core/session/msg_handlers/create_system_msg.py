@@ -18,22 +18,23 @@ def create_system_message(
         sender: The sender of the system message.
         recipient: The recipient of the system message.
         system_datetime: System datetime information.
+            ignored if system is a System instance.
 
     Returns:
         System: New or updated System instance.
     """
-    config = {
-        "sender": sender,
-        "recipient": recipient,
-        "system_datetime": system_datetime,
-    }
-    config = {k: v for k, v in config.items() if v}
+    system = system or DEFAULT_SYSTEM
 
-    if not system:
-        return System(DEFAULT_SYSTEM, **config)
     if isinstance(system, System):
-        if config:
-            for k, v in config.items():
-                setattr(system, k, v)
+        if sender:
+            system.sender = sender
+        if recipient:
+            system.recipient = recipient
         return system
-    return System(system, **config)
+
+    return System(
+        system=system,
+        sender=sender,
+        recipient=recipient,
+        system_datetime=system_datetime,
+    )

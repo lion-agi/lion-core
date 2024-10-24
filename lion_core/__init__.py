@@ -10,12 +10,14 @@ event_log_manager = LogManager(
     persist_dir="./data/logs",
     subfolder="events",
     file_prefix="event_",
+    capacity=1000,
 )
 
 message_log_manager = LogManager(
     persist_dir="./data/logs",
     subfolder="messages",
     file_prefix="message_",
+    capacity=1000,
 )
 
 __all__ = [

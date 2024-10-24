@@ -1,6 +1,6 @@
 from typing import Any
 
-from lionfuncs import to_dict, to_str
+from lionfuncs import Note, copy, to_str
 from pydantic import BaseModel
 from typing_extensions import override
 
@@ -9,6 +9,46 @@ from lion_core.communication.message import (
     MessageRole,
     RoledMessage,
 )
+
+
+def prepare_assistant_response(
+    assistant_response: BaseModel | list[BaseModel] | dict | str | Any, /
+):
+    if assistant_response:
+        content = Note()
+        # must be response.choices[0].message.content
+        if isinstance(assistant_response, BaseModel):
+            content["assistant_response"] = (
+                assistant_response.choices[0].message.content or ""
+            )
+            content["model_response"] = assistant_response.model_dump(
+                exclude_none=True, exclude_unset=True
+            )
+        # or response[i].choices[0].delta.content
+        elif isinstance(assistant_response, list):
+            msg = "".join(
+                [i.choices[0].delta.content or "" for i in assistant_response]
+            )
+            content["assistant_response"] = msg
+            content["model_response"] = [
+                i.model_dump(
+                    exclude_none=True,
+                    exclude_unset=True,
+                )
+                for i in assistant_response
+            ]
+        elif (
+            isinstance(assistant_response, dict)
+            and "content" in assistant_response
+        ):
+            content["assistant_response"] = assistant_response["content"]
+        elif isinstance(assistant_response, str):
+            content["assistant_response"] = assistant_response
+        else:
+            content["assistant_response"] = to_str(assistant_response)
+        return content
+    else:
+        return Note(assistant_response="")
 
 
 class AssistantResponse(RoledMessage):
@@ -48,49 +88,10 @@ class AssistantResponse(RoledMessage):
             recipient=recipient,
         )
 
-        if assistant_response:
-            # must be response.choices[0].message.content
-            if isinstance(assistant_response, BaseModel):
-                self.content["assistant_response"] = (
-                    assistant_response.choices[0].message.content or ""
-                )
-                self.metadata["model_response"] = to_dict(
-                    assistant_response,
-                    use_model_dump=True,
-                    exclude_none=True,
-                    exclude_unset=True,
-                )
-            # or response[i].choices[0].delta.content
-            elif isinstance(assistant_response, list):
-                msg = "".join(
-                    [
-                        i.choices[0].delta.content or ""
-                        for i in assistant_response
-                    ]
-                )
-                self.content["assistant_response"] = msg
-                self.metadata["model_response"] = [
-                    to_dict(
-                        i,
-                        use_model_dump=True,
-                        exclude_none=True,
-                        exclude_unset=True,
-                    )
-                    for i in assistant_response
-                ]
-            elif (
-                isinstance(assistant_response, dict)
-                and "content" in assistant_response
-            ):
-                self.content["assistant_response"] = assistant_response[
-                    "content"
-                ]
-            elif isinstance(assistant_response, str):
-                self.content["assistant_response"] = assistant_response
-            else:
-                self.content["assistant_response"] = to_str(assistant_response)
-        else:
-            self.content["assistant_response"] = ""
+        content = prepare_assistant_response(assistant_response)
+        if "model_response" in content:
+            self.metadata["model_response"] = content.pop("model_response")
+        self.content = content
 
     @property
     def response(self) -> str:
@@ -100,7 +101,7 @@ class AssistantResponse(RoledMessage):
         Returns:
             Any: The content of the assistant's response.
         """
-        return to_str(self.content.get("assistant_response"))
+        return copy(self.content["assistant_response"])
 
     @override
     def _format_content(self) -> dict[str, str]:

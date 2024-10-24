@@ -2,7 +2,7 @@ from datetime import timezone
 from enum import Enum
 from typing import Any
 
-from lionfuncs import LN_UNDEFINED, LionUndefinedType, to_dict
+from lionfuncs import LN_UNDEFINED, LionUndefinedType
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -15,11 +15,7 @@ class SchemaModel(BaseModel):
     )
 
     def to_dict(self) -> dict[str, Any]:
-        dict_ = to_dict(
-            self,
-            use_model_dump=True,
-            exclude_unset=True,
-        )
+        dict_ = self.model_dump(exclude_unset=True)
         for i in list(dict_.keys()):
             if dict_[i] is LN_UNDEFINED:
                 dict_.pop(i)
@@ -120,6 +116,14 @@ DEFAULT_RETRY_CONFIG = RetryConfig(
     error_map=None,
 )
 
+DEFAULT_CHAT_CONFIG = {
+    "provider": "openai",
+    "api_key": "OPENAI_API_KEY",
+    "model": "gpt-4o-mini",
+    "task": "chat",
+    "interval_tokens": 100_000,
+    "interval_requests": 1_000,
+}
 
 DEFAULT_TIMEZONE = timezone.utc
 BASE_LION_FIELDS = set(BaseLionFields.__members__.values())

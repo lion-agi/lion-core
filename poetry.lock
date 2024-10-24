@@ -376,13 +376,13 @@ tiktoken = ">=0.7.0,<0.8.0"
 
 [[package]]
 name = "lionabc"
-version = "1.0.1"
+version = "1.1.0"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "lionabc-1.0.1-py3-none-any.whl", hash = "sha256:10d6f8155598f4d4e67152f86338271b67365124b9940d62e7d82002ecd7a34c"},
-    {file = "lionabc-1.0.1.tar.gz", hash = "sha256:ac62774abf83a7bebad549494c842d7e07937d66116a3ade10931fa22652efed"},
+    {file = "lionabc-1.1.0-py3-none-any.whl", hash = "sha256:b2214d91b26a820b8440427a14d4312ab1a5540d06f2e564d5fa30077edc947a"},
+    {file = "lionabc-1.1.0.tar.gz", hash = "sha256:8caf05ad785a7a2767168060175896cb0905c3c5870408453bc1621771c0438a"},
 ]
 
 [[package]]
@@ -1285,4 +1285,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "fd0da5f2c9f73614dc92f37b6352e8ac61d46330cf93cd924a471fea374147c9"
+content-hash = "e24f88361dd136171a7d526f0ea8f7b124e3f0b7c231a619608c98b47fbf8887"

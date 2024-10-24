@@ -25,11 +25,15 @@ def prepare_action_response_content(
     Returns:
         Note: A Note object containing the action response content.
     """
-    dict_ = action_request.request
-    dict_["output"] = output
-    content = Note(action_request_id=action_request.ln_id)
-    content["action_response"] = dict_
-    return content
+
+    return Note(
+        action_request_id=action_request.ln_id,
+        action_response={
+            "function": action_request.function,
+            "arguments": action_request.arguments,
+            "output": output,
+        },
+    )
 
 
 class ActionResponse(RoledMessage):
@@ -39,7 +43,6 @@ class ActionResponse(RoledMessage):
     def __init__(
         self,
         action_request: ActionRequest | MessageFlag,
-        sender: Any | MessageFlag = None,
         output: Any | MessageFlag = None,
         protected_init_params: dict | None = None,
     ) -> None:
@@ -54,7 +57,6 @@ class ActionResponse(RoledMessage):
         """
         message_flags = [
             action_request,
-            sender,
             output,
         ]
 
@@ -69,17 +71,14 @@ class ActionResponse(RoledMessage):
 
         super().__init__(
             role=MessageRole.ASSISTANT,
-            sender=sender or "N/A",  # sender is the actionable component
             recipient=action_request.sender,
+            sender=action_request.recipient,
             content=prepare_action_response_content(
                 action_request=action_request,
                 output=output,
             ),
         )
-        self.update_request(
-            action_request=action_request,
-            output=output,
-        )
+        action_request.content["action_response_id"] = self.ln_id
 
     @property
     def function(self) -> str:
@@ -105,27 +104,6 @@ class ActionResponse(RoledMessage):
     def action_request_id(self) -> str | None:
         """Get the ID of the corresponding action request."""
         return self.content.get("action_request_id", None)
-
-    def update_request(
-        self,
-        action_request: ActionRequest,
-        output: Any = None,
-    ) -> None:
-        """Update the action response with new request and output.
-
-        Args:
-            action_request: The original action request being responded to.
-            func_output: The output from the function in the request.
-        """
-        output = output or self.output
-        self.content = prepare_action_response_content(
-            action_request=action_request,
-            output=output,
-        )
-        action_request.content.set(
-            ["action_response_id"],
-            self.ln_id,
-        )
 
     @override
     def _format_content(self) -> dict[str, Any]:

@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any
 
-from lionfuncs import Note, copy, to_dict, to_str
+from lionfuncs import Note, copy
 from typing_extensions import override
 
 from lion_core.communication.message import (
@@ -15,39 +15,7 @@ def prepare_action_request(
     function: str | Callable,
     arguments: dict,
 ) -> Note:
-    """
-    Prepare an action request Note.
-
-    Args:
-        function: The function name or callable to be invoked.
-        arguments: The arguments for the function.
-
-    Returns:
-        Note: A Note object containing the action request.
-
-    Raises:
-        ValueError: If the arguments are invalid.
-    """
-
-    def _prepare_arguments(_arg: Any) -> dict[str, Any]:
-        if _arg is None:
-            return {}
-        if not isinstance(_arg, dict):
-            try:
-                _arg = to_dict(to_str(_arg), str_type="json", fuzzy_parse=True)
-            except ValueError:
-                _arg = to_dict(to_str(_arg), str_type="xml")
-            except Exception as e:
-                raise ValueError(f"Invalid arguments: {e}") from e
-
-        if isinstance(_arg, dict):
-            return _arg
-        raise ValueError(f"Invalid arguments: {_arg}")
-
-    arguments = _prepare_arguments(arguments)
-    return Note(
-        **{"action_request": {"function": function, "arguments": arguments}},
-    )
+    return Note(action_request={"function": function, "arguments": arguments})
 
 
 class ActionRequest(RoledMessage):
@@ -87,7 +55,9 @@ class ActionRequest(RoledMessage):
 
         super().__init__(
             role=MessageRole.ASSISTANT,
-            content=prepare_action_request(function, arguments),
+            content=prepare_action_request(
+                function=function, arguments=arguments
+            ),
             sender=sender,
             recipient=recipient,
         )
