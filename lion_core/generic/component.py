@@ -13,6 +13,7 @@ from lion_core._class_registry import get_class
 from lion_core.generic.component_adapter import ComponentAdapterRegistry
 from lion_core.generic.element import Element
 from lion_core.protocols.adapter import Adapter, AdapterRegistry
+from lion_core.version import __version__
 
 T = TypeVar("T", bound=Element)
 
@@ -24,7 +25,6 @@ DEFAULT_SERIALIZATION_INCLUDE: set[str] = {
     "embedding",
 }
 
-
 NAMED_FIELD = Annotated[str, Field(..., alias="field")]
 
 
@@ -32,7 +32,7 @@ class Component(Element):
     """Extended base class for components in the Lion framework."""
 
     metadata: Note = Field(
-        default_factory=Note,
+        default_factory=lambda: Note(lion_core_version=__version__),
         description="Additional metadata for the component",
     )
 
